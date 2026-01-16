@@ -1,0 +1,39 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <AvaloniaResource Include="Assets\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Avalonia Core - Versión 11.3.0 -->
+    <PackageReference Include="Avalonia" Version="11.3.0" />
+    <PackageReference Include="Avalonia.Desktop" Version="11.3.0" />
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="11.3.0" />
+    <PackageReference Include="Avalonia.Fonts.Inter" Version="11.3.0" />
+    
+    <!-- Diagnostics (solo Debug) -->
+    <PackageReference Condition="'$(Configuration)' == 'Debug'" 
+                      Include="Avalonia.Diagnostics" Version="11.3.0" />
+    
+    <!-- MVVM Toolkit - CommunityToolkit -->
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.3.2" />
+    
+    <!-- SQLite -->
+    <PackageReference Include="sqlite-net-pcl" Version="1.9.172" />
+    <PackageReference Include="SQLitePCLRaw.bundle_green" Version="2.1.10" />
+    
+    <!-- JSON -->
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    
+    <!-- Excel Export -->
+    <PackageReference Include="ClosedXML" Version="0.102.3" />
+  </ItemGroup>
+</Project>
