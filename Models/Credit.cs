@@ -1,63 +1,78 @@
 using SQLite;
 using System;
 
-namespace casa_ceja_remake.Models
+namespace CasaCejaRemake.Models
 {
     [Table("credits")]
     public class Credit
     {
+        // ========== IDENTIFICADOR ==========
         [PrimaryKey, AutoIncrement]
         [Column("id")]
         public int Id { get; set; }
 
+        // ========== FOLIO ==========
         [Column("folio")]
         [MaxLength(50)]
-        [Indexed(Name = "IX_Credit_Folio")]
+        [Indexed(Name = "IX_Credits_Folio", Unique = true)]
         public string Folio { get; set; } = string.Empty;
 
-        [Column("sale_id")]
-        public int SaleId { get; set; } // Referencia a la venta original
-
+        // ========== RELACIONES ==========
         [Column("customer_id")]
-        public int CustomerId { get; set; } // ✅ Cliente que debe
+        [Indexed(Name = "IX_Credits_Customer")]
+        public int CustomerId { get; set; }
 
         [Column("branch_id")]
+        [Indexed(Name = "IX_Credits_Branch")]
         public int BranchId { get; set; }
 
         [Column("user_id")]
-        public int UserId { get; set; } // Cajero que autorizó el crédito
+        [Indexed(Name = "IX_Credits_User")]
+        public int UserId { get; set; }
 
-        // ============ MONTOS ============
-        [Column("total_amount")]
-        public decimal TotalAmount { get; set; } = 0;
+        // ========== INFORMACIÓN FINANCIERA ==========
+        [Column("total")]
+        public decimal Total { get; set; }
 
-        [Column("paid_amount")]
-        public decimal PaidAmount { get; set; } = 0;
+        [Column("total_paid")]
+        public decimal TotalPaid { get; set; }
 
-        [Column("remaining_amount")]
-        public decimal RemainingAmount { get; set; } = 0;
+        // ========== INFORMACIÓN DE CRÉDITO ==========
+        [Column("months_to_pay")]
+        public int MonthsToPay { get; set; }
 
-        // ============ CAMPOS PARA GRID ============
-        [Column("customer_name")]
-        [MaxLength(200)]
-        public string CustomerName { get; set; } = string.Empty; // Para mostrar en grid
-
-        [Column("status")]
-        public int Status { get; set; } = 1; // 1=Activo, 2=Pagado, 3=Vencido, 4=Cancelado
+        [Column("credit_date")]
+        [Indexed(Name = "IX_Credits_CreditDate")]
+        public DateTime CreditDate { get; set; } = DateTime.Now;
 
         [Column("due_date")]
+        [Indexed(Name = "IX_Credits_DueDate")]
         public DateTime DueDate { get; set; }
 
-        // ============ FECHAS ============
+        // ========== ESTADO ==========
+        // 1 = Pending (Pendiente)
+        // 2 = Paid (Pagado)
+        // 3 = Overdue (Vencido)
+        // 4 = Cancelled (Cancelado)
+        [Column("status")]
+        [Indexed(Name = "IX_Credits_Status")]
+        public int Status { get; set; } = 1;
+
+        // ========== OBSERVACIONES ==========
+        [Column("notes")]
+        [MaxLength(500)]
+        public string? Notes { get; set; }
+
+        // ========== TIMESTAMPS ==========
         [Column("created_at")]
         public DateTime CreatedAt { get; set; } = DateTime.Now;
 
         [Column("updated_at")]
         public DateTime UpdatedAt { get; set; } = DateTime.Now;
 
-        // ============ SINCRONIZACIÓN ============
+        // ========== SINCRONIZACIÓN ==========
         [Column("sync_status")]
-        public int SyncStatus { get; set; } = 1;
+        public int SyncStatus { get; set; } = 1; // 1=Pending, 2=Synced, 3=Error
 
         [Column("last_sync")]
         public DateTime? LastSync { get; set; }

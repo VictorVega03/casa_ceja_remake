@@ -12,12 +12,7 @@ namespace casa_ceja_remake.Models
 
         [Column("rfc")]
         [MaxLength(13)]
-        public string Rfc { get; set; } = string.Empty;
-
-        [Column("business_name")]
-        [MaxLength(255)]
-        [Indexed(Name = "IX_Customer_BusinessName")]
-        public string BusinessName { get; set; } = string.Empty;
+        public string Rfc { get; set; } = string.Empty;      
 
         [Column("street")]
         [MaxLength(255)]
