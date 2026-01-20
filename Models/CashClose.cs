@@ -1,7 +1,7 @@
 using SQLite;
 using System;
 
-namespace casa_ceja_remake.Models
+namespace CasaCejaRemake.Models
 {
     [Table("cash_closes")]
     public class CashClose

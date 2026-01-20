@@ -1,6 +1,6 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 
-namespace casa_ceja_remake.ViewModels;
+namespace CasaCejaRemake.ViewModels;
 
 public abstract class ViewModelBase : ObservableObject
 {

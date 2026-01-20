@@ -2,9 +2,9 @@ using System;
 using System.Diagnostics.CodeAnalysis;
 using Avalonia.Controls;
 using Avalonia.Controls.Templates;
-using casa_ceja_remake.ViewModels;
+using CasaCejaRemake.ViewModels;
 
-namespace casa_ceja_remake;
+namespace CasaCejaRemake;
 
 /// <summary>
 /// Given a view model, returns the corresponding view if possible.

@@ -1,7 +1,7 @@
 using SQLite;
 using System;
 
-namespace casa_ceja_remake.Models
+namespace CasaCejaRemake.Models
 {
     [Table("categories")]
     public class Category
@@ -18,8 +18,8 @@ namespace casa_ceja_remake.Models
         [Column("discount")]
         public decimal Discount { get; set; } = 0;
 
-        [Column("discount_enabled")]
-        public bool DiscountEnabled { get; set; } = false;
+        [Column("has_discount")]
+        public bool HasDiscount { get; set; } = false;
 
         [Column("active")]
         public bool Active { get; set; } = true;

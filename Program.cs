@@ -1,7 +1,7 @@
 ﻿using Avalonia;
 using System;
 
-namespace casa_ceja_remake;
+namespace CasaCejaRemake;
 
 sealed class Program
 {

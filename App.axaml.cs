@@ -4,10 +4,10 @@ using Avalonia.Data.Core;
 using Avalonia.Data.Core.Plugins;
 using System.Linq;
 using Avalonia.Markup.Xaml;
-using casa_ceja_remake.ViewModels;
-using casa_ceja_remake.Views;
+using CasaCejaRemake.ViewModels;
+using CasaCejaRemake.Views;
 
-namespace casa_ceja_remake;
+namespace CasaCejaRemake;
 
 public partial class App : Application
 {

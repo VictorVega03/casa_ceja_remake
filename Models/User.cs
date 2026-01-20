@@ -1,7 +1,7 @@
 using SQLite;
 using System;
 
-namespace casa_ceja_remake.Models
+namespace CasaCejaRemake.Models
 {
     [Table("users")]
     public class User
@@ -14,6 +14,10 @@ namespace casa_ceja_remake.Models
         [MaxLength(100)]
         public string Name { get; set; } = string.Empty;
 
+        [Column("email")]
+        [MaxLength(50)]
+        public string Email { get; set; } = string.Empty;
+
         [Column("username")]
         [MaxLength(50)]
         [Indexed(Name = "IX_User_Username", Unique = true)]
@@ -24,7 +28,7 @@ namespace casa_ceja_remake.Models
         public string Password { get; set; } = string.Empty;
 
         [Column("user_type")]
-        public int UserType { get; set; } // 1 = Admin, 2 = Cashier
+        public int UserType { get; set; } // 1 = Admin, 2 = Cashier        
 
         [Column("branch_id")]
         public int? BranchId { get; set; }

@@ -1,4 +1,4 @@
-﻿namespace casa_ceja_remake.ViewModels;
+﻿namespace CasaCejaRemake.ViewModels;
 
 public partial class MainWindowViewModel : ViewModelBase
 {

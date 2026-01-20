@@ -1,6 +1,6 @@
 using Avalonia.Controls;
 
-namespace casa_ceja_remake.Views;
+namespace CasaCejaRemake.Views;
 
 public partial class MainWindow : Window
 {
