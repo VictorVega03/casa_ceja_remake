@@ -1,0 +1,237 @@
+<!-- ============================================================ -->
+<!-- ARCHIVO: Views/Shared/ModuleSelectorView.axaml -->
+<!-- INSTRUCCIONES: -->
+<!-- 1. Copia TODO este contenido -->
+<!-- 2. Pégalo en: Views/Shared/ModuleSelectorView.axaml -->
+<!-- 3. Guarda el archivo -->
+<!-- (Este archivo NO requiere cambios adicionales) -->
+<!-- ============================================================ -->
+
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="using:CasaCejaRemake.ViewModels.Shared"
+        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="500"
+        x:Class="CasaCejaRemake.Views.Shared.ModuleSelectorView"
+        x:DataType="vm:ModuleSelectorViewModel"
+        Title="Casa Ceja - Seleccionar Módulo"
+        Width="800" Height="500"
+        WindowStartupLocation="CenterScreen"
+        CanResize="False"
+        Background="#F5F5F5">
+
+    <Window.Styles>
+        <Style Selector="Button">
+            <Setter Property="Cursor" Value="Hand" />
+        </Style>
+    </Window.Styles>
+
+    <!-- HOTKEYS -->
+    <Window.KeyBindings>
+        <!-- ESC para cerrar sesión -->
+        <KeyBinding Gesture="Escape" Command="{Binding LogoutCommand}" />
+    </Window.KeyBindings>
+
+    <!-- LAYOUT PRINCIPAL -->
+    <Grid>
+        <Grid.RowDefinitions>
+            <!-- Row 0: Header -->
+            <RowDefinition Height="Auto" />
+            <!-- Row 1: Content -->
+            <RowDefinition Height="*" />
+            <!-- Row 2: Footer -->
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- HEADER -->
+        <Border Grid.Row="0"
+                Background="#2196F3"
+                Padding="20,15">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0" Orientation="Vertical">
+                    <TextBlock Text="SELECCIONE UN MÓDULO"
+                               FontSize="24"
+                               FontWeight="Bold"
+                               Foreground="White" />
+                    <TextBlock Text="{Binding WelcomeMessage}"
+                               FontSize="14"
+                               Foreground="White"
+                               Opacity="0.9"
+                               Margin="0,5,0,0" />
+                </StackPanel>
+
+                <Button Grid.Column="1"
+                        Content="Cerrar Sesión"
+                        Command="{Binding LogoutCommand}"
+                        FontSize="13"
+                        Padding="15,8"
+                        Background="#1976D2"
+                        Foreground="White"
+                        BorderThickness="0"
+                        CornerRadius="3">
+                    <Button.Styles>
+                        <Style Selector="Button:pointerover">
+                            <Setter Property="Background" Value="#1565C0" />
+                        </Style>
+                    </Button.Styles>
+                </Button>
+            </Grid>
+        </Border>
+
+        <!-- MÓDULOS -->
+        <Grid Grid.Row="1" Margin="40">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="20" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="20" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <!-- MÓDULO: PUNTO DE VENTA -->
+            <Button Grid.Column="0"
+                    Command="{Binding OpenPOSCommand}"
+                    VerticalAlignment="Stretch"
+                    Background="White"
+                    BorderBrush="#DDDDDD"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Padding="20">
+                <Button.Styles>
+                    <Style Selector="Button:pointerover">
+                        <Setter Property="BorderBrush" Value="#4CAF50" />
+                        <Setter Property="BorderThickness" Value="2" />
+                    </Style>
+                </Button.Styles>
+                <StackPanel Spacing="15" HorizontalAlignment="Center">
+                    <!-- Icono POS -->
+                    <Border Width="120" Height="120"
+                            Background="#4CAF50"
+                            CornerRadius="60">
+                        <TextBlock Text="🛒"
+                                   FontSize="60"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center" />
+                    </Border>
+                    <TextBlock Text="PUNTO DE VENTA"
+                               FontSize="18"
+                               FontWeight="Bold"
+                               Foreground="#333333"
+                               HorizontalAlignment="Center"
+                               TextWrapping="Wrap"
+                               TextAlignment="Center" />
+                    <TextBlock Text="Realizar ventas, cobros, créditos y apartados"
+                               FontSize="12"
+                               Foreground="#666666"
+                               HorizontalAlignment="Center"
+                               TextWrapping="Wrap"
+                               TextAlignment="Center" />
+                </StackPanel>
+            </Button>
+
+            <!-- MÓDULO: INVENTARIO -->
+            <Button Grid.Column="2"
+                    Command="{Binding OpenInventoryCommand}"
+                    VerticalAlignment="Stretch"
+                    Background="White"
+                    BorderBrush="#DDDDDD"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Padding="20">
+                <Button.Styles>
+                    <Style Selector="Button:pointerover">
+                        <Setter Property="BorderBrush" Value="#FF9800" />
+                        <Setter Property="BorderThickness" Value="2" />
+                    </Style>
+                </Button.Styles>
+                <StackPanel Spacing="15" HorizontalAlignment="Center">
+                    <!-- Icono Inventario -->
+                    <Border Width="120" Height="120"
+                            Background="#FF9800"
+                            CornerRadius="60">
+                        <TextBlock Text="📦"
+                                   FontSize="60"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center" />
+                    </Border>
+                    <TextBlock Text="INVENTARIO"
+                               FontSize="18"
+                               FontWeight="Bold"
+                               Foreground="#333333"
+                               HorizontalAlignment="Center"
+                               TextWrapping="Wrap"
+                               TextAlignment="Center" />
+                    <TextBlock Text="Entradas, salidas y control de existencias"
+                               FontSize="12"
+                               Foreground="#666666"
+                               HorizontalAlignment="Center"
+                               TextWrapping="Wrap"
+                               TextAlignment="Center" />
+                </StackPanel>
+            </Button>
+
+            <!-- MÓDULO: ADMINISTRADOR -->
+            <Button Grid.Column="4"
+                    Command="{Binding OpenAdminCommand}"
+                    VerticalAlignment="Stretch"
+                    Background="White"
+                    BorderBrush="#DDDDDD"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Padding="20">
+                <Button.Styles>
+                    <Style Selector="Button:pointerover">
+                        <Setter Property="BorderBrush" Value="#2196F3" />
+                        <Setter Property="BorderThickness" Value="2" />
+                    </Style>
+                </Button.Styles>
+                <StackPanel Spacing="15" HorizontalAlignment="Center">
+                    <!-- Icono Admin -->
+                    <Border Width="120" Height="120"
+                            Background="#2196F3"
+                            CornerRadius="60">
+                        <TextBlock Text="⚙️"
+                                   FontSize="60"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center" />
+                    </Border>
+                    <TextBlock Text="ADMINISTRADOR"
+                               FontSize="18"
+                               FontWeight="Bold"
+                               Foreground="#333333"
+                               HorizontalAlignment="Center"
+                               TextWrapping="Wrap"
+                               TextAlignment="Center" />
+                    <TextBlock Text="Productos, categorías, usuarios y configuración"
+                               FontSize="12"
+                               Foreground="#666666"
+                               HorizontalAlignment="Center"
+                               TextWrapping="Wrap"
+                               TextAlignment="Center" />
+                </StackPanel>
+            </Button>
+        </Grid>
+
+        <!-- FOOTER -->
+        <Border Grid.Row="2"
+                Background="White"
+                BorderBrush="#DDDDDD"
+                BorderThickness="0,1,0,0"
+                Padding="20,10">
+            <TextBlock Text="Presione Esc para cerrar sesión"
+                       FontSize="11"
+                       Foreground="#999999"
+                       HorizontalAlignment="Center" />
+        </Border>
+    </Grid>
+</Window>
+
+<!-- ============================================================ -->
+<!-- ¡LISTO! Este archivo NO requiere cambios adicionales -->
+<!-- ============================================================ -->

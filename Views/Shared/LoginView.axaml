@@ -1,0 +1,180 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="using:CasaCejaRemake.ViewModels.Shared"
+        mc:Ignorable="d" d:DesignWidth="680" d:DesignHeight="350"
+        x:Class="CasaCejaRemake.Views.Shared.LoginView"
+        x:DataType="vm:LoginViewModel"
+        Title="Casa Ceja - Inicio de Sesión"
+        Width="680" Height="350"
+        WindowStartupLocation="CenterScreen"
+        CanResize="False"
+        Background="#F5F5F5">
+
+    <Window.Styles>
+        <Style Selector="TextBox">
+            <Setter Property="BorderBrush" Value="#CCCCCC" />
+            <Setter Property="BorderThickness" Value="1" />
+        </Style>
+        <Style Selector="Button">
+            <Setter Property="Cursor" Value="Hand" />
+        </Style>
+    </Window.Styles>
+
+    <!-- HOTKEYS -->
+    <Window.KeyBindings>
+        <!-- F5 para login -->
+        <KeyBinding Gesture="F5" Command="{Binding LoginCommand}" />
+        <!-- ESC para salir -->
+        <KeyBinding Gesture="Escape" Command="{Binding CancelCommand}" />
+    </Window.KeyBindings>
+
+    <!-- LAYOUT PRINCIPAL -->
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <!-- Row 0: Espaciador superior -->
+            <RowDefinition Height="*" />
+            <!-- Row 1: Formulario de login -->
+            <RowDefinition Height="Auto" />
+            <!-- Row 2: Espaciador inferior -->
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- FORMULARIO DE LOGIN -->
+        <Border Grid.Row="1"
+                Background="White"
+                BorderBrush="#CCCCCC"
+                BorderThickness="1"
+                CornerRadius="4"
+                Padding="30">
+            <StackPanel Spacing="15">
+                
+                <!-- LABEL: USUARIO -->
+                <TextBlock Text="USUARIO"
+                           FontFamily="Segoe UI"
+                           FontSize="16"
+                           FontWeight="SemiBold"
+                           Foreground="#333333" />
+
+                <!-- TEXTBOX: USUARIO -->
+                <TextBox x:Name="UsernameTextBox"
+                         Text="{Binding Username}"
+                         FontFamily="Segoe UI"
+                         FontSize="24"
+                         Height="50"
+                         Padding="10,8"
+                         Watermark="Ingrese su usuario" />
+
+                <!-- LABEL: CONTRASEÑA -->
+                <TextBlock Text="CONTRASEÑA"
+                           FontFamily="Segoe UI"
+                           FontSize="16"
+                           FontWeight="SemiBold"
+                           Foreground="#333333"
+                           Margin="0,10,0,0" />
+
+                <!-- TEXTBOX: CONTRASEÑA -->
+                <TextBox x:Name="PasswordTextBox"
+                         Text="{Binding Password}"
+                         PasswordChar="*"
+                         FontFamily="Segoe UI"
+                         FontSize="24"
+                         Height="50"
+                         Padding="10,8"
+                         Watermark="Ingrese su contraseña" />
+
+                <!-- MENSAJE DE ERROR -->
+                <Border IsVisible="{Binding HasError}"
+                        Background="#FFEBEE"
+                        BorderBrush="#EF5350"
+                        BorderThickness="1"
+                        CornerRadius="3"
+                        Padding="10"
+                        Margin="0,10,0,0">
+                    <TextBlock Text="{Binding ErrorMessage}"
+                               FontSize="13"
+                               Foreground="#C62828"
+                               TextWrapping="Wrap" />
+                </Border>
+
+                <!-- LOADING INDICATOR -->
+                <StackPanel Orientation="Horizontal"
+                            HorizontalAlignment="Center"
+                            IsVisible="{Binding IsLoading}"
+                            Margin="0,10,0,0">
+                    <TextBlock Text="Autenticando..."
+                               FontSize="13"
+                               Foreground="#666666"
+                               Margin="0,0,10,0" />
+                </StackPanel>
+
+                <!-- BOTONES: ACEPTAR Y SALIR -->
+                <Grid Margin="0,20,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="10" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+                    <!-- BOTÓN ACEPTAR (F5) -->
+                    <Button Grid.Column="0"
+                            Content="ACEPTAR (F5)"
+                            Command="{Binding LoginCommand}"
+                            Height="68"
+                            FontSize="16"
+                            FontWeight="SemiBold"
+                            Background="#4CAF50"
+                            Foreground="White"
+                            BorderThickness="0"
+                            CornerRadius="3"
+                            HorizontalContentAlignment="Center"
+                            VerticalContentAlignment="Center">
+                        <Button.Styles>
+                            <Style Selector="Button:pointerover">
+                                <Setter Property="Background" Value="#45A049" />
+                            </Style>
+                            <Style Selector="Button:pressed">
+                                <Setter Property="Background" Value="#3D8B40" />
+                            </Style>
+                            <Style Selector="Button:disabled">
+                                <Setter Property="Background" Value="#CCCCCC" />
+                                <Setter Property="Foreground" Value="#999999" />
+                            </Style>
+                        </Button.Styles>
+                    </Button>
+
+                    <!-- BOTÓN SALIR (ESC) -->
+                    <Button Grid.Column="2"
+                            Content="SALIR (Esc)"
+                            Command="{Binding CancelCommand}"
+                            Height="68"
+                            FontSize="16"
+                            FontWeight="SemiBold"
+                            Background="#F44336"
+                            Foreground="White"
+                            BorderThickness="0"
+                            CornerRadius="3"
+                            HorizontalContentAlignment="Center"
+                            VerticalContentAlignment="Center">
+                        <Button.Styles>
+                            <Style Selector="Button:pointerover">
+                                <Setter Property="Background" Value="#E53935" />
+                            </Style>
+                            <Style Selector="Button:pressed">
+                                <Setter Property="Background" Value="#C62828" />
+                            </Style>
+                        </Button.Styles>
+                    </Button>
+                </Grid>
+
+                <!-- INSTRUCCIONES -->
+                <TextBlock Text="Use F5 para aceptar o Esc para salir"
+                           FontSize="11"
+                           Foreground="#999999"
+                           HorizontalAlignment="Center"
+                           Margin="0,10,0,0" />
+            </StackPanel>
+        </Border>
+    </Grid>
+</Window>

@@ -23,7 +23,7 @@ namespace CasaCejaRemake.Data
 
         public DatabaseService()
         {
-            // Path de la BD principal (AppData/CasaCeja/casaceja.db)
+            // Path de la BD principal (ApplicationData/CasaCeja/casaceja.db)
             var appDataPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
             var casaCejaFolder = Path.Combine(appDataPath, "CasaCeja");
             _dbPath = Path.Combine(casaCejaFolder, "casaceja.db");
