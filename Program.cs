@@ -11,14 +11,14 @@ sealed class Program
     [STAThread]
     public static void Main(string[] args)
     {
-        Console.WriteLine("🚀 Iniciando aplicación...");
+        Console.WriteLine("Iniciando aplicación...");
         try
         {
             BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"❌ ERROR CRÍTICO: {ex.Message}");
+            Console.WriteLine($"ERROR CRÍTICO: {ex.Message}");
             Console.WriteLine($"Stack Trace: {ex.StackTrace}");
             throw;
         }

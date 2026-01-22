@@ -40,9 +40,11 @@ namespace CasaCejaRemake.Views.Shared
         /// </summary>
         private void OnLoginSuccess(object? sender, LoginSuccessEventArgs e)
         {
-            // El resultado se manejará desde App.axaml.cs
-            // Establecer DialogResult
-            Close(e);
+            Console.WriteLine($"Login exitoso en LoginView: {e.UserName} (Admin: {e.IsAdmin})");
+            // Guardar el resultado en Tag antes de cerrar
+            Tag = e;
+            // Cerrar la ventana
+            Close();
         }
 
         /// <summary>

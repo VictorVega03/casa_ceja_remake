@@ -29,18 +29,18 @@ namespace CasaCejaRemake
 
         public override void Initialize()
         {
-            Console.WriteLine("📋 Inicializando Avalonia XAML...");
+            Console.WriteLine("Inicializando Avalonia XAML...");
             AvaloniaXamlLoader.Load(this);
-            Console.WriteLine("✅ Avalonia XAML inicializado");
+            Console.WriteLine("Avalonia XAML inicializado");
         }
 
         public override void OnFrameworkInitializationCompleted()
         {
-            Console.WriteLine("🔧 Framework inicializado, configurando aplicación...");
+            Console.WriteLine("Framework inicializado, configurando aplicación...");
             
             if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
             {
-                Console.WriteLine("🖥️  Aplicación de escritorio detectada");
+                Console.WriteLine("Aplicación de escritorio detectada");
                 
                 // Inicializar servicios y mostrar login
                 Task.Run(async () =>
@@ -50,13 +50,14 @@ namespace CasaCejaRemake
                     // Volver al hilo de UI para mostrar la ventana
                     Avalonia.Threading.Dispatcher.UIThread.Post(() =>
                     {
+                        // Mostrar vista de login
                         ShowLogin(desktop);
                     });
                 });
             }
             else
             {
-                Console.WriteLine("⚠️ No se detectó aplicación de escritorio");
+                Console.WriteLine("No se detectó aplicación de escritorio");
             }
 
             base.OnFrameworkInitializationCompleted();
@@ -73,29 +74,28 @@ namespace CasaCejaRemake
         {
             try
             {
-                Console.WriteLine("💾 Inicializando DatabaseService...");
+                Console.WriteLine("Inicializando DatabaseService...");
                 // 1. Inicializar DatabaseService
                 DatabaseService = new DatabaseService();
-                Console.WriteLine("⏳ Esperando inicialización de base de datos...");
+                Console.WriteLine("Esperando inicialización de base de datos...");
                 await DatabaseService.InitializeAsync();
-                Console.WriteLine("✅ DatabaseService inicializado");
+                Console.WriteLine("DatabaseService inicializado");
 
-                Console.WriteLine("� Inicializando datos por defecto...");
+                Console.WriteLine("Inicializando datos por defecto...");
                 var dbInitializer = new DatabaseInitializer(DatabaseService);
                 await dbInitializer.InitializeDefaultDataAsync();
-                Console.WriteLine("✅ Datos por defecto inicializados");
+                Console.WriteLine("Datos por defecto inicializados");
 
-                Console.WriteLine("�👤 Inicializando AuthService...");
+                Console.WriteLine("Inicializando AuthService...");
                 // 2. Crear AuthService con repositorio de usuarios
                 var userRepository = new BaseRepository<User>(DatabaseService);
                 AuthService = new AuthService(userRepository);
-                Console.WriteLine("✅ AuthService inicializado");
-
-                Console.WriteLine("✅ Servicios inicializados correctamente");
+                Console.WriteLine("AuthService inicializado");
+                Console.WriteLine("Servicios inicializados correctamente");
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"❌ Error inicializando servicios: {ex.Message}");
+                Console.WriteLine($"Error inicializando servicios: {ex.Message}");
                 Console.WriteLine($"Stack Trace: {ex.StackTrace}");
                 if (ex.InnerException != null)
                 {
@@ -117,28 +117,33 @@ namespace CasaCejaRemake
         {
             try
             {
-                Console.WriteLine("🔐 Creando pantalla de login...");
+                Console.WriteLine("Creando pantalla de login...");
                 // Crear LoginView con su ViewModel
                 var loginViewModel = new LoginViewModel(AuthService);
-                Console.WriteLine("✅ LoginViewModel creado");
+                Console.WriteLine("LoginViewModel creado");
                 
                 var loginView = new LoginView
                 {
-                    DataContext = loginViewModel
+                    DataContext = loginViewModel // ← Conecta ViewModel con View
                 };
-                Console.WriteLine("✅ LoginView creado");
+                Console.WriteLine("LoginView creado");
 
                 // Manejar resultado del login
                 loginView.Closed += (sender, args) =>
                 {
-                    Console.WriteLine("🚪 LoginView cerrado");
+                    Console.WriteLine("LoginView cerrado - Evento Closed disparado");
+                    Console.WriteLine($"Sender type: {sender?.GetType().Name}");
+                    Console.WriteLine($"Tag type: {(sender as LoginView)?.Tag?.GetType().Name ?? "null"}");
+                    
                     if (sender is LoginView window && window.Tag is LoginSuccessEventArgs loginResult)
                     {
+                        Console.WriteLine($"Login exitoso detectado: {loginResult.UserName} (Admin: {loginResult.IsAdmin})");
                         // Login exitoso
                         HandleSuccessfulLogin(desktop, loginResult.IsAdmin);
                     }
                     else
                     {
+                        Console.WriteLine("Login cancelado o Tag no es LoginSuccessEventArgs - cerrando aplicación");
                         // Login cancelado o cerrado - cerrar aplicación
                         desktop.Shutdown();
                     }
@@ -151,16 +156,16 @@ namespace CasaCejaRemake
                 };
 
                 // Mostrar ventana de login
-                Console.WriteLine("🪟 Estableciendo MainWindow como LoginView...");
+                Console.WriteLine("Estableciendo MainWindow como LoginView...");
                 desktop.MainWindow = loginView;
                 loginView.Show();
                 loginView.Activate();
-                Console.WriteLine("✅ LoginView establecido como MainWindow y mostrado");
-                Console.WriteLine("👀 Si no ves la ventana, verifica tu pantalla o Cmd+Tab");
+                Console.WriteLine("LoginView establecido como MainWindow y mostrado");
+                Console.WriteLine("Si no ves la ventana, verifica tu pantalla o Cmd+Tab");
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"❌ Error mostrando login: {ex.Message}");
+                Console.WriteLine($"Error mostrando login: {ex.Message}");
                 Console.WriteLine($"Stack Trace: {ex.StackTrace}");
                 throw;
             }
@@ -171,13 +176,17 @@ namespace CasaCejaRemake
         /// </summary>
         private void HandleSuccessfulLogin(IClassicDesktopStyleApplicationLifetime desktop, bool isAdmin)
         {
+            Console.WriteLine($"HandleSuccessfulLogin llamado - isAdmin: {isAdmin}");
+            
             if (isAdmin)
             {
+                Console.WriteLine("Usuario es Admin - Mostrando selector de módulos");
                 // Usuario Admin: Mostrar selector de módulos
                 ShowModuleSelector(desktop);
             }
             else
             {
+                Console.WriteLine("Usuario es Cajero - Mostrando POS directamente");
                 // Usuario Cajero: Ir directo a POS
                 ShowPOS(desktop);
             }
@@ -192,12 +201,17 @@ namespace CasaCejaRemake
         /// </summary>
         private void ShowModuleSelector(IClassicDesktopStyleApplicationLifetime desktop)
         {
+            Console.WriteLine("Creando ModuleSelectorView...");
+            
             // Crear ModuleSelectorView con su ViewModel
             var moduleSelectorViewModel = new ModuleSelectorViewModel(AuthService);
+            Console.WriteLine("ModuleSelectorViewModel creado");
+            
             var moduleSelectorView = new ModuleSelectorView
             {
                 DataContext = moduleSelectorViewModel
             };
+            Console.WriteLine("ModuleSelectorView creado");
 
             // Manejar resultado
             moduleSelectorView.Closed += (sender, args) =>
@@ -232,7 +246,11 @@ namespace CasaCejaRemake
             };
 
             // Mostrar ventana de selector
+            Console.WriteLine("Estableciendo MainWindow como ModuleSelectorView...");
             desktop.MainWindow = moduleSelectorView;
+            moduleSelectorView.Show();
+            moduleSelectorView.Activate();
+            Console.WriteLine("ModuleSelectorView mostrado");
         }
 
         /// <summary>
@@ -314,7 +332,7 @@ namespace CasaCejaRemake
         private void ShowInventory(IClassicDesktopStyleApplicationLifetime desktop)
         {
             // TODO: Implementar en Fase 7
-            Console.WriteLine("⚠️ Módulo Inventario aún no implementado");
+            Console.WriteLine("Módulo Inventario aún no implementado");
 
             // Por ahora, volver al selector
             ShowModuleSelector(desktop);
@@ -326,7 +344,7 @@ namespace CasaCejaRemake
         private void ShowAdmin(IClassicDesktopStyleApplicationLifetime desktop)
         {
             // TODO: Implementar en Fase 8
-            Console.WriteLine("⚠️ Módulo Administrador aún no implementado");
+            Console.WriteLine("Módulo Administrador aún no implementado");
 
             // Por ahora, volver al selector
             ShowModuleSelector(desktop);
