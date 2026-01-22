@@ -1,0 +1,299 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:CasaCejaRemake.ViewModels.POS"
+        x:Class="CasaCejaRemake.Views.POS.SalesView"
+        x:DataType="vm:SalesViewModel"
+        Title="Punto de Venta - Casa Ceja"
+        WindowStartupLocation="CenterScreen"
+        WindowState="Maximized"
+        Background="#1E1E1E">
+
+    <Window.Styles>
+        <!-- Estilo para botones de accion -->
+        <Style Selector="Button.action-button">
+            <Setter Property="Background" Value="#0078D4"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Padding" Value="15,10"/>
+            <Setter Property="Margin" Value="5"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="CornerRadius" Value="4"/>
+        </Style>
+        <Style Selector="Button.action-button:pointerover">
+            <Setter Property="Background" Value="#1084D8"/>
+        </Style>
+        <Style Selector="Button.danger-button">
+            <Setter Property="Background" Value="#D32F2F"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Padding" Value="15,10"/>
+            <Setter Property="Margin" Value="5"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="CornerRadius" Value="4"/>
+        </Style>
+        <Style Selector="Button.danger-button:pointerover">
+            <Setter Property="Background" Value="#E53935"/>
+        </Style>
+        <Style Selector="Button.success-button">
+            <Setter Property="Background" Value="#388E3C"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Padding" Value="20,15"/>
+            <Setter Property="Margin" Value="5"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="CornerRadius" Value="4"/>
+        </Style>
+        <Style Selector="Button.success-button:pointerover">
+            <Setter Property="Background" Value="#43A047"/>
+        </Style>
+    </Window.Styles>
+
+    <Grid RowDefinitions="Auto,*,Auto,Auto">
+        
+        <!-- Header -->
+        <Border Grid.Row="0" Background="#2D2D2D" Padding="15">
+            <Grid ColumnDefinitions="*,Auto,*">
+                <!-- Info izquierda -->
+                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="30">
+                    <StackPanel>
+                        <TextBlock Text="FOLIO" FontSize="10" Foreground="#888"/>
+                        <TextBlock Text="{Binding Folio}" FontSize="16" Foreground="White" FontWeight="Bold"/>
+                    </StackPanel>
+                    <StackPanel>
+                        <TextBlock Text="COBRANZA" FontSize="10" Foreground="#888"/>
+                        <TextBlock Text="{Binding CurrentCollection}" FontSize="24" Foreground="#4CAF50" FontWeight="Bold"/>
+                    </StackPanel>
+                </StackPanel>
+
+                <!-- Titulo central -->
+                <TextBlock Grid.Column="1" 
+                           Text="PUNTO DE VENTA" 
+                           FontSize="24" 
+                           FontWeight="Bold" 
+                           Foreground="White"
+                           VerticalAlignment="Center"/>
+
+                <!-- Info derecha -->
+                <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="30" HorizontalAlignment="Right">
+                    <StackPanel>
+                        <TextBlock Text="SUCURSAL" FontSize="10" Foreground="#888"/>
+                        <TextBlock Text="{Binding Branch}" FontSize="14" Foreground="White"/>
+                    </StackPanel>
+                    <StackPanel>
+                        <TextBlock Text="USUARIO" FontSize="10" Foreground="#888"/>
+                        <TextBlock Text="{Binding User}" FontSize="14" Foreground="White"/>
+                    </StackPanel>
+                    <StackPanel>
+                        <TextBlock Text="FECHA/HORA" FontSize="10" Foreground="#888"/>
+                        <TextBlock x:Name="TxtFechaHora" Text="{Binding FechaHora}" FontSize="14" Foreground="White"/>
+                    </StackPanel>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Area principal -->
+        <Grid Grid.Row="1" ColumnDefinitions="*,300" Margin="10">
+            
+            <!-- Panel izquierdo: Codigo de barras y DataGrid -->
+            <Grid Grid.Column="0" RowDefinitions="Auto,*" Margin="0,0,10,0">
+                
+                <!-- Input de codigo de barras -->
+                <Border Grid.Row="0" Background="#2D2D2D" Padding="15" CornerRadius="4" Margin="0,0,0,10">
+                    <Grid ColumnDefinitions="Auto,*,Auto">
+                        <TextBlock Grid.Column="0" 
+                                   Text="CODIGO:" 
+                                   VerticalAlignment="Center" 
+                                   Foreground="White"
+                                   FontSize="16"
+                                   Margin="0,0,10,0"/>
+                        <TextBox x:Name="TxtBarcode"
+                                 Grid.Column="1"
+                                 Text="{Binding Barcode, Mode=TwoWay}"
+                                 FontSize="18"
+                                 Padding="10"
+                                 Background="#3D3D3D"
+                                 Foreground="White"
+                                 BorderThickness="0"
+                                 CornerRadius="4"/>
+                        <TextBlock Grid.Column="2"
+                                   Text="F1"
+                                   VerticalAlignment="Center"
+                                   Foreground="#888"
+                                   FontSize="12"
+                                   Margin="10,0,0,0"/>
+                    </Grid>
+                </Border>
+
+                <!-- DataGrid de productos -->
+                <Border Grid.Row="1" Background="#2D2D2D" Padding="10" CornerRadius="4">
+                    <DataGrid x:Name="GridProducts"
+                              ItemsSource="{Binding Items}"
+                              SelectedIndex="{Binding SelectedItemIndex, Mode=TwoWay}"
+                              AutoGenerateColumns="False"
+                              IsReadOnly="True"
+                              GridLinesVisibility="Horizontal"
+                              HeadersVisibility="Column"
+                              Background="Transparent"
+                              Foreground="White"
+                              RowBackground="#2D2D2D"
+                              BorderThickness="0">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="ARTICULO" 
+                                                Binding="{Binding ProductName}" 
+                                                Width="*"/>
+                            <DataGridTextColumn Header="CANTIDAD" 
+                                                Binding="{Binding Quantity}" 
+                                                Width="100"/>
+                            <DataGridTextColumn Header="PRECIO" 
+                                                Binding="{Binding FinalUnitPrice, StringFormat='{}{0:C2}'}" 
+                                                Width="120"/>
+                            <DataGridTextColumn Header="TOTAL" 
+                                                Binding="{Binding LineTotal, StringFormat='{}{0:C2}'}" 
+                                                Width="120"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Border>
+            </Grid>
+
+            <!-- Panel derecho: Totales y acciones rapidas -->
+            <Grid Grid.Column="1" RowDefinitions="Auto,*,Auto">
+                
+                <!-- Totales -->
+                <Border Grid.Row="0" Background="#2D2D2D" Padding="15" CornerRadius="4" Margin="0,0,0,10">
+                    <StackPanel Spacing="10">
+                        <TextBlock Text="RESUMEN" FontSize="14" Foreground="#888" FontWeight="Bold"/>
+                        
+                        <Grid ColumnDefinitions="*,Auto">
+                            <TextBlock Text="Articulos:" Foreground="White"/>
+                            <TextBlock Grid.Column="1" Text="{Binding TotalItems}" Foreground="White" FontWeight="Bold"/>
+                        </Grid>
+                        
+                        <Grid ColumnDefinitions="*,Auto">
+                            <TextBlock Text="Descuento:" Foreground="#FF9800"/>
+                            <TextBlock Grid.Column="1" Text="{Binding TotalDiscount, StringFormat='-{0:C2}'}" Foreground="#FF9800"/>
+                        </Grid>
+                        
+                        <Separator Background="#444"/>
+                        
+                        <Grid ColumnDefinitions="*,Auto">
+                            <TextBlock Text="TOTAL:" FontSize="20" Foreground="White" FontWeight="Bold"/>
+                            <TextBlock Grid.Column="1" 
+                                       Text="{Binding Total, StringFormat='{}{0:C2}'}" 
+                                       FontSize="28" 
+                                       Foreground="#4CAF50" 
+                                       FontWeight="Bold"/>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <!-- Acciones rapidas -->
+                <Border Grid.Row="1" Background="#2D2D2D" Padding="10" CornerRadius="4">
+                    <StackPanel Spacing="5">
+                        <TextBlock Text="ACCIONES" FontSize="12" Foreground="#888" FontWeight="Bold" Margin="5,0,0,5"/>
+                        
+                        <Button Classes="action-button" Command="{Binding FocusBarcodeCommand}" HorizontalAlignment="Stretch">
+                            <StackPanel Orientation="Horizontal" Spacing="10">
+                                <TextBlock Text="F1" FontWeight="Bold"/>
+                                <TextBlock Text="Codigo Barras"/>
+                            </StackPanel>
+                        </Button>
+                        
+                        <Button Classes="action-button" Command="{Binding ModifyQuantityCommand}" HorizontalAlignment="Stretch">
+                            <StackPanel Orientation="Horizontal" Spacing="10">
+                                <TextBlock Text="F2" FontWeight="Bold"/>
+                                <TextBlock Text="Modificar Cantidad"/>
+                            </StackPanel>
+                        </Button>
+                        
+                        <Button Classes="action-button" Command="{Binding SearchProductCommand}" HorizontalAlignment="Stretch">
+                            <StackPanel Orientation="Horizontal" Spacing="10">
+                                <TextBlock Text="F3" FontWeight="Bold"/>
+                                <TextBlock Text="Buscar Producto"/>
+                            </StackPanel>
+                        </Button>
+                        
+                        <Button Classes="action-button" Command="{Binding ChangeCollectionCommand}" HorizontalAlignment="Stretch">
+                            <StackPanel Orientation="Horizontal" Spacing="10">
+                                <TextBlock Text="F4" FontWeight="Bold"/>
+                                <TextBlock Text="Cambiar Cobranza"/>
+                            </StackPanel>
+                        </Button>
+                        
+                        <Separator Background="#444" Margin="0,5"/>
+                        
+                        <Button Classes="danger-button" Command="{Binding RemoveProductCommand}" HorizontalAlignment="Stretch">
+                            <StackPanel Orientation="Horizontal" Spacing="10">
+                                <TextBlock Text="Supr" FontWeight="Bold"/>
+                                <TextBlock Text="Quitar Producto"/>
+                            </StackPanel>
+                        </Button>
+                        
+                        <Button Classes="danger-button" Command="{Binding ClearCartCommand}" HorizontalAlignment="Stretch">
+                            <StackPanel Orientation="Horizontal" Spacing="10">
+                                <TextBlock Text="Shift+F5" FontWeight="Bold"/>
+                                <TextBlock Text="Vaciar Carrito"/>
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+                </Border>
+
+                <!-- Boton de pagar -->
+                <Button Grid.Row="2" 
+                        Classes="success-button" 
+                        Command="{Binding PayCommand}"
+                        HorizontalAlignment="Stretch"
+                        Margin="0,10,0,0">
+                    <StackPanel Orientation="Horizontal" Spacing="15">
+                        <TextBlock Text="F11" FontWeight="Bold" FontSize="18"/>
+                        <TextBlock Text="PAGAR" FontSize="18"/>
+                    </StackPanel>
+                </Button>
+            </Grid>
+        </Grid>
+
+        <!-- Barra de estado -->
+        <Border Grid.Row="2" Background="#2D2D2D" Padding="10">
+            <Grid ColumnDefinitions="*,Auto">
+                <TextBlock Text="{Binding StatusMessage}" 
+                           Foreground="#888" 
+                           VerticalAlignment="Center"/>
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="20">
+                    <TextBlock Text="F12: Creditos/Apartados" Foreground="#666" FontSize="11"/>
+                    <TextBlock Text="Alt+F4: Salir" Foreground="#666" FontSize="11"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Barra inferior con boton salir -->
+        <Border Grid.Row="3" Background="#1A1A1A" Padding="10">
+            <Grid ColumnDefinitions="*,Auto">
+                <TextBlock Text="Casa Ceja - Sistema de Punto de Venta v1.0" 
+                           Foreground="#555" 
+                           FontSize="11"
+                           VerticalAlignment="Center"/>
+                <Button Grid.Column="1" 
+                        Classes="danger-button" 
+                        Command="{Binding ExitCommand}"
+                        Padding="20,8">
+                    <TextBlock Text="SALIR (Alt+F4)"/>
+                </Button>
+            </Grid>
+        </Border>
+
+        <!-- Indicador de procesamiento -->
+        <Border Grid.RowSpan="4"
+                Background="#80000000"
+                IsVisible="{Binding IsProcessing}">
+            <Border Background="#2D2D2D" 
+                    Padding="30" 
+                    CornerRadius="8"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center">
+                <StackPanel Spacing="15">
+                    <ProgressBar IsIndeterminate="True" Width="200"/>
+                    <TextBlock Text="Procesando..." 
+                               Foreground="White" 
+                               HorizontalAlignment="Center"/>
+                </StackPanel>
+            </Border>
+        </Border>
+    </Grid>
+</Window>

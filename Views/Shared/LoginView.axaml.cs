@@ -42,7 +42,7 @@ namespace CasaCejaRemake.Views.Shared
         {
             Console.WriteLine($"Login exitoso en LoginView: {e.UserName} (Admin: {e.IsAdmin})");
             // Guardar el resultado en Tag antes de cerrar
-            Tag = e;
+            Tag = "success";
             // Cerrar la ventana
             Close();
         }
