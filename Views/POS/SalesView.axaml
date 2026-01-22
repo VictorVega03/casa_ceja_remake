@@ -131,10 +131,27 @@
                               IsReadOnly="True"
                               GridLinesVisibility="Horizontal"
                               HeadersVisibility="Column"
-                              Background="Transparent"
-                              Foreground="White"
-                              RowBackground="#2D2D2D"
+                              Background="#2D2D2D"
                               BorderThickness="0">
+                        <DataGrid.Styles>
+                            <Style Selector="DataGridRow">
+                                <Setter Property="Background" Value="#2D2D2D"/>
+                            </Style>
+                            <Style Selector="DataGridRow:nth-child(even)">
+                                <Setter Property="Background" Value="#353535"/>
+                            </Style>
+                            <Style Selector="DataGridRow:selected">
+                                <Setter Property="Background" Value="#4A4A4A"/>
+                            </Style>
+                            <Style Selector="DataGridCell">
+                                <Setter Property="Foreground" Value="White"/>
+                            </Style>
+                            <Style Selector="DataGridColumnHeader">
+                                <Setter Property="Foreground" Value="#888"/>
+                                <Setter Property="Background" Value="#2D2D2D"/>
+                                <Setter Property="FontWeight" Value="Bold"/>
+                            </Style>
+                        </DataGrid.Styles>
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="ARTICULO" 
                                                 Binding="{Binding ProductName}" 

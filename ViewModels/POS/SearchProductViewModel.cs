@@ -55,6 +55,9 @@ namespace CasaCejaRemake.ViewModels.POS
             {
                 Categories.Add(category);
             }
+
+            // Cargar todos los productos al iniciar (modo catálogo)
+            await SearchAsync();
         }
 
         partial void OnSearchTermChanged(string value)

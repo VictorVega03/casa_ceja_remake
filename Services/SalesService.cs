@@ -231,11 +231,6 @@ namespace CasaCejaRemake.Services
 
         public async Task<List<Product>> SearchProductsAsync(string searchTerm, int? categoryId = null)
         {
-            if (string.IsNullOrWhiteSpace(searchTerm) && categoryId == null)
-            {
-                return new List<Product>();
-            }
-
             var products = await _productRepository.GetAllAsync();
             var results = new List<Product>();
 
@@ -307,22 +302,17 @@ namespace CasaCejaRemake.Services
             string priceType = "retail";
             string discountInfo = "";
 
-            // Verificar precio mayoreo
-            if (quantity >= product.WholesaleQuantity && product.PriceWholesale > 0)
+            // Verificar precio mayoreo (solo aplica si cumple cantidad mínima)
+            if (product.WholesaleQuantity > 0 && quantity >= product.WholesaleQuantity && product.PriceWholesale > 0)
             {
                 finalPrice = product.PriceWholesale;
                 priceType = "wholesale";
-                discountInfo = "Precio mayoreo";
+                discountInfo = $"Precio mayoreo ({product.WholesaleQuantity}+ piezas)";
             }
 
-            // Verificar precio especial
-            if (product.PriceSpecial > 0 && product.PriceSpecial < finalPrice)
-            {
-                finalPrice = product.PriceSpecial;
-                priceType = "special";
-                discountInfo = "Precio especial";
-                discount = 0;
-            }
+            // NOTA: El precio especial NO se aplica automáticamente.
+            // Debe ser activado manualmente por el usuario o por promociones específicas.
+            // El precio especial está disponible en product.PriceSpecial si se necesita.
 
             // Si no es precio especial, calcular descuento si aplica
             if (priceType != "special")
