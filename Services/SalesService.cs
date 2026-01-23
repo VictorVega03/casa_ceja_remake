@@ -184,8 +184,8 @@ namespace CasaCejaRemake.Services
                     BranchId = branchId,
                     TicketData = ticketCompressed,
                     SyncStatus = 1,
-                    SaleDate = DateTime.Now,
-                    CreatedAt = DateTime.Now
+                    SaleDate = DateTime.Now
+                    // CreatedAt lo asigna automáticamente BaseRepository.AddAsync()
                 };
 
                 // Guardar venta
@@ -208,8 +208,8 @@ namespace CasaCejaRemake.Services
                         TotalDiscountAmount = item.TotalDiscount,
                         PriceType = item.PriceType,
                         DiscountInfo = item.DiscountInfo,
-                        PricingData = JsonCompressor.Compress(item.PricingData),
-                        CreatedAt = DateTime.Now
+                        PricingData = JsonCompressor.Compress(item.PricingData)
+                        // CreatedAt lo asigna automáticamente BaseRepository.AddAsync()
                     };
 
                     await _saleProductRepository.AddAsync(saleProduct);
