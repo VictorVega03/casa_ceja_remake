@@ -1,5 +1,7 @@
 using SQLite;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace CasaCejaRemake.Models
 {
@@ -62,6 +64,87 @@ namespace CasaCejaRemake.Models
 
         [Column("last_sync")]
         public DateTime? LastSync { get; set; }
+
+        // ========== PROPIEDADES CALCULADAS ==========
+        
+        /// <summary>
+        /// Indica si el producto tiene configurado precio de mayoreo
+        /// </summary>
+        [Ignore]
+        public bool HasWholesalePrice => PriceWholesale > 0 && WholesaleQuantity > 1;
+
+        /// <summary>
+        /// Indica si el producto tiene configurado precio especial
+        /// </summary>
+        [Ignore]
+        public bool HasSpecialPrice => PriceSpecial > 0;
+
+        /// <summary>
+        /// Indica si el producto tiene configurado precio distribuidor
+        /// </summary>
+        [Ignore]
+        public bool HasDealerPrice => PriceDealer > 0;
+
+        /// <summary>
+        /// Indica si el producto tiene múltiples precios configurados (más allá del menudeo)
+        /// </summary>
+        [Ignore]
+        public bool HasMultiplePrices => HasWholesalePrice || HasSpecialPrice || HasDealerPrice;
+
+        /// <summary>
+        /// Obtiene el precio más bajo disponible del producto (mayor a 0)
+        /// </summary>
+        [Ignore]
+        public decimal LowestPrice
+        {
+            get
+            {
+                var prices = new List<decimal>();
+                if (PriceRetail > 0) prices.Add(PriceRetail);
+                if (PriceWholesale > 0) prices.Add(PriceWholesale);
+                if (PriceSpecial > 0) prices.Add(PriceSpecial);
+                if (PriceDealer > 0) prices.Add(PriceDealer);
+                
+                return prices.Any() ? prices.Min() : 0;
+            }
+        }
+
+        /// <summary>
+        /// Obtiene el precio más alto disponible del producto
+        /// </summary>
+        [Ignore]
+        public decimal HighestPrice
+        {
+            get
+            {
+                var prices = new List<decimal>();
+                if (PriceRetail > 0) prices.Add(PriceRetail);
+                if (PriceWholesale > 0) prices.Add(PriceWholesale);
+                if (PriceSpecial > 0) prices.Add(PriceSpecial);
+                if (PriceDealer > 0) prices.Add(PriceDealer);
+                
+                return prices.Any() ? prices.Max() : 0;
+            }
+        }
+
+        /// <summary>
+        /// Indica si la cantidad especificada califica para precio de mayoreo
+        /// </summary>
+        public bool QualifiesForWholesale(int quantity)
+        {
+            return HasWholesalePrice && quantity >= WholesaleQuantity;
+        }
+
+        /// <summary>
+        /// Obtiene el precio aplicable según la cantidad (menudeo o mayoreo)
+        /// </summary>
+        public decimal GetPriceByQuantity(int quantity)
+        {
+            if (QualifiesForWholesale(quantity))
+                return PriceWholesale;
+            
+            return PriceRetail;
+        }
 
         // Navigation properties
         [Ignore]

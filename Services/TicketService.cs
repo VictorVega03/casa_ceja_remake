@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using CasaCejaRemake.Models;
 
 namespace CasaCejaRemake.Services
 {
@@ -138,14 +139,6 @@ namespace CasaCejaRemake.Services
 
         [JsonPropertyName("app")]
         public string AppVersion { get; set; } = "1.0.0";
-    }
-
-    public enum PaymentMethod
-    {
-        Efectivo = 1,
-        TarjetaDebito = 2,
-        TarjetaCredito = 3,
-        Transferencia = 4
     }
 
     public class TicketService

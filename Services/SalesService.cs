@@ -303,7 +303,7 @@ namespace CasaCejaRemake.Services
             string discountInfo = "";
 
             // Verificar precio mayoreo (solo aplica si cumple cantidad mínima)
-            if (product.WholesaleQuantity > 0 && quantity >= product.WholesaleQuantity && product.PriceWholesale > 0)
+            if (product.QualifiesForWholesale(quantity))
             {
                 finalPrice = product.PriceWholesale;
                 priceType = "wholesale";

@@ -79,5 +79,33 @@ namespace CasaCejaRemake.Models
 
         [Column("last_sync")]
         public DateTime? LastSync { get; set; }
+
+        
+        // Propiedades calculadas
+        [Ignore]
+        public decimal RemainingBalance => Total - TotalPaid;
+
+        [Ignore]
+        public bool IsFullyPaid => RemainingBalance <= 0;
+
+        [Ignore]
+        public bool IsDelivered => Status == 2;
+
+        [Ignore]
+        public bool IsExpired => Status == 3 || (DateTime.Now > PickupDate && Status == 1);
+
+        [Ignore]
+        public bool CanDeliver => IsFullyPaid && Status == 1;
+
+        [Ignore]
+        public string StatusName => Status switch
+        {
+            1 => "Pendiente",
+            2 => "Entregado",
+            3 => "Vencido",
+            4 => "Cancelado",
+            _ => "Desconocido"
+        };
+    
     }
 }

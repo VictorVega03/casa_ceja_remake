@@ -90,5 +90,51 @@ namespace CasaCejaRemake.Models
 
         [Column("last_sync")]
         public DateTime? LastSync { get; set; }
+
+        // ========== PROPIEDADES CALCULADAS ==========
+        
+        /// <summary>
+        /// Total de todos los métodos de pago (sin contar efectivo inicial)
+        /// </summary>
+        [Ignore]
+        public decimal TotalPayments => TotalCash + TotalDebitCard + TotalCreditCard + 
+                                        TotalChecks + TotalTransfers + LayawayCash + CreditCash;
+
+        /// <summary>
+        /// Efectivo final esperado en caja
+        /// </summary>
+        [Ignore]
+        public decimal ExpectedFinalCash => OpeningCash + TotalCash + LayawayCash + CreditCash;
+
+        /// <summary>
+        /// Indica si hay sobrante de efectivo
+        /// </summary>
+        [Ignore]
+        public bool HasSurplus => Surplus > 0;
+
+        /// <summary>
+        /// Indica si hay faltante de efectivo
+        /// </summary>
+        [Ignore]
+        public bool HasShortage => Surplus < 0;
+
+        /// <summary>
+        /// Indica si el corte está balanceado (sin sobrante ni faltante)
+        /// </summary>
+        [Ignore]
+        public bool IsBalanced => Surplus == 0;
+
+        /// <summary>
+        /// Duración del turno en horas
+        /// </summary>
+        [Ignore]
+        public double ShiftDurationHours => (CloseDate - OpeningDate).TotalHours;
+
+        /// <summary>
+        /// Total de ventas por métodos electrónicos
+        /// </summary>
+        [Ignore]
+        public decimal TotalElectronicPayments => TotalDebitCard + TotalCreditCard + 
+                                                   TotalChecks + TotalTransfers;
     }
 }

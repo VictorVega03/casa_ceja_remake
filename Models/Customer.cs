@@ -10,6 +10,11 @@ namespace CasaCejaRemake.Models
         [Column("id")]
         public int Id { get; set; }
 
+        [Column("name")]
+        [MaxLength(100)]
+        [Indexed(Name = "IX_Customer_Name")]
+        public string Name { get; set; } = string.Empty;
+
         [Column("rfc")]
         [MaxLength(13)]
         public string Rfc { get; set; } = string.Empty;      
@@ -60,5 +65,14 @@ namespace CasaCejaRemake.Models
 
         [Column("last_sync")]
         public DateTime? LastSync { get; set; }
+
+         // ========== PROPIEDADES CALCULADAS ==========
+        [Ignore]
+        public string FullAddress => string.IsNullOrWhiteSpace(Street) ? 
+            City : $"{Street} {ExteriorNumber}{(string.IsNullOrWhiteSpace(InteriorNumber) ? 
+            "" : $" Int. {InteriorNumber}")}, {Neighborhood}, {City}";
+
+        [Ignore]
+        public string DisplayName => string.IsNullOrWhiteSpace(Name) ? Phone : Name;    
     }
 }

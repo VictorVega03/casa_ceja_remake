@@ -1,7 +1,7 @@
 using System;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using CasaCejaRemake.Services;
+using CasaCejaRemake.Models;
 
 namespace CasaCejaRemake.ViewModels.POS
 {

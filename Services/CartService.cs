@@ -2,36 +2,12 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using CasaCejaRemake.Models;
 
 namespace CasaCejaRemake.Services
 {
-    public class CartItem
-    {
-        public int ProductId { get; set; }
-        public string Barcode { get; set; } = string.Empty;
-        public string ProductName { get; set; } = string.Empty;
-        public string CategoryName { get; set; } = string.Empty;
-        public string UnitName { get; set; } = string.Empty;
-        public int Quantity { get; set; }
-        public decimal ListPrice { get; set; }
-        public decimal FinalUnitPrice { get; set; }
-        public decimal LineTotal => FinalUnitPrice * Quantity;
-        public decimal TotalDiscount { get; set; }
-        public string PriceType { get; set; } = "retail";
-        public string DiscountInfo { get; set; } = string.Empty;
-        public bool HasDiscount => TotalDiscount > 0;
-        public byte[]? PricingData { get; set; }
-    }
-
-    public class Collection
-    {
-        public char Identifier { get; set; }
-        public ObservableCollection<CartItem> Items { get; set; } = new();
-        public decimal Total => Items.Sum(i => i.LineTotal);
-        public decimal TotalDiscount => Items.Sum(i => i.TotalDiscount * i.Quantity);
-        public int TotalItems => Items.Sum(i => i.Quantity);
-        public bool IsEmpty => Items.Count == 0;
-    }
+    /// Servicio para gestión de carritos de compra
+    /// Soporta múltiples colecciones (A, B, C, D) para manejar ventas simultáneas
 
     public class CartService
     {
