@@ -76,6 +76,10 @@ namespace CasaCejaRemake.Models
 
         [Column("last_sync")]
         public DateTime? LastSync { get; set; }
+
+        // ========== TICKET DATA (para reimpresión) ==========
+        [Column("ticket_data")]
+        public byte[]? TicketData { get; set; }
        
          // Propiedades calculadas
         [Ignore]

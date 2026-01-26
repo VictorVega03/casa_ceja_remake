@@ -1,0 +1,305 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using CasaCejaRemake.Data;
+using CasaCejaRemake.Data.Repositories;
+using CasaCejaRemake.Helpers;
+using CasaCejaRemake.Models;
+
+namespace CasaCejaRemake.Services
+{
+    public class LayawayService
+    {
+        private readonly DatabaseService _databaseService;
+        private readonly BaseRepository<Layaway> _layawayRepository;
+        private readonly BaseRepository<LayawayProduct> _layawayProductRepository;
+        private readonly BaseRepository<LayawayPayment> _layawayPaymentRepository;
+        private readonly BaseRepository<Customer> _customerRepository;
+        private readonly BaseRepository<Branch> _branchRepository;
+        private readonly TicketService _ticketService;
+
+        public LayawayService(DatabaseService databaseService)
+        {
+            _databaseService = databaseService;
+            _layawayRepository = new BaseRepository<Layaway>(databaseService);
+            _layawayProductRepository = new BaseRepository<LayawayProduct>(databaseService);
+            _layawayPaymentRepository = new BaseRepository<LayawayPayment>(databaseService);
+            _customerRepository = new BaseRepository<Customer>(databaseService);
+            _branchRepository = new BaseRepository<Branch>(databaseService);
+            _ticketService = new TicketService();
+        }
+
+        public async Task<string> GenerateFolioAsync(int branchId)
+        {
+            var today = DateTime.Now;
+            var todayStart = today.Date;
+            var todayEnd = todayStart.AddDays(1);
+            
+            var layaways = await _layawayRepository.FindAsync(l => 
+                l.BranchId == branchId && 
+                l.LayawayDate >= todayStart && 
+                l.LayawayDate < todayEnd);
+            
+            var consecutive = layaways.Count + 1;
+            return _ticketService.GenerateLayawayFolio(branchId, consecutive);
+        }
+
+        public async Task<(bool Success, Layaway? Layaway, string? Error)> CreateLayawayAsync(
+            List<CartItem> items,
+            int customerId,
+            int daysToPickup,
+            decimal initialPayment,
+            PaymentMethod paymentMethod,
+            int userId,
+            int branchId,
+            string? notes)
+        {
+            if (items == null || !items.Any())
+                return (false, null, "No hay productos para crear el apartado.");
+
+            if (daysToPickup <= 0)
+                return (false, null, "Los dias para recoger deben ser mayor a 0.");
+
+            var customer = await _customerRepository.GetByIdAsync(customerId);
+            if (customer == null)
+                return (false, null, "Cliente no encontrado.");
+
+            var branch = await _branchRepository.GetByIdAsync(branchId);
+
+            decimal total = items.Sum(i => i.LineTotal);
+            
+            if (initialPayment < 0)
+                return (false, null, "El abono inicial no puede ser negativo.");
+            
+            if (initialPayment > total)
+                return (false, null, "El abono inicial no puede ser mayor al total.");
+
+            if (initialPayment <= 0)
+                return (false, null, "Se requiere un abono inicial para crear el apartado.");
+
+            try
+            {
+                // Generar folio
+                string folio = await GenerateFolioAsync(branchId);
+                var layawayDate = DateTime.Now;
+                var pickupDate = layawayDate.AddDays(daysToPickup);
+
+                // Crear apartado
+                var layaway = new Layaway
+                {
+                    Folio = folio,
+                    CustomerId = customerId,
+                    BranchId = branchId,
+                    UserId = userId,
+                    DeliveryUserId = null,
+                    Total = total,
+                    TotalPaid = initialPayment,
+                    LayawayDate = layawayDate,
+                    PickupDate = pickupDate,
+                    DeliveryDate = null,
+                    Status = 1, // Pending
+                    Notes = notes,
+                    SyncStatus = 1
+                };
+
+                // Guardar apartado
+                var layawayId = await _layawayRepository.AddAsync(layaway);
+                layaway.Id = layawayId;
+
+                // Guardar productos del apartado
+                foreach (var item in items)
+                {
+                    var layawayProduct = new LayawayProduct
+                    {
+                        LayawayId = layawayId,
+                        ProductId = item.ProductId,
+                        Barcode = item.Barcode,
+                        ProductName = item.ProductName,
+                        Quantity = item.Quantity,
+                        UnitPrice = item.FinalUnitPrice,
+                        LineTotal = item.LineTotal,
+                        PricingData = item.PricingData
+                    };
+
+                    await _layawayProductRepository.AddAsync(layawayProduct);
+                }
+
+                await AddPaymentInternalAsync(layaway, initialPayment, paymentMethod, userId, "Abono inicial");
+
+                var ticketData = _ticketService.GenerateLayawayTicket(
+                    folio,
+                    branch?.Name ?? "Sucursal",
+                    branch?.Address ?? "",
+                    branch?.Email ?? "",
+                    "",
+                    customer.Name,
+                    customer.Phone,
+                    items,
+                    total,
+                    initialPayment,
+                    layaway.RemainingBalance,
+                    pickupDate,
+                    daysToPickup,
+                    paymentMethod
+                );
+
+                byte[] ticketCompressed = JsonCompressor.Compress(ticketData);
+                layaway.TicketData = ticketCompressed;
+                await _layawayRepository.UpdateAsync(layaway);
+
+                return (true, layaway, null);
+            }
+            catch (Exception ex)
+            {
+                return (false, null, $"Error al crear el apartado: {ex.Message}");
+            }
+        }
+
+        public async Task<List<Layaway>> GetPendingByCustomerAsync(int customerId)
+        {
+            var layaways = await _layawayRepository.FindAsync(l => 
+                l.CustomerId == customerId && 
+                (l.Status == 1 || l.Status == 3)); // Pending or Expired
+            
+            return layaways.OrderByDescending(l => l.LayawayDate).ToList();
+        }
+
+        public async Task<List<Layaway>> GetPendingByBranchAsync(int branchId)
+        {
+            var layaways = await _layawayRepository.FindAsync(l => 
+                l.BranchId == branchId && 
+                (l.Status == 1 || l.Status == 3)); // Pending or Expired
+            
+            return layaways.OrderByDescending(l => l.LayawayDate).ToList();
+        }
+
+        public async Task<List<Layaway>> SearchAsync(int? customerId, int? status, int branchId)
+        {
+            var layaways = await _layawayRepository.FindAsync(l => l.BranchId == branchId);
+
+            if (customerId.HasValue)
+                layaways = layaways.Where(l => l.CustomerId == customerId.Value).ToList();
+
+            if (status.HasValue)
+                layaways = layaways.Where(l => l.Status == status.Value).ToList();
+
+            return layaways.OrderByDescending(l => l.LayawayDate).ToList();
+        }
+
+        public async Task<Layaway?> GetByIdAsync(int id)
+        {
+            return await _layawayRepository.GetByIdAsync(id);
+        }
+
+        public async Task<Layaway?> GetByFolioAsync(string folio)
+        {
+            if (string.IsNullOrWhiteSpace(folio)) return null;
+
+            var layaways = await _layawayRepository.FindAsync(l => l.Folio == folio);
+            return layaways.FirstOrDefault();
+        }
+
+        public async Task<List<LayawayProduct>> GetProductsAsync(int layawayId)
+        {
+            var products = await _layawayProductRepository.FindAsync(p => p.LayawayId == layawayId);
+            return products.ToList();
+        }
+
+        public async Task<List<LayawayPayment>> GetPaymentsAsync(int layawayId)
+        {
+            var payments = await _layawayPaymentRepository.FindAsync(p => p.LayawayId == layawayId);
+            return payments.OrderByDescending(p => p.PaymentDate).ToList();
+        }
+
+        public async Task<bool> AddPaymentAsync(int layawayId, decimal amount, PaymentMethod method, int userId, string? notes)
+        {
+            var layaway = await _layawayRepository.GetByIdAsync(layawayId);
+            if (layaway == null) return false;
+
+            if (layaway.Status == 2 || layaway.Status == 4)
+                return false;
+
+            var remaining = layaway.RemainingBalance;
+            if (amount > remaining)
+                amount = remaining;
+
+            if (amount <= 0) return false;
+
+            return await AddPaymentInternalAsync(layaway, amount, method, userId, notes);
+        }
+
+        private async Task<bool> AddPaymentInternalAsync(Layaway layaway, decimal amount, PaymentMethod method, int userId, string? notes)
+        {
+            try
+            {
+                // Generar folio de pago
+                var paymentFolio = $"PAGO-{layaway.Folio}-{DateTime.Now:HHmmss}";
+
+                var payment = new LayawayPayment
+                {
+                    Folio = paymentFolio,
+                    LayawayId = layaway.Id,
+                    UserId = userId,
+                    AmountPaid = amount,
+                    PaymentMethod = method.ToString(),
+                    PaymentDate = DateTime.Now,
+                    CashCloseFolio = string.Empty, // Se actualizara en el corte
+                    Notes = notes,
+                    SyncStatus = 1
+                };
+
+                await _layawayPaymentRepository.AddAsync(payment);
+
+                // Actualizar total pagado solo si no es el abono inicial (ya se incluyo en el layaway)
+                if (notes != "Abono inicial")
+                {
+                    layaway.TotalPaid += amount;
+                    layaway.UpdatedAt = DateTime.Now;
+                    await _layawayRepository.UpdateAsync(layaway);
+                }
+
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        public async Task<bool> MarkAsDeliveredAsync(int layawayId, int deliveryUserId)
+        {
+            var layaway = await _layawayRepository.GetByIdAsync(layawayId);
+            if (layaway == null) return false;
+
+            if (layaway.RemainingBalance > 0)
+                return false;
+
+            if (layaway.Status != 1)
+                return false;
+
+            layaway.Status = 2; // Delivered
+            layaway.DeliveryDate = DateTime.Now;
+            layaway.DeliveryUserId = deliveryUserId;
+            layaway.UpdatedAt = DateTime.Now;
+
+            await _layawayRepository.UpdateAsync(layaway);
+            return true;
+        }
+
+        public async Task UpdateStatusAsync(int layawayId)
+        {
+            var layaway = await _layawayRepository.GetByIdAsync(layawayId);
+            if (layaway == null) return;
+
+            if (layaway.Status != 1) return;
+
+            if (layaway.IsExpired)
+            {
+                layaway.Status = 3;
+                layaway.UpdatedAt = DateTime.Now;
+                await _layawayRepository.UpdateAsync(layaway);
+            }
+        }
+    }
+}

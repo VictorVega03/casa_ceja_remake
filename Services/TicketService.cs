@@ -1,11 +1,26 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using CasaCejaRemake.Helpers;
 using CasaCejaRemake.Models;
 
 namespace CasaCejaRemake.Services
 {
+    public enum TicketType
+    {
+        Sale = 1,
+        Credit = 2,
+        Layaway = 3
+    }
+
+    public enum PrinterType
+    {
+        Thermal = 1,
+        Normal = 2
+    }
+
     public class TicketData
     {
         // Informacion del negocio
@@ -149,6 +164,18 @@ namespace CasaCejaRemake.Services
             return $"{now:MMddyyyy}{branchId:D2}{consecutivo:D4}";
         }
 
+        public string GenerateCreditFolio(int branchId, int consecutivo)
+        {
+            var now = DateTime.Now;
+            return $"CRED-{now:MMddyyyy}-{consecutivo:D3}";
+        }
+
+        public string GenerateLayawayFolio(int branchId, int consecutivo)
+        {
+            var now = DateTime.Now;
+            return $"APAR-{now:MMddyyyy}-{consecutivo:D3}";
+        }
+
         public string GetPaymentMethodName(PaymentMethod method)
         {
             return method switch
@@ -243,6 +270,126 @@ namespace CasaCejaRemake.Services
             };
         }
 
+        public TicketData GenerateCreditTicket(
+            string folio,
+            string branchName,
+            string branchAddress,
+            string branchPhone,
+            string userName,
+            string customerName,
+            string customerPhone,
+            List<CartItem> items,
+            decimal total,
+            decimal initialPayment,
+            decimal remainingBalance,
+            DateTime dueDate,
+            int monthsToPay,
+            PaymentMethod paymentMethod)
+        {
+            var now = DateTime.Now;
+
+            return new TicketData
+            {
+                Branch = new TicketBranch
+                {
+                    Name = branchName,
+                    Address = branchAddress,
+                    Phone = branchPhone
+                },
+                Sale = new TicketSale
+                {
+                    Folio = folio,
+                    DateTime = now,
+                    UserName = userName
+                },
+                Products = items.Select(i => new TicketProduct
+                {
+                    Barcode = i.Barcode,
+                    Name = i.ProductName,
+                    Quantity = i.Quantity,
+                    UnitPrice = i.FinalUnitPrice,
+                    LineTotal = i.LineTotal
+                }).ToList(),
+                Totals = new TicketTotals
+                {
+                    GrandTotal = total,
+                    ItemCount = items.Sum(i => i.Quantity)
+                },
+                Payment = new TicketPayment
+                {
+                    Method = (int)paymentMethod,
+                    MethodName = GetPaymentMethodName(paymentMethod),
+                    Amount = initialPayment
+                },
+                Meta = new TicketMetadata
+                {
+                    Version = "1.0",
+                    GeneratedAt = now,
+                    AppVersion = "1.0.0"
+                }
+            };
+        }
+
+        public TicketData GenerateLayawayTicket(
+            string folio,
+            string branchName,
+            string branchAddress,
+            string branchPhone,
+            string userName,
+            string customerName,
+            string customerPhone,
+            List<CartItem> items,
+            decimal total,
+            decimal initialPayment,
+            decimal remainingBalance,
+            DateTime pickupDate,
+            int daysToPickup,
+            PaymentMethod paymentMethod)
+        {
+            var now = DateTime.Now;
+
+            return new TicketData
+            {
+                Branch = new TicketBranch
+                {
+                    Name = branchName,
+                    Address = branchAddress,
+                    Phone = branchPhone
+                },
+                Sale = new TicketSale
+                {
+                    Folio = folio,
+                    DateTime = now,
+                    UserName = userName
+                },
+                Products = items.Select(i => new TicketProduct
+                {
+                    Barcode = i.Barcode,
+                    Name = i.ProductName,
+                    Quantity = i.Quantity,
+                    UnitPrice = i.FinalUnitPrice,
+                    LineTotal = i.LineTotal
+                }).ToList(),
+                Totals = new TicketTotals
+                {
+                    GrandTotal = total,
+                    ItemCount = items.Sum(i => i.Quantity)
+                },
+                Payment = new TicketPayment
+                {
+                    Method = (int)paymentMethod,
+                    MethodName = GetPaymentMethodName(paymentMethod),
+                    Amount = initialPayment
+                },
+                Meta = new TicketMetadata
+                {
+                    Version = "1.0",
+                    GeneratedAt = now,
+                    AppVersion = "1.0.0"
+                }
+            };
+        }
+
         public string SerializeTicket(TicketData ticket)
         {
             var options = new JsonSerializerOptions
@@ -267,65 +414,158 @@ namespace CasaCejaRemake.Services
 
         public string GenerateTicketText(TicketData ticket, int lineWidth = 40)
         {
+            return GenerateTicketText(ticket, TicketType.Sale, lineWidth);
+        }
+
+        public string GenerateTicketText(TicketData ticket, TicketType type, int lineWidth = 40)
+        {
             var lines = new List<string>();
             var separator = new string('-', lineWidth);
 
-            // Encabezado
-            lines.Add(CenterText(ticket.Branch.Name, lineWidth));
+            lines.AddRange(FormatHeader(ticket, lineWidth));
+            lines.Add(separator);
+
+            switch (type)
+            {
+                case TicketType.Credit:
+                    lines.AddRange(FormatCreditBody(ticket, lineWidth));
+                    break;
+                case TicketType.Layaway:
+                    lines.AddRange(FormatLayawayBody(ticket, lineWidth));
+                    break;
+                default:
+                    lines.AddRange(FormatSaleBody(ticket, lineWidth));
+                    break;
+            }
+
+            lines.Add(separator);
+            lines.AddRange(FormatFooter(ticket, type, lineWidth));
+
+            return string.Join(Environment.NewLine, lines);
+        }
+
+        private List<string> FormatHeader(TicketData ticket, int lineWidth)
+        {
+            var lines = new List<string>
+            {
+                CenterText(ticket.Branch.Name, lineWidth)
+            };
+
             if (!string.IsNullOrEmpty(ticket.Branch.Address))
                 lines.Add(CenterText(ticket.Branch.Address, lineWidth));
             if (!string.IsNullOrEmpty(ticket.Branch.Phone))
                 lines.Add(CenterText($"Tel: {ticket.Branch.Phone}", lineWidth));
-            
-            lines.Add(separator);
 
-            // Info de venta
-            lines.Add($"Folio: {ticket.Sale.Folio}");
-            lines.Add($"Fecha: {ticket.Sale.DateTime:dd/MM/yyyy HH:mm}");
-            lines.Add($"Atendio: {ticket.Sale.UserName}");
+            return lines;
+        }
 
-            lines.Add(separator);
+        private List<string> FormatSaleBody(TicketData ticket, int lineWidth)
+        {
+            var lines = new List<string>
+            {
+                $"Folio: {ticket.Sale.Folio}",
+                $"Fecha: {ticket.Sale.DateTime:dd/MM/yyyy HH:mm}",
+                $"Atendio: {ticket.Sale.UserName}",
+                new string('-', lineWidth)
+            };
 
-            // Productos
             foreach (var product in ticket.Products)
             {
                 lines.Add($"{product.Quantity} x {product.Name}");
-                
-                var priceInfo = $"  ${product.UnitPrice:N2} c/u = ${product.LineTotal:N2}";
-                lines.Add(priceInfo);
+                lines.Add($"  ${product.UnitPrice:N2} c/u = ${product.LineTotal:N2}");
 
                 if (product.Discount > 0)
-                {
                     lines.Add($"  Desc: -${product.Discount:N2}");
-                }
             }
 
-            lines.Add(separator);
+            lines.Add(new string('-', lineWidth));
 
-            // Totales
             if (ticket.Totals.TotalDiscount > 0)
             {
                 lines.Add($"Subtotal: ${ticket.Totals.Subtotal:N2}");
                 lines.Add($"Descuento: -${ticket.Totals.TotalDiscount:N2}");
             }
-            
+
             lines.Add($"TOTAL: ${ticket.Totals.GrandTotal:N2}");
             lines.Add($"Articulos: {ticket.Totals.ItemCount}");
-
-            lines.Add(separator);
-
-            // Pago
+            lines.Add(new string('-', lineWidth));
             lines.Add($"Pago: {ticket.Payment.MethodName}");
             lines.Add($"Recibido: ${ticket.Payment.Amount:N2}");
+
             if (ticket.Payment.Change > 0)
-            {
                 lines.Add($"Cambio: ${ticket.Payment.Change:N2}");
+
+            return lines;
+        }
+
+        private List<string> FormatCreditBody(TicketData ticket, int lineWidth)
+        {
+            var lines = new List<string>
+            {
+                CenterText("*** CREDITO ***", lineWidth),
+                new string('-', lineWidth),
+                $"Folio: {ticket.Sale.Folio}",
+                $"Fecha: {ticket.Sale.DateTime:dd/MM/yyyy HH:mm}",
+                $"Atendio: {ticket.Sale.UserName}"
+            };
+
+            lines.Add(new string('-', lineWidth));
+
+            foreach (var product in ticket.Products)
+            {
+                lines.Add($"{product.Quantity} x {product.Name}");
+                lines.Add($"  ${product.UnitPrice:N2} = ${product.LineTotal:N2}");
             }
 
-            lines.Add(separator);
+            lines.Add(new string('-', lineWidth));
+            lines.Add($"TOTAL:          ${ticket.Totals.GrandTotal:N2}");
+            lines.Add($"ABONO INICIAL:  ${ticket.Payment.Amount:N2}");
+
+            return lines;
+        }
+
+        private List<string> FormatLayawayBody(TicketData ticket, int lineWidth)
+        {
+            var lines = new List<string>
+            {
+                CenterText("*** APARTADO ***", lineWidth),
+                new string('-', lineWidth),
+                $"Folio: {ticket.Sale.Folio}",
+                $"Fecha: {ticket.Sale.DateTime:dd/MM/yyyy HH:mm}",
+                $"Atendio: {ticket.Sale.UserName}"
+            };
+
+            lines.Add(new string('-', lineWidth));
+            lines.Add("PRODUCTOS APARTADOS:");
+
+            foreach (var product in ticket.Products)
+            {
+                lines.Add($"{product.Quantity} x {product.Name}");
+                lines.Add($"  ${product.UnitPrice:N2} = ${product.LineTotal:N2}");
+            }
+
+            lines.Add(new string('-', lineWidth));
+            lines.Add($"TOTAL:          ${ticket.Totals.GrandTotal:N2}");
+            lines.Add($"ABONO INICIAL:  ${ticket.Payment.Amount:N2}");
+
+            return lines;
+        }
+
+        private List<string> FormatFooter(TicketData ticket, TicketType type, int lineWidth)
+        {
+            var lines = new List<string>();
+
+            if (type == TicketType.Layaway)
+            {
+                lines.Add(new string('-', lineWidth));
+                lines.Add(CenterText("*** CONSERVE ESTE TICKET ***", lineWidth));
+                lines.Add(CenterText("*** PARA RECOGER SU MERCANCIA ***", lineWidth));
+            }
+
+            lines.Add(new string('-', lineWidth));
             lines.Add(CenterText("Gracias por su compra", lineWidth));
 
-            return string.Join(Environment.NewLine, lines);
+            return lines;
         }
 
         private string CenterText(string text, int width)
