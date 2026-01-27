@@ -17,6 +17,8 @@ namespace CasaCejaRemake.ViewModels.POS
         private readonly AuthService _authService;
         private readonly int _branchId;
 
+        public int BranchId => _branchId;
+
         [ObservableProperty]
         private string _barcode = string.Empty;
 
@@ -59,6 +61,7 @@ namespace CasaCejaRemake.ViewModels.POS
         public event EventHandler? RequestShowSearchProduct;
         public event EventHandler? RequestShowPayment;
         public event EventHandler? RequestShowModifyQuantity;
+        public event EventHandler? RequestShowCreditsLayaways;
         public event EventHandler<string>? ShowMessage;
         public event EventHandler? RequestExit;
         public event EventHandler<SaleResult>? SaleCompleted;
@@ -348,7 +351,7 @@ namespace CasaCejaRemake.ViewModels.POS
         [RelayCommand]
         private void CreditsLayaways()
         {
-            ShowMessage?.Invoke(this, "Creditos y Apartados: Proximamente");
+            RequestShowCreditsLayaways?.Invoke(this, EventArgs.Empty);
         }
 
         [RelayCommand]

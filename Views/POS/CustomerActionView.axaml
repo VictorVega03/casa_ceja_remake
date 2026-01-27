@@ -1,0 +1,135 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="using:CasaCejaRemake.ViewModels.POS"
+        mc:Ignorable="d" d:DesignWidth="400" d:DesignHeight="350"
+        x:Class="CasaCejaRemake.Views.POS.CustomerActionView"
+        x:DataType="vm:CustomerActionViewModel"
+        Title="Acciones de Cliente"
+        Width="400" Height="350"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False"
+        ShowInTaskbar="False"
+        Background="#1E1E1E">
+
+    <Window.Styles>
+        <Style Selector="Button.action-button">
+            <Setter Property="Height" Value="45"/>
+            <Setter Property="Margin" Value="5"/>
+            <Setter Property="Background" Value="#2D2D2D"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="CornerRadius" Value="5"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+        </Style>
+        <Style Selector="Button.action-button:pointerover">
+            <Setter Property="Background" Value="#3D3D3D"/>
+        </Style>
+        <Style Selector="Button.action-button:pressed">
+            <Setter Property="Background" Value="#4D4D4D"/>
+        </Style>
+        <Style Selector="Button.action-button:disabled">
+            <Setter Property="Opacity" Value="0.5"/>
+        </Style>
+    </Window.Styles>
+
+    <Grid RowDefinitions="Auto,Auto,*,Auto">
+        <!-- Header -->
+        <Border Grid.Row="0" Background="#2D2D2D" Padding="15">
+            <TextBlock Text="ACCIONES DE CLIENTE"
+                       FontSize="18"
+                       FontWeight="Bold"
+                       Foreground="White"
+                       HorizontalAlignment="Center"/>
+        </Border>
+
+        <!-- Customer Info -->
+        <Border Grid.Row="1" Background="#252525" Padding="15" Margin="10,10,10,0" CornerRadius="5">
+            <StackPanel>
+                <TextBlock Text="{Binding CustomerName}"
+                           FontSize="16"
+                           FontWeight="Bold"
+                           Foreground="White"/>
+                <TextBlock Text="{Binding CustomerPhone}"
+                           FontSize="14"
+                           Foreground="#AAAAAA"
+                           Margin="0,5,0,0"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Action Buttons -->
+        <StackPanel Grid.Row="2" Margin="15" VerticalAlignment="Center">
+            <!-- Error Message -->
+            <Border Background="#F44336" 
+                    Padding="10" 
+                    CornerRadius="5" 
+                    Margin="0,0,0,10"
+                    IsVisible="{Binding HasError}">
+                <TextBlock Text="{Binding ErrorMessage}"
+                           Foreground="White"
+                           FontSize="12"
+                           TextWrapping="Wrap"
+                           HorizontalAlignment="Center"/>
+            </Border>
+            
+            <Button Classes="action-button"
+                    Command="{Binding NewCreditCommand}"
+                    IsEnabled="{Binding HasCartItems}"
+                    HotKey="F1">
+                <StackPanel Orientation="Horizontal" Spacing="10">
+                    <TextBlock Text="F1" Foreground="#4CAF50" FontWeight="Bold"/>
+                    <TextBlock Text="Nuevo Credito"/>
+                    <TextBlock Text="(requiere productos)" 
+                               Foreground="#888888" 
+                               FontSize="11"
+                               IsVisible="{Binding !HasCartItems}"/>
+                </StackPanel>
+            </Button>
+
+            <Button Classes="action-button"
+                    Command="{Binding NewLayawayCommand}"
+                    IsEnabled="{Binding HasCartItems}"
+                    HotKey="F2">
+                <StackPanel Orientation="Horizontal" Spacing="10">
+                    <TextBlock Text="F2" Foreground="#2196F3" FontWeight="Bold"/>
+                    <TextBlock Text="Nuevo Apartado"/>
+                    <TextBlock Text="(requiere productos)" 
+                               Foreground="#888888" 
+                               FontSize="11"
+                               IsVisible="{Binding !HasCartItems}"/>
+                </StackPanel>
+            </Button>
+
+            <Button Classes="action-button"
+                    Command="{Binding MyCreditsCommand}"
+                    HotKey="F3">
+                <StackPanel Orientation="Horizontal" Spacing="10">
+                    <TextBlock Text="F3" Foreground="#FF9800" FontWeight="Bold"/>
+                    <TextBlock Text="Mis Creditos"/>
+                </StackPanel>
+            </Button>
+
+            <Button Classes="action-button"
+                    Command="{Binding MyLayawaysCommand}"
+                    HotKey="F4">
+                <StackPanel Orientation="Horizontal" Spacing="10">
+                    <TextBlock Text="F4" Foreground="#9C27B0" FontWeight="Bold"/>
+                    <TextBlock Text="Mis Apartados"/>
+                </StackPanel>
+            </Button>
+        </StackPanel>
+
+        <!-- Footer -->
+        <Border Grid.Row="3" Background="#2D2D2D" Padding="10">
+            <Button Content="Cancelar (Esc)"
+                    Command="{Binding CancelCommand}"
+                    HotKey="Escape"
+                    HorizontalAlignment="Center"
+                    Background="#555555"
+                    Foreground="White"
+                    Padding="20,8"/>
+        </Border>
+    </Grid>
+</Window>

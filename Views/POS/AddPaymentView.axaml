@@ -1,0 +1,206 @@
+<!-- AddPaymentView.axaml -->
+<!-- Renombrar a .axaml para usar -->
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="using:CasaCejaRemake.ViewModels.POS"
+        mc:Ignorable="d" d:DesignWidth="450" d:DesignHeight="450"
+        x:Class="CasaCejaRemake.Views.POS.AddPaymentView"
+        x:DataType="vm:AddPaymentViewModel"
+        Title="Agregar Abono"
+        Width="450" Height="450"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False"
+        ShowInTaskbar="False"
+        Background="#1E1E1E">
+
+    <Window.Styles>
+        <Style Selector="TextBox">
+            <Setter Property="Background" Value="#2D2D2D"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderBrush" Value="#3D3D3D"/>
+            <Setter Property="Padding" Value="10"/>
+            <Setter Property="FontSize" Value="14"/>
+        </Style>
+        <Style Selector="NumericUpDown">
+            <Setter Property="Background" Value="#2D2D2D"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderBrush" Value="#3D3D3D"/>
+            <Setter Property="FontSize" Value="16"/>
+        </Style>
+        <Style Selector="ComboBox">
+            <Setter Property="Background" Value="#2D2D2D"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderBrush" Value="#3D3D3D"/>
+            <Setter Property="Padding" Value="10"/>
+        </Style>
+        <Style Selector="TextBlock.label">
+            <Setter Property="Foreground" Value="#AAAAAA"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Margin" Value="0,0,0,5"/>
+        </Style>
+        <Style Selector="TextBlock.value">
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+        </Style>
+    </Window.Styles>
+
+    <Grid RowDefinitions="Auto,Auto,Auto,*,Auto">
+        <!-- Header -->
+        <Border Grid.Row="0" Background="{Binding HeaderColor}" Padding="15">
+            <StackPanel>
+                <TextBlock Text="AGREGAR ABONO"
+                           FontSize="18"
+                           FontWeight="Bold"
+                           Foreground="White"
+                           HorizontalAlignment="Center"/>
+                <TextBlock Text="{Binding Type}"
+                           FontSize="12"
+                           Foreground="#DDDDDD"
+                           HorizontalAlignment="Center"
+                           Margin="0,5,0,0"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Credit/Layaway Info -->
+        <Border Grid.Row="1" Background="#252525" Padding="15" Margin="15,10,15,0" CornerRadius="5">
+            <Grid RowDefinitions="Auto,Auto" ColumnDefinitions="*,*">
+                <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,0,10">
+                    <TextBlock Text="Folio" Classes="label"/>
+                    <TextBlock Text="{Binding Folio}" Classes="value"/>
+                </StackPanel>
+                <StackPanel Grid.Row="0" Grid.Column="1" Margin="0,0,0,10">
+                    <TextBlock Text="Cliente" Classes="label"/>
+                    <TextBlock Text="{Binding CustomerName}" Classes="value"/>
+                </StackPanel>
+                <StackPanel Grid.Row="1" Grid.Column="0">
+                    <TextBlock Text="Vencimiento" Classes="label"/>
+                    <TextBlock Text="{Binding DueDate, StringFormat='{}{0:dd/MM/yyyy}'}" Classes="value"/>
+                </StackPanel>
+                <StackPanel Grid.Row="1" Grid.Column="1">
+                    <TextBlock Text="Dias restantes" Classes="label"/>
+                    <TextBlock Text="{Binding DaysRemaining}" 
+                               Classes="value"
+                               Foreground="{Binding DaysRemainingColor}"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Balances -->
+        <Border Grid.Row="2" Background="#252525" Padding="15" Margin="15,10,15,0" CornerRadius="5">
+            <Grid ColumnDefinitions="*,*,*">
+                <StackPanel Grid.Column="0" HorizontalAlignment="Center">
+                    <TextBlock Text="TOTAL" Classes="label" HorizontalAlignment="Center"/>
+                    <TextBlock Text="{Binding Total, StringFormat='{}{0:C2}'}" 
+                               FontSize="16" 
+                               FontWeight="Bold" 
+                               Foreground="#4CAF50"
+                               HorizontalAlignment="Center"/>
+                </StackPanel>
+                <StackPanel Grid.Column="1" HorizontalAlignment="Center">
+                    <TextBlock Text="PAGADO" Classes="label" HorizontalAlignment="Center"/>
+                    <TextBlock Text="{Binding TotalPaid, StringFormat='{}{0:C2}'}" 
+                               FontSize="16" 
+                               FontWeight="Bold" 
+                               Foreground="#2196F3"
+                               HorizontalAlignment="Center"/>
+                </StackPanel>
+                <StackPanel Grid.Column="2" HorizontalAlignment="Center">
+                    <TextBlock Text="PENDIENTE" Classes="label" HorizontalAlignment="Center"/>
+                    <TextBlock Text="{Binding RemainingBalance, StringFormat='{}{0:C2}'}" 
+                               FontSize="16" 
+                               FontWeight="Bold" 
+                               Foreground="#FF9800"
+                               HorizontalAlignment="Center"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Payment Input -->
+        <Border Grid.Row="3" Margin="15,10" Padding="15" Background="#252525" CornerRadius="5">
+            <StackPanel>
+                <!-- Amount -->
+                <StackPanel Margin="0,0,0,15">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <TextBlock Text="Monto a abonar" Classes="label"/>
+                        <Button Grid.Column="1"
+                                Content="F4 Pagar Todo"
+                                Command="{Binding PayAllCommand}"
+                                Background="#4CAF50"
+                                Foreground="White"
+                                Padding="10,5"
+                                FontSize="11"
+                                HotKey="F4"/>
+                    </Grid>
+                    <NumericUpDown Value="{Binding AmountToPay}"
+                                   Minimum="0.01"
+                                   Maximum="{Binding RemainingBalance}"
+                                   Increment="100"
+                                   FormatString="C2"
+                                   HorizontalAlignment="Stretch"/>
+                </StackPanel>
+
+                <!-- Payment Method -->
+                <StackPanel Margin="0,0,0,10">
+                    <TextBlock Text="Metodo de pago" Classes="label"/>
+                    <ComboBox ItemsSource="{Binding PaymentMethods}"
+                              SelectedItem="{Binding PaymentMethod}"
+                              HorizontalAlignment="Stretch"/>
+                </StackPanel>
+
+                <!-- Notes -->
+                <StackPanel>
+                    <TextBlock Text="Notas (opcional)" Classes="label"/>
+                    <TextBox Text="{Binding Notes}"
+                             Watermark="Notas del abono..."
+                             Height="50"
+                             AcceptsReturn="True"
+                             TextWrapping="Wrap"/>
+                </StackPanel>
+            </StackPanel>
+        </Border>
+
+        <!-- Error + Buttons -->
+        <Border Grid.Row="4" Background="#2D2D2D" Padding="10">
+            <StackPanel>
+                <!-- Error Message -->
+                <Border IsVisible="{Binding HasError}"
+                        Background="#FF5252"
+                        CornerRadius="5"
+                        Padding="10"
+                        Margin="0,0,0,10">
+                    <TextBlock Text="{Binding ErrorMessage}"
+                               Foreground="White"
+                               TextWrapping="Wrap"/>
+                </Border>
+
+                <!-- Buttons -->
+                <Grid ColumnDefinitions="*,*">
+                    <Button Grid.Column="0"
+                            Command="{Binding ConfirmCommand}"
+                            Background="#4CAF50"
+                            Foreground="White"
+                            Padding="20,12"
+                            HorizontalAlignment="Center"
+                            IsEnabled="{Binding !IsProcessing}"
+                            HotKey="F5">
+                        <StackPanel Orientation="Horizontal" Spacing="5">
+                            <TextBlock Text="F5"/>
+                            <TextBlock Text="Confirmar Abono"/>
+                        </StackPanel>
+                    </Button>
+                    <Button Grid.Column="1"
+                            Content="Cancelar (Esc)"
+                            Command="{Binding CancelCommand}"
+                            Background="#555555"
+                            Foreground="White"
+                            Padding="20,12"
+                            HorizontalAlignment="Center"
+                            HotKey="Escape"/>
+                </Grid>
+            </StackPanel>
+        </Border>
+    </Grid>
+</Window>

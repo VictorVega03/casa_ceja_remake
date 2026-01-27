@@ -82,7 +82,7 @@ namespace CasaCejaRemake.Services
                 var creditDate = DateTime.Now;
                 var dueDate = creditDate.AddMonths(monthsToPay);
 
-                // Crear credito
+                // Crear credito (sin TotalPaid inicial, se agregará con el pago)
                 var credit = new Credit
                 {
                     Folio = folio,
@@ -90,7 +90,7 @@ namespace CasaCejaRemake.Services
                     BranchId = branchId,
                     UserId = userId,
                     Total = total,
-                    TotalPaid = initialPayment,
+                    TotalPaid = 0, // Se actualizará con el pago inicial
                     MonthsToPay = monthsToPay,
                     CreditDate = creditDate,
                     DueDate = dueDate,
@@ -100,8 +100,8 @@ namespace CasaCejaRemake.Services
                 };
 
                 // Guardar credito
-                var creditId = await _creditRepository.AddAsync(credit);
-                credit.Id = creditId;
+                await _creditRepository.AddAsync(credit);
+                var creditId = credit.Id; // SQLite actualiza el ID automáticamente
 
                 // Guardar productos del credito
                 foreach (var item in items)
@@ -126,10 +126,17 @@ namespace CasaCejaRemake.Services
                     await AddPaymentInternalAsync(credit, initialPayment, paymentMethod, userId, "Abono inicial");
                 }
 
-                if (credit.TotalPaid >= credit.Total)
+                // Recargar el credit actualizado de la BD
+                var updatedCredit = await _creditRepository.GetByIdAsync(creditId);
+                if (updatedCredit == null)
                 {
-                    credit.Status = 2;
-                    await _creditRepository.UpdateAsync(credit);
+                    return (false, null, "Error al recargar crédito después del pago inicial");
+                }
+
+                // Verificar si está completamente pagado
+                if (updatedCredit.TotalPaid >= updatedCredit.Total)
+                {
+                    updatedCredit.Status = 2;
                 }
 
                 var ticketData = _ticketService.GenerateCreditTicket(
@@ -143,15 +150,17 @@ namespace CasaCejaRemake.Services
                     items,
                     total,
                     initialPayment,
-                    credit.RemainingBalance,
+                    updatedCredit.RemainingBalance,
                     dueDate,
                     monthsToPay,
                     paymentMethod
                 );
 
                 byte[] ticketCompressed = JsonCompressor.Compress(ticketData);
-                credit.TicketData = ticketCompressed;
-                await _creditRepository.UpdateAsync(credit);
+                updatedCredit.TicketData = ticketCompressed;
+                await _creditRepository.UpdateAsync(updatedCredit);
+
+                return (true, updatedCredit, null);
 
                 return (true, credit, null);
             }

@@ -1,0 +1,171 @@
+<!-- CreditsLayawaysListView.axaml -->
+<!-- Renombrar a .axaml para usar -->
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="using:CasaCejaRemake.ViewModels.POS"
+        mc:Ignorable="d" d:DesignWidth="850" d:DesignHeight="550"
+        x:Class="CasaCejaRemake.Views.POS.CreditsLayawaysListView"
+        x:DataType="vm:CreditsLayawaysListViewModel"
+        Title="Lista de Creditos y Apartados"
+        Width="850" Height="550"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False"
+        ShowInTaskbar="False"
+        Background="#1E1E1E">
+
+    <Window.Styles>
+        <Style Selector="Button.filter">
+            <Setter Property="Background" Value="#3D3D3D"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Padding" Value="15,8"/>
+            <Setter Property="Margin" Value="5,0"/>
+            <Setter Property="CornerRadius" Value="5"/>
+        </Style>
+        <Style Selector="Button.filter:pointerover">
+            <Setter Property="Background" Value="#4D4D4D"/>
+        </Style>
+        <Style Selector="Button.filter.active">
+            <Setter Property="Background" Value="#4CAF50"/>
+        </Style>
+        <Style Selector="DataGrid">
+            <Setter Property="Background" Value="#1E1E1E"/>
+            <Setter Property="RowBackground" Value="#2D2D2D"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderBrush" Value="#3D3D3D"/>
+            <Setter Property="GridLinesVisibility" Value="Horizontal"/>
+            <Setter Property="HorizontalGridLinesBrush" Value="#3D3D3D"/>
+        </Style>
+        <Style Selector="DataGridRow:nth-child(2n) /template/ Rectangle#BackgroundRectangle">
+            <Setter Property="Fill" Value="#252525"/>
+        </Style>
+        <Style Selector="DataGridColumnHeader">
+            <Setter Property="Background" Value="#3D3D3D"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Padding" Value="10,8"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+        </Style>
+        <Style Selector="DataGridRow:selected /template/ Rectangle#BackgroundRectangle">
+            <Setter Property="Fill" Value="#4CAF50"/>
+        </Style>
+    </Window.Styles>
+
+    <Grid RowDefinitions="Auto,Auto,*,Auto">
+        <!-- Header -->
+        <Border Grid.Row="0" Background="#2D2D2D" Padding="15">
+            <Grid ColumnDefinitions="*,Auto">
+                <TextBlock Text="LISTA DE CREDITOS Y APARTADOS"
+                           FontSize="18"
+                           FontWeight="Bold"
+                           Foreground="White"
+                           VerticalAlignment="Center"/>
+                <StackPanel Grid.Column="1" Orientation="Horizontal">
+                    <TextBlock Text="Total: " Foreground="#AAAAAA" VerticalAlignment="Center"/>
+                    <TextBlock Text="{Binding TotalCount}" 
+                               Foreground="#4CAF50" 
+                               FontWeight="Bold"
+                               FontSize="16"
+                               VerticalAlignment="Center"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Filters -->
+        <Border Grid.Row="1" Background="#252525" Padding="10">
+            <Grid ColumnDefinitions="Auto,*,Auto">
+                <!-- Filter Type -->
+                <StackPanel Grid.Column="0" Orientation="Horizontal">
+                    <TextBlock Text="Tipo:" 
+                               Foreground="#AAAAAA" 
+                               VerticalAlignment="Center"
+                               Margin="0,0,10,0"/>
+                    <Button Content="F1 Todos"
+                            Command="{Binding SetFilterCommand}"
+                            CommandParameter="type"
+                            Classes="filter"
+                            HotKey="F1"/>
+                    <Button Content="Creditos"
+                            Command="{Binding SetFilterCommand}"
+                            CommandParameter="credits"
+                            Classes="filter"/>
+                    <Button Content="Apartados"
+                            Command="{Binding SetFilterCommand}"
+                            CommandParameter="layaways"
+                            Classes="filter"/>
+                </StackPanel>
+
+                <!-- Filter Status -->
+                <StackPanel Grid.Column="2" Orientation="Horizontal">
+                    <TextBlock Text="Estado:" 
+                               Foreground="#AAAAAA" 
+                               VerticalAlignment="Center"
+                               Margin="0,0,10,0"/>
+                    <Button Content="F2 Todos"
+                            Command="{Binding SetFilterCommand}"
+                            CommandParameter="status"
+                            Classes="filter"
+                            HotKey="F2"/>
+                    <Button Content="Pendiente"
+                            Command="{Binding SetFilterCommand}"
+                            CommandParameter="pending"
+                            Classes="filter"/>
+                    <Button Content="Pagado"
+                            Command="{Binding SetFilterCommand}"
+                            CommandParameter="paid"
+                            Classes="filter"/>
+                    <Button Content="Vencido"
+                            Command="{Binding SetFilterCommand}"
+                            CommandParameter="overdue"
+                            Classes="filter"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- DataGrid -->
+        <DataGrid Grid.Row="2"
+                  ItemsSource="{Binding Items}"
+                  SelectedItem="{Binding SelectedItem}"
+                  AutoGenerateColumns="False"
+                  IsReadOnly="True"
+                  Margin="10"
+                  SelectionMode="Single">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="TIPO" Binding="{Binding Type}" Width="80"/>
+                <DataGridTextColumn Header="FOLIO" Binding="{Binding Folio}" Width="150"/>
+                <DataGridTextColumn Header="CLIENTE" Binding="{Binding CustomerName}" Width="*"/>
+                <DataGridTextColumn Header="TOTAL" Binding="{Binding Total, StringFormat='{}{0:C2}'}" Width="100"/>
+                <DataGridTextColumn Header="PAGADO" Binding="{Binding TotalPaid, StringFormat='{}{0:C2}'}" Width="100"/>
+                <DataGridTextColumn Header="SALDO" Binding="{Binding RemainingBalance, StringFormat='{}{0:C2}'}" Width="100"/>
+                <DataGridTextColumn Header="FECHA" Binding="{Binding CreatedDate, StringFormat='{}{0:dd/MM/yyyy}'}" Width="90"/>
+                <DataGridTextColumn Header="ESTADO" Binding="{Binding StatusName}" Width="90"/>
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <!-- Buttons -->
+        <Border Grid.Row="3" Background="#2D2D2D" Padding="15">
+            <Grid ColumnDefinitions="*,Auto,Auto,*">
+                <Button Grid.Column="1"
+                        Command="{Binding SelectItemCommand}"
+                        Background="#4CAF50"
+                        Foreground="White"
+                        Padding="20,10"
+                        Margin="5,0"
+                        IsEnabled="{Binding HasSelectedItem}">
+                    <StackPanel Orientation="Horizontal" Spacing="5">
+                        <TextBlock Text="Enter"/>
+                        <TextBlock Text="Seleccionar"/>
+                    </StackPanel>
+                </Button>
+                <Button Grid.Column="2"
+                        Content="Salir (Esc)"
+                        Command="{Binding CloseCommand}"
+                        Background="#555555"
+                        Foreground="White"
+                        Padding="20,10"
+                        Margin="5,0"
+                        HotKey="Escape"/>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>

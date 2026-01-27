@@ -1,0 +1,132 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="using:CasaCejaRemake.ViewModels.POS"
+        mc:Ignorable="d" d:DesignWidth="600" d:DesignHeight="450"
+        x:Class="CasaCejaRemake.Views.POS.CustomerSearchView"
+        x:DataType="vm:CustomerSearchViewModel"
+        Title="Buscar Cliente"
+        Width="600" Height="450"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False"
+        ShowInTaskbar="False"
+        Background="#1E1E1E">
+
+    <Window.Styles>
+        <Style Selector="TextBox">
+            <Setter Property="Background" Value="#2D2D2D"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderBrush" Value="#3D3D3D"/>
+            <Setter Property="Padding" Value="10"/>
+        </Style>
+        <Style Selector="DataGrid">
+            <Setter Property="Background" Value="#1E1E1E"/>
+            <Setter Property="RowBackground" Value="#2D2D2D"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderBrush" Value="#3D3D3D"/>
+            <Setter Property="GridLinesVisibility" Value="Horizontal"/>
+            <Setter Property="HorizontalGridLinesBrush" Value="#3D3D3D"/>
+        </Style>
+        <Style Selector="DataGridRow:nth-child(2n) /template/ Rectangle#BackgroundRectangle">
+            <Setter Property="Fill" Value="#252525"/>
+        </Style>
+        <Style Selector="DataGridColumnHeader">
+            <Setter Property="Background" Value="#3D3D3D"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Padding" Value="10,5"/>
+        </Style>
+        <Style Selector="DataGridRow:selected /template/ Rectangle#BackgroundRectangle">
+            <Setter Property="Fill" Value="#4CAF50"/>
+        </Style>
+        <Style Selector="Button.action-button">
+            <Setter Property="Background" Value="#2D2D2D"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Padding" Value="15,8"/>
+            <Setter Property="Margin" Value="5"/>
+        </Style>
+        <Style Selector="Button.action-button:pointerover">
+            <Setter Property="Background" Value="#3D3D3D"/>
+        </Style>
+    </Window.Styles>
+
+    <Grid RowDefinitions="Auto,Auto,*,Auto,Auto">
+        <!-- Header -->
+        <Border Grid.Row="0" Background="#2D2D2D" Padding="15">
+            <TextBlock Text="BUSCAR CLIENTE"
+                       FontSize="18"
+                       FontWeight="Bold"
+                       Foreground="White"
+                       HorizontalAlignment="Center"/>
+        </Border>
+
+        <!-- Search Box -->
+        <Grid Grid.Row="1" Margin="15,10" ColumnDefinitions="*,Auto">
+            <TextBox x:Name="SearchBox"
+                     Grid.Column="0"
+                     Text="{Binding SearchTerm}"
+                     Watermark="Buscar por telefono, nombre o email..."
+                     FontSize="14"/>
+            <Button Grid.Column="1"
+                    Content="Buscar"
+                    Command="{Binding SearchCommand}"
+                    Classes="action-button"
+                    Margin="10,0,0,0"/>
+        </Grid>
+
+        <!-- DataGrid -->
+        <DataGrid Grid.Row="2"
+                  x:Name="CustomersGrid"
+                  ItemsSource="{Binding Customers}"
+                  SelectedItem="{Binding SelectedCustomer}"
+                  AutoGenerateColumns="False"
+                  IsReadOnly="True"
+                  Margin="15,0"
+                  SelectionMode="Single"
+                  CanUserResizeColumns="True">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="50"/>
+                <DataGridTextColumn Header="NOMBRE" Binding="{Binding Name}" Width="*"/>
+                <DataGridTextColumn Header="TELEFONO" Binding="{Binding Phone}" Width="120"/>
+                <DataGridTextColumn Header="EMAIL" Binding="{Binding Email}" Width="150"/>
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <!-- Status -->
+        <Border Grid.Row="3" Margin="15,5" Padding="5">
+            <TextBlock Text="{Binding StatusMessage}"
+                       Foreground="#888888"
+                       FontSize="12"/>
+        </Border>
+
+        <!-- Buttons -->
+        <Border Grid.Row="4" Background="#2D2D2D" Padding="10">
+            <Grid ColumnDefinitions="*,*,*">
+                <Button Grid.Column="0"
+                        Content="Seleccionar (Enter)"
+                        Command="{Binding SelectCustomerCommand}"
+                        Classes="action-button"
+                        Background="#4CAF50"
+                        HorizontalAlignment="Center"/>
+                <Button Grid.Column="1"
+                        Classes="action-button"
+                        Command="{Binding CreateNewCommand}"
+                        Background="#2196F3"
+                        HorizontalAlignment="Center"
+                        HotKey="F5">
+                    <StackPanel Orientation="Horizontal" Spacing="5">
+                        <TextBlock Text="F5"/>
+                        <TextBlock Text="Alta Rapida"/>
+                    </StackPanel>
+                </Button>
+                <Button Grid.Column="2"
+                        Content="Cancelar (Esc)"
+                        Command="{Binding CancelCommand}"
+                        Classes="action-button"
+                        Background="#555555"
+                        HorizontalAlignment="Center"
+                        HotKey="Escape"/>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>

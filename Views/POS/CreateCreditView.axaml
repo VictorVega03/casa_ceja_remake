@@ -1,0 +1,212 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="using:CasaCejaRemake.ViewModels.POS"
+        mc:Ignorable="d" d:DesignWidth="700" d:DesignHeight="550"
+        x:Class="CasaCejaRemake.Views.POS.CreateCreditView"
+        x:DataType="vm:CreateCreditViewModel"
+        Title="Nuevo Credito"
+        Width="700" Height="550"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False"
+        ShowInTaskbar="False"
+        Background="#1E1E1E">
+
+    <Window.Styles>
+        <Style Selector="TextBox">
+            <Setter Property="Background" Value="#2D2D2D"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderBrush" Value="#3D3D3D"/>
+            <Setter Property="Padding" Value="8"/>
+        </Style>
+        <Style Selector="NumericUpDown">
+            <Setter Property="Background" Value="#2D2D2D"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderBrush" Value="#3D3D3D"/>
+        </Style>
+        <Style Selector="ComboBox">
+            <Setter Property="Background" Value="#2D2D2D"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderBrush" Value="#3D3D3D"/>
+        </Style>
+        <Style Selector="DataGrid">
+            <Setter Property="Background" Value="#1E1E1E"/>
+            <Setter Property="RowBackground" Value="#2D2D2D"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderBrush" Value="#3D3D3D"/>
+            <Setter Property="GridLinesVisibility" Value="Horizontal"/>
+            <Setter Property="HorizontalGridLinesBrush" Value="#3D3D3D"/>
+        </Style>
+        <Style Selector="DataGridRow:nth-child(2n) /template/ Rectangle#BackgroundRectangle">
+            <Setter Property="Fill" Value="#252525"/>
+        </Style>
+        <Style Selector="DataGridColumnHeader">
+            <Setter Property="Background" Value="#3D3D3D"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Padding" Value="8,5"/>
+        </Style>
+        <Style Selector="TextBlock.label">
+            <Setter Property="Foreground" Value="#AAAAAA"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Margin" Value="0,5,0,2"/>
+        </Style>
+        <Style Selector="TextBlock.value">
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+        </Style>
+    </Window.Styles>
+
+    <Grid RowDefinitions="Auto,Auto,*,Auto,Auto,Auto">
+        <!-- Header -->
+        <Border Grid.Row="0" Background="#4CAF50" Padding="15">
+            <TextBlock Text="NUEVO CREDITO"
+                       FontSize="18"
+                       FontWeight="Bold"
+                       Foreground="White"
+                       HorizontalAlignment="Center"/>
+        </Border>
+
+        <!-- Customer Info -->
+        <Border Grid.Row="1" Background="#252525" Padding="15" Margin="15,10,15,0" CornerRadius="5">
+            <Grid ColumnDefinitions="*,*">
+                <StackPanel Grid.Column="0">
+                    <TextBlock Text="Cliente" Classes="label"/>
+                    <TextBlock Text="{Binding CustomerName}" Classes="value"/>
+                </StackPanel>
+                <StackPanel Grid.Column="1">
+                    <TextBlock Text="Telefono" Classes="label"/>
+                    <TextBlock Text="{Binding CustomerPhone}" Classes="value"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Products DataGrid -->
+        <DataGrid Grid.Row="2"
+                  ItemsSource="{Binding CartItems}"
+                  AutoGenerateColumns="False"
+                  IsReadOnly="True"
+                  Margin="15,10"
+                  MaxHeight="180">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="PRODUCTO" Binding="{Binding ProductName}" Width="*"/>
+                <DataGridTextColumn Header="CANT" Binding="{Binding Quantity}" Width="60"/>
+                <DataGridTextColumn Header="PRECIO" Binding="{Binding FinalUnitPrice, StringFormat='{}{0:C2}'}" Width="100"/>
+                <DataGridTextColumn Header="TOTAL" Binding="{Binding LineTotal, StringFormat='{}{0:C2}'}" Width="100"/>
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <!-- Configuration -->
+        <Border Grid.Row="3" Margin="15,0" Padding="10" Background="#252525" CornerRadius="5">
+            <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto">
+                <!-- Meses -->
+                <StackPanel Grid.Row="0" Grid.Column="0" Margin="5">
+                    <TextBlock Text="Meses de vigencia" Classes="label"/>
+                    <NumericUpDown Value="{Binding MonthsToPay}"
+                                   Minimum="1"
+                                   Maximum="24"
+                                   Increment="1"
+                                   FormatString="0"/>
+                </StackPanel>
+
+                <!-- Fecha vencimiento -->
+                <StackPanel Grid.Row="0" Grid.Column="1" Margin="5">
+                    <TextBlock Text="Fecha de vencimiento" Classes="label"/>
+                    <TextBlock Text="{Binding DueDate, StringFormat='{}{0:dd/MM/yyyy}'}" 
+                               Classes="value"
+                               Margin="0,5"/>
+                </StackPanel>
+
+                <!-- Abono inicial -->
+                <StackPanel Grid.Row="1" Grid.Column="0" Margin="5">
+                    <TextBlock Text="Abono inicial" Classes="label"/>
+                    <NumericUpDown Value="{Binding InitialPayment}"
+                                   Minimum="0"
+                                   Maximum="{Binding Total}"
+                                   Increment="100"
+                                   FormatString="C2"/>
+                </StackPanel>
+
+                <!-- Metodo de pago -->
+                <StackPanel Grid.Row="1" Grid.Column="1" Margin="5">
+                    <TextBlock Text="Metodo de pago" Classes="label"/>
+                    <ComboBox ItemsSource="{Binding PaymentMethods}"
+                              SelectedItem="{Binding PaymentMethod}"
+                              HorizontalAlignment="Stretch"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Totals -->
+        <Border Grid.Row="4" Margin="15,10" Padding="15" Background="#252525" CornerRadius="5">
+            <Grid ColumnDefinitions="*,*,*">
+                <StackPanel Grid.Column="0" HorizontalAlignment="Center">
+                    <TextBlock Text="TOTAL" Classes="label" HorizontalAlignment="Center"/>
+                    <TextBlock Text="{Binding Total, StringFormat='{}{0:C2}'}" 
+                               FontSize="18" 
+                               FontWeight="Bold" 
+                               Foreground="#4CAF50"
+                               HorizontalAlignment="Center"/>
+                </StackPanel>
+                <StackPanel Grid.Column="1" HorizontalAlignment="Center">
+                    <TextBlock Text="ABONO" Classes="label" HorizontalAlignment="Center"/>
+                    <TextBlock Text="{Binding InitialPayment, StringFormat='{}{0:C2}'}" 
+                               FontSize="18" 
+                               FontWeight="Bold" 
+                               Foreground="#2196F3"
+                               HorizontalAlignment="Center"/>
+                </StackPanel>
+                <StackPanel Grid.Column="2" HorizontalAlignment="Center">
+                    <TextBlock Text="SALDO" Classes="label" HorizontalAlignment="Center"/>
+                    <TextBlock Text="{Binding RemainingBalance, StringFormat='{}{0:C2}'}" 
+                               FontSize="18" 
+                               FontWeight="Bold" 
+                               Foreground="#FF9800"
+                               HorizontalAlignment="Center"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Error + Buttons -->
+        <Border Grid.Row="5" Background="#2D2D2D" Padding="10">
+            <StackPanel>
+                <!-- Error Message -->
+                <Border IsVisible="{Binding HasError}"
+                        Background="#FF5252"
+                        CornerRadius="5"
+                        Padding="10"
+                        Margin="0,0,0,10">
+                    <TextBlock Text="{Binding ErrorMessage}"
+                               Foreground="White"
+                               TextWrapping="Wrap"/>
+                </Border>
+
+                <!-- Buttons -->
+                <Grid ColumnDefinitions="*,*">
+                    <Button Grid.Column="0"
+                            Command="{Binding ConfirmCommand}"
+                            Background="#4CAF50"
+                            Foreground="White"
+                            Padding="20,10"
+                            HorizontalAlignment="Center"
+                            IsEnabled="{Binding !IsProcessing}"
+                            HotKey="F5">
+                        <StackPanel Orientation="Horizontal" Spacing="5">
+                            <TextBlock Text="F5"/>
+                            <TextBlock Text="Crear Credito"/>
+                        </StackPanel>
+                    </Button>
+                    <Button Grid.Column="1"
+                            Content="Cancelar (Esc)"
+                            Command="{Binding CancelCommand}"
+                            Background="#555555"
+                            Foreground="White"
+                            Padding="20,10"
+                            HorizontalAlignment="Center"
+                            HotKey="Escape"/>
+                </Grid>
+            </StackPanel>
+        </Border>
+    </Grid>
+</Window>

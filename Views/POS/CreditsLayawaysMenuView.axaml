@@ -1,0 +1,87 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="using:CasaCejaRemake.ViewModels.POS"
+        mc:Ignorable="d" d:DesignWidth="350" d:DesignHeight="280"
+        x:Class="CasaCejaRemake.Views.POS.CreditsLayawaysMenuView"
+        x:DataType="vm:CreditsLayawaysMenuViewModel"
+        Title="Creditos y Apartados"
+        Width="350" Height="280"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False"
+        ShowInTaskbar="False"
+        Background="#1E1E1E">
+    
+    <Window.Styles>
+        <Style Selector="Button.menu-button">
+            <Setter Property="Height" Value="50"/>
+            <Setter Property="Margin" Value="5"/>
+            <Setter Property="Background" Value="#2D2D2D"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="CornerRadius" Value="5"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+        </Style>
+        <Style Selector="Button.menu-button:pointerover">
+            <Setter Property="Background" Value="#3D3D3D"/>
+        </Style>
+        <Style Selector="Button.menu-button:pressed">
+            <Setter Property="Background" Value="#4D4D4D"/>
+        </Style>
+    </Window.Styles>
+
+    <Grid RowDefinitions="Auto,*,Auto">
+        <!-- Header -->
+        <Border Grid.Row="0" Background="#2D2D2D" Padding="15">
+            <TextBlock Text="CREDITOS Y APARTADOS"
+                       FontSize="18"
+                       FontWeight="Bold"
+                       Foreground="White"
+                       HorizontalAlignment="Center"/>
+        </Border>
+
+        <!-- Botones -->
+        <StackPanel Grid.Row="1" Margin="15" VerticalAlignment="Center">
+            <Button Classes="menu-button"
+                    Command="{Binding SelectListCommand}"
+                    HotKey="F1">
+                <StackPanel Orientation="Horizontal" Spacing="10">
+                    <TextBlock Text="F1" Foreground="#4CAF50" FontWeight="Bold"/>
+                    <TextBlock Text="Lista Creditos/Apartados"/>
+                </StackPanel>
+            </Button>
+
+            <Button Classes="menu-button"
+                    Command="{Binding SelectNewOrPaymentCommand}"
+                    HotKey="F2">
+                <StackPanel Orientation="Horizontal" Spacing="10">
+                    <TextBlock Text="F2" Foreground="#2196F3" FontWeight="Bold"/>
+                    <TextBlock Text="Nuevo o Abonar"/>
+                </StackPanel>
+            </Button>
+
+            <Button Classes="menu-button"
+                    Command="{Binding SelectCustomerListCommand}"
+                    HotKey="F3">
+                <StackPanel Orientation="Horizontal" Spacing="10">
+                    <TextBlock Text="F3" Foreground="#FF9800" FontWeight="Bold"/>
+                    <TextBlock Text="Lista de Clientes"/>
+                </StackPanel>
+            </Button>
+        </StackPanel>
+
+        <!-- Footer -->
+        <Border Grid.Row="2" Background="#2D2D2D" Padding="10">
+            <Button Content="Cancelar (Esc)"
+                    Command="{Binding CancelCommand}"
+                    HotKey="Escape"
+                    HorizontalAlignment="Center"
+                    Background="#555555"
+                    Foreground="White"
+                    Padding="20,8"/>
+        </Border>
+    </Grid>
+</Window>

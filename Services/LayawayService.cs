@@ -85,7 +85,7 @@ namespace CasaCejaRemake.Services
                 var layawayDate = DateTime.Now;
                 var pickupDate = layawayDate.AddDays(daysToPickup);
 
-                // Crear apartado
+                // Crear apartado (sin TotalPaid inicial, se agregará con el pago)
                 var layaway = new Layaway
                 {
                     Folio = folio,
@@ -94,7 +94,7 @@ namespace CasaCejaRemake.Services
                     UserId = userId,
                     DeliveryUserId = null,
                     Total = total,
-                    TotalPaid = initialPayment,
+                    TotalPaid = 0, // Se actualizará con el pago inicial
                     LayawayDate = layawayDate,
                     PickupDate = pickupDate,
                     DeliveryDate = null,
@@ -104,8 +104,8 @@ namespace CasaCejaRemake.Services
                 };
 
                 // Guardar apartado
-                var layawayId = await _layawayRepository.AddAsync(layaway);
-                layaway.Id = layawayId;
+                await _layawayRepository.AddAsync(layaway);
+                var layawayId = layaway.Id; // SQLite actualiza el ID automáticamente
 
                 // Guardar productos del apartado
                 foreach (var item in items)
@@ -125,8 +125,17 @@ namespace CasaCejaRemake.Services
                     await _layawayProductRepository.AddAsync(layawayProduct);
                 }
 
+                // Guardar el pago inicial
                 await AddPaymentInternalAsync(layaway, initialPayment, paymentMethod, userId, "Abono inicial");
 
+                // Recargar el layaway actualizado de la BD
+                var updatedLayaway = await _layawayRepository.GetByIdAsync(layawayId);
+                if (updatedLayaway == null)
+                {
+                    return (false, null, "Error al recargar apartado después del pago inicial");
+                }
+
+                // Generar y guardar ticket data
                 var ticketData = _ticketService.GenerateLayawayTicket(
                     folio,
                     branch?.Name ?? "Sucursal",
@@ -138,15 +147,19 @@ namespace CasaCejaRemake.Services
                     items,
                     total,
                     initialPayment,
-                    layaway.RemainingBalance,
+                    updatedLayaway.RemainingBalance,
                     pickupDate,
                     daysToPickup,
                     paymentMethod
                 );
 
                 byte[] ticketCompressed = JsonCompressor.Compress(ticketData);
-                layaway.TicketData = ticketCompressed;
-                await _layawayRepository.UpdateAsync(layaway);
+                updatedLayaway.TicketData = ticketCompressed;
+                
+                // Actualizar el layaway con el ticket
+                await _layawayRepository.UpdateAsync(updatedLayaway);
+
+                return (true, updatedLayaway, null);
 
                 return (true, layaway, null);
             }
@@ -251,13 +264,10 @@ namespace CasaCejaRemake.Services
 
                 await _layawayPaymentRepository.AddAsync(payment);
 
-                // Actualizar total pagado solo si no es el abono inicial (ya se incluyo en el layaway)
-                if (notes != "Abono inicial")
-                {
-                    layaway.TotalPaid += amount;
-                    layaway.UpdatedAt = DateTime.Now;
-                    await _layawayRepository.UpdateAsync(layaway);
-                }
+                // Actualizar total pagado siempre
+                layaway.TotalPaid += amount;
+                layaway.UpdatedAt = DateTime.Now;
+                await _layawayRepository.UpdateAsync(layaway);
 
                 return true;
             }

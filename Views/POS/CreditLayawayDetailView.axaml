@@ -1,0 +1,316 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="using:CasaCejaRemake.ViewModels.POS"
+        mc:Ignorable="d" d:DesignWidth="900" d:DesignHeight="650"
+        x:Class="CasaCejaRemake.Views.POS.CreditLayawayDetailView"
+        x:DataType="vm:CreditLayawayDetailViewModel"
+        Title="{Binding WindowTitle}"
+        Width="900" Height="650"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False"
+        ShowInTaskbar="False"
+        Background="#1E1E1E">
+
+    <Window.Styles>
+        <Style Selector="TextBlock.label">
+            <Setter Property="Foreground" Value="#999999"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Margin" Value="0,0,0,3"/>
+        </Style>
+        <Style Selector="TextBlock.value">
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+        </Style>
+        <Style Selector="DataGrid">
+            <Setter Property="Background" Value="#1E1E1E"/>
+            <Setter Property="RowBackground" Value="#2D2D2D"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderBrush" Value="#3D3D3D"/>
+            <Setter Property="GridLinesVisibility" Value="Horizontal"/>
+            <Setter Property="HorizontalGridLinesBrush" Value="#3D3D3D"/>
+            <Setter Property="CanUserResizeColumns" Value="False"/>
+            <Setter Property="CanUserSortColumns" Value="False"/>
+        </Style>
+        <Style Selector="DataGridRow:nth-child(2n) /template/ Rectangle#BackgroundRectangle">
+            <Setter Property="Fill" Value="#252525"/>
+        </Style>
+        <Style Selector="DataGridColumnHeader">
+            <Setter Property="Background" Value="#3D3D3D"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Padding" Value="10,8"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="FontSize" Value="12"/>
+        </Style>
+        <Style Selector="Button.action">
+            <Setter Property="Background" Value="#3D3D3D"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Padding" Value="20,12"/>
+            <Setter Property="Margin" Value="5,0"/>
+            <Setter Property="MinWidth" Value="140"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+        </Style>
+        <Style Selector="Button.action:pointerover">
+            <Setter Property="Background" Value="#4D4D4D"/>
+        </Style>
+        <Style Selector="Button.action:disabled">
+            <Setter Property="Opacity" Value="0.5"/>
+        </Style>
+        <Style Selector="Button.primary">
+            <Setter Property="Background" Value="#4CAF50"/>
+        </Style>
+        <Style Selector="Button.primary:pointerover">
+            <Setter Property="Background" Value="#66BB6A"/>
+        </Style>
+    </Window.Styles>
+
+    <Grid RowDefinitions="Auto,*,Auto">
+        <!-- Header -->
+        <Border Grid.Row="0" Background="{Binding HeaderColor}" Padding="20">
+            <Grid ColumnDefinitions="*,Auto">
+                <StackPanel>
+                    <TextBlock Text="{Binding HeaderTitle}"
+                               FontSize="20"
+                               FontWeight="Bold"
+                               Foreground="White"/>
+                    <TextBlock Text="{Binding Folio}"
+                               FontSize="16"
+                               Foreground="#DDDDDD"
+                               Margin="0,5,0,0"/>
+                </StackPanel>
+                <StackPanel Grid.Column="1" HorizontalAlignment="Right">
+                    <Border Background="{Binding StatusColor}" 
+                            Padding="12,6" 
+                            CornerRadius="4">
+                        <TextBlock Text="{Binding Status}" 
+                                   Foreground="White" 
+                                   FontSize="14"
+                                   FontWeight="Bold"/>
+                    </Border>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Main Content -->
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <StackPanel Margin="20">
+                
+                <!-- Customer Info -->
+                <Border Background="#2D2D2D" Padding="15" CornerRadius="4" Margin="0,0,0,15">
+                    <Grid ColumnDefinitions="*,*,*">
+                        <StackPanel Grid.Column="0">
+                            <TextBlock Text="Cliente" Classes="label"/>
+                            <TextBlock Text="{Binding CustomerName}" Classes="value"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="1">
+                            <TextBlock Text="Teléfono" Classes="label"/>
+                            <TextBlock Text="{Binding CustomerPhone}" Classes="value"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="2">
+                            <TextBlock Text="{Binding DateLabel}" Classes="label"/>
+                            <TextBlock Text="{Binding CreatedDate, StringFormat='{}{0:dd/MM/yyyy}'}" Classes="value"/>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <!-- Financial Summary -->
+                <Border Background="#2D2D2D" Padding="15" CornerRadius="4" Margin="0,0,0,15">
+                    <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto" ColumnDefinitions="*,Auto">
+                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Total:" Foreground="#999999" FontSize="14"/>
+                        <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding Total, StringFormat='{}{0:C2}'}" 
+                                   Foreground="White" FontSize="14" FontWeight="SemiBold" HorizontalAlignment="Right"/>
+                        
+                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Pagado:" Foreground="#999999" FontSize="14" Margin="0,8,0,0"/>
+                        <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding TotalPaid, StringFormat='{}{0:C2}'}" 
+                                   Foreground="#4CAF50" FontSize="14" FontWeight="SemiBold" HorizontalAlignment="Right" Margin="0,8,0,0"/>
+                        
+                        <Rectangle Grid.Row="2" Grid.ColumnSpan="2" Height="1" Fill="#3D3D3D" Margin="0,10"/>
+                        
+                        <TextBlock Grid.Row="3" Grid.Column="0" Text="Saldo pendiente:" Foreground="#999999" FontSize="16" FontWeight="Bold"/>
+                        <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding RemainingBalance, StringFormat='{}{0:C2}'}" 
+                                   Foreground="#FF5722" FontSize="20" FontWeight="Bold" HorizontalAlignment="Right"/>
+                        
+                        <TextBlock Grid.Row="4" Grid.Column="0" Text="{Binding DueDateLabel}" Foreground="#999999" FontSize="12" Margin="0,8,0,0"/>
+                        <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding DueDate, StringFormat='{}{0:dd/MM/yyyy}'}" 
+                                   Foreground="#FFC107" FontSize="12" HorizontalAlignment="Right" Margin="0,8,0,0"/>
+                    </Grid>
+                </Border>
+
+                <!-- Notes -->
+                <Border Background="#2D2D2D" Padding="15" CornerRadius="4" Margin="0,0,0,15"
+                        IsVisible="{Binding Notes, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                    <StackPanel>
+                        <TextBlock Text="Notas" Classes="label"/>
+                        <TextBlock Text="{Binding Notes}" Classes="value" TextWrapping="Wrap"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Products -->
+                <Border Background="#2D2D2D" Padding="15" CornerRadius="4" Margin="0,0,0,15">
+                    <StackPanel>
+                        <TextBlock Text="{Binding ProductCount, StringFormat='Productos ({0})'}" 
+                                   Foreground="White" FontSize="16" FontWeight="Bold" Margin="0,0,0,10"/>
+                        
+                        <!-- Products List as Cards -->
+                        <ScrollViewer MaxHeight="200" VerticalScrollBarVisibility="Auto">
+                            <ItemsControl ItemsSource="{Binding Products}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Background="#252525" 
+                                                Padding="12" 
+                                                CornerRadius="4" 
+                                                Margin="0,0,0,8"
+                                                BorderBrush="#3D3D3D"
+                                                BorderThickness="1">
+                                            <Grid ColumnDefinitions="*,Auto,Auto,Auto">
+                                                <!-- Product Name and Code -->
+                                                <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                                    <TextBlock Text="{Binding Name}" 
+                                                               Foreground="White" 
+                                                               FontSize="14" 
+                                                               FontWeight="SemiBold"
+                                                               TextTrimming="CharacterEllipsis"/>
+                                                    <TextBlock Text="{Binding Barcode}" 
+                                                               Foreground="#999999" 
+                                                               FontSize="11"
+                                                               Margin="0,2,0,0"/>
+                                                </StackPanel>
+                                                
+                                                <!-- Quantity Badge -->
+                                                <Border Grid.Column="1" 
+                                                        Background="#4CAF50" 
+                                                        Padding="8,4" 
+                                                        CornerRadius="12"
+                                                        Margin="10,0"
+                                                        VerticalAlignment="Center">
+                                                    <TextBlock Text="{Binding QuantityDisplay}" 
+                                                               Foreground="White" 
+                                                               FontSize="12"
+                                                               FontWeight="Bold"/>
+                                                </Border>
+                                                
+                                                <!-- Unit Price -->
+                                                <StackPanel Grid.Column="2" 
+                                                            VerticalAlignment="Center"
+                                                            Margin="15,0">
+                                                    <TextBlock Text="Precio unit." 
+                                                               Foreground="#999999" 
+                                                               FontSize="10"
+                                                               HorizontalAlignment="Right"/>
+                                                    <TextBlock Text="{Binding UnitPrice, StringFormat='{}{0:C2}'}" 
+                                                               Foreground="#FFC107" 
+                                                               FontSize="13"
+                                                               FontWeight="SemiBold"
+                                                               HorizontalAlignment="Right"/>
+                                                </StackPanel>
+                                                
+                                                <!-- Line Total -->
+                                                <StackPanel Grid.Column="3" 
+                                                            VerticalAlignment="Center"
+                                                            MinWidth="80">
+                                                    <TextBlock Text="Total" 
+                                                               Foreground="#999999" 
+                                                               FontSize="10"
+                                                               HorizontalAlignment="Right"/>
+                                                    <TextBlock Text="{Binding LineTotal, StringFormat='{}{0:C2}'}" 
+                                                               Foreground="White" 
+                                                               FontSize="15"
+                                                               FontWeight="Bold"
+                                                               HorizontalAlignment="Right"/>
+                                                </StackPanel>
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </StackPanel>
+                </Border>
+
+                <!-- Payment History -->
+                <Border Background="#2D2D2D" Padding="15" CornerRadius="4">
+                    <StackPanel>
+                        <TextBlock Text="{Binding PaymentCount, StringFormat='Historial de Pagos ({0})'}" 
+                                   Foreground="White" FontSize="16" FontWeight="Bold" Margin="0,0,0,10"/>
+                        <DataGrid ItemsSource="{Binding PaymentHistory}"
+                                  AutoGenerateColumns="False"
+                                  IsReadOnly="True"
+                                  Height="180"
+                                  HeadersVisibility="Column">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Folio" Binding="{Binding Folio}" Width="140" />
+                                <DataGridTextColumn Header="Fecha" Binding="{Binding DateFormatted}" Width="140" />
+                                <DataGridTextColumn Header="Monto" Binding="{Binding Amount, StringFormat='{}{0:C2}'}" Width="120" />
+                                <DataGridTextColumn Header="Método" Binding="{Binding PaymentMethod}" Width="120" />
+                                <DataGridTextColumn Header="Notas" Binding="{Binding Notes}" Width="*" />
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </StackPanel>
+                </Border>
+
+                <!-- Error Message -->
+                <Border Background="#F44336" 
+                        Padding="15" 
+                        CornerRadius="4" 
+                        Margin="0,15,0,0"
+                        IsVisible="{Binding HasError}">
+                    <TextBlock Text="{Binding ErrorMessage}" 
+                               Foreground="White" 
+                               FontWeight="SemiBold"
+                               TextWrapping="Wrap"/>
+                </Border>
+
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- Footer Actions -->
+        <Border Grid.Row="2" Background="#2D2D2D" Padding="20" BorderThickness="0,1,0,0" BorderBrush="#3D3D3D">
+            <Grid ColumnDefinitions="Auto,*,Auto">
+                <!-- Left: Info -->
+                <TextBlock Grid.Column="0" 
+                           Text="F5: Abonar | F6: Entregar | F7: Imprimir | ESC: Cerrar"
+                           Foreground="#999999"
+                           VerticalAlignment="Center"
+                           FontSize="12"/>
+
+                <!-- Right: Action Buttons -->
+                <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right">
+                    <Button Content="Imprimir (F7)"
+                            Classes="action"
+                            Command="{Binding PrintCommand}"/>
+                    
+                    <Button Content="Entregar (F6)"
+                            Classes="action"
+                            Command="{Binding DeliverCommand}"
+                            IsVisible="{Binding !IsCredit}"
+                            IsEnabled="{Binding CanDeliver}"/>
+                    
+                    <Button Content="Abonar (F5)"
+                            Classes="action primary"
+                            Command="{Binding AddPaymentCommand}"
+                            IsEnabled="{Binding CanAddPayment}"/>
+                    
+                    <Button Content="Cerrar (ESC)"
+                            Classes="action"
+                            Command="{Binding CloseCommand}"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Loading Overlay -->
+        <Border Grid.Row="0" Grid.RowSpan="3"
+                Background="#CC000000"
+                IsVisible="{Binding IsLoading}">
+            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                <TextBlock Text="Cargando..."
+                           Foreground="White"
+                           FontSize="18"
+                           FontWeight="Bold"
+                           HorizontalAlignment="Center"/>
+            </StackPanel>
+        </Border>
+    </Grid>
+</Window>

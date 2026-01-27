@@ -23,6 +23,9 @@ namespace CasaCejaRemake
         // Servicios del POS
         private CartService? _cartService;
         private SalesService? _salesService;
+        private CreditService? _creditService;
+        private LayawayService? _layawayService;
+        private CustomerService? _customerService;
 
         // Sucursal actual (por defecto 1)
         private int _currentBranchId = 1;
@@ -69,6 +72,13 @@ namespace CasaCejaRemake
                 // Inicializar servicios del POS
                 _cartService = new CartService();
                 _salesService = new SalesService(DatabaseService);
+
+                // Inicializar servicio de clientes
+                _customerService = new CustomerService(DatabaseService);
+
+                // Inicializar servicios de crédito y apartados
+                _creditService = new CreditService(DatabaseService);
+                _layawayService = new LayawayService(DatabaseService);
 
                 Console.WriteLine("[App] Servicios inicializados correctamente");
             }
@@ -298,6 +308,38 @@ namespace CasaCejaRemake
         public SalesService? GetSaleService()
         {
             return _salesService;
+        }
+
+        /// <summary>
+        /// Obtiene el servicio de crédito (usado por las vistas).
+        /// </summary>
+        public CreditService? GetCreditService()
+        {
+            return _creditService;
+        }
+
+        /// <summary>
+        /// Obtiene el servicio de apartados (usado por las vistas).
+        /// </summary>
+        public LayawayService? GetLayawayService()
+        {
+            return _layawayService;
+        }
+
+        /// <summary>
+        /// Obtiene el servicio de clientes (usado por las vistas).
+        /// </summary>
+        public CustomerService? GetCustomerService()
+        {
+            return _customerService;
+        }
+
+        /// <summary>
+        /// Obtiene el servicio de autenticación (usado por las vistas).
+        /// </summary>
+        public AuthService? GetAuthService()
+        {
+            return AuthService;
         }
     }
 }
