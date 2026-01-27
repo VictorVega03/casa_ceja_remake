@@ -311,5 +311,13 @@ namespace CasaCejaRemake.Services
                 await _layawayRepository.UpdateAsync(layaway);
             }
         }
+
+        public async Task<TicketData?> RecoverTicketAsync(int layawayId)
+        {
+            var layaway = await _layawayRepository.GetByIdAsync(layawayId);
+            if (layaway?.TicketData == null) return null;
+
+            return JsonCompressor.Decompress<TicketData>(layaway.TicketData);
+        }
     }
 }

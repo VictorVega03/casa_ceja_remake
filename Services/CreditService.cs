@@ -295,5 +295,13 @@ namespace CasaCejaRemake.Services
                 await _creditRepository.UpdateAsync(credit);
             }
         }
+
+        public async Task<TicketData?> RecoverTicketAsync(int creditId)
+        {
+            var credit = await _creditRepository.GetByIdAsync(creditId);
+            if (credit?.TicketData == null) return null;
+
+            return JsonCompressor.Decompress<TicketData>(credit.TicketData);
+        }
     }
 }
