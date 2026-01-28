@@ -6585,11 +6585,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "/Users/victorvega/Documents/DevPojects/casa_ceja_remake/casa_ceja_remake.csproj",
+      "projectUniqueName": "/Users/victorvega/Documents/DevPojects/casa_ceja_remake-1/casa_ceja_remake.csproj",
       "projectName": "casa_ceja_remake",
-      "projectPath": "/Users/victorvega/Documents/DevPojects/casa_ceja_remake/casa_ceja_remake.csproj",
+      "projectPath": "/Users/victorvega/Documents/DevPojects/casa_ceja_remake-1/casa_ceja_remake.csproj",
       "packagesPath": "/Users/victorvega/.nuget/packages/",
-      "outputPath": "/Users/victorvega/Documents/DevPojects/casa_ceja_remake/obj/",
+      "outputPath": "/Users/victorvega/Documents/DevPojects/casa_ceja_remake-1/obj/",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "/Users/victorvega/.nuget/NuGet/NuGet.Config"

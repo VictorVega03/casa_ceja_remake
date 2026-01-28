@@ -159,6 +159,7 @@ namespace CasaCejaRemake.Data
 
                 // Otras tablas
                 transaction.CreateTable<CashClose>();
+                transaction.CreateTable<CashMovement>();
             });
 
             Console.WriteLine("Todas las tablas creadas correctamente");
@@ -194,6 +195,7 @@ namespace CasaCejaRemake.Data
             await _database.CreateTableAsync<StockOutput>();
             await _database.CreateTableAsync<OutputProduct>();
             await _database.CreateTableAsync<CashClose>();
+            await _database.CreateTableAsync<CashMovement>();
 
             Console.WriteLine("Verificación de tablas completada");
         }

@@ -126,6 +126,21 @@ namespace CasaCejaRemake.Views.POS
                     e.Handled = true;
                     break;
 
+                case Key.F6:
+                    ShowCashMovementDialogAsync(true); // Gasto
+                    e.Handled = true;
+                    break;
+
+                case Key.F7:
+                    ShowCashMovementDialogAsync(false); // Ingreso
+                    e.Handled = true;
+                    break;
+
+                case Key.F10:
+                    ShowCashCloseDialogAsync();
+                    e.Handled = true;
+                    break;
+
                 case Key.F12:
                     _viewModel?.CreditsLayawaysCommand.Execute(null);
                     e.Handled = true;
@@ -394,6 +409,90 @@ namespace CasaCejaRemake.Views.POS
             if (result.Success && result.TicketText != null)
             {
                 ShowTicketDialog(result.Sale?.Folio ?? "N/A", result.TicketText);
+            }
+
+            TxtBarcode.Focus();
+        }
+
+        /// <summary>
+        /// Muestra el diálogo para agregar un gasto o ingreso.
+        /// </summary>
+        private async void ShowCashMovementDialogAsync(bool isExpense)
+        {
+            var app = (App)Application.Current!;
+            var cashCloseService = app.GetCashCloseService();
+            var authService = app.GetAuthService();
+
+            if (cashCloseService == null || authService == null)
+            {
+                ShowMessageDialog("Error", "Servicios no disponibles");
+                return;
+            }
+
+            // Verificar que hay caja abierta
+            var openCash = await cashCloseService.GetOpenCashAsync(_viewModel?.BranchId ?? 1);
+            if (openCash == null)
+            {
+                ShowMessageDialog("Sin caja abierta", "No hay una caja abierta para registrar movimientos.");
+                return;
+            }
+
+            var movementView = new CashMovementView();
+            var movementViewModel = new CashMovementViewModel(
+                cashCloseService,
+                openCash.Id,
+                authService.CurrentUser?.Id ?? 0,
+                isExpense);
+            
+            movementView.DataContext = movementViewModel;
+            await movementView.ShowDialog(this);
+
+            if (movementView.Tag is CashMovement movement)
+            {
+                var tipo = movement.IsExpense ? "Gasto" : "Ingreso";
+                OnShowMessage(this, $"{tipo} registrado: {movement.Concept} - ${movement.Amount:N2}");
+            }
+
+            TxtBarcode.Focus();
+        }
+
+        /// <summary>
+        /// Muestra el diálogo de corte de caja.
+        /// </summary>
+        private async void ShowCashCloseDialogAsync()
+        {
+            var app = (App)Application.Current!;
+            var cashCloseService = app.GetCashCloseService();
+            var authService = app.GetAuthService();
+
+            if (cashCloseService == null || authService == null)
+            {
+                ShowMessageDialog("Error", "Servicios no disponibles");
+                return;
+            }
+
+            // Verificar que hay caja abierta
+            var openCash = await cashCloseService.GetOpenCashAsync(_viewModel?.BranchId ?? 1);
+            if (openCash == null)
+            {
+                ShowMessageDialog("Sin caja abierta", "No hay una caja abierta para realizar el corte.");
+                return;
+            }
+
+            var closeView = new CashCloseView();
+            var closeViewModel = new CashCloseViewModel(cashCloseService, authService, openCash);
+            closeView.DataContext = closeViewModel;
+
+            await closeView.ShowDialog(this);
+
+            if (closeView.Tag is CashClose closedCash)
+            {
+                // Corte completado exitosamente
+                OnShowMessage(this, $"Corte de caja completado. Folio: {closedCash.Folio}");
+                
+                // Salir del POS (el usuario debe volver a abrir caja)
+                Tag = "exit";
+                Close();
             }
 
             TxtBarcode.Focus();

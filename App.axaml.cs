@@ -26,6 +26,7 @@ namespace CasaCejaRemake
         private CreditService? _creditService;
         private LayawayService? _layawayService;
         private CustomerService? _customerService;
+        private CashCloseService? _cashCloseService;
 
         // Sucursal actual (por defecto 1)
         private int _currentBranchId = 1;
@@ -82,6 +83,9 @@ namespace CasaCejaRemake
                 // Inicializar servicios de crédito y apartados
                 _creditService = new CreditService(DatabaseService);
                 _layawayService = new LayawayService(DatabaseService);
+
+                // Inicializar servicio de cortes de caja
+                _cashCloseService = new CashCloseService(DatabaseService);
 
                 Console.WriteLine("[App] Servicios inicializados correctamente");
             }
@@ -233,7 +237,7 @@ namespace CasaCejaRemake
         /// <summary>
         /// Muestra el modulo POS.
         /// </summary>
-        private void ShowPOS(Window? windowToClose = null)
+        private async void ShowPOS(Window? windowToClose = null)
         {
             Console.WriteLine("[App] ShowPOS() llamado");
             
@@ -243,9 +247,9 @@ namespace CasaCejaRemake
                 return;
             }
             
-            if (AuthService == null || _cartService == null || _salesService == null)
+            if (AuthService == null || _cartService == null || _salesService == null || _cashCloseService == null)
             {
-                Console.WriteLine($"[App] ERROR: Servicios null - Auth:{AuthService != null}, Cart:{_cartService != null}, Sales:{_salesService != null}");
+                Console.WriteLine($"[App] ERROR: Servicios null - Auth:{AuthService != null}, Cart:{_cartService != null}, Sales:{_salesService != null}, CashClose:{_cashCloseService != null}");
                 return;
             }
 
@@ -266,6 +270,46 @@ namespace CasaCejaRemake
                 DataContext = salesViewModel
             };
 
+            // IMPORTANTE: Establecer como MainWindow ANTES de mostrar
+            desktop.MainWindow = salesView;
+            
+            Console.WriteLine("[App] Mostrando SalesView...");
+            salesView.Show();
+            Console.WriteLine("[App] SalesView mostrada correctamente");
+            
+            // Cerrar la ventana anterior DESPUÉS de mostrar la nueva
+            windowToClose?.Close();
+
+            // Verificar si hay caja abierta
+            var openCash = await _cashCloseService.GetOpenCashAsync(_currentBranchId);
+            if (openCash == null)
+            {
+                Console.WriteLine("[App] No hay caja abierta, mostrando modal de apertura...");
+                
+                var openCashView = new OpenCashView();
+                var openCashViewModel = new OpenCashViewModel(_cashCloseService, AuthService, _currentBranchId);
+                openCashView.DataContext = openCashViewModel;
+
+                await openCashView.ShowDialog(salesView);
+
+                if (openCashView.Tag is Models.CashClose newCash)
+                {
+                    Console.WriteLine($"[App] Caja abierta exitosamente: {newCash.Folio}");
+                }
+                else
+                {
+                    Console.WriteLine("[App] Apertura de caja cancelada, saliendo del POS...");
+                    // Usuario canceló, salir del POS
+                    salesView.Tag = "exit";
+                    salesView.Close();
+                    return;
+                }
+            }
+            else
+            {
+                Console.WriteLine($"[App] Caja ya abierta: {openCash.Folio}");
+            }
+
             // Manejar salida del POS
             salesView.Closed += (sender, args) =>
             {
@@ -285,17 +329,8 @@ namespace CasaCejaRemake
                     }
                 }
             };
-
-            // IMPORTANTE: Establecer como MainWindow ANTES de mostrar
-            desktop.MainWindow = salesView;
-            
-            Console.WriteLine("[App] Mostrando SalesView...");
-            salesView.Show();
-            Console.WriteLine("[App] SalesView mostrada correctamente");
-            
-            // Cerrar la ventana anterior DESPUÉS de mostrar la nueva
-            windowToClose?.Close();
         }
+
 
         /// <summary>
         /// Muestra el modulo de Inventario (placeholder).
@@ -405,6 +440,14 @@ namespace CasaCejaRemake
         public AuthService? GetAuthService()
         {
             return AuthService;
+        }
+
+        /// <summary>
+        /// Obtiene el servicio de cortes de caja (usado por las vistas).
+        /// </summary>
+        public CashCloseService? GetCashCloseService()
+        {
+            return _cashCloseService;
         }
     }
 }
