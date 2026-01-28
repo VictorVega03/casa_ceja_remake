@@ -15,6 +15,7 @@ namespace CasaCejaRemake.ViewModels.POS
         private readonly CashCloseService _cashCloseService;
         private readonly int _cashCloseId;
         private readonly int _userId;
+        private readonly int _branchId;
 
         [ObservableProperty]
         private bool _isExpense = true;
@@ -46,11 +47,12 @@ namespace CasaCejaRemake.ViewModels.POS
         /// </summary>
         public event EventHandler? Cancelled;
 
-        public CashMovementViewModel(CashCloseService cashCloseService, int cashCloseId, int userId, bool isExpense = true)
+        public CashMovementViewModel(CashCloseService cashCloseService, int cashCloseId, int userId, int branchId, bool isExpense = true)
         {
             _cashCloseService = cashCloseService;
             _cashCloseId = cashCloseId;
             _userId = userId;
+            _branchId = branchId;
             _isExpense = isExpense;
         }
 
@@ -74,6 +76,59 @@ namespace CasaCejaRemake.ViewModels.POS
             {
                 ErrorMessage = "El monto debe ser mayor a 0";
                 return;
+            }
+
+            // Validar retiros contra efectivo disponible
+            if (IsExpense)
+            {
+                Console.WriteLine($"[CashMovementVM] Validando retiro de ${Amount}...");
+                
+                var cashClose = await _cashCloseService.GetOpenCashAsync(_branchId);
+                if (cashClose != null)
+                {
+                    Console.WriteLine($"[CashMovementVM] Caja abierta encontrada: {cashClose.Folio}, ID={cashClose.Id}");
+                    
+                    var totals = await _cashCloseService.CalculateTotalsAsync(cashClose.Id, cashClose.OpeningDate);
+                    
+                    // Calcular efectivo disponible actual
+                    decimal availableCash = cashClose.OpeningCash + totals.TotalCash + 
+                                           totals.LayawayCash + totals.CreditPaymentsCash + 
+                                           totals.TotalIncome - totals.TotalExpenses;
+
+                    Console.WriteLine($"[CashMovementVM] Efectivo disponible: ${availableCash:N2}");
+                    Console.WriteLine($"[CashMovementVM] Fondo: ${cashClose.OpeningCash}, Ventas: ${totals.TotalCash}, " +
+                                    $"Abonos: ${totals.LayawayCash + totals.CreditPaymentsCash}, " +
+                                    $"Ingresos: ${totals.TotalIncome}, Gastos: ${totals.TotalExpenses}");
+
+                    // No permitir retiros que dejen la caja en negativo
+                    if (Amount > availableCash)
+                    {
+                        Console.WriteLine($"[CashMovementVM] RETIRO RECHAZADO: ${Amount} > ${availableCash}");
+                        ErrorMessage = $"No hay suficiente efectivo en caja.\nDisponible: ${availableCash:N2}";
+                        Console.WriteLine($"[CashMovementVM] ErrorMessage establecido: '{ErrorMessage}'");
+                        Console.WriteLine($"[CashMovementVM] IsLoading: {IsLoading}");
+                        return;
+                    }
+
+
+                    // Advertir si el retiro deja la caja vacía o casi vacía
+                    if (Amount >= availableCash * 0.95m) // 95% o más del efectivo
+                    {
+                        Console.WriteLine($"[CashMovementVM] ADVERTENCIA: Retiro dejará caja con ${(availableCash - Amount):N2}");
+                        ErrorMessage = $"ADVERTENCIA: Este retiro dejará la caja con ${(availableCash - Amount):N2}.\n¿Desea continuar? (Presione F5 nuevamente)";
+                        
+                        // Permitir confirmación doble
+                        if (!_warningShown)
+                        {
+                            _warningShown = true;
+                            return;
+                        }
+                    }
+                }
+                else
+                {
+                    Console.WriteLine($"[CashMovementVM] ERROR: No se encontró caja abierta para branchId={_branchId}");
+                }
             }
 
             IsLoading = true;
@@ -101,6 +156,8 @@ namespace CasaCejaRemake.ViewModels.POS
                 IsLoading = false;
             }
         }
+
+        private bool _warningShown = false;
 
         [RelayCommand]
         private void Cancel()

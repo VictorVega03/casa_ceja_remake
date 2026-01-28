@@ -12,11 +12,42 @@
         CanResize="False"
         Background="#F5F5F5">
 
+
     <Window.Styles>
+        <!-- Estilos base para TextBox -->
         <Style Selector="TextBox">
+            <Setter Property="Background" Value="#FFFFFF" />
             <Setter Property="BorderBrush" Value="#CCCCCC" />
-            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="BorderThickness" Value="2" />
+            <Setter Property="Foreground" Value="#000000" />
+            <Setter Property="CornerRadius" Value="4" />
+            <Setter Property="CaretBrush" Value="#000000" />
+            <Setter Property="SelectionBrush" Value="#2196F3" />
+            <Setter Property="SelectionForegroundBrush" Value="White" />
         </Style>
+        
+        <!-- Hover - borde más oscuro y texto negro visible -->
+        <Style Selector="TextBox:pointerover /template/ Border#PART_BorderElement">
+            <Setter Property="Background" Value="#F0F0F0" />
+            <Setter Property="BorderBrush" Value="#888888" />
+        </Style>
+        <Style Selector="TextBox:pointerover">
+            <Setter Property="Foreground" Value="#000000" />
+        </Style>
+        
+        <!-- Focus - borde azul brillante y texto negro -->
+        <Style Selector="TextBox:focus /template/ Border#PART_BorderElement">
+            <Setter Property="Background" Value="#FFFFFF" />
+            <Setter Property="BorderBrush" Value="#2196F3" />
+            <Setter Property="BorderThickness" Value="3" />
+        </Style>
+        <Style Selector="TextBox:focus">
+            <Setter Property="Foreground" Value="#000000" />
+        </Style>
+        <Style Selector="TextBox:focus /template/ TextBlock#PART_Watermark">
+            <Setter Property="Foreground" Value="#999999" />
+        </Style>
+        
         <Style Selector="Button">
             <Setter Property="Cursor" Value="Hand" />
         </Style>
@@ -131,11 +162,11 @@
                             HorizontalContentAlignment="Center"
                             VerticalContentAlignment="Center">
                         <Button.Styles>
-                            <Style Selector="Button:pointerover">
-                                <Setter Property="Background" Value="#45A049" />
+                            <Style Selector="Button:pointerover /template/ ContentPresenter">
+                                <Setter Property="Background" Value="#388E3C" />
                             </Style>
-                            <Style Selector="Button:pressed">
-                                <Setter Property="Background" Value="#3D8B40" />
+                            <Style Selector="Button:pressed /template/ ContentPresenter">
+                                <Setter Property="Background" Value="#2E7D32" />
                             </Style>
                             <Style Selector="Button:disabled">
                                 <Setter Property="Background" Value="#CCCCCC" />
@@ -158,11 +189,11 @@
                             HorizontalContentAlignment="Center"
                             VerticalContentAlignment="Center">
                         <Button.Styles>
-                            <Style Selector="Button:pointerover">
-                                <Setter Property="Background" Value="#E53935" />
+                            <Style Selector="Button:pointerover /template/ ContentPresenter">
+                                <Setter Property="Background" Value="#D32F2F" />
                             </Style>
-                            <Style Selector="Button:pressed">
-                                <Setter Property="Background" Value="#C62828" />
+                            <Style Selector="Button:pressed /template/ ContentPresenter">
+                                <Setter Property="Background" Value="#B71C1C" />
                             </Style>
                         </Button.Styles>
                     </Button>

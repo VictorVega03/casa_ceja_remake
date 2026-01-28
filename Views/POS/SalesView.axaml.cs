@@ -442,6 +442,7 @@ namespace CasaCejaRemake.Views.POS
                 cashCloseService,
                 openCash.Id,
                 authService.CurrentUser?.Id ?? 0,
+                _viewModel?.BranchId ?? 1,
                 isExpense);
             
             movementView.DataContext = movementViewModel;

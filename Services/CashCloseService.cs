@@ -236,7 +236,7 @@ namespace CasaCejaRemake.Services
                 // Calcular totales
                 var totals = await CalculateTotalsAsync(cashClose.Id, cashClose.OpeningDate);
 
-                // Actualizar campos
+                // Actualizar campos de totales
                 cashClose.TotalCash = totals.TotalCash;
                 cashClose.TotalDebitCard = totals.TotalDebit;
                 cashClose.TotalCreditCard = totals.TotalCredit;
@@ -246,6 +246,14 @@ namespace CasaCejaRemake.Services
                 cashClose.CreditCash = totals.CreditPaymentsCash;
                 cashClose.TotalSales = totals.TotalCash + totals.TotalDebit + totals.TotalCredit + 
                                        totals.TotalTransfer + totals.TotalCheck;
+
+                // Serializar gastos e ingresos como JSON
+                var movements = await GetMovementsAsync(cashClose.Id);
+                var expenses = movements.Where(m => m.IsExpense).Select(m => new { description = m.Concept, amount = m.Amount }).ToList();
+                var income = movements.Where(m => !m.IsExpense).Select(m => new { description = m.Concept, amount = m.Amount }).ToList();
+                
+                cashClose.Expenses = System.Text.Json.JsonSerializer.Serialize(expenses);
+                cashClose.Income = System.Text.Json.JsonSerializer.Serialize(income);
 
                 // Calcular efectivo esperado
                 // Fondo + Ventas en efectivo + Abonos en efectivo + Ingresos - Gastos
@@ -262,6 +270,7 @@ namespace CasaCejaRemake.Services
 
                 Console.WriteLine($"[CashCloseService] Caja cerrada: Folio={cashClose.Folio}, " +
                                   $"Esperado=${expectedCash}, Declarado=${declaredAmount}, Diferencia=${cashClose.Surplus}");
+                Console.WriteLine($"[CashCloseService] Gastos: {expenses.Count}, Ingresos: {income.Count}");
 
                 return CashCloseResult.Ok(cashClose);
             }

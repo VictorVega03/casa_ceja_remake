@@ -1,47 +1,62 @@
 using System;
 using System.Collections.ObjectModel;
 using System.Linq;
+using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace CasaCejaRemake.Models
 {   
     /// Item del carrito de compras (modelo temporal, no persistido en BD)   
-    public class CartItem
+    public partial class CartItem : ObservableObject
     {       
         /// ID del producto en la base de datos       
-        public int ProductId { get; set; }
+        [ObservableProperty]
+        private int _productId;
        
         /// Código de barras del producto       
-        public string Barcode { get; set; } = string.Empty;
+        [ObservableProperty]
+        private string _barcode = string.Empty;
        
         /// Nombre del producto    
-        public string ProductName { get; set; } = string.Empty;
+        [ObservableProperty]
+        private string _productName = string.Empty;
        
         /// Nombre de la categoría (para display)       
-        public string CategoryName { get; set; } = string.Empty;
+        [ObservableProperty]
+        private string _categoryName = string.Empty;
        
         /// Nombre de la unidad de medida (para display)       
-        public string UnitName { get; set; } = string.Empty;
+        [ObservableProperty]
+        private string _unitName = string.Empty;
        
         /// Cantidad de productos en el carrito       
-        public int Quantity { get; set; }
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(LineTotal))]
+        private int _quantity;
        
         /// Precio de lista original (sin descuentos)       
-        public decimal ListPrice { get; set; }
+        [ObservableProperty]
+        private decimal _listPrice;
        
         /// Precio final por unidad (con descuentos aplicados)       
-        public decimal FinalUnitPrice { get; set; }
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(LineTotal))]
+        private decimal _finalUnitPrice;
        
         /// Total de la línea (FinalUnitPrice * Quantity)       
         public decimal LineTotal => FinalUnitPrice * Quantity;
        
         /// Descuento por unidad       
-        public decimal TotalDiscount { get; set; }
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(HasDiscount))]
+        private decimal _totalDiscount;
        
         /// Tipo de precio aplicado: "retail", "wholesale", "special", "dealer"       
-        public string PriceType { get; set; } = "retail";
+        [ObservableProperty]
+        private string _priceType = "retail";
        
         /// Información descriptiva del descuento aplicado       
-        public string DiscountInfo { get; set; } = string.Empty;
+        [ObservableProperty]
+        private string _discountInfo = string.Empty;
        
         /// Indica si el item tiene descuento aplicado       
         public bool HasDiscount => TotalDiscount > 0;

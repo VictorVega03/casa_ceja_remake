@@ -27,8 +27,33 @@ namespace CasaCejaRemake.Views.POS
                 _viewModel.Cancelled += OnCancelled;
             }
 
+            // Validación numérica para el campo de monto
+            TxtAmount.AddHandler(TextInputEvent, OnAmountTextInput, RoutingStrategies.Tunnel);
+
             // Enfocar el campo de concepto
             TxtConcept.Focus();
+        }
+
+        private void OnAmountTextInput(object? sender, TextInputEventArgs e)
+        {
+            // Permitir solo números y un punto decimal
+            if (string.IsNullOrEmpty(e.Text))
+                return;
+
+            foreach (char c in e.Text)
+            {
+                // Permitir números
+                if (char.IsDigit(c))
+                    continue;
+
+                // Permitir un solo punto decimal
+                if (c == '.' && TxtAmount.Text?.Contains('.') == false)
+                    continue;
+
+                // Rechazar cualquier otro carácter
+                e.Handled = true;
+                return;
+            }
         }
 
         private void OnMovementAdded(object? sender, CashMovement movement)

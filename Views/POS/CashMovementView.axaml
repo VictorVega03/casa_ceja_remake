@@ -5,7 +5,7 @@
         x:DataType="vm:CashMovementViewModel"
         Title="{Binding Title}"
         Width="400"
-        Height="320"
+        Height="400"
         WindowStartupLocation="CenterOwner"
         CanResize="False"
         Background="#1E1E1E">
@@ -46,7 +46,8 @@
         </Style>
     </Window.Styles>
 
-    <Grid RowDefinitions="Auto,Auto,Auto,Auto,*,Auto" Margin="20">
+
+    <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto" Margin="20">
         
         <!-- Header -->
         <TextBlock Grid.Row="0" 
@@ -110,13 +111,25 @@
             </Grid>
         </StackPanel>
 
+
         <!-- Mensaje de error -->
-        <TextBlock Grid.Row="4" 
-                   Text="{Binding ErrorMessage}" 
-                   Foreground="#F44336"
-                   IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
-                   VerticalAlignment="Top"
-                   TextWrapping="Wrap"/>
+        <Border Grid.Row="4" 
+                IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                Background="#FFEBEE"
+                BorderBrush="#F44336"
+                BorderThickness="2"
+                CornerRadius="4"
+                Padding="15"
+                Margin="0,10,0,0"
+                VerticalAlignment="Top">
+            <TextBlock Text="{Binding ErrorMessage}" 
+                       Foreground="#C62828"
+                       FontSize="13"
+                       FontWeight="SemiBold"
+                       TextWrapping="Wrap"
+                       TextAlignment="Center"/>
+        </Border>
+
 
         <!-- Botones -->
         <Grid Grid.Row="5" ColumnDefinitions="*,*" Margin="0,15,0,0">
