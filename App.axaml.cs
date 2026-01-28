@@ -31,6 +31,9 @@ namespace CasaCejaRemake
         private int _currentBranchId = 1;
         private string _currentBranchName = "Sucursal Principal";
 
+        // Referencia a la ventana de login actual (para evitar duplicados)
+        private LoginView? _currentLoginView;
+
         public override void Initialize()
         {
             AvaloniaXamlLoader.Load(this);
@@ -92,10 +95,21 @@ namespace CasaCejaRemake
         /// <summary>
         /// Muestra la pantalla de login.
         /// </summary>
-        private void ShowLogin()
+        private void ShowLogin(Window? windowToClose = null)
         {
             if (ApplicationLifetime is not IClassicDesktopStyleApplicationLifetime desktop) return;
             if (AuthService == null) return;
+
+            Console.WriteLine("[App] ShowLogin() llamado");
+
+            // Si ya hay un login abierto, no crear otro
+            if (_currentLoginView != null)
+            {
+                Console.WriteLine("[App] Login ya existe, activando...");
+                _currentLoginView.Activate();
+                windowToClose?.Close();
+                return;
+            }
 
             var loginViewModel = new LoginViewModel(AuthService);
             var loginView = new LoginView
@@ -103,14 +117,23 @@ namespace CasaCejaRemake
                 DataContext = loginViewModel
             };
 
+            // Guardar referencia
+            _currentLoginView = loginView;
+
             loginView.Closed += (sender, args) =>
             {
+                Console.WriteLine($"[App] LoginView.Closed disparado. Tag = {loginView.Tag}");
+                // Limpiar referencia al cerrar
+                _currentLoginView = null;
+
                 if (loginView.Tag is string result && result == "success")
                 {
+                    Console.WriteLine("[App] Login exitoso, llamando HandleSuccessfulLogin()");
                     HandleSuccessfulLogin();
                 }
                 else
                 {
+                    Console.WriteLine("[App] Login cancelado o sin resultado");
                     // Usuario cancelo, cerrar aplicacion
                     if (desktop.MainWindow == null)
                     {
@@ -119,7 +142,11 @@ namespace CasaCejaRemake
                 }
             };
 
+            Console.WriteLine("[App] Mostrando LoginView...");
             loginView.Show();
+            
+            // Cerrar la ventana anterior DESPUÉS de mostrar el login
+            windowToClose?.Close();
         }
 
         /// <summary>
@@ -147,59 +174,83 @@ namespace CasaCejaRemake
             if (ApplicationLifetime is not IClassicDesktopStyleApplicationLifetime desktop) return;
             if (AuthService?.CurrentUser == null) return;
 
+            Console.WriteLine("[App] ShowModuleSelector() llamado");
+
             var selectorViewModel = new ModuleSelectorViewModel(AuthService);
             var selectorView = new ModuleSelectorView
             {
                 DataContext = selectorViewModel
             };
 
-            // Suscribirse a eventos
+            // Suscribirse a eventos - NO cerrar aquí, solo marcar y dejar que ShowPOS maneje todo
             selectorViewModel.POSSelected += (s, e) => 
             {
-                selectorView.Close();
-                ShowPOS();
+                Console.WriteLine("[App] POS seleccionado");
+                selectorView.Tag = "module_selected";
+                // Primero mostrar POS, luego cerrar selector
+                ShowPOS(selectorView);
             };
 
             selectorViewModel.InventorySelected += (s, e) =>
             {
-                selectorView.Close();
-                ShowInventory();
+                Console.WriteLine("[App] Inventario seleccionado");
+                selectorView.Tag = "module_selected";
+                ShowInventory(selectorView);
             };
 
             selectorViewModel.AdminSelected += (s, e) =>
             {
-                selectorView.Close();
-                ShowAdmin();
+                Console.WriteLine("[App] Admin seleccionado");
+                selectorView.Tag = "module_selected";
+                ShowAdmin(selectorView);
             };
 
             selectorViewModel.LogoutRequested += (s, e) =>
             {
+                Console.WriteLine("[App] Logout solicitado");
+                selectorView.Tag = "logout";
                 AuthService?.Logout();
-                selectorView.Close();
-                ShowLogin();
+                // Primero mostrar login, luego cerrar selector
+                ShowLogin(selectorView);
             };
 
             selectorView.Closed += (sender, args) =>
             {
-                // Si se cerro sin resultado, logout
-                if (selectorView.Tag == null && desktop.MainWindow == null)
+                Console.WriteLine($"[App] ModuleSelector cerrado. Tag = {selectorView.Tag}");
+                // Si se cerro sin seleccionar módulo ni logout (ej: botón X), hacer logout
+                if (selectorView.Tag == null)
                 {
+                    Console.WriteLine("[App] Cerrado sin selección, haciendo logout");
                     AuthService?.Logout();
                     ShowLogin();
                 }
             };
 
+            Console.WriteLine("[App] Mostrando ModuleSelector");
             selectorView.Show();
         }
 
         /// <summary>
         /// Muestra el modulo POS.
         /// </summary>
-        private void ShowPOS()
+        private void ShowPOS(Window? windowToClose = null)
         {
-            if (ApplicationLifetime is not IClassicDesktopStyleApplicationLifetime desktop) return;
-            if (AuthService == null || _cartService == null || _salesService == null) return;
+            Console.WriteLine("[App] ShowPOS() llamado");
+            
+            if (ApplicationLifetime is not IClassicDesktopStyleApplicationLifetime desktop)
+            {
+                Console.WriteLine("[App] ERROR: No hay ApplicationLifetime");
+                return;
+            }
+            
+            if (AuthService == null || _cartService == null || _salesService == null)
+            {
+                Console.WriteLine($"[App] ERROR: Servicios null - Auth:{AuthService != null}, Cart:{_cartService != null}, Sales:{_salesService != null}");
+                return;
+            }
 
+            Console.WriteLine("[App] Creando SalesViewModel...");
+            
             // Crear ViewModel con servicios inyectados
             var salesViewModel = new SalesViewModel(
                 _cartService,
@@ -208,6 +259,8 @@ namespace CasaCejaRemake
                 _currentBranchId,
                 _currentBranchName);
 
+            Console.WriteLine("[App] Creando SalesView...");
+            
             var salesView = new SalesView
             {
                 DataContext = salesViewModel
@@ -216,6 +269,7 @@ namespace CasaCejaRemake
             // Manejar salida del POS
             salesView.Closed += (sender, args) =>
             {
+                Console.WriteLine($"[App] SalesView cerrada. Tag = {salesView.Tag}");
                 if (salesView.Tag is string result && result == "exit")
                 {
                     if (AuthService.IsAdmin)
@@ -232,14 +286,21 @@ namespace CasaCejaRemake
                 }
             };
 
+            // IMPORTANTE: Establecer como MainWindow ANTES de mostrar
+            desktop.MainWindow = salesView;
+            
+            Console.WriteLine("[App] Mostrando SalesView...");
             salesView.Show();
-            desktop.MainWindow?.Close();
+            Console.WriteLine("[App] SalesView mostrada correctamente");
+            
+            // Cerrar la ventana anterior DESPUÉS de mostrar la nueva
+            windowToClose?.Close();
         }
 
         /// <summary>
         /// Muestra el modulo de Inventario (placeholder).
         /// </summary>
-        private void ShowInventory()
+        private void ShowInventory(Window? windowToClose = null)
         {
             if (ApplicationLifetime is not IClassicDesktopStyleApplicationLifetime desktop) return;
 
@@ -266,13 +327,15 @@ namespace CasaCejaRemake
                 ShowModuleSelector();
             };
 
+            desktop.MainWindow = placeholderWindow;
             placeholderWindow.Show();
+            windowToClose?.Close();
         }
 
         /// <summary>
         /// Muestra el modulo de Administrador (placeholder).
         /// </summary>
-        private void ShowAdmin()
+        private void ShowAdmin(Window? windowToClose = null)
         {
             if (ApplicationLifetime is not IClassicDesktopStyleApplicationLifetime desktop) return;
 
@@ -299,7 +362,9 @@ namespace CasaCejaRemake
                 ShowModuleSelector();
             };
 
+            desktop.MainWindow = placeholderWindow;
             placeholderWindow.Show();
+            windowToClose?.Close();
         }
 
         /// <summary>

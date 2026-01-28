@@ -94,8 +94,12 @@ namespace CasaCejaRemake.ViewModels.Shared
                     var isAdmin = _authService.IsAdmin;
                     var userName = _authService.CurrentUserName ?? "Usuario";
 
+                    Console.WriteLine($"[LoginViewModel] Login exitoso para {userName}, disparando evento LoginSuccess...");
+                    
                     // Disparar evento de éxito
                     LoginSuccess?.Invoke(this, new LoginSuccessEventArgs(isAdmin, userName));
+
+                    Console.WriteLine("[LoginViewModel] Evento LoginSuccess disparado");
 
                     // Limpiar campos
                     Username = string.Empty;

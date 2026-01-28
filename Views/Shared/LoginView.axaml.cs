@@ -11,12 +11,39 @@ namespace CasaCejaRemake.Views.Shared
     /// </summary>
     public partial class LoginView : Window
     {
+        private LoginViewModel? _viewModel;
+
         public LoginView()
         {
             InitializeComponent();
             
+            // Suscribirse al cambio de DataContext para capturar el ViewModel
+            DataContextChanged += OnDataContextChanged;
+            
             // Configurar eventos de la vista
             Loaded += OnLoaded;
+        }
+
+        /// <summary>
+        /// Evento cuando el DataContext cambia
+        /// </summary>
+        private void OnDataContextChanged(object? sender, EventArgs e)
+        {
+            // Desuscribir del ViewModel anterior si existe
+            if (_viewModel != null)
+            {
+                _viewModel.LoginSuccess -= OnLoginSuccess;
+                _viewModel.LoginCancelled -= OnLoginCancelled;
+            }
+
+            // Suscribir al nuevo ViewModel
+            if (DataContext is LoginViewModel viewModel)
+            {
+                _viewModel = viewModel;
+                _viewModel.LoginSuccess += OnLoginSuccess;
+                _viewModel.LoginCancelled += OnLoginCancelled;
+                Console.WriteLine("[LoginView] ViewModel conectado correctamente");
+            }
         }
 
         /// <summary>
@@ -26,13 +53,6 @@ namespace CasaCejaRemake.Views.Shared
         {
             // Enfocar el campo de usuario al cargar
             UsernameTextBox.Focus();
-
-            // Configurar eventos del ViewModel si existe
-            if (DataContext is LoginViewModel viewModel)
-            {
-                viewModel.LoginSuccess += OnLoginSuccess;
-                viewModel.LoginCancelled += OnLoginCancelled;
-            }
         }
 
         /// <summary>
@@ -40,11 +60,12 @@ namespace CasaCejaRemake.Views.Shared
         /// </summary>
         private void OnLoginSuccess(object? sender, LoginSuccessEventArgs e)
         {
-            Console.WriteLine($"Login exitoso en LoginView: {e.UserName} (Admin: {e.IsAdmin})");
+            Console.WriteLine($"[LoginView] Login exitoso: {e.UserName} (Admin: {e.IsAdmin}) - Cerrando ventana...");
             // Guardar el resultado en Tag antes de cerrar
             Tag = "success";
-            // Cerrar la ventana
+            // Cerrar la ventana inmediatamente
             Close();
+            Console.WriteLine("[LoginView] Close() ejecutado");
         }
 
         /// <summary>
@@ -52,8 +73,9 @@ namespace CasaCejaRemake.Views.Shared
         /// </summary>
         private void OnLoginCancelled(object? sender, EventArgs e)
         {
-            // Cerrar la aplicación
-            Close(null);
+            Console.WriteLine("[LoginView] Login cancelado - Cerrando ventana...");
+            // Cerrar la ventana
+            Close();
         }
 
         /// <summary>
@@ -88,11 +110,14 @@ namespace CasaCejaRemake.Views.Shared
         /// </summary>
         protected override void OnClosed(EventArgs e)
         {
+            Console.WriteLine("[LoginView] OnClosed ejecutado");
+            
             // Desuscribir eventos
-            if (DataContext is LoginViewModel viewModel)
+            if (_viewModel != null)
             {
-                viewModel.LoginSuccess -= OnLoginSuccess;
-                viewModel.LoginCancelled -= OnLoginCancelled;
+                _viewModel.LoginSuccess -= OnLoginSuccess;
+                _viewModel.LoginCancelled -= OnLoginCancelled;
+                _viewModel = null;
             }
 
             base.OnClosed(e);
