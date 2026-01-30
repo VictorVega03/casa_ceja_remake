@@ -65,6 +65,8 @@ namespace CasaCejaRemake.ViewModels.POS
         public event EventHandler<string>? ShowMessage;
         public event EventHandler? RequestExit;
         public event EventHandler<SaleResult>? SaleCompleted;
+        public event EventHandler? RequestClearCartConfirmation;
+        public event EventHandler? RequestExitConfirmation;
 
         public SalesViewModel(
             CartService cartService,
@@ -293,6 +295,11 @@ namespace CasaCejaRemake.ViewModels.POS
                 return;
             }
 
+            RequestClearCartConfirmation?.Invoke(this, EventArgs.Empty);
+        }
+
+        public void ConfirmClearCart()
+        {
             _cartService.ClearCart();
             StatusMessage = "Carrito vaciado";
         }
@@ -363,6 +370,11 @@ namespace CasaCejaRemake.ViewModels.POS
                 return;
             }
 
+            RequestExitConfirmation?.Invoke(this, EventArgs.Empty);
+        }
+
+        public void ConfirmExit()
+        {
             RequestExit?.Invoke(this, EventArgs.Empty);
         }
 

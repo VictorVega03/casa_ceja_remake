@@ -45,13 +45,14 @@ namespace CasaCejaRemake.Views.POS
 
             switch (e.Key)
             {
-                case Key.Escape:
-                    _viewModel?.CancelCommand.Execute(null);
+                case Key.Enter:
+                case Key.F5:
+                    _viewModel?.ConfirmCommand.Execute(null);
                     e.Handled = true;
                     break;
 
-                case Key.F5:
-                    _viewModel?.ConfirmCommand.Execute(null);
+                case Key.Escape:
+                    _viewModel?.CancelCommand.Execute(null);
                     e.Handled = true;
                     break;
             }

@@ -202,12 +202,15 @@ namespace CasaCejaRemake.ViewModels.POS
             {
                 case "ALL":
                     FilterType = ListFilterType.All;
+                    FilterStatus = ListFilterStatus.All; // Reset status to avoid impossible combinations
                     break;
                 case "CREDITS":
                     FilterType = ListFilterType.Credits;
+                    FilterStatus = ListFilterStatus.All; // Reset status
                     break;
                 case "LAYAWAYS":
                     FilterType = ListFilterType.Layaways;
+                    FilterStatus = ListFilterStatus.All; // Reset status
                     break;
                 case "PENDING":
                     FilterStatus = ListFilterStatus.Pending;

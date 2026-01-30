@@ -9,7 +9,7 @@
         x:Class="CasaCejaRemake.Views.POS.CreditsLayawaysListView"
         x:DataType="vm:CreditsLayawaysListViewModel"
         Title="Lista de Creditos y Apartados"
-        Width="850" Height="550"
+        Width="950" Height="550"
         WindowStartupLocation="CenterOwner"
         CanResize="False"
         ShowInTaskbar="False"
@@ -82,17 +82,19 @@
                                Margin="0,0,10,0"/>
                     <Button Content="F1 Todos"
                             Command="{Binding SetFilterCommand}"
-                            CommandParameter="type"
+                            CommandParameter="ALL"
                             Classes="filter"
                             HotKey="F1"/>
-                    <Button Content="Creditos"
+                    <Button Content="F2 Créditos"
                             Command="{Binding SetFilterCommand}"
-                            CommandParameter="credits"
-                            Classes="filter"/>
-                    <Button Content="Apartados"
+                            CommandParameter="CREDITS"
+                            Classes="filter"
+                            HotKey="F2"/>
+                    <Button Content="F3 Apartados"
                             Command="{Binding SetFilterCommand}"
-                            CommandParameter="layaways"
-                            Classes="filter"/>
+                            CommandParameter="LAYAWAYS"
+                            Classes="filter"
+                            HotKey="F3"/>
                 </StackPanel>
 
                 <!-- Filter Status -->
@@ -101,29 +103,27 @@
                                Foreground="#AAAAAA" 
                                VerticalAlignment="Center"
                                Margin="0,0,10,0"/>
-                    <Button Content="F2 Todos"
+                    <Button Content="F4 Pendiente"
                             Command="{Binding SetFilterCommand}"
-                            CommandParameter="status"
+                            CommandParameter="PENDING"
                             Classes="filter"
-                            HotKey="F2"/>
-                    <Button Content="Pendiente"
-                            Command="{Binding SetFilterCommand}"
-                            CommandParameter="pending"
-                            Classes="filter"/>
+                            HotKey="F4"/>
                     <Button Content="Pagado"
                             Command="{Binding SetFilterCommand}"
-                            CommandParameter="paid"
+                            CommandParameter="PAID"
                             Classes="filter"/>
-                    <Button Content="Vencido"
+                    <Button Content="F5 Vencidos"
                             Command="{Binding SetFilterCommand}"
-                            CommandParameter="overdue"
-                            Classes="filter"/>
+                            CommandParameter="OVERDUE"
+                            Classes="filter"
+                            HotKey="F5"/>
                 </StackPanel>
             </Grid>
         </Border>
 
         <!-- DataGrid -->
-        <DataGrid Grid.Row="2"
+        <DataGrid x:Name="DataGridItems"
+                  Grid.Row="2"
                   ItemsSource="{Binding Items}"
                   SelectedItem="{Binding SelectedItem}"
                   AutoGenerateColumns="False"

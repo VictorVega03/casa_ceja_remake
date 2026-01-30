@@ -7,7 +7,7 @@
         x:Class="CasaCejaRemake.Views.Shared.LoginView"
         x:DataType="vm:LoginViewModel"
         Title="Casa Ceja - Inicio de Sesión"
-        Width="680" Height="350"
+        Width="680" Height="420"
         WindowStartupLocation="CenterScreen"
         CanResize="False"
         Background="#F5F5F5">

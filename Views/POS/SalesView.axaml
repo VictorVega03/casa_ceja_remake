@@ -49,7 +49,10 @@
     <Grid RowDefinitions="Auto,*,Auto,Auto">
         
         <!-- Header -->
-        <Border Grid.Row="0" Background="#2D2D2D" Padding="15">
+        <Border Grid.Row="0" Background="#252525" Padding="15">
+            <Border.Effect>
+                <DropShadowEffect Color="#000000" Opacity="0.3" BlurRadius="10" OffsetX="0" OffsetY="2"/>
+            </Border.Effect>
             <Grid ColumnDefinitions="*,Auto,*">
                 <!-- Info izquierda -->
                 <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="30">
@@ -59,7 +62,7 @@
                     </StackPanel>
                     <StackPanel>
                         <TextBlock Text="COBRANZA" FontSize="10" Foreground="#888"/>
-                        <TextBlock Text="{Binding CurrentCollection}" FontSize="24" Foreground="#4CAF50" FontWeight="Bold"/>
+                        <TextBlock Text="{Binding CurrentCollection}" FontSize="24" Foreground="#66BB6A" FontWeight="Bold"/>
                     </StackPanel>
                 </StackPanel>
 
@@ -68,7 +71,7 @@
                            Text="PUNTO DE VENTA" 
                            FontSize="24" 
                            FontWeight="Bold" 
-                           Foreground="White"
+                           Foreground="#E0E0E0"
                            VerticalAlignment="Center"/>
 
                 <!-- Info derecha -->
@@ -195,74 +198,79 @@
                             <TextBlock Grid.Column="1" 
                                        Text="{Binding Total, StringFormat='{}{0:C2}'}" 
                                        FontSize="28" 
-                                       Foreground="#4CAF50" 
+                                       Foreground="#66BB6A" 
                                        FontWeight="Bold"/>
                         </Grid>
                     </StackPanel>
                 </Border>
 
                 <!-- Acciones rapidas -->
-                <Border Grid.Row="1" Background="#2D2D2D" Padding="10" CornerRadius="4">
-                    <StackPanel Spacing="5">
-                        <TextBlock Text="ACCIONES" FontSize="12" Foreground="#888" FontWeight="Bold" Margin="5,0,0,5"/>
-                        
-                        <Button Classes="action-button" Command="{Binding FocusBarcodeCommand}" HorizontalAlignment="Stretch">
-                            <StackPanel Orientation="Horizontal" Spacing="10">
-                                <TextBlock Text="F1" FontWeight="Bold"/>
-                                <TextBlock Text="Codigo Barras"/>
-                            </StackPanel>
-                        </Button>
-                        
-                        <Button Classes="action-button" Command="{Binding ModifyQuantityCommand}" HorizontalAlignment="Stretch">
-                            <StackPanel Orientation="Horizontal" Spacing="10">
-                                <TextBlock Text="F2" FontWeight="Bold"/>
-                                <TextBlock Text="Modificar Cantidad"/>
-                            </StackPanel>
-                        </Button>
-                        
-                        <Button Classes="action-button" Command="{Binding SearchProductCommand}" HorizontalAlignment="Stretch">
-                            <StackPanel Orientation="Horizontal" Spacing="10">
-                                <TextBlock Text="F3" FontWeight="Bold"/>
-                                <TextBlock Text="Buscar Producto"/>
-                            </StackPanel>
-                        </Button>
-                        
-                        <Button Classes="action-button" Command="{Binding ChangeCollectionCommand}" HorizontalAlignment="Stretch">
-                            <StackPanel Orientation="Horizontal" Spacing="10">
-                                <TextBlock Text="F4" FontWeight="Bold"/>
-                                <TextBlock Text="Cambiar Cobranza"/>
-                            </StackPanel>
-                        </Button>
-                        
-                        <Separator Background="#444" Margin="0,5"/>
-                        
-                        <Button Classes="danger-button" Command="{Binding RemoveProductCommand}" HorizontalAlignment="Stretch">
-                            <StackPanel Orientation="Horizontal" Spacing="10">
-                                <TextBlock Text="Supr" FontWeight="Bold"/>
-                                <TextBlock Text="Quitar Producto"/>
-                            </StackPanel>
-                        </Button>
-                        
-                        <Button Classes="danger-button" Command="{Binding ClearCartCommand}" HorizontalAlignment="Stretch">
-                            <StackPanel Orientation="Horizontal" Spacing="10">
-                                <TextBlock Text="Shift+F5" FontWeight="Bold"/>
-                                <TextBlock Text="Vaciar Carrito"/>
-                            </StackPanel>
-                        </Button>
-                        
-                        <Separator Background="#444" Margin="0,5"/>
-                        
-                        <Button Classes="action-button" 
-                                Command="{Binding CreditsLayawaysCommand}" 
-                                HorizontalAlignment="Stretch"
-                                Background="#9C27B0">
-                            <StackPanel Orientation="Horizontal" Spacing="10">
-                                <TextBlock Text="F12" FontWeight="Bold"/>
-                                <TextBlock Text="Créditos/Apartados"/>
-                            </StackPanel>
-                        </Button>
-                    </StackPanel>
-                </Border>
+                <ScrollViewer Grid.Row="1" 
+                             VerticalScrollBarVisibility="Auto"
+                             HorizontalScrollBarVisibility="Disabled">
+                    <Border Background="#2D2D2D" Padding="10" CornerRadius="4">
+                        <StackPanel Spacing="5">
+                            <TextBlock Text="ACCIONES" FontSize="12" Foreground="#888" FontWeight="Bold" Margin="5,0,0,5"/>
+                            
+                            <Button Classes="action-button" Command="{Binding FocusBarcodeCommand}" HorizontalAlignment="Stretch" Height="40">
+                                <StackPanel Orientation="Horizontal" Spacing="10">
+                                    <TextBlock Text="F1" FontWeight="Bold"/>
+                                    <TextBlock Text="Codigo Barras"/>
+                                </StackPanel>
+                            </Button>
+                            
+                            <Button Classes="action-button" Command="{Binding ModifyQuantityCommand}" HorizontalAlignment="Stretch" Height="40">
+                                <StackPanel Orientation="Horizontal" Spacing="10">
+                                    <TextBlock Text="F2" FontWeight="Bold"/>
+                                    <TextBlock Text="Modificar Cantidad"/>
+                                </StackPanel>
+                            </Button>
+                            
+                            <Button Classes="action-button" Command="{Binding SearchProductCommand}" HorizontalAlignment="Stretch" Height="40">
+                                <StackPanel Orientation="Horizontal" Spacing="10">
+                                    <TextBlock Text="F3" FontWeight="Bold"/>
+                                    <TextBlock Text="Buscar Producto"/>
+                                </StackPanel>
+                            </Button>
+                            
+                            <Button Classes="action-button" Command="{Binding ChangeCollectionCommand}" HorizontalAlignment="Stretch" Height="40">
+                                <StackPanel Orientation="Horizontal" Spacing="10">
+                                    <TextBlock Text="F4" FontWeight="Bold"/>
+                                    <TextBlock Text="Cambiar Cobranza"/>
+                                </StackPanel>
+                            </Button>
+                            
+                            <Separator Background="#444" Margin="0,5"/>
+                            
+                            <Button Classes="danger-button" Command="{Binding RemoveProductCommand}" HorizontalAlignment="Stretch" Height="40">
+                                <StackPanel Orientation="Horizontal" Spacing="10">
+                                    <TextBlock Text="Supr" FontWeight="Bold"/>
+                                    <TextBlock Text="Quitar Producto"/>
+                                </StackPanel>
+                            </Button>
+                            
+                            <Button Classes="danger-button" Command="{Binding ClearCartCommand}" HorizontalAlignment="Stretch" Height="40">
+                                <StackPanel Orientation="Horizontal" Spacing="10">
+                                    <TextBlock Text="Shift+F5" FontWeight="Bold"/>
+                                    <TextBlock Text="Vaciar Carrito"/>
+                                </StackPanel>
+                            </Button>
+                            
+                            <Separator Background="#444" Margin="0,5"/>
+                            
+                            <Button Classes="action-button" 
+                                    Command="{Binding CreditsLayawaysCommand}" 
+                                    HorizontalAlignment="Stretch"
+                                    Background="#9C27B0"
+                                    Height="40">
+                                <StackPanel Orientation="Horizontal" Spacing="10">
+                                    <TextBlock Text="F12" FontWeight="Bold"/>
+                                    <TextBlock Text="Créditos/Apartados"/>
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
+                    </Border>
+                </ScrollViewer>
 
                 <!-- Boton de pagar -->
                 <Button Grid.Row="2" 
@@ -280,7 +288,7 @@
 
         <!-- Barra de estado -->
         <Border Grid.Row="2" Background="#2D2D2D" Padding="10">
-            <Grid ColumnDefinitions="*,Auto,Auto">
+            <Grid ColumnDefinitions="*,Auto">
                 <TextBlock Text="{Binding StatusMessage}" 
                            Foreground="#888" 
                            VerticalAlignment="Center"/>
@@ -288,33 +296,37 @@
                            Text="Usa los botones o atajos de teclado para navegar" 
                            Foreground="#666" 
                            FontSize="11"
-                           Margin="0,0,20,0"
                            VerticalAlignment="Center"/>
-                <Button Grid.Column="2" 
-                        Classes="action-button" 
-                        Command="{Binding CreditsLayawaysCommand}"
-                        Background="#9C27B0"
-                        Padding="15,8">
-                    <StackPanel Orientation="Horizontal" Spacing="10">
-                        <TextBlock Text="F12" FontWeight="Bold"/>
-                        <TextBlock Text="Créditos/Apartados"/>
-                    </StackPanel>
-                </Button>
             </Grid>
         </Border>
 
-        <!-- Barra inferior con boton salir -->
+        <!-- Barra inferior con menu salir -->
         <Border Grid.Row="3" Background="#1A1A1A" Padding="10">
             <Grid ColumnDefinitions="*,Auto">
                 <TextBlock Text="Casa Ceja - Sistema de Punto de Venta v1.0" 
                            Foreground="#555" 
                            FontSize="11"
                            VerticalAlignment="Center"/>
-                <Button Grid.Column="1" 
+                
+                <!-- Dropdown Button para Salir -->
+                <Button x:Name="BtnExitMenu"
+                        Grid.Column="1" 
                         Classes="danger-button" 
-                        Command="{Binding ExitCommand}"
-                        Padding="20,8">
-                    <TextBlock Text="SALIR (Alt+F4)"/>
+                        Padding="20,8"
+                        Background="#D32F2F">
+                    <StackPanel Orientation="Horizontal" Spacing="5">
+                        <TextBlock Text="MENÚ" FontWeight="Bold"/>
+                        <TextBlock Text="▼" FontSize="10"/>
+                    </StackPanel>
+                    <Button.ContextMenu>
+                        <ContextMenu>
+                            <MenuItem Header="🚪 Salir (Alt+F4)" Command="{Binding ExitCommand}"/>
+                            <Separator/>
+                            <MenuItem Header="💰 Corte de Caja (F10)" Click="OnCashCloseClick"/>
+                            <MenuItem Header="➖ Gasto (F6)" Click="OnExpenseClick"/>
+                            <MenuItem Header="➕ Ingreso (F7)" Click="OnIncomeClick"/>
+                        </ContextMenu>
+                    </Button.ContextMenu>
                 </Button>
             </Grid>
         </Border>

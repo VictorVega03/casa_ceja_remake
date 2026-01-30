@@ -43,9 +43,24 @@ namespace CasaCejaRemake.Views.POS
         {
             base.OnKeyDown(e);
 
-            if (DataContext is CreateCreditViewModel vm)
+            switch (e.Key)
             {
-                vm.HandleKeyPress(e.Key.ToString());
+                case Key.Enter:
+                    _viewModel?.ConfirmCommand.Execute(null);
+                    e.Handled = true;
+                    break;
+
+                case Key.Escape:
+                    _viewModel?.CancelCommand.Execute(null);
+                    e.Handled = true;
+                    break;
+
+                default:
+                    if (DataContext is CreateCreditViewModel vm)
+                    {
+                        vm.HandleKeyPress(e.Key.ToString());
+                    }
+                    break;
             }
         }
 

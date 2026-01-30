@@ -7,7 +7,7 @@
         x:Class="CasaCejaRemake.Views.POS.CustomerActionView"
         x:DataType="vm:CustomerActionViewModel"
         Title="Acciones de Cliente"
-        Width="400" Height="350"
+        Width="400" Height="500"
         WindowStartupLocation="CenterOwner"
         CanResize="False"
         ShowInTaskbar="False"

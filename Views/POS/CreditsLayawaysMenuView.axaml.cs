@@ -197,10 +197,13 @@ namespace CasaCejaRemake.Views.POS
                     if (actionCompleted && (result.Item2 == CustomerActionOption.NewCredit || result.Item2 == CustomerActionOption.NewLayaway))
                     {
                         string type = result.Item2 == CustomerActionOption.NewCredit ? "Crédito" : "Apartado";
-                        ShowMessageDialog("Éxito", $"{type} creado correctamente");
                         
                         // Marcar que se creó algo para que SalesView limpie el carrito
                         Tag = "ItemCreated";
+                        
+                        // Mostrar mensaje y ESPERAR a que el usuario lo cierre
+                        await ShowMessageDialogAsync("Éxito", $"{type} creado correctamente");
+                        
                         Close();
                         shouldContinue = false;
                     }
@@ -364,6 +367,7 @@ namespace CasaCejaRemake.Views.POS
         {
             bool shouldContinue = true;
             bool paymentWasMade = false;
+            bool creditCompleted = false;
             
             while (shouldContinue)
             {
@@ -395,11 +399,19 @@ namespace CasaCejaRemake.Views.POS
                             var creditFromVm = result.Item2.GetCredit();
                             if (creditFromVm != null)
                             {
+                                var balanceBefore = creditFromVm.RemainingBalance;
                                 actionHandled = await ShowAddPaymentToCredit(creditFromVm);
                                 if (actionHandled)
                                 {
                                     paymentWasMade = true;
                                     shouldContinue = false;
+                                    
+                                    // Verificar si el crédito se completó
+                                    var updatedCredit = await _creditService.GetByIdAsync(creditFromVm.Id);
+                                    if (updatedCredit != null && updatedCredit.RemainingBalance <= 0 && balanceBefore > 0)
+                                    {
+                                        creditCompleted = true;
+                                    }
                                 }
                             }
                             break;
@@ -409,7 +421,7 @@ namespace CasaCejaRemake.Views.POS
                             {
                                 var ticketService = new TicketService();
                                 var ticketText = ticketService.GenerateTicketText(creditTicket, TicketType.Credit);
-                                ShowTicketDialog(credit.Folio, ticketText);
+                                await ShowTicketDialog(credit.Folio, ticketText);
                             }
                             else
                             {
@@ -433,7 +445,11 @@ namespace CasaCejaRemake.Views.POS
                 }
             }
             
-            if (paymentWasMade)
+            if (creditCompleted)
+            {
+                ShowMessageDialog("¡Crédito completado!", "El crédito ha sido liquidado correctamente. Saldo: $0.00");
+            }
+            else if (paymentWasMade)
             {
                 ShowMessageDialog("Éxito", "Pago registrado correctamente");
             }
@@ -501,7 +517,7 @@ namespace CasaCejaRemake.Views.POS
                             {
                                 var ticketService = new TicketService();
                                 var ticketText = ticketService.GenerateTicketText(layawayTicket, TicketType.Layaway);
-                                ShowTicketDialog(layaway.Folio, ticketText);
+                                await ShowTicketDialog(layaway.Folio, ticketText);
                             }
                             else
                             {
@@ -672,12 +688,17 @@ namespace CasaCejaRemake.Views.POS
             return confirmDialog.Tag is string tag && tag == "delivered";
         }
 
+        private async Task ShowMessageDialogAsync(string title, string message)
+        {
+            await DialogHelper.ShowMessageDialog(this, title, message);
+        }
+        
         private async void ShowMessageDialog(string title, string message)
         {
             await DialogHelper.ShowMessageDialog(this, title, message);
         }
 
-        private async void ShowTicketDialog(string folio, string ticketText)
+        private async Task ShowTicketDialog(string folio, string ticketText)
         {
             await DialogHelper.ShowTicketDialog(this, folio, ticketText);
         }

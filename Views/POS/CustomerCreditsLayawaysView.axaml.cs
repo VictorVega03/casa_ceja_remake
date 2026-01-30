@@ -3,6 +3,7 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using CasaCejaRemake.ViewModels.POS;
+using casa_ceja_remake.Helpers;
 
 namespace CasaCejaRemake.Views.POS
 {
@@ -29,6 +30,25 @@ namespace CasaCejaRemake.Views.POS
                 _viewModel.PrintCredit += OnPrintCredit;
                 _viewModel.PrintLayaway += OnPrintLayaway;
             }
+            
+            // Establecer focus en el DataGrid apropiado
+            SetFocusToDataGrid();
+        }
+
+        private void SetFocusToDataGrid()
+        {
+            if (_viewModel == null) return;
+            
+            if (_viewModel.IsCreditsMode)
+            {
+                var dataGrid = this.FindControl<DataGrid>("DataGridCredits");
+                dataGrid?.Focus();
+            }
+            else
+            {
+                var dataGrid = this.FindControl<DataGrid>("DataGridLayaways");
+                dataGrid?.Focus();
+            }
         }
 
         private void OnCloseRequested(object? sender, EventArgs e)
@@ -54,14 +74,54 @@ namespace CasaCejaRemake.Views.POS
             Close();
         }
 
-        private void OnPrintCredit(object? sender, Models.Credit e)
+        private async void OnPrintCredit(object? sender, Models.Credit e)
         {
-            // TODO: Print credit ticket
+            try
+            {
+                var creditService = new Services.CreditService(new Data.DatabaseService());
+                var creditTicket = await creditService.RecoverTicketAsync(e.Id);
+                
+                if (creditTicket != null)
+                {
+                    var ticketService = new Services.TicketService();
+                    var ticketText = ticketService.GenerateTicketText(creditTicket, Services.TicketType.Credit);
+                    await DialogHelper.ShowTicketDialog(this, e.Folio, ticketText);
+                }
+            }
+            catch
+            {
+                // Silently fail - user can try again
+            }
         }
 
-        private void OnPrintLayaway(object? sender, Models.Layaway e)
+        private async void OnPrintLayaway(object? sender, Models.Layaway e)
         {
-            // TODO: Print layaway ticket
+            try
+            {
+                var layawayService = new Services.LayawayService(new Data.DatabaseService());
+                var layawayTicket = await layawayService.RecoverTicketAsync(e.Id);
+                
+                if (layawayTicket != null)
+                {
+                    var ticketService = new Services.TicketService();
+                    var ticketText = ticketService.GenerateTicketText(layawayTicket, Services.TicketType.Layaway);
+                    await DialogHelper.ShowTicketDialog(this, e.Folio, ticketText);
+                }
+            }
+            catch
+            {
+                // Silently fail - user can try again
+            }
+        }
+
+        private void DataGrid_KeyDown(object? sender, KeyEventArgs e)
+        {
+            // Capturar Enter ANTES de que el DataGrid lo procese
+            if (e.Key == Key.Enter)
+            {
+                _viewModel?.AddPaymentCommand.Execute(null);
+                e.Handled = true;
+            }
         }
 
         protected override void OnKeyDown(KeyEventArgs e)

@@ -32,7 +32,24 @@ namespace CasaCejaRemake.Views.POS
             _timer.Start();
 
             Loaded += OnLoaded;
+            Loaded += OnWindowLoaded;
             Closed += OnClosed;
+        }
+
+        private void OnWindowLoaded(object? sender, RoutedEventArgs e)
+        {
+            // Wire up the menu button to open context menu on click
+            var btnExitMenu = this.FindControl<Button>("BtnExitMenu");
+            if (btnExitMenu != null)
+            {
+                btnExitMenu.Click += (s, args) =>
+                {
+                    if (btnExitMenu.ContextMenu != null)
+                    {
+                        btnExitMenu.ContextMenu.Open(btnExitMenu);
+                    }
+                };
+            }
         }
 
         private void OnLoaded(object? sender, RoutedEventArgs e)
@@ -49,6 +66,8 @@ namespace CasaCejaRemake.Views.POS
                 _viewModel.ShowMessage += OnShowMessage;
                 _viewModel.RequestExit += OnRequestExit;
                 _viewModel.SaleCompleted += OnSaleCompleted;
+                _viewModel.RequestClearCartConfirmation += OnRequestClearCartConfirmation;
+                _viewModel.RequestExitConfirmation += OnRequestExitConfirmation;
             }
 
             TxtBarcode.Focus();
@@ -69,6 +88,8 @@ namespace CasaCejaRemake.Views.POS
                 _viewModel.ShowMessage -= OnShowMessage;
                 _viewModel.RequestExit -= OnRequestExit;
                 _viewModel.SaleCompleted -= OnSaleCompleted;
+                _viewModel.RequestClearCartConfirmation -= OnRequestClearCartConfirmation;
+                _viewModel.RequestExitConfirmation -= OnRequestExitConfirmation;
                 _viewModel.Cleanup();
             }
         }
@@ -497,6 +518,51 @@ namespace CasaCejaRemake.Views.POS
             }
 
             TxtBarcode.Focus();
+        }
+
+        private async void OnRequestClearCartConfirmation(object? sender, EventArgs e)
+        {
+            var confirmed = await DialogHelper.ShowConfirmDialog(
+                this, 
+                "Confirmar", 
+                "¿Está seguro de vaciar el carrito?");
+
+            if (confirmed && _viewModel != null)
+            {
+                _viewModel.ConfirmClearCart();
+            }
+
+            TxtBarcode.Focus();
+        }
+
+        private async void OnRequestExitConfirmation(object? sender, EventArgs e)
+        {
+            var confirmed = await DialogHelper.ShowConfirmDialog(
+                this, 
+                "Salir", 
+                "¿Está seguro de salir del Punto de Venta?");
+
+            if (confirmed && _viewModel != null)
+            {
+                _viewModel.ConfirmExit();
+            }
+
+            TxtBarcode.Focus();
+        }
+
+        private void OnCashCloseClick(object? sender, RoutedEventArgs e)
+        {
+            ShowCashCloseDialogAsync();
+        }
+
+        private void OnExpenseClick(object? sender, RoutedEventArgs e)
+        {
+            ShowCashMovementDialogAsync(true);
+        }
+
+        private void OnIncomeClick(object? sender, RoutedEventArgs e)
+        {
+            ShowCashMovementDialogAsync(false);
         }
     }
 }

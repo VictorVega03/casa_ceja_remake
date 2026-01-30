@@ -110,14 +110,16 @@
         </Border>
 
         <!-- Credits DataGrid (visible when IsCreditsMode) -->
-        <DataGrid Grid.Row="2"
+        <DataGrid x:Name="DataGridCredits"
+                  Grid.Row="2"
                   ItemsSource="{Binding Credits}"
                   SelectedItem="{Binding SelectedCredit}"
                   AutoGenerateColumns="False"
                   IsReadOnly="True"
                   IsVisible="{Binding IsCreditsMode}"
                   Margin="10"
-                  SelectionMode="Single">
+                  SelectionMode="Single"
+                  KeyDown="DataGrid_KeyDown">
             <DataGrid.Columns>
                 <DataGridTextColumn Header="FOLIO" Binding="{Binding Folio}" Width="140"/>
                 <DataGridTextColumn Header="TOTAL" Binding="{Binding Total, StringFormat='{}{0:C2}'}" Width="100"/>
@@ -130,14 +132,16 @@
         </DataGrid>
 
         <!-- Layaways DataGrid (visible when NOT IsCreditsMode) -->
-        <DataGrid Grid.Row="2"
+        <DataGrid x:Name="DataGridLayaways"
+                  Grid.Row="2"
                   ItemsSource="{Binding Layaways}"
                   SelectedItem="{Binding SelectedLayaway}"
                   AutoGenerateColumns="False"
                   IsReadOnly="True"
                   IsVisible="{Binding !IsCreditsMode}"
                   Margin="10"
-                  SelectionMode="Single">
+                  SelectionMode="Single"
+                  KeyDown="DataGrid_KeyDown">
             <DataGrid.Columns>
                 <DataGridTextColumn Header="FOLIO" Binding="{Binding Folio}" Width="140"/>
                 <DataGridTextColumn Header="TOTAL" Binding="{Binding Total, StringFormat='{}{0:C2}'}" Width="100"/>
