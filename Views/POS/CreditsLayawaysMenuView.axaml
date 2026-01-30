@@ -11,6 +11,7 @@
         WindowStartupLocation="CenterOwner"
         CanResize="False"
         ShowInTaskbar="False"
+        Focusable="True"
         Background="#1E1E1E">
     
     <Window.Styles>
@@ -46,8 +47,7 @@
         <!-- Botones -->
         <StackPanel Grid.Row="1" Margin="15" VerticalAlignment="Center">
             <Button Classes="menu-button"
-                    Command="{Binding SelectListCommand}"
-                    HotKey="F1">
+                    Command="{Binding SelectListCommand}">
                 <StackPanel Orientation="Horizontal" Spacing="10">
                     <TextBlock Text="F1" Foreground="#4CAF50" FontWeight="Bold"/>
                     <TextBlock Text="Lista Creditos/Apartados"/>
@@ -55,8 +55,7 @@
             </Button>
 
             <Button Classes="menu-button"
-                    Command="{Binding SelectNewOrPaymentCommand}"
-                    HotKey="F2">
+                    Command="{Binding SelectNewOrPaymentCommand}">
                 <StackPanel Orientation="Horizontal" Spacing="10">
                     <TextBlock Text="F2" Foreground="#2196F3" FontWeight="Bold"/>
                     <TextBlock Text="Nuevo o Abonar"/>
@@ -64,8 +63,7 @@
             </Button>
 
             <Button Classes="menu-button"
-                    Command="{Binding SelectCustomerListCommand}"
-                    HotKey="F3">
+                    Command="{Binding SelectCustomerListCommand}">
                 <StackPanel Orientation="Horizontal" Spacing="10">
                     <TextBlock Text="F3" Foreground="#FF9800" FontWeight="Bold"/>
                     <TextBlock Text="Lista de Clientes"/>
@@ -77,7 +75,6 @@
         <Border Grid.Row="2" Background="#2D2D2D" Padding="10">
             <Button Content="Cancelar (Esc)"
                     Command="{Binding CancelCommand}"
-                    HotKey="Escape"
                     HorizontalAlignment="Center"
                     Background="#555555"
                     Foreground="White"

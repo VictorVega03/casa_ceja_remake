@@ -1,9 +1,11 @@
 using System;
+using System.Collections.Generic;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using CasaCejaRemake.Models;
 using CasaCejaRemake.ViewModels.POS;
+using casa_ceja_remake.Helpers;
 
 namespace CasaCejaRemake.Views.POS
 {
@@ -70,32 +72,28 @@ namespace CasaCejaRemake.Views.POS
 
         protected override void OnKeyDown(KeyEventArgs e)
         {
-            base.OnKeyDown(e);
-
-            switch (e.Key)
+            if (_viewModel != null)
             {
-                case Key.F5:
-                case Key.Enter:
-                    _viewModel?.ConfirmCommand.Execute(null);
-                    e.Handled = true;
-                    break;
+                // F5 y Enter ejecutan la misma acción
+                if (KeyboardShortcutHelper.HandleShortcuts(e, () => _viewModel.ConfirmCommand.Execute(null), Key.F5, Key.Enter))
+                {
+                    return;
+                }
 
-                case Key.Escape:
-                    _viewModel?.CancelCommand.Execute(null);
-                    e.Handled = true;
-                    break;
+                var shortcuts = new Dictionary<Key, Action>
+                {
+                    { Key.Escape, () => _viewModel.CancelCommand.Execute(null) },
+                    { Key.F1, () => TxtConcept.Focus() },
+                    { Key.F2, () => { TxtAmount.Focus(); TxtAmount.SelectAll(); } }
+                };
 
-                case Key.F1:
-                    TxtConcept.Focus();
-                    e.Handled = true;
-                    break;
-
-                case Key.F2:
-                    TxtAmount.Focus();
-                    TxtAmount.SelectAll();
-                    e.Handled = true;
-                    break;
+                if (KeyboardShortcutHelper.HandleShortcut(e, shortcuts))
+                {
+                    return;
+                }
             }
+
+            base.OnKeyDown(e);
         }
 
         protected override void OnClosed(EventArgs e)

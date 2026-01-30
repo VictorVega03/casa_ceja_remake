@@ -1,8 +1,10 @@
 using System;
+using System.Collections.Generic;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using CasaCejaRemake.ViewModels.POS;
+using casa_ceja_remake.Helpers;
 
 namespace CasaCejaRemake.Views.POS
 {
@@ -14,6 +16,13 @@ namespace CasaCejaRemake.Views.POS
         {
             InitializeComponent();
             Loaded += OnLoaded;
+            Activated += OnActivated;
+        }
+
+        private void OnActivated(object? sender, EventArgs e)
+        {
+            // Asegurar que la ventana tenga focus para recibir eventos de teclado
+            Focus();
         }
 
         private void OnLoaded(object? sender, RoutedEventArgs e)
@@ -54,33 +63,30 @@ namespace CasaCejaRemake.Views.POS
 
         protected override void OnKeyDown(KeyEventArgs e)
         {
-            base.OnKeyDown(e);
-
-            switch (e.Key)
+            if (_viewModel != null)
             {
-                case Key.Escape:
-                    _viewModel?.CloseCommand.Execute(null);
-                    e.Handled = true;
-                    break;
+                var shortcuts = new Dictionary<Key, Action>
+                {
+                    { Key.Escape, () => _viewModel.CloseCommand.Execute(null) },
+                    { Key.F5, () => _viewModel.AddPaymentCommand.Execute(null) },
+                    { Key.F7, () => _viewModel.PrintCommand.Execute(null) }
+                };
 
-                case Key.F5:
-                    _viewModel?.AddPaymentCommand.Execute(null);
-                    e.Handled = true;
-                    break;
+                if (KeyboardShortcutHelper.HandleShortcut(e, shortcuts))
+                {
+                    return;
+                }
 
-                case Key.F6:
-                    if (_viewModel?.IsCredit == false)
-                    {
-                        _viewModel?.DeliverCommand.Execute(null);
-                    }
+                // F6 solo disponible para Layaways (no créditos)
+                if (e.Key == Key.F6 && _viewModel.IsCredit == false)
+                {
+                    _viewModel.DeliverCommand.Execute(null);
                     e.Handled = true;
-                    break;
-
-                case Key.F7:
-                    _viewModel?.PrintCommand.Execute(null);
-                    e.Handled = true;
-                    break;
+                    return;
+                }
             }
+
+            base.OnKeyDown(e);
         }
 
         protected override void OnClosed(EventArgs e)

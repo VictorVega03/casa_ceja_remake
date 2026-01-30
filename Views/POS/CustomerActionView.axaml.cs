@@ -14,6 +14,13 @@ namespace CasaCejaRemake.Views.POS
         {
             InitializeComponent();
             Loaded += OnLoaded;
+            Activated += OnActivated;
+        }
+
+        private void OnActivated(object? sender, EventArgs e)
+        {
+            // Asegurar que la ventana tenga focus para recibir eventos de teclado
+            Focus();
         }
 
         private void OnLoaded(object? sender, RoutedEventArgs e)
@@ -40,12 +47,13 @@ namespace CasaCejaRemake.Views.POS
 
         protected override void OnKeyDown(KeyEventArgs e)
         {
-            base.OnKeyDown(e);
-
             if (DataContext is CustomerActionViewModel vm)
             {
+                // Delegar manejo de atajos al ViewModel
                 vm.HandleKeyPress(e.Key.ToString());
             }
+
+            base.OnKeyDown(e);
         }
 
         protected override void OnClosed(EventArgs e)

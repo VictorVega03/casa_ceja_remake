@@ -17,6 +17,13 @@ namespace CasaCejaRemake.Views.POS
 
             // Focus search box when loaded
             Loaded += OnLoaded;
+            Activated += OnActivated;
+        }
+
+        private void OnActivated(object? sender, EventArgs e)
+        {
+            // Asegurar que la ventana tenga focus para recibir eventos de teclado
+            Focus();
         }
 
         private void OnLoaded(object? sender, RoutedEventArgs e)
@@ -31,6 +38,24 @@ namespace CasaCejaRemake.Views.POS
             }
             
             SearchBox?.Focus();
+            
+            // Establecer handler para Enter en el DataGrid
+            var dataGrid = this.FindControl<DataGrid>("CustomersGrid");
+            if (dataGrid != null)
+            {
+                // Usar PreviewKeyDown (Tunneling) para interceptar Enter ANTES del DataGrid
+                dataGrid.AddHandler(KeyDownEvent, DataGrid_PreviewKeyDown, Avalonia.Interactivity.RoutingStrategies.Tunnel);
+            }
+        }
+
+        private void DataGrid_PreviewKeyDown(object? sender, KeyEventArgs e)
+        {
+            // PreviewKeyDown (Tunneling) se ejecuta ANTES de que el DataGrid procese la tecla
+            if (e.Key == Key.Enter && _viewModel?.SelectedCustomer != null)
+            {
+                _viewModel.SelectCustomerCommand.Execute(null);
+                e.Handled = true; // Evitar que el DataGrid navegue a la siguiente fila
+            }
         }
 
         private void OnCustomerSelected(object? sender, Customer e)
@@ -52,10 +77,9 @@ namespace CasaCejaRemake.Views.POS
 
         protected override void OnKeyDown(KeyEventArgs e)
         {
-            base.OnKeyDown(e);
-
             if (DataContext is CustomerSearchViewModel vm)
             {
+                // Enter con lógica condicional
                 if (e.Key == Key.Enter)
                 {
                     if (vm.SelectedCustomer != null)
@@ -67,12 +91,14 @@ namespace CasaCejaRemake.Views.POS
                         vm.SearchCommand.Execute(null);
                     }
                     e.Handled = true;
+                    return;
                 }
-                else
-                {
-                    vm.HandleKeyPress(e.Key.ToString());
-                }
+
+                // Delegar otros atajos al ViewModel
+                vm.HandleKeyPress(e.Key.ToString());
             }
+
+            base.OnKeyDown(e);
         }
 
         protected override void OnClosed(EventArgs e)

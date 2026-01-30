@@ -1,8 +1,10 @@
 using System;
+using System.Collections.Generic;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using CasaCejaRemake.ViewModels.POS;
+using casa_ceja_remake.Helpers;
 
 namespace CasaCejaRemake.Views.POS
 {
@@ -14,6 +16,13 @@ namespace CasaCejaRemake.Views.POS
         {
             InitializeComponent();
             Loaded += OnLoaded;
+            Activated += OnActivated;
+        }
+
+        private void OnActivated(object? sender, EventArgs e)
+        {
+            // Asegurar que la ventana tenga focus para recibir eventos de teclado
+            Focus();
         }
 
         private void OnLoaded(object? sender, RoutedEventArgs e)
@@ -66,45 +75,27 @@ namespace CasaCejaRemake.Views.POS
 
         protected override void OnKeyDown(KeyEventArgs e)
         {
-            base.OnKeyDown(e);
-
-            switch (e.Key)
+            if (_viewModel != null)
             {
-                case Key.Escape:
-                    _viewModel?.CloseCommand.Execute(null);
-                    e.Handled = true;
-                    break;
+                var shortcuts = new Dictionary<Key, Action>
+                {
+                    { Key.Escape, () => _viewModel.CloseCommand.Execute(null) },
+                    { Key.Enter, () => _viewModel.SelectItemCommand.Execute(null) },
+                    { Key.F1, () => _viewModel.SetFilterCommand.Execute("ALL") },
+                    { Key.F2, () => _viewModel.SetFilterCommand.Execute("CREDITS") },
+                    { Key.F3, () => _viewModel.SetFilterCommand.Execute("LAYAWAYS") },
+                    { Key.F4, () => _viewModel.SetFilterCommand.Execute("PENDING") },
+                    { Key.F5, () => _viewModel.SetFilterCommand.Execute("PAID") },
+                    { Key.F6, () => _viewModel.SetFilterCommand.Execute("OVERDUE") }
+                };
 
-                case Key.Enter:
-                    _viewModel?.SelectItemCommand.Execute(null);
-                    e.Handled = true;
-                    break;
-
-                case Key.F1:
-                    _viewModel?.SetFilterCommand.Execute("ALL");
-                    e.Handled = true;
-                    break;
-
-                case Key.F2:
-                    _viewModel?.SetFilterCommand.Execute("CREDITS");
-                    e.Handled = true;
-                    break;
-
-                case Key.F3:
-                    _viewModel?.SetFilterCommand.Execute("LAYAWAYS");
-                    e.Handled = true;
-                    break;
-
-                case Key.F4:
-                    _viewModel?.SetFilterCommand.Execute("PENDING");
-                    e.Handled = true;
-                    break;
-
-                case Key.F5:
-                    _viewModel?.SetFilterCommand.Execute("OVERDUE");
-                    e.Handled = true;
-                    break;
+                if (KeyboardShortcutHelper.HandleShortcut(e, shortcuts))
+                {
+                    return;
+                }
             }
+
+            base.OnKeyDown(e);
         }
 
         protected override void OnClosed(EventArgs e)

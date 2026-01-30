@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Avalonia;
@@ -19,6 +20,7 @@ namespace CasaCejaRemake.Views.POS
     {
         private SalesViewModel? _viewModel;
         private DispatcherTimer? _timer;
+        private bool _hasOpenDialog = false;
 
         public SalesView()
         {
@@ -101,90 +103,57 @@ namespace CasaCejaRemake.Views.POS
 
         protected override void OnKeyDown(KeyEventArgs e)
         {
-            base.OnKeyDown(e);
-
-            var modifiers = e.KeyModifiers;
-
-            switch (e.Key)
+            // Si hay un diálogo abierto, no procesar atajos de la ventana principal
+            if (_hasOpenDialog)
             {
-                case Key.F1:
-                    _viewModel?.FocusBarcodeCommand.Execute(null);
-                    e.Handled = true;
-                    break;
-
-                case Key.F2:
-                    _viewModel?.ModifyQuantityCommand.Execute(null);
-                    e.Handled = true;
-                    break;
-
-                case Key.F3:
-                    _viewModel?.SearchProductCommand.Execute(null);
-                    e.Handled = true;
-                    break;
-
-                case Key.F4:
-                    if (modifiers.HasFlag(KeyModifiers.Alt))
-                    {
-                        _viewModel?.ExitCommand.Execute(null);
-                    }
-                    else
-                    {
-                        _viewModel?.ChangeCollectionCommand.Execute(null);
-                    }
-                    e.Handled = true;
-                    break;
-
-                case Key.F5:
-                    if (modifiers.HasFlag(KeyModifiers.Shift))
-                    {
-                        _viewModel?.ClearCartCommand.Execute(null);
-                    }
-                    e.Handled = true;
-                    break;
-
-                case Key.F11:
-                    _viewModel?.PayCommand.Execute(null);
-                    e.Handled = true;
-                    break;
-
-                case Key.F6:
-                    ShowCashMovementDialogAsync(true); // Gasto
-                    e.Handled = true;
-                    break;
-
-                case Key.F7:
-                    ShowCashMovementDialogAsync(false); // Ingreso
-                    e.Handled = true;
-                    break;
-
-                case Key.F10:
-                    ShowCashCloseDialogAsync();
-                    e.Handled = true;
-                    break;
-
-                case Key.F12:
-                    _viewModel?.CreditsLayawaysCommand.Execute(null);
-                    e.Handled = true;
-                    break;
-
-                case Key.Delete:
-                    _viewModel?.RemoveProductCommand.Execute(null);
-                    e.Handled = true;
-                    break;
-
-                case Key.Enter:
-                    if (TxtBarcode.IsFocused)
-                    {
-                        _ = _viewModel?.SearchByCodeCommand.ExecuteAsync(null);
-                        e.Handled = true;
-                    }
-                    break;
-
-                case Key.Escape:
-                    TxtBarcode.Focus();
-                    e.Handled = true;
-                    break;
+                return;
             }
+
+            if (_viewModel != null)
+            {
+                // Atajos complejos con modificadores (Alt+F4, Shift+F5)
+                var complexShortcuts = new Dictionary<(Key, KeyModifiers), Action>
+                {
+                    { (Key.F4, KeyModifiers.Alt), () => _viewModel.ExitCommand.Execute(null) },
+                    { (Key.F5, KeyModifiers.Shift), () => _viewModel.ClearCartCommand.Execute(null) }
+                };
+
+                if (KeyboardShortcutHelper.HandleComplexShortcut(e, complexShortcuts))
+                {
+                    return;
+                }
+
+                // Atajos simples
+                var shortcuts = new Dictionary<Key, Action>
+                {
+                    { Key.F1, () => _viewModel.FocusBarcodeCommand.Execute(null) },
+                    { Key.F2, () => _viewModel.ModifyQuantityCommand.Execute(null) },
+                    { Key.F3, () => _viewModel.SearchProductCommand.Execute(null) },
+                    { Key.F4, () => _viewModel.ChangeCollectionCommand.Execute(null) },
+                    { Key.F6, () => ShowCashMovementDialogAsync(true) },
+                    { Key.F7, () => ShowCashMovementDialogAsync(false) },
+                    { Key.F10, () => ShowCashCloseDialogAsync() },
+                    { Key.F11, () => _viewModel.PayCommand.Execute(null) },
+                    { Key.F12, () => _viewModel.CreditsLayawaysCommand.Execute(null) },
+                    { Key.Delete, () => _viewModel.RemoveProductCommand.Execute(null) }
+                };
+
+                if (KeyboardShortcutHelper.HandleShortcut(e, shortcuts))
+                {
+                    return;
+                }
+
+                // Enter con lógica condicional
+                if (e.Key == Key.Enter && TxtBarcode.IsFocused)
+                {
+                    _ = _viewModel.SearchByCodeCommand.ExecuteAsync(null);
+                    e.Handled = true;
+                    return;
+                }
+            }
+
+            // Solo propagar si no se manejó
+            base.OnKeyDown(e);
         }
 
         private void OnRequestFocusBarcode(object? sender, EventArgs e)
@@ -222,7 +191,9 @@ namespace CasaCejaRemake.Views.POS
                     searchView.Close();
                 };
 
+                _hasOpenDialog = true;
                 await searchView.ShowDialog(this);
+                _hasOpenDialog = false;
             }
 
             TxtBarcode.Focus();
@@ -253,7 +224,9 @@ namespace CasaCejaRemake.Views.POS
                 paymentView.Close();
             };
 
+            _hasOpenDialog = true;
             await paymentView.ShowDialog(this);
+            _hasOpenDialog = false;
             TxtBarcode.Focus();
         }
 
@@ -326,7 +299,9 @@ namespace CasaCejaRemake.Views.POS
 
             dialog.Content = stackPanel;
 
+            _hasOpenDialog = true;
             await dialog.ShowDialog(this);
+            _hasOpenDialog = false;
             TxtBarcode.Focus();
         }
 
@@ -356,7 +331,9 @@ namespace CasaCejaRemake.Views.POS
             var menuViewModel = new CreditsLayawaysMenuViewModel();
             menuView.DataContext = menuViewModel;
 
+            _hasOpenDialog = true;
             await menuView.ShowDialog(this);
+            _hasOpenDialog = false;
 
             // Si se creó un crédito o apartado, limpiar el carrito
             if (menuView.Tag is string result && result == "ItemCreated")
@@ -411,7 +388,9 @@ namespace CasaCejaRemake.Views.POS
 
             dialog.Content = stackPanel;
 
+            _hasOpenDialog = true;
             await dialog.ShowDialog(this);
+            _hasOpenDialog = false;
         }
 
         private void OnRequestExit(object? sender, EventArgs e)
@@ -467,7 +446,10 @@ namespace CasaCejaRemake.Views.POS
                 isExpense);
             
             movementView.DataContext = movementViewModel;
+            
+            _hasOpenDialog = true;
             await movementView.ShowDialog(this);
+            _hasOpenDialog = false;
 
             if (movementView.Tag is CashMovement movement)
             {
@@ -505,7 +487,9 @@ namespace CasaCejaRemake.Views.POS
             var closeViewModel = new CashCloseViewModel(cashCloseService, authService, openCash);
             closeView.DataContext = closeViewModel;
 
+            _hasOpenDialog = true;
             await closeView.ShowDialog(this);
+            _hasOpenDialog = false;
 
             if (closeView.Tag is CashClose closedCash)
             {

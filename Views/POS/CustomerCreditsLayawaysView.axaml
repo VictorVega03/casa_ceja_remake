@@ -13,6 +13,7 @@
         WindowStartupLocation="CenterOwner"
         CanResize="False"
         ShowInTaskbar="False"
+        Focusable="True"
         Background="#1E1E1E">
 
     <Window.Styles>
@@ -169,8 +170,7 @@
                         Command="{Binding AddPaymentCommand}"
                         Background="#4CAF50"
                         Classes="action"
-                        IsEnabled="{Binding CanAddPayment}"
-                        HotKey="F5">
+                        IsEnabled="{Binding CanAddPayment}">
                     <StackPanel Orientation="Horizontal" Spacing="5">
                         <TextBlock Text="F5"/>
                         <TextBlock Text="Abonar"/>
@@ -183,8 +183,7 @@
                         Background="#2196F3"
                         Classes="action"
                         IsVisible="{Binding !IsCreditsMode}"
-                        IsEnabled="{Binding CanDeliver}"
-                        HotKey="F6">
+                        IsEnabled="{Binding CanDeliver}">
                     <StackPanel Orientation="Horizontal" Spacing="5">
                         <TextBlock Text="F6"/>
                         <TextBlock Text="Entregar"/>
@@ -196,8 +195,7 @@
                         Command="{Binding PrintCommand}"
                         Background="#FF9800"
                         Classes="action"
-                        IsEnabled="{Binding HasSelection}"
-                        HotKey="F7">
+                        IsEnabled="{Binding HasSelection}">
                     <StackPanel Orientation="Horizontal" Spacing="5">
                         <TextBlock Text="F7"/>
                         <TextBlock Text="Imprimir"/>
@@ -209,8 +207,7 @@
                         Content="Salir (Esc)"
                         Command="{Binding CloseCommand}"
                         Background="#555555"
-                        Classes="action"
-                        HotKey="Escape"/>
+                        Classes="action"/>
             </Grid>
         </Border>
     </Grid>

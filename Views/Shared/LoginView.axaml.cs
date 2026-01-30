@@ -83,13 +83,12 @@ namespace CasaCejaRemake.Views.Shared
         /// </summary>
         protected override void OnKeyDown(KeyEventArgs e)
         {
-            base.OnKeyDown(e);
-
             // Enter en username: ir a password
             if (e.Source == UsernameTextBox && e.Key == Key.Enter)
             {
                 PasswordTextBox.Focus();
                 e.Handled = true;
+                return;
             }
             // Enter en password: intentar login
             else if (e.Source == PasswordTextBox && e.Key == Key.Enter)
@@ -102,7 +101,10 @@ namespace CasaCejaRemake.Views.Shared
                     }
                 }
                 e.Handled = true;
+                return;
             }
+
+            base.OnKeyDown(e);
         }
 
         /// <summary>

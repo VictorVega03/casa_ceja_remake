@@ -11,6 +11,7 @@
         WindowStartupLocation="CenterOwner"
         CanResize="False"
         ShowInTaskbar="False"
+        Focusable="True"
         Background="#1E1E1E">
 
     <Window.Styles>
@@ -76,8 +77,7 @@
             
             <Button Classes="action-button"
                     Command="{Binding NewCreditCommand}"
-                    IsEnabled="{Binding HasCartItems}"
-                    HotKey="F1">
+                    IsEnabled="{Binding HasCartItems}">
                 <StackPanel Orientation="Horizontal" Spacing="10">
                     <TextBlock Text="F1" Foreground="#4CAF50" FontWeight="Bold"/>
                     <TextBlock Text="Nuevo Credito"/>
@@ -90,8 +90,7 @@
 
             <Button Classes="action-button"
                     Command="{Binding NewLayawayCommand}"
-                    IsEnabled="{Binding HasCartItems}"
-                    HotKey="F2">
+                    IsEnabled="{Binding HasCartItems}">
                 <StackPanel Orientation="Horizontal" Spacing="10">
                     <TextBlock Text="F2" Foreground="#2196F3" FontWeight="Bold"/>
                     <TextBlock Text="Nuevo Apartado"/>
@@ -103,8 +102,7 @@
             </Button>
 
             <Button Classes="action-button"
-                    Command="{Binding MyCreditsCommand}"
-                    HotKey="F3">
+                    Command="{Binding MyCreditsCommand}">
                 <StackPanel Orientation="Horizontal" Spacing="10">
                     <TextBlock Text="F3" Foreground="#FF9800" FontWeight="Bold"/>
                     <TextBlock Text="Mis Creditos"/>
@@ -112,8 +110,7 @@
             </Button>
 
             <Button Classes="action-button"
-                    Command="{Binding MyLayawaysCommand}"
-                    HotKey="F4">
+                    Command="{Binding MyLayawaysCommand}">
                 <StackPanel Orientation="Horizontal" Spacing="10">
                     <TextBlock Text="F4" Foreground="#9C27B0" FontWeight="Bold"/>
                     <TextBlock Text="Mis Apartados"/>
@@ -125,7 +122,6 @@
         <Border Grid.Row="3" Background="#2D2D2D" Padding="10">
             <Button Content="Cancelar (Esc)"
                     Command="{Binding CancelCommand}"
-                    HotKey="Escape"
                     HorizontalAlignment="Center"
                     Background="#555555"
                     Foreground="White"

@@ -1,8 +1,10 @@
 using System;
+using System.Collections.Generic;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using CasaCejaRemake.ViewModels.POS;
+using casa_ceja_remake.Helpers;
 
 namespace CasaCejaRemake.Views.POS
 {
@@ -32,50 +34,61 @@ namespace CasaCejaRemake.Views.POS
 
         protected override void OnKeyDown(KeyEventArgs e)
         {
-            base.OnKeyDown(e);
-
-            switch (e.Key)
+            if (DataContext is SearchProductViewModel vm)
             {
-                case Key.Escape:
-                    _viewModel?.CancelCommand.Execute(null);
-                    e.Handled = true;
-                    break;
+                var shortcuts = new Dictionary<Key, Action>
+                {
+                    { Key.Escape, () => vm.CancelCommand.Execute(null) },
+                    { Key.F3, () => TxtSearch.Focus() } // Assuming TxtQuery should be TxtSearch based on original code
+                };
 
-                case Key.Enter:
-                    if (TxtSearch.IsFocused)
+                if (KeyboardShortcutHelper.HandleShortcut(e, shortcuts))
+                {
+                    return;
+                }
+
+                // Enter con lógica condicional
+                if (e.Key == Key.Enter)
+                {
+                    if (vm.SelectedProduct != null)
                     {
-                        _ = _viewModel?.SearchCommand.ExecuteAsync(null);
+                        vm.ConfirmCommand.Execute(null); // Assuming AddProductCommand should be ConfirmCommand based on original code
                     }
-                    else if (_viewModel?.SelectedProduct != null)
+                    else
                     {
-                        _viewModel.ConfirmCommand.Execute(null);
+                        vm.SearchCommand.Execute(null);
                     }
                     e.Handled = true;
-                    break;
+                    return;
+                }
 
-                case Key.Down:
-                    if (TxtSearch.IsFocused && _viewModel?.SearchResults.Count > 0)
+                // Handle navigation for Down/Up keys
+                if (e.Key == Key.Down)
+                {
+                    if (TxtSearch.IsFocused && vm.SearchResults.Count > 0)
                     {
                         if (GridResults != null)
                         {
                             GridResults.Focus();
-                            _viewModel.SelectedProductIndex = 0;
+                            vm.SelectedProductIndex = 0;
                         }
                     }
-                    break;
+                    e.Handled = true;
+                    return;
+                }
 
-                case Key.Up:
-                    if (GridResults?.IsFocused == true && _viewModel?.SelectedProductIndex == 0)
+                if (e.Key == Key.Up)
+                {
+                    if (GridResults?.IsFocused == true && vm.SelectedProductIndex == 0)
                     {
                         TxtSearch.Focus();
                     }
-                    break;
-
-                case Key.F3:
-                    _viewModel?.CancelCommand.Execute(null);
                     e.Handled = true;
-                    break;
+                    return;
+                }
             }
+
+            base.OnKeyDown(e);
         }
     }
 }

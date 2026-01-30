@@ -1,8 +1,10 @@
 using System;
+using System.Collections.Generic;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using CasaCejaRemake.ViewModels.POS;
+using casa_ceja_remake.Helpers;
 
 namespace CasaCejaRemake.Views.POS
 {
@@ -25,47 +27,46 @@ namespace CasaCejaRemake.Views.POS
 
         protected override void OnKeyDown(KeyEventArgs e)
         {
-            base.OnKeyDown(e);
-
-            switch (e.Key)
+            if (_viewModel != null)
             {
-                case Key.Escape:
-                    _viewModel?.CancelCommand.Execute(null);
-                    e.Handled = true;
-                    break;
+                var shortcuts = new Dictionary<Key, Action>
+                {
+                    { Key.Escape, () => _viewModel.CancelCommand.Execute(null) }
+                };
 
-                case Key.Enter:
-                    if (_viewModel?.CanConfirm == true)
-                    {
-                        _viewModel.ConfirmCommand.Execute(null);
-                    }
-                    e.Handled = true;
-                    break;
+                if (KeyboardShortcutHelper.HandleShortcut(e, shortcuts))
+                {
+                    return;
+                }
 
-                case Key.D1:
-                case Key.NumPad1:
-                    _viewModel?.SelectCashCommand.Execute(null);
+                // Enter con validación
+                if (e.Key == Key.Enter && _viewModel.CanConfirm)
+                {
+                    _viewModel.ConfirmCommand.Execute(null);
                     e.Handled = true;
-                    break;
+                    return;
+                }
 
-                case Key.D2:
-                case Key.NumPad2:
-                    _viewModel?.SelectDebitCommand.Execute(null);
-                    e.Handled = true;
-                    break;
-
-                case Key.D3:
-                case Key.NumPad3:
-                    _viewModel?.SelectCreditCommand.Execute(null);
-                    e.Handled = true;
-                    break;
-
-                case Key.D4:
-                case Key.NumPad4:
-                    _viewModel?.SelectTransferCommand.Execute(null);
-                    e.Handled = true;
-                    break;
+                // Teclas numéricas para selección de método de pago
+                if (KeyboardShortcutHelper.HandleShortcuts(e, () => _viewModel.SelectCashCommand.Execute(null), Key.D1, Key.NumPad1))
+                {
+                    return;
+                }
+                if (KeyboardShortcutHelper.HandleShortcuts(e, () => _viewModel.SelectDebitCommand.Execute(null), Key.D2, Key.NumPad2))
+                {
+                    return;
+                }
+                if (KeyboardShortcutHelper.HandleShortcuts(e, () => _viewModel.SelectCreditCommand.Execute(null), Key.D3, Key.NumPad3))
+                {
+                    return;
+                }
+                if (KeyboardShortcutHelper.HandleShortcuts(e, () => _viewModel.SelectTransferCommand.Execute(null), Key.D4, Key.NumPad4))
+                {
+                    return;
+                }
             }
+
+            base.OnKeyDown(e);
         }
     }
 }

@@ -11,6 +11,7 @@
         WindowStartupLocation="CenterOwner"
         CanResize="False"
         ShowInTaskbar="False"
+        Focusable="True"
         Background="#1E1E1E">
 
     <Window.Styles>
@@ -112,8 +113,7 @@
                         Classes="action-button"
                         Command="{Binding CreateNewCommand}"
                         Background="#2196F3"
-                        HorizontalAlignment="Center"
-                        HotKey="F5">
+                        HorizontalAlignment="Center">
                     <StackPanel Orientation="Horizontal" Spacing="5">
                         <TextBlock Text="F5"/>
                         <TextBlock Text="Alta Rapida"/>
@@ -124,8 +124,7 @@
                         Command="{Binding CancelCommand}"
                         Classes="action-button"
                         Background="#555555"
-                        HorizontalAlignment="Center"
-                        HotKey="Escape"/>
+                        HorizontalAlignment="Center"/>
             </Grid>
         </Border>
     </Grid>

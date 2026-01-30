@@ -1,9 +1,11 @@
 using System;
+using System.Collections.Generic;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using CasaCejaRemake.Models;
 using CasaCejaRemake.ViewModels.POS;
+using casa_ceja_remake.Helpers;
 
 namespace CasaCejaRemake.Views.POS
 {
@@ -74,20 +76,21 @@ namespace CasaCejaRemake.Views.POS
 
         protected override void OnKeyDown(KeyEventArgs e)
         {
-            base.OnKeyDown(e);
-
-            switch (e.Key)
+            if (_viewModel != null)
             {
-                case Key.F5:
-                    _viewModel?.ConfirmCommand.Execute(null);
-                    e.Handled = true;
-                    break;
+                var shortcuts = new Dictionary<Key, Action>
+                {
+                    {Key.F5, () => _viewModel.ConfirmCommand.Execute(null) },
+                    { Key.Escape, () => _viewModel.CancelCommand.Execute(null) }
+                };
 
-                case Key.Escape:
-                    _viewModel?.CancelCommand.Execute(null);
-                    e.Handled = true;
-                    break;
+                if (KeyboardShortcutHelper.HandleShortcut(e, shortcuts))
+                {
+                    return;
+                }
             }
+
+            base.OnKeyDown(e);
         }
 
         protected override void OnClosed(EventArgs e)

@@ -13,6 +13,7 @@
         WindowStartupLocation="CenterOwner"
         CanResize="False"
         ShowInTaskbar="False"
+        Focusable="True"
         Background="#1E1E1E">
 
     <Window.Styles>
@@ -131,8 +132,7 @@
                                 Background="#4CAF50"
                                 Foreground="White"
                                 Padding="10,5"
-                                FontSize="11"
-                                HotKey="F4"/>
+                                FontSize="11"/>
                     </Grid>
                     <NumericUpDown Value="{Binding AmountToPay}"
                                    Minimum="0.01"
@@ -184,8 +184,7 @@
                             Foreground="White"
                             Padding="20,12"
                             HorizontalAlignment="Center"
-                            IsEnabled="{Binding !IsProcessing}"
-                            HotKey="F5">
+                            IsEnabled="{Binding !IsProcessing}">
                         <StackPanel Orientation="Horizontal" Spacing="5">
                             <TextBlock Text="F5"/>
                             <TextBlock Text="Confirmar Abono"/>
@@ -197,8 +196,7 @@
                             Background="#555555"
                             Foreground="White"
                             Padding="20,12"
-                            HorizontalAlignment="Center"
-                            HotKey="Escape"/>
+                            HorizontalAlignment="Center"/>
                 </Grid>
             </StackPanel>
         </Border>

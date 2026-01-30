@@ -43,6 +43,14 @@ namespace CasaCejaRemake.Views.POS
             _cartItems = cartItems;
 
             Loaded += OnLoaded;
+            Activated += OnActivated;
+        }
+
+        private void OnActivated(object? sender, EventArgs e)
+        {
+            // Asegurar que la ventana tenga focus para recibir eventos de teclado
+            // Se ejecuta cada vez que la ventana se activa
+            Focus();
         }
 
         private void OnLoaded(object? sender, RoutedEventArgs e)
@@ -56,12 +64,23 @@ namespace CasaCejaRemake.Views.POS
 
         protected override void OnKeyDown(KeyEventArgs e)
         {
-            base.OnKeyDown(e);
-
             if (DataContext is CreditsLayawaysMenuViewModel vm)
             {
-                vm.HandleKeyPress(e.Key.ToString());
+                var shortcuts = new Dictionary<Key, Action>
+                {
+                    { Key.F1, () => vm.SelectListCommand.Execute(null) },
+                    { Key.F2, () => vm.SelectNewOrPaymentCommand.Execute(null) },
+                    { Key.F3, () => vm.SelectCustomerListCommand.Execute(null) },
+                    { Key.Escape, () => vm.CancelCommand.Execute(null) }
+                };
+
+                if (KeyboardShortcutHelper.HandleShortcut(e, shortcuts))
+                {
+                    return; // No propagar al padre
+                }
             }
+
+            base.OnKeyDown(e);
         }
 
         private async void OnOptionSelected(object? sender, CreditsLayawaysOption option)

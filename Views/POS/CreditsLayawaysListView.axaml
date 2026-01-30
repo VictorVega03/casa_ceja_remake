@@ -13,6 +13,7 @@
         WindowStartupLocation="CenterOwner"
         CanResize="False"
         ShowInTaskbar="False"
+        Focusable="True"
         Background="#1E1E1E">
 
     <Window.Styles>
@@ -83,18 +84,15 @@
                     <Button Content="F1 Todos"
                             Command="{Binding SetFilterCommand}"
                             CommandParameter="ALL"
-                            Classes="filter"
-                            HotKey="F1"/>
+                            Classes="filter"/>
                     <Button Content="F2 Créditos"
                             Command="{Binding SetFilterCommand}"
                             CommandParameter="CREDITS"
-                            Classes="filter"
-                            HotKey="F2"/>
+                            Classes="filter"/>
                     <Button Content="F3 Apartados"
                             Command="{Binding SetFilterCommand}"
                             CommandParameter="LAYAWAYS"
-                            Classes="filter"
-                            HotKey="F3"/>
+                            Classes="filter"/>
                 </StackPanel>
 
                 <!-- Filter Status -->
@@ -106,17 +104,15 @@
                     <Button Content="F4 Pendiente"
                             Command="{Binding SetFilterCommand}"
                             CommandParameter="PENDING"
-                            Classes="filter"
-                            HotKey="F4"/>
-                    <Button Content="Pagado"
+                            Classes="filter"/>
+                    <Button Content="F5 Pagado"
                             Command="{Binding SetFilterCommand}"
                             CommandParameter="PAID"
                             Classes="filter"/>
-                    <Button Content="F5 Vencidos"
+                    <Button Content="F6 Vencidos"
                             Command="{Binding SetFilterCommand}"
                             CommandParameter="OVERDUE"
-                            Classes="filter"
-                            HotKey="F5"/>
+                            Classes="filter"/>
                 </StackPanel>
             </Grid>
         </Border>
@@ -163,8 +159,7 @@
                         Background="#555555"
                         Foreground="White"
                         Padding="20,10"
-                        Margin="5,0"
-                        HotKey="Escape"/>
+                        Margin="5,0"/>
             </Grid>
         </Border>
     </Grid>

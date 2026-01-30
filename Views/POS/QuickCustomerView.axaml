@@ -11,6 +11,7 @@
         WindowStartupLocation="CenterOwner"
         CanResize="False"
         ShowInTaskbar="False"
+        Focusable="True"
         Background="#1E1E1E">
 
     <Window.Styles>
@@ -104,8 +105,7 @@
                         Foreground="White"
                         Padding="20,10"
                         HorizontalAlignment="Center"
-                        IsEnabled="{Binding !IsSaving}"
-                        HotKey="F5">
+                        IsEnabled="{Binding !IsSaving}">
                     <StackPanel Orientation="Horizontal" Spacing="5">
                         <TextBlock Text="F5"/>
                         <TextBlock Text="Guardar"/>
@@ -117,8 +117,7 @@
                         Background="#555555"
                         Foreground="White"
                         Padding="20,10"
-                        HorizontalAlignment="Center"
-                        HotKey="Escape"/>
+                        HorizontalAlignment="Center"/>
             </Grid>
         </Border>
     </Grid>

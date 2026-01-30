@@ -1,8 +1,10 @@
 using System;
+using System.Collections.Generic;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using CasaCejaRemake.ViewModels.POS;
+using casa_ceja_remake.Helpers;
 
 namespace CasaCejaRemake.Views.POS
 {
@@ -14,6 +16,13 @@ namespace CasaCejaRemake.Views.POS
         {
             InitializeComponent();
             Loaded += OnLoaded;
+            Activated += OnActivated;
+        }
+
+        private void OnActivated(object? sender, EventArgs e)
+        {
+            // Asegurar que la ventana tenga focus para recibir eventos de teclado
+            Focus();
         }
 
         private void OnLoaded(object? sender, RoutedEventArgs e)
@@ -40,30 +49,26 @@ namespace CasaCejaRemake.Views.POS
 
         protected override void OnKeyDown(KeyEventArgs e)
         {
-            base.OnKeyDown(e);
-
-            switch (e.Key)
+            if (_viewModel != null)
             {
-                case Key.Escape:
-                    _viewModel?.CancelCommand.Execute(null);
-                    e.Handled = true;
-                    break;
+                // Enter y F5 ejecutan la misma acción
+                if (KeyboardShortcutHelper.HandleShortcuts(e, () => _viewModel.ConfirmCommand.Execute(null), Key.Enter, Key.F5))
+                {
+                    return;
+                }
 
-                case Key.F4:
-                    _viewModel?.PayAllCommand.Execute(null);
-                    e.Handled = true;
-                    break;
+                var shortcuts = new Dictionary<Key, Action>
+                {
+                    { Key.Escape, () => _viewModel.CancelCommand.Execute(null) }
+                };
 
-                case Key.F5:
-                    _viewModel?.ConfirmCommand.Execute(null);
-                    e.Handled = true;
-                    break;
-
-                case Key.Enter:
-                    _viewModel?.ConfirmCommand.Execute(null);
-                    e.Handled = true;
-                    break;
+                if (KeyboardShortcutHelper.HandleShortcut(e, shortcuts))
+                {
+                    return;
+                }
             }
+
+            base.OnKeyDown(e);
         }
 
         protected override void OnClosed(EventArgs e)

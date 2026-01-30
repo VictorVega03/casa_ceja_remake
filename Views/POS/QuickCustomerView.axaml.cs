@@ -43,12 +43,12 @@ namespace CasaCejaRemake.Views.POS
 
         protected override void OnKeyDown(KeyEventArgs e)
         {
-            base.OnKeyDown(e);
-
             if (DataContext is QuickCustomerViewModel vm)
             {
                 vm.HandleKeyPress(e.Key.ToString());
             }
+
+            base.OnKeyDown(e);
         }
 
         protected override void OnClosed(EventArgs e)
