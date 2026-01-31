@@ -209,8 +209,8 @@ namespace CasaCejaRemake.Views.POS
 
             paymentViewModel.PaymentConfirmed += async (s, args) =>
             {
-                var (paymentMethod, amountPaid) = args;
-                var result = await _viewModel.ProcessPaymentAsync((Models.PaymentMethod)paymentMethod, amountPaid);
+                var (paymentJson, totalPaid, change) = args;
+                var result = await _viewModel.ProcessPaymentAsync(paymentJson, totalPaid, change);
                 
                 if (result.Success)
                 {

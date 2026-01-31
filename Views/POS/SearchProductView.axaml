@@ -4,10 +4,10 @@
         x:Class="CasaCejaRemake.Views.POS.SearchProductView"
         x:DataType="vm:SearchProductViewModel"
         Title="Buscar Producto"
-        Width="700"
-        Height="500"
+        WindowState="Maximized"
         WindowStartupLocation="CenterOwner"
-        Background="#1E1E1E">
+        Background="#1E1E1E"
+        Focusable="True">
 
     <Window.Styles>
         <Style Selector="Button.action-btn">
@@ -20,40 +20,65 @@
         <Style Selector="Button.action-btn:pointerover">
             <Setter Property="Background" Value="#1084D8"/>
         </Style>
+        <Style Selector="ComboBox">
+            <Setter Property="Background" Value="#3D3D3D"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Padding" Value="10"/>
+            <Setter Property="CornerRadius" Value="4"/>
+            <Setter Property="MinWidth" Value="150"/>
+        </Style>
     </Window.Styles>
 
-    <Grid RowDefinitions="Auto,Auto,*,Auto,Auto" Margin="15">
+    <Grid RowDefinitions="Auto,Auto,*,Auto,Auto,Auto" Margin="20">
         
         <!-- Filtros de busqueda -->
-        <Grid Grid.Row="0" ColumnDefinitions="*,200" Margin="0,0,0,10">
+        <Grid Grid.Row="0" ColumnDefinitions="*,Auto,Auto,Auto" Margin="0,0,0,10">
             <TextBox x:Name="TxtSearch"
                      Grid.Column="0"
                      Text="{Binding SearchTerm, Mode=TwoWay}"
-                     Watermark="Buscar por codigo o nombre..."
-                     FontSize="14"
-                     Padding="10"
+                     Watermark="Buscar por codigo o nombre... (presiona Enter para buscar)"
+                     FontSize="16"
+                     Padding="15"
                      Background="#3D3D3D"
                      Foreground="White"
                      BorderThickness="0"
                      CornerRadius="4"
                      Margin="0,0,10,0"/>
             
+            <!-- Dropdown de Categoría -->
             <ComboBox Grid.Column="1"
                       ItemsSource="{Binding Categories}"
                       SelectedValue="{Binding SelectedCategoryId}"
                       SelectedValueBinding="{Binding Id}"
                       DisplayMemberBinding="{Binding Name}"
-                      Background="#3D3D3D"
-                      Foreground="White"
-                      Padding="10"
-                      CornerRadius="4"/>
+                      Margin="0,0,10,0"/>
+            
+            <!-- Dropdown de Medida -->
+            <ComboBox Grid.Column="2"
+                      ItemsSource="{Binding Units}"
+                      SelectedValue="{Binding SelectedUnitId}"
+                      SelectedValueBinding="{Binding Id}"
+                      DisplayMemberBinding="{Binding Name}"
+                      Margin="0,0,10,0"/>
+            
+            <!-- Botón Ver Existencia -->
+            <Button Grid.Column="3"
+                    x:Name="BtnExistencia"
+                    Content="📦 Ver Existencia"
+                    Background="#FF9800"
+                    Foreground="White"
+                    Padding="15,10"
+                    CornerRadius="4"
+                    IsEnabled="{Binding SelectedProduct, Converter={x:Static ObjectConverters.IsNotNull}}"
+                    Click="OnVerExistenciaClick"/>
         </Grid>
 
         <!-- Botones de busqueda -->
         <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,10">
             <Button Classes="action-btn" Command="{Binding SearchCommand}">
                 <StackPanel Orientation="Horizontal" Spacing="5">
-                    <TextBlock Text="Buscar"/>
+                    <TextBlock Text="🔍"/>
+                    <TextBlock Text="Buscar (Enter)"/>
                 </StackPanel>
             </Button>
             <Button Classes="action-btn" Command="{Binding ClearCommand}" Background="#3D3D3D">
@@ -61,7 +86,7 @@
             </Button>
         </StackPanel>
 
-        <!-- Resultados -->
+        <!-- Resultados con TODAS las columnas -->
         <Border Grid.Row="2" Background="#2D2D2D" Padding="5" CornerRadius="4">
             <DataGrid x:Name="GridResults"
                       ItemsSource="{Binding SearchResults}"
@@ -72,7 +97,8 @@
                       GridLinesVisibility="Horizontal"
                       HeadersVisibility="Column"
                       Background="#2D2D2D"
-                      BorderThickness="0">
+                      BorderThickness="0"
+                      CanUserResizeColumns="True">
                 <DataGrid.Styles>
                     <Style Selector="DataGridRow">
                         <Setter Property="Background" Value="#2D2D2D"/>
@@ -90,39 +116,79 @@
                         <Setter Property="Foreground" Value="#888"/>
                         <Setter Property="Background" Value="#2D2D2D"/>
                         <Setter Property="FontWeight" Value="Bold"/>
+                        <Setter Property="Padding" Value="8,4"/>
                     </Style>
                 </DataGrid.Styles>
                 <DataGrid.Columns>
-                    <DataGridTextColumn Header="CODIGO" Binding="{Binding Barcode}" Width="120"/>
+                    <DataGridTextColumn Header="CÓDIGO" Binding="{Binding Barcode}" Width="120"/>
                     <DataGridTextColumn Header="NOMBRE" Binding="{Binding Name}" Width="*"/>
-                    <DataGridTextColumn Header="PRECIO" Binding="{Binding PriceRetail, StringFormat='{}{0:C2}'}" Width="100"/>
+                    <DataGridTextColumn Header="CATEGORÍA" Binding="{Binding CategoryName}" Width="120"/>
+                    <DataGridTextColumn Header="PRESENTACIÓN" Binding="{Binding Presentation}" Width="100"/>
+                    <DataGridTextColumn Header="MEDIDA" Binding="{Binding UnitName}" Width="80"/>
+                    <DataGridTextColumn Header="P. VENTA" Binding="{Binding PriceRetail, StringFormat='{}{0:C2}'}" Width="100"/>
+                    <DataGridTextColumn Header="P. MAYOREO" Binding="{Binding PriceWholesale, StringFormat='{}{0:C2}'}" Width="100"/>
+                    <DataGridTextColumn Header="CANT. MAY." Binding="{Binding WholesaleQuantity}" Width="80"/>
+                    <DataGridTextColumn Header="P. ESPECIAL" Binding="{Binding PriceSpecial, StringFormat='{}{0:C2}'}" Width="100"/>
+                    <DataGridTextColumn Header="P. VENDEDOR" Binding="{Binding PriceDealer, StringFormat='{}{0:C2}'}" Width="100"/>
                 </DataGrid.Columns>
             </DataGrid>
         </Border>
 
-        <!-- Selector de cantidad -->
+        <!-- Paginación -->
         <Border Grid.Row="3" Background="#2D2D2D" Padding="10" CornerRadius="4" Margin="0,10,0,0">
+            <Grid ColumnDefinitions="Auto,*,Auto">
+                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="10">
+                    <Button Content="◀ Anterior"
+                            Command="{Binding PreviousPageCommand}"
+                            IsEnabled="{Binding CanGoPrevious}"
+                            Background="#3D3D3D"
+                            Foreground="White"
+                            Padding="15,8"
+                            CornerRadius="4"/>
+                    <TextBlock Text="{Binding PaginationInfo}"
+                               Foreground="White"
+                               VerticalAlignment="Center"
+                               FontWeight="Bold"/>
+                    <Button Content="Siguiente ▶"
+                            Command="{Binding NextPageCommand}"
+                            IsEnabled="{Binding CanGoNext}"
+                            Background="#3D3D3D"
+                            Foreground="White"
+                            Padding="15,8"
+                            CornerRadius="4"/>
+                </StackPanel>
+                
+                <TextBlock Grid.Column="2" 
+                           Text="{Binding StatusMessage}" 
+                           Foreground="#888" 
+                           VerticalAlignment="Center"/>
+            </Grid>
+        </Border>
+
+        <!-- Selector de cantidad -->
+        <Border Grid.Row="4" Background="#2D2D2D" Padding="10" CornerRadius="4" Margin="0,10,0,0">
             <Grid ColumnDefinitions="Auto,Auto,*,Auto">
                 <TextBlock Grid.Column="0" 
                            Text="Cantidad:" 
                            Foreground="White" 
                            VerticalAlignment="Center"
+                           FontSize="16"
                            Margin="0,0,10,0"/>
                 
                 <StackPanel Grid.Column="1" Orientation="Horizontal">
                     <Button Command="{Binding DecrementQuantityCommand}"
-                            Width="35"
-                            Height="35"
+                            Width="40"
+                            Height="40"
                             Background="#3D3D3D"
                             Foreground="White"
                             CornerRadius="4">
-                        <TextBlock Text="-" FontSize="16" FontWeight="Bold"/>
+                        <TextBlock Text="-" FontSize="20" FontWeight="Bold"/>
                     </Button>
                     
                     <TextBox Text="{Binding Quantity, Mode=TwoWay}"
-                             Width="60"
-                             Height="35"
-                             FontSize="16"
+                             Width="80"
+                             Height="40"
+                             FontSize="18"
                              FontWeight="Bold"
                              HorizontalContentAlignment="Center"
                              VerticalContentAlignment="Center"
@@ -132,20 +198,14 @@
                              Margin="5,0"/>
                     
                     <Button Command="{Binding IncrementQuantityCommand}"
-                            Width="35"
-                            Height="35"
+                            Width="40"
+                            Height="40"
                             Background="#3D3D3D"
                             Foreground="White"
                             CornerRadius="4">
-                        <TextBlock Text="+" FontSize="16" FontWeight="Bold"/>
+                        <TextBlock Text="+" FontSize="20" FontWeight="Bold"/>
                     </Button>
                 </StackPanel>
-
-                <TextBlock Grid.Column="2" 
-                           Text="{Binding StatusMessage}" 
-                           Foreground="#888" 
-                           VerticalAlignment="Center"
-                           Margin="15,0,0,0"/>
 
                 <!-- Indicador de carga -->
                 <ProgressBar Grid.Column="3" 
@@ -157,18 +217,18 @@
         </Border>
 
         <!-- Botones de accion -->
-        <Grid Grid.Row="4" ColumnDefinitions="*,Auto,Auto" Margin="0,15,0,0">
+        <Grid Grid.Row="5" ColumnDefinitions="*,Auto,Auto" Margin="0,15,0,0">
             <TextBlock Grid.Column="0" 
-                       Text="Enter: Seleccionar | Esc: Cancelar" 
+                       Text="Enter: Seleccionar | Esc: Cancelar | ↓: Ir a lista" 
                        Foreground="#666" 
                        VerticalAlignment="Center"
-                       FontSize="11"/>
+                       FontSize="12"/>
             
             <Button Grid.Column="1" 
                     Command="{Binding CancelCommand}"
                     Background="#3D3D3D"
                     Foreground="White"
-                    Padding="20,10"
+                    Padding="25,12"
                     Margin="0,0,5,0"
                     CornerRadius="4">
                 <StackPanel Orientation="Horizontal" Spacing="8">
@@ -181,12 +241,12 @@
                     Command="{Binding ConfirmCommand}"
                     Background="#4CAF50"
                     Foreground="White"
-                    Padding="20,10"
+                    Padding="25,12"
                     Margin="5,0,0,0"
                     CornerRadius="4">
                 <StackPanel Orientation="Horizontal" Spacing="8">
                     <TextBlock Text="Enter" FontWeight="Bold"/>
-                    <TextBlock Text="Agregar"/>
+                    <TextBlock Text="Agregar al Carrito"/>
                 </StackPanel>
             </Button>
         </Grid>

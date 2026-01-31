@@ -6,7 +6,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CasaCejaRemake.Models;
 using CasaCejaRemake.Services;
-using PaymentMethodEnum = CasaCejaRemake.Models.PaymentMethod;
+using PaymentMethodEnum = CasaCejaRemake.Models.PaymentMethod; // Keep for backward compatibility
 
 namespace CasaCejaRemake.ViewModels.POS
 {
@@ -316,17 +316,18 @@ namespace CasaCejaRemake.ViewModels.POS
             RequestShowPayment?.Invoke(this, EventArgs.Empty);
         }
 
-        public async Task<SaleResult> ProcessPaymentAsync(PaymentMethodEnum paymentMethod, decimal amountPaid)
+        public async Task<SaleResult> ProcessPaymentAsync(string paymentJson, decimal totalPaid, decimal changeGiven)
         {
             IsProcessing = true;
             StatusMessage = "Procesando venta...";
 
             try
             {
-                var result = await _salesService.ProcessSaleAsync(
+                var result = await _salesService.ProcessSaleWithMixedPaymentAsync(
                     _cartService.GetItemsForSale(),
-                    paymentMethod,
-                    amountPaid,
+                    paymentJson,
+                    totalPaid,
+                    changeGiven,
                     _authService.CurrentUser?.Id ?? 0,
                     _authService.CurrentUser?.Name ?? "Usuario",
                     _branchId);

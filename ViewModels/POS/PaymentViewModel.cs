@@ -1,35 +1,59 @@
 using System;
+using System.Collections.ObjectModel;
+using System.Text.Json;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CasaCejaRemake.Models;
 
 namespace CasaCejaRemake.ViewModels.POS
 {
+    // Representa un pago individual en la lista de pagos mixtos
+    public class PaymentEntry
+    {
+        public string Method { get; set; } = string.Empty;
+        public decimal Amount { get; set; }
+    }
+
     public partial class PaymentViewModel : ViewModelBase
     {
         [ObservableProperty]
         private decimal _totalToPay;
 
         [ObservableProperty]
-        private decimal _amountPaid;
+        private decimal _totalPaid;
+
+        [ObservableProperty]
+        private decimal _remainingAmount;
 
         [ObservableProperty]
         private decimal _change;
 
         [ObservableProperty]
-        private PaymentMethod _selectedPaymentMethod = PaymentMethod.Efectivo;
+        private bool _showChange;
 
         [ObservableProperty]
-        private bool _isCashSelected = true;
+        private string _remainingColor = "#FF9800";
 
         [ObservableProperty]
-        private bool _isDebitSelected;
+        private decimal _currentAmount;
 
         [ObservableProperty]
-        private bool _isCreditSelected;
+        private string _currentMethodName = "Efectivo";
 
         [ObservableProperty]
-        private bool _isTransferSelected;
+        private PaymentMethod _currentMethod = PaymentMethod.Efectivo;
+
+        [ObservableProperty]
+        private bool _isEffectivoSelected = true;
+
+        [ObservableProperty]
+        private bool _isDebitoSelected;
+
+        [ObservableProperty]
+        private bool _isCreditoSelected;
+
+        [ObservableProperty]
+        private bool _isTransferenciaSelected;
 
         [ObservableProperty]
         private string _errorMessage = string.Empty;
@@ -38,117 +62,179 @@ namespace CasaCejaRemake.ViewModels.POS
         private bool _canConfirm;
 
         [ObservableProperty]
+        private bool _hasPayments;
+
+        [ObservableProperty]
         private int _totalItems;
 
-        public event EventHandler<(PaymentMethod, decimal)>? PaymentConfirmed;
+        // Lista de pagos mixtos
+        public ObservableCollection<PaymentEntry> PaymentsList { get; } = new();
+
+        public event EventHandler<(string PaymentJson, decimal TotalPaid, decimal Change)>? PaymentConfirmed;
         public event EventHandler? PaymentCancelled;
 
         public PaymentViewModel(decimal total, int articulos)
         {
             TotalToPay = total;
             TotalItems = articulos;
-            AmountPaid = total;
-            CalculateChange();
+            RemainingAmount = total;
+            CurrentAmount = total; // Por defecto, pagar todo
+            UpdateState();
         }
 
-        partial void OnAmountPaidChanged(decimal value)
+        private void UpdateState()
         {
-            CalculateChange();
-        }
-
-        partial void OnSelectedPaymentMethodChanged(PaymentMethod value)
-        {
-            // Actualizar flags de seleccion
-            IsCashSelected = value == PaymentMethod.Efectivo;
-            IsDebitSelected = value == PaymentMethod.TarjetaDebito;
-            IsCreditSelected = value == PaymentMethod.TarjetaCredito;
-            IsTransferSelected = value == PaymentMethod.Transferencia;
-
-            // Si no es efectivo, el monto pagado es el total
-            if (value != PaymentMethod.Efectivo)
+            // Calcular total pagado
+            decimal sum = 0;
+            foreach (var p in PaymentsList)
             {
-                AmountPaid = TotalToPay;
+                sum += p.Amount;
             }
-
-            CalculateChange();
-        }
-
-        private void CalculateChange()
-        {
-            if (SelectedPaymentMethod == PaymentMethod.Efectivo)
-            {
-                Change = AmountPaid - TotalToPay;
-                
-                if (AmountPaid < TotalToPay)
-                {
-                    ErrorMessage = "Monto insuficiente";
-                    CanConfirm = false;
-                }
-                else
-                {
-                    ErrorMessage = string.Empty;
-                    CanConfirm = true;
-                }
-            }
+            TotalPaid = sum;
+            
+            // Calcular restante
+            RemainingAmount = TotalToPay - TotalPaid;
+            
+            // Color del restante
+            if (RemainingAmount <= 0)
+                RemainingColor = "#4CAF50"; // Verde - pagado
+            else if (RemainingAmount < TotalToPay)
+                RemainingColor = "#2196F3"; // Azul - parcialmente pagado
             else
+                RemainingColor = "#FF9800"; // Naranja - sin pagar
+
+            // Calcular cambio (solo si hay efectivo y se pagó de más)
+            Change = TotalPaid > TotalToPay ? TotalPaid - TotalToPay : 0;
+            
+            // Mostrar cambio solo si hay pagos en efectivo y hay exceso
+            bool hasCash = false;
+            foreach (var p in PaymentsList)
             {
-                Change = 0;
-                ErrorMessage = string.Empty;
-                CanConfirm = true;
+                if (p.Method == "Efectivo") { hasCash = true; break; }
+            }
+            ShowChange = hasCash && Change > 0;
+
+            // Puede confirmar si cubrió el total
+            HasPayments = PaymentsList.Count > 0;
+            CanConfirm = TotalPaid >= TotalToPay;
+        }
+
+        [RelayCommand]
+        private void SelectMethod(string method)
+        {
+            CurrentMethodName = method switch
+            {
+                "Efectivo" => "Efectivo",
+                "Debito" => "Tarjeta Débito",
+                "Credito" => "Tarjeta Crédito",
+                "Transferencia" => "Transferencia",
+                _ => "Efectivo"
+            };
+
+            CurrentMethod = method switch
+            {
+                "Efectivo" => PaymentMethod.Efectivo,
+                "Debito" => PaymentMethod.TarjetaDebito,
+                "Credito" => PaymentMethod.TarjetaCredito,
+                "Transferencia" => PaymentMethod.Transferencia,
+                _ => PaymentMethod.Efectivo
+            };
+
+            // Actualizar estados de selección visual
+            IsEffectivoSelected = method == "Efectivo";
+            IsDebitoSelected = method == "Debito";
+            IsCreditoSelected = method == "Credito";
+            IsTransferenciaSelected = method == "Transferencia";
+
+            // Si no es efectivo, sugerir el restante exacto
+            if (CurrentMethod != PaymentMethod.Efectivo)
+            {
+                CurrentAmount = RemainingAmount > 0 ? RemainingAmount : 0;
             }
         }
 
         [RelayCommand]
-        private void SelectCash()
-        {
-            SelectedPaymentMethod = PaymentMethod.Efectivo;
-        }
-
-        [RelayCommand]
-        private void SelectDebit()
-        {
-            SelectedPaymentMethod = PaymentMethod.TarjetaDebito;
-        }
-
-        [RelayCommand]
-        private void SelectCredit()
-        {
-            SelectedPaymentMethod = PaymentMethod.TarjetaCredito;
-        }
-
-        [RelayCommand]
-        private void SelectTransfer()
-        {
-            SelectedPaymentMethod = PaymentMethod.Transferencia;
-        }
-
-        [RelayCommand]
-        private void AddAmount(string monto)
+        private void AddToCurrent(string monto)
         {
             if (decimal.TryParse(monto, out decimal cantidad))
             {
-                AmountPaid += cantidad;
+                CurrentAmount += cantidad;
             }
         }
 
         [RelayCommand]
-        private void ExactPayment()
+        private void ClearCurrent()
         {
-            AmountPaid = TotalToPay;
+            CurrentAmount = 0;
         }
 
         [RelayCommand]
-        private void ClearAmount()
+        private void PayRemaining()
         {
-            AmountPaid = 0;
+            CurrentAmount = RemainingAmount > 0 ? RemainingAmount : 0;
+        }
+
+        [RelayCommand]
+        private void AddPayment()
+        {
+            if (CurrentAmount <= 0)
+            {
+                ErrorMessage = "El monto debe ser mayor a 0";
+                return;
+            }
+
+            // Agregar pago a la lista
+            PaymentsList.Add(new PaymentEntry
+            {
+                Method = CurrentMethodName,
+                Amount = CurrentAmount
+            });
+
+            ErrorMessage = string.Empty;
+            UpdateState();
+
+            // Preparar para siguiente pago
+            CurrentAmount = RemainingAmount > 0 ? RemainingAmount : 0;
+        }
+
+        [RelayCommand]
+        private void RemovePayment(PaymentEntry payment)
+        {
+            if (payment != null)
+            {
+                PaymentsList.Remove(payment);
+                UpdateState();
+                CurrentAmount = RemainingAmount > 0 ? RemainingAmount : 0;
+            }
         }
 
         [RelayCommand]
         private void Confirm()
         {
-            if (!CanConfirm) return;
+            if (!CanConfirm)
+            {
+                ErrorMessage = "Debe cubrir el total para confirmar la venta";
+                return;
+            }
 
-            PaymentConfirmed?.Invoke(this, (SelectedPaymentMethod, AmountPaid));
+            // Generar JSON de pagos mixtos
+            var paymentDict = new System.Collections.Generic.Dictionary<string, decimal>();
+            foreach (var p in PaymentsList)
+            {
+                string key = p.Method.ToLower()
+                    .Replace("á", "a").Replace("é", "e").Replace("í", "i")
+                    .Replace("ó", "o").Replace("ú", "u")
+                    .Replace(" ", "_");
+                
+                if (paymentDict.ContainsKey(key))
+                    paymentDict[key] += p.Amount;
+                else
+                    paymentDict[key] = p.Amount;
+            }
+
+            string paymentJson = JsonSerializer.Serialize(paymentDict);
+            
+            PaymentConfirmed?.Invoke(this, (paymentJson, TotalPaid, Change));
         }
 
         [RelayCommand]
@@ -157,13 +243,10 @@ namespace CasaCejaRemake.ViewModels.POS
             PaymentCancelled?.Invoke(this, EventArgs.Empty);
         }
 
-        public string PaymentMethodName => SelectedPaymentMethod switch
+        // Incrementar/decrementar con flechas
+        public void AdjustAmount(int delta)
         {
-            PaymentMethod.Efectivo => "Efectivo",
-            PaymentMethod.TarjetaDebito => "Tarjeta Debito",
-            PaymentMethod.TarjetaCredito => "Tarjeta Credito",
-            PaymentMethod.Transferencia => "Transferencia",
-            _ => "Desconocido"
-        };
+            CurrentAmount = Math.Max(0, CurrentAmount + delta);
+        }
     }
 }

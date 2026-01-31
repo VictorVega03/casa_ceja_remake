@@ -142,6 +142,9 @@ namespace CasaCejaRemake.Services
 
         [JsonPropertyName("c")]
         public decimal Change { get; set; }
+
+        [JsonPropertyName("pd")]
+        public string PaymentDetails { get; set; } = string.Empty; // JSON con desglose de pagos mixtos
     }
 
     public class TicketMetadata
@@ -260,6 +263,119 @@ namespace CasaCejaRemake.Services
                     MethodName = GetPaymentMethodName(paymentMethod),
                     Amount = amountPaid,
                     Change = change
+                },
+                Meta = new TicketMetadata
+                {
+                    Version = "1.0",
+                    GeneratedAt = now,
+                    AppVersion = "1.0.0"
+                }
+            };
+        }
+
+        /// <summary>
+        /// Genera ticket con pagos mixtos (múltiples métodos de pago)
+        /// </summary>
+        public TicketData GenerateTicketWithMixedPayment(
+            string folio,
+            int branchId,
+            string branchName,
+            string branchAddress,
+            string branchPhone,
+            int userId,
+            string userName,
+            List<CartItem> items,
+            string paymentJson,
+            decimal totalPaid,
+            decimal change)
+        {
+            var now = DateTime.Now;
+
+            var ticketProducts = new List<TicketProduct>();
+            decimal subtotal = 0;
+            decimal totalDiscount = 0;
+            int itemCount = 0;
+
+            foreach (var item in items)
+            {
+                ticketProducts.Add(new TicketProduct
+                {
+                    ProductId = item.ProductId,
+                    Barcode = item.Barcode,
+                    Name = item.ProductName,
+                    Quantity = item.Quantity,
+                    ListPrice = item.ListPrice,
+                    UnitPrice = item.FinalUnitPrice,
+                    LineTotal = item.LineTotal,
+                    Discount = item.TotalDiscount * item.Quantity,
+                    PriceType = item.PriceType,
+                    DiscountInfo = item.DiscountInfo
+                });
+
+                subtotal += item.LineTotal;
+                totalDiscount += item.TotalDiscount * item.Quantity;
+                itemCount += item.Quantity;
+            }
+
+            // Parsear el nombre del método de pago para mostrar
+            string paymentMethodName = "Mixto";
+            try
+            {
+                var payments = JsonSerializer.Deserialize<Dictionary<string, decimal>>(paymentJson);
+                if (payments != null && payments.Count == 1)
+                {
+                    foreach (var key in payments.Keys)
+                    {
+                        paymentMethodName = key switch
+                        {
+                            "efectivo" => "Efectivo",
+                            "tarjeta_debito" => "Tarjeta Débito",
+                            "tarjeta_credito" => "Tarjeta Crédito",
+                            "transferencia" => "Transferencia",
+                            _ => key
+                        };
+                        break;
+                    }
+                }
+                else if (payments != null && payments.Count > 1)
+                {
+                    paymentMethodName = "Pago Mixto";
+                }
+            }
+            catch { /* usar default */ }
+
+            return new TicketData
+            {
+                Branch = new TicketBranch
+                {
+                    Id = branchId,
+                    Name = branchName,
+                    Address = branchAddress,
+                    Phone = branchPhone
+                },
+                Sale = new TicketSale
+                {
+                    Folio = folio,
+                    DateTime = now,
+                    UserId = userId,
+                    UserName = userName
+                },
+                Products = ticketProducts,
+                Totals = new TicketTotals
+                {
+                    Subtotal = subtotal + totalDiscount,
+                    TotalDiscount = totalDiscount,
+                    Tax = 0,
+                    GrandTotal = subtotal,
+                    ItemCount = itemCount
+                },
+                Payment = new TicketPayment
+                {
+                    Method = 0,
+                    MethodName = paymentMethodName,
+                    Amount = totalPaid,
+                    Change = change,
+                    PaymentDetails = paymentJson
                 },
                 Meta = new TicketMetadata
                 {

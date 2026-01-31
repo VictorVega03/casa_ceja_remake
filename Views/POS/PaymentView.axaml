@@ -1,34 +1,32 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:CasaCejaRemake.ViewModels.POS"
+        xmlns:helpers="using:CasaCejaRemake.Helpers"
         x:Class="CasaCejaRemake.Views.POS.PaymentView"
         x:DataType="vm:PaymentViewModel"
         Title="Cobro"
-        Width="500"
-        Height="450"
+        Width="650"
+        Height="550"
         WindowStartupLocation="CenterOwner"
         CanResize="False"
+        Focusable="True"
         Background="#1E1E1E">
+
+    <Window.Resources>
+        <helpers:BoolToColorConverter x:Key="BoolToColorConverter"/>
+    </Window.Resources>
 
     <Window.Styles>
         <Style Selector="Button.payment-method">
             <Setter Property="Background" Value="#3D3D3D"/>
             <Setter Property="Foreground" Value="White"/>
-            <Setter Property="Padding" Value="15,12"/>
+            <Setter Property="Padding" Value="15,10"/>
             <Setter Property="Margin" Value="3"/>
             <Setter Property="CornerRadius" Value="4"/>
             <Setter Property="HorizontalAlignment" Value="Stretch"/>
         </Style>
         <Style Selector="Button.payment-method:pointerover">
             <Setter Property="Background" Value="#4D4D4D"/>
-        </Style>
-        <Style Selector="Button.payment-method-selected">
-            <Setter Property="Background" Value="#0078D4"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="Padding" Value="15,12"/>
-            <Setter Property="Margin" Value="3"/>
-            <Setter Property="CornerRadius" Value="4"/>
-            <Setter Property="HorizontalAlignment" Value="Stretch"/>
         </Style>
         <Style Selector="Button.quick-amount">
             <Setter Property="Background" Value="#2D2D2D"/>
@@ -44,125 +42,153 @@
 
     <Grid RowDefinitions="Auto,*,Auto,Auto" Margin="15">
         
-        <!-- Header con total -->
+        <!-- Header con totales -->
         <Border Grid.Row="0" Background="#2D2D2D" Padding="15" CornerRadius="4" Margin="0,0,0,15">
-            <StackPanel>
-                <TextBlock Text="TOTAL A PAGAR" 
-                           FontSize="14" 
-                           Foreground="#888" 
-                           HorizontalAlignment="Center"/>
-                <TextBlock Text="{Binding TotalToPay, StringFormat='{}{ 0:C2}'}" 
-                           FontSize="36" 
-                           FontWeight="Bold" 
-                           Foreground="#4CAF50" 
-                           HorizontalAlignment="Center"/>
-                <TextBlock Text="{Binding TotalItems, StringFormat='{}{0} articulo(s)'}" 
-                           FontSize="12" 
-                           Foreground="#888" 
-                           HorizontalAlignment="Center"/>
-            </StackPanel>
+            <Grid ColumnDefinitions="*,*,*">
+                <StackPanel Grid.Column="0" HorizontalAlignment="Center">
+                    <TextBlock Text="TOTAL" FontSize="12" Foreground="#888" HorizontalAlignment="Center"/>
+                    <TextBlock Text="{Binding TotalToPay, StringFormat='{}{0:C2}'}" 
+                               FontSize="28" FontWeight="Bold" Foreground="#4CAF50" HorizontalAlignment="Center"/>
+                </StackPanel>
+                <StackPanel Grid.Column="1" HorizontalAlignment="Center">
+                    <TextBlock Text="ABONADO" FontSize="12" Foreground="#888" HorizontalAlignment="Center"/>
+                    <TextBlock Text="{Binding TotalPaid, StringFormat='{}{0:C2}'}" 
+                               FontSize="28" FontWeight="Bold" Foreground="#2196F3" HorizontalAlignment="Center"/>
+                </StackPanel>
+                <StackPanel Grid.Column="2" HorizontalAlignment="Center">
+                    <TextBlock Text="RESTANTE" FontSize="12" Foreground="#888" HorizontalAlignment="Center"/>
+                    <TextBlock Text="{Binding RemainingAmount, StringFormat='{}{0:C2}'}" 
+                               FontSize="28" FontWeight="Bold" Foreground="{Binding RemainingColor}" HorizontalAlignment="Center"/>
+                </StackPanel>
+            </Grid>
         </Border>
 
         <!-- Contenido principal -->
-        <Grid Grid.Row="1" ColumnDefinitions="*,*" RowDefinitions="Auto,*">
+        <Grid Grid.Row="1" ColumnDefinitions="200,*">
             
             <!-- Metodos de pago -->
-            <StackPanel Grid.Column="0" Grid.Row="0" Grid.RowSpan="2" Margin="0,0,10,0">
-                <TextBlock Text="METODO DE PAGO" 
-                           FontSize="12" 
-                           Foreground="#888" 
-                           FontWeight="Bold"
-                           Margin="0,0,0,10"/>
+            <StackPanel Grid.Column="0" Margin="0,0,15,0">
+                <TextBlock Text="MÉTODO DE PAGO" FontSize="12" Foreground="#888" FontWeight="Bold" Margin="0,0,0,10"/>
                 
-                <Button Classes="payment-method" Command="{Binding SelectCashCommand}">
+                <Button Command="{Binding SelectMethodCommand}" CommandParameter="Efectivo"
+                        Background="{Binding IsEffectivoSelected, Converter={StaticResource BoolToColorConverter}, ConverterParameter='#0078D4|#3D3D3D'}"
+                        Foreground="White" Padding="15,10" Margin="3" CornerRadius="4" HorizontalAlignment="Stretch">
                     <StackPanel Orientation="Horizontal" Spacing="10">
-                        <TextBlock Text="$" FontWeight="Bold"/>
+                        <TextBlock Text="💵" FontSize="16"/>
                         <TextBlock Text="Efectivo"/>
                     </StackPanel>
                 </Button>
                 
-                <Button Classes="payment-method" Command="{Binding SelectDebitCommand}">
+                <Button Command="{Binding SelectMethodCommand}" CommandParameter="Debito"
+                        Background="{Binding IsDebitoSelected, Converter={StaticResource BoolToColorConverter}, ConverterParameter='#0078D4|#3D3D3D'}"
+                        Foreground="White" Padding="15,10" Margin="3" CornerRadius="4" HorizontalAlignment="Stretch">
                     <StackPanel Orientation="Horizontal" Spacing="10">
-                        <TextBlock Text="TD"/>
-                        <TextBlock Text="Tarjeta Debito"/>
+                        <TextBlock Text="💳" FontSize="16"/>
+                        <TextBlock Text="Tarjeta Débito"/>
                     </StackPanel>
                 </Button>
                 
-                <Button Classes="payment-method" Command="{Binding SelectCreditCommand}">
+                <Button Command="{Binding SelectMethodCommand}" CommandParameter="Credito"
+                        Background="{Binding IsCreditoSelected, Converter={StaticResource BoolToColorConverter}, ConverterParameter='#0078D4|#3D3D3D'}"
+                        Foreground="White" Padding="15,10" Margin="3" CornerRadius="4" HorizontalAlignment="Stretch">
                     <StackPanel Orientation="Horizontal" Spacing="10">
-                        <TextBlock Text="TC"/>
-                        <TextBlock Text="Tarjeta Credito"/>
+                        <TextBlock Text="💳" FontSize="16"/>
+                        <TextBlock Text="Tarjeta Crédito"/>
                     </StackPanel>
                 </Button>
                 
-                <Button Classes="payment-method" Command="{Binding SelectTransferCommand}">
+                <Button Command="{Binding SelectMethodCommand}" CommandParameter="Transferencia"
+                        Background="{Binding IsTransferenciaSelected, Converter={StaticResource BoolToColorConverter}, ConverterParameter='#0078D4|#3D3D3D'}"
+                        Foreground="White" Padding="15,10" Margin="3" CornerRadius="4" HorizontalAlignment="Stretch">
                     <StackPanel Orientation="Horizontal" Spacing="10">
-                        <TextBlock Text="TR"/>
+                        <TextBlock Text="🏦" FontSize="16"/>
                         <TextBlock Text="Transferencia"/>
                     </StackPanel>
                 </Button>
+
+                <Separator Margin="0,10" Background="#444"/>
+                
+                <TextBlock Text="{Binding TotalItems, StringFormat='{}{0} artículo(s)'}" 
+                           FontSize="12" Foreground="#888" HorizontalAlignment="Center"/>
             </StackPanel>
 
-            <!-- Monto pagado (solo para efectivo) -->
-            <StackPanel Grid.Column="1" Grid.Row="0" Grid.RowSpan="2" IsVisible="{Binding IsCashSelected}">
-                <TextBlock Text="MONTO RECIBIDO" 
-                           FontSize="12" 
-                           Foreground="#888" 
-                           FontWeight="Bold"
-                           Margin="0,0,0,10"/>
-                
-                <TextBox x:Name="TxtAmountPaid"
-                         Text="{Binding AmountPaid, Mode=TwoWay, StringFormat='{}{0:F2}'}"
-                         FontSize="24"
-                         FontWeight="Bold"
-                         Padding="10"
-                         Background="#3D3D3D"
-                         Foreground="White"
-                         BorderThickness="0"
-                         CornerRadius="4"
-                         HorizontalContentAlignment="Right"/>
+            <!-- Panel de pagos realizados y entrada de monto -->
+            <StackPanel Grid.Column="1">
+                <!-- Input de monto actual -->
+                <Border Background="#252525" Padding="15" CornerRadius="4" Margin="0,0,0,10">
+                    <StackPanel>
+                        <Grid ColumnDefinitions="*,Auto">
+                            <TextBlock Text="{Binding CurrentMethodName, StringFormat='Agregar pago: {0}'}" 
+                                       FontSize="14" FontWeight="Bold" Foreground="White"/>
+                            <Button Grid.Column="1" Content="Pagar Restante" 
+                                    Command="{Binding PayRemainingCommand}"
+                                    Background="#4CAF50" Foreground="White" Padding="10,5" FontSize="11"/>
+                        </Grid>
+                        
+                        <TextBox x:Name="TxtCurrentAmount"
+                                 Text="{Binding CurrentAmount, Mode=TwoWay, StringFormat='{}{0:F2}'}"
+                                 FontSize="24" FontWeight="Bold"
+                                 Padding="10" Margin="0,10,0,0"
+                                 Background="#3D3D3D" Foreground="White"
+                                 BorderThickness="0" CornerRadius="4"
+                                 HorizontalContentAlignment="Right"/>
+                        
+                        <WrapPanel Margin="0,10,0,0">
+                            <Button Classes="quick-amount" Command="{Binding AddToCurrentCommand}" CommandParameter="20">+$20</Button>
+                            <Button Classes="quick-amount" Command="{Binding AddToCurrentCommand}" CommandParameter="50">+$50</Button>
+                            <Button Classes="quick-amount" Command="{Binding AddToCurrentCommand}" CommandParameter="100">+$100</Button>
+                            <Button Classes="quick-amount" Command="{Binding AddToCurrentCommand}" CommandParameter="200">+$200</Button>
+                            <Button Classes="quick-amount" Command="{Binding AddToCurrentCommand}" CommandParameter="500">+$500</Button>
+                            <Button Classes="quick-amount" Command="{Binding ClearCurrentCommand}">Limpiar</Button>
+                        </WrapPanel>
+                        
+                        <Button Content="➕ Agregar Pago" 
+                                Command="{Binding AddPaymentCommand}"
+                                Background="#0078D4" Foreground="White"
+                                Padding="15,10" Margin="0,10,0,0"
+                                HorizontalAlignment="Stretch"
+                                HorizontalContentAlignment="Center"/>
+                    </StackPanel>
+                </Border>
 
-                <!-- Botones de montos rapidos -->
-                <WrapPanel Margin="0,10,0,0">
-                    <Button Classes="quick-amount" Command="{Binding AddAmountCommand}" CommandParameter="20">+$20</Button>
-                    <Button Classes="quick-amount" Command="{Binding AddAmountCommand}" CommandParameter="50">+$50</Button>
-                    <Button Classes="quick-amount" Command="{Binding AddAmountCommand}" CommandParameter="100">+$100</Button>
-                    <Button Classes="quick-amount" Command="{Binding AddAmountCommand}" CommandParameter="200">+$200</Button>
-                    <Button Classes="quick-amount" Command="{Binding AddAmountCommand}" CommandParameter="500">+$500</Button>
-                    <Button Classes="quick-amount" Command="{Binding ExactPaymentCommand}">Exacto</Button>
-                    <Button Classes="quick-amount" Command="{Binding ClearAmountCommand}">Limpiar</Button>
-                </WrapPanel>
-
-                <!-- Cambio -->
-                <Border Background="#2D2D2D" Padding="10" CornerRadius="4" Margin="0,15,0,0">
-                    <Grid ColumnDefinitions="*,Auto">
-                        <TextBlock Text="CAMBIO:" 
-                                   FontSize="16" 
-                                   Foreground="White" 
-                                   VerticalAlignment="Center"/>
-                        <TextBlock Grid.Column="1" 
-                                   Text="{Binding Change, StringFormat='{}{0:C2}'}" 
-                                   FontSize="24" 
-                                   FontWeight="Bold" 
-                                   Foreground="#4CAF50"/>
-                    </Grid>
+                <!-- Lista de pagos agregados -->
+                <Border Background="#252525" Padding="10" CornerRadius="4" MinHeight="100">
+                    <StackPanel>
+                        <TextBlock Text="PAGOS REGISTRADOS" FontSize="12" Foreground="#888" FontWeight="Bold" Margin="0,0,0,10"/>
+                        
+                        <ItemsControl ItemsSource="{Binding PaymentsList}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid ColumnDefinitions="*,Auto,Auto" Margin="0,3">
+                                        <TextBlock Text="{Binding Method}" Foreground="White" VerticalAlignment="Center"/>
+                                        <TextBlock Grid.Column="1" Text="{Binding Amount, StringFormat='{}{0:C2}'}" 
+                                                   Foreground="#4CAF50" FontWeight="Bold" Margin="10,0" VerticalAlignment="Center"/>
+                                        <Button Grid.Column="2" Content="✕" 
+                                                Command="{Binding $parent[Window].((vm:PaymentViewModel)DataContext).RemovePaymentCommand}"
+                                                CommandParameter="{Binding}"
+                                                Background="#F44336" Foreground="White" Padding="8,4" FontSize="10"/>
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        
+                        <TextBlock Text="No hay pagos registrados" 
+                                   Foreground="#666" FontStyle="Italic"
+                                   IsVisible="{Binding !HasPayments}"
+                                   HorizontalAlignment="Center" Margin="0,10"/>
+                        
+                        <!-- Cambio (solo si efectivo y sobra) -->
+                        <Border Background="#1A3D1A" Padding="10" CornerRadius="4" Margin="0,10,0,0"
+                                IsVisible="{Binding ShowChange}">
+                            <Grid ColumnDefinitions="*,Auto">
+                                <TextBlock Text="CAMBIO:" FontSize="14" Foreground="White" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="1" Text="{Binding Change, StringFormat='{}{0:C2}'}" 
+                                           FontSize="20" FontWeight="Bold" Foreground="#4CAF50"/>
+                            </Grid>
+                        </Border>
+                    </StackPanel>
                 </Border>
             </StackPanel>
-
-            <!-- Mensaje para otros metodos -->
-            <Border Grid.Column="1" 
-                    Grid.Row="0" 
-                    Grid.RowSpan="2" 
-                    Background="#2D2D2D" 
-                    Padding="15" 
-                    CornerRadius="4"
-                    IsVisible="{Binding !IsCashSelected}"
-                    VerticalAlignment="Center">
-                <TextBlock Text="Confirme el pago con el metodo seleccionado" 
-                           Foreground="#888" 
-                           TextWrapping="Wrap"
-                           TextAlignment="Center"/>
-            </Border>
         </Grid>
 
         <!-- Error message -->
@@ -201,7 +227,7 @@
                     HorizontalContentAlignment="Center">
                 <StackPanel Orientation="Horizontal" Spacing="10">
                     <TextBlock Text="Enter" FontWeight="Bold"/>
-                    <TextBlock Text="Confirmar"/>
+                    <TextBlock Text="Confirmar Venta"/>
                 </StackPanel>
             </Button>
         </Grid>

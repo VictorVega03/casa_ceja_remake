@@ -16,20 +16,59 @@ namespace CasaCejaRemake.Views.POS
         {
             InitializeComponent();
             Loaded += OnLoaded;
+            Activated += OnActivated;
+        }
+
+        private void OnActivated(object? sender, EventArgs e)
+        {
+            Focus();
         }
 
         private void OnLoaded(object? sender, RoutedEventArgs e)
         {
             _viewModel = DataContext as SearchProductViewModel;
             TxtSearch.Focus();
+            TxtSearch.SelectAll();
+
+            // Handler para seleccionar todo el texto al recibir focus
+            TxtSearch.GotFocus += (s, args) => TxtSearch.SelectAll();
 
             if (GridResults != null)
+            {
                 GridResults.DoubleTapped += GridResults_DoubleTapped;
+                // Usar PreviewKeyDown para interceptar Enter en el DataGrid
+                GridResults.AddHandler(KeyDownEvent, DataGrid_PreviewKeyDown, Avalonia.Interactivity.RoutingStrategies.Tunnel);
+            }
+        }
+
+        private void DataGrid_PreviewKeyDown(object? sender, KeyEventArgs e)
+        {
+            // PreviewKeyDown (Tunneling) - interceptar Enter ANTES del DataGrid
+            if (e.Key == Key.Enter && _viewModel?.SelectedProduct != null)
+            {
+                _viewModel.ConfirmCommand.Execute(null);
+                e.Handled = true;
+            }
         }
 
         private void GridResults_DoubleTapped(object? sender, TappedEventArgs e)
         {
             _viewModel?.SelectCurrentProduct();
+        }
+
+        private async void OnVerExistenciaClick(object? sender, RoutedEventArgs e)
+        {
+            if (_viewModel?.SelectedProduct == null)
+            {
+                await DialogHelper.ShowMessageDialog(this, "Aviso", "Seleccione un producto primero.");
+                return;
+            }
+
+            // Mostrar diálogo de existencia (pendiente de implementación)
+            await DialogHelper.ShowMessageDialog(
+                this, 
+                $"Existencia - {_viewModel.SelectedProduct.Name}",
+                "⚠️ Función en desarrollo.\n\nAquí se mostrará la existencia del producto en cada sucursal.");
         }
 
         protected override void OnKeyDown(KeyEventArgs e)
@@ -39,7 +78,7 @@ namespace CasaCejaRemake.Views.POS
                 var shortcuts = new Dictionary<Key, Action>
                 {
                     { Key.Escape, () => vm.CancelCommand.Execute(null) },
-                    { Key.F3, () => TxtSearch.Focus() } // Assuming TxtQuery should be TxtSearch based on original code
+                    { Key.F3, () => { TxtSearch.Focus(); TxtSearch.SelectAll(); } }
                 };
 
                 if (KeyboardShortcutHelper.HandleShortcut(e, shortcuts))
@@ -47,17 +86,10 @@ namespace CasaCejaRemake.Views.POS
                     return;
                 }
 
-                // Enter con lógica condicional
-                if (e.Key == Key.Enter)
+                // Enter solo busca si está en el TextBox de búsqueda
+                if (e.Key == Key.Enter && TxtSearch.IsFocused)
                 {
-                    if (vm.SelectedProduct != null)
-                    {
-                        vm.ConfirmCommand.Execute(null); // Assuming AddProductCommand should be ConfirmCommand based on original code
-                    }
-                    else
-                    {
-                        vm.SearchCommand.Execute(null);
-                    }
+                    vm.SearchCommand.Execute(null);
                     e.Handled = true;
                     return;
                 }
@@ -82,6 +114,7 @@ namespace CasaCejaRemake.Views.POS
                     if (GridResults?.IsFocused == true && vm.SelectedProductIndex == 0)
                     {
                         TxtSearch.Focus();
+                        TxtSearch.SelectAll();
                     }
                     e.Handled = true;
                     return;

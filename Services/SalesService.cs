@@ -229,6 +229,160 @@ namespace CasaCejaRemake.Services
             }
         }
 
+        /// <summary>
+        /// Procesa una venta con pagos mixtos (múltiples métodos de pago)
+        /// </summary>
+        public async Task<SaleResult> ProcessSaleWithMixedPaymentAsync(
+            List<CartItem> items,
+            string paymentJson,
+            decimal totalPaid,
+            decimal changeGiven,
+            int userId,
+            string userName,
+            int branchId)
+        {
+            // Validar que hay items
+            if (items == null || items.Count == 0)
+            {
+                return SaleResult.Error("El carrito esta vacio.");
+            }
+
+            // Validar stock
+            var stockValidation = await ValidateStockAsync(items);
+            if (!stockValidation.IsValid)
+            {
+                return SaleResult.Error(string.Join("\n", stockValidation.Errors));
+            }
+
+            // Calcular totales
+            decimal total = 0;
+            decimal totalDiscount = 0;
+
+            foreach (var item in items)
+            {
+                total += item.LineTotal;
+                totalDiscount += item.TotalDiscount * item.Quantity;
+            }
+
+            // Validar que el pago cubre el total
+            if (totalPaid < total)
+            {
+                return SaleResult.Error($"El monto pagado (${totalPaid:N2}) es menor al total (${total:N2}).");
+            }
+
+            // Obtener informacion de sucursal
+            var branch = await _branchRepository.GetByIdAsync(branchId);
+            string branchName = branch?.Name ?? "Sucursal";
+            string branchAddress = branch?.Address ?? "";
+            string branchPhone = branch?.Email ?? "";
+
+            // Generar folio
+            int consecutivo = await GetNextConsecutiveAsync(branchId);
+            string folio = _ticketService.GenerateFolio(branchId, consecutivo);
+
+            // Generar ticket con pagos mixtos
+            var ticketData = _ticketService.GenerateTicketWithMixedPayment(
+                folio,
+                branchId,
+                branchName,
+                branchAddress,
+                branchPhone,
+                userId,
+                userName,
+                items,
+                paymentJson,
+                totalPaid,
+                changeGiven
+            );
+
+            // Serializar y comprimir ticket
+            byte[] ticketCompressed = JsonCompressor.Compress(ticketData);
+
+            try
+            {
+                // Crear venta - PaymentMethod ahora es el JSON de pagos
+                var sale = new Sale
+                {
+                    Folio = folio,
+                    Total = total,
+                    Subtotal = total + totalDiscount,
+                    Discount = totalDiscount,
+                    PaymentMethod = paymentJson, // JSON: {"efectivo": 500, "tarjeta_debito": 300}
+                    AmountPaid = totalPaid,
+                    ChangeGiven = changeGiven,
+                    PaymentSummary = GetMixedPaymentSummaryText(paymentJson),
+                    UserId = userId,
+                    BranchId = branchId,
+                    TicketData = ticketCompressed,
+                    SyncStatus = 1,
+                    SaleDate = DateTime.Now
+                };
+
+                // Guardar venta
+                var saleId = await _saleRepository.AddAsync(sale);
+
+                // Guardar productos de la venta
+                foreach (var item in items)
+                {
+                    var saleProduct = new SaleProduct
+                    {
+                        SaleId = saleId,
+                        ProductId = item.ProductId,
+                        Barcode = item.Barcode,
+                        ProductName = item.ProductName,
+                        Quantity = item.Quantity,
+                        ListPrice = item.ListPrice,
+                        FinalUnitPrice = item.FinalUnitPrice,
+                        LineTotal = item.LineTotal,
+                        TotalDiscountAmount = item.TotalDiscount,
+                        PriceType = item.PriceType,
+                        DiscountInfo = item.DiscountInfo,
+                        PricingData = JsonCompressor.Compress(item.PricingData)
+                    };
+
+                    await _saleProductRepository.AddAsync(saleProduct);
+                }
+
+                // Generar texto del ticket para impresion
+                string ticketText = _ticketService.GenerateTicketText(ticketData);
+
+                return SaleResult.Ok(sale, ticketData, ticketText);
+            }
+            catch (Exception ex)
+            {
+                return SaleResult.Error($"Error al procesar la venta: {ex.Message}");
+            }
+        }
+
+        private string GetMixedPaymentSummaryText(string paymentJson)
+        {
+            try
+            {
+                var payments = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, decimal>>(paymentJson);
+                if (payments == null || payments.Count == 0)
+                    return "Sin datos de pago";
+
+                var parts = new List<string>();
+                foreach (var kvp in payments)
+                {
+                    string methodName = kvp.Key switch
+                    {
+                        "efectivo" => "Efectivo",
+                        "tarjeta_debito" => "T. Débito",
+                        "tarjeta_credito" => "T. Crédito",
+                        "transferencia" => "Transfer.",
+                        _ => kvp.Key
+                    };
+                    parts.Add($"{methodName} ${kvp.Value:N2}");
+                }
+                return string.Join(" + ", parts);
+            }
+            catch
+            {
+                return paymentJson;
+            }
+        }
+
         public async Task<List<Product>> SearchProductsAsync(string searchTerm, int? categoryId = null)
         {
             var products = await _productRepository.GetAllAsync();
@@ -371,6 +525,72 @@ namespace CasaCejaRemake.Services
         {
             var categoryRepo = new BaseRepository<Category>(_databaseService);
             return await categoryRepo.FindAsync(c => c.Active);
+        }
+
+        public async Task<List<Unit>> GetUnitsAsync()
+        {
+            var unitRepo = new BaseRepository<Unit>(_databaseService);
+            return await unitRepo.FindAsync(u => u.Active);
+        }
+
+        public async Task<List<Product>> SearchProductsWithUnitAsync(string searchTerm, int? categoryId = null, int? unitId = null)
+        {
+            var products = await _productRepository.GetAllAsync();
+            var results = new List<Product>();
+
+            // Cargar categorías y unidades para nombres
+            var categoryRepo = new BaseRepository<Category>(_databaseService);
+            var unitRepo = new BaseRepository<Unit>(_databaseService);
+            var categories = await categoryRepo.GetAllAsync();
+            var units = await unitRepo.GetAllAsync();
+
+            var categoryDict = new Dictionary<int, string>();
+            foreach (var c in categories)
+            {
+                categoryDict[c.Id] = c.Name;
+            }
+
+            var unitDict = new Dictionary<int, string>();
+            foreach (var u in units)
+            {
+                unitDict[u.Id] = u.Name;
+            }
+
+            foreach (var product in products)
+            {
+                if (!product.Active) continue;
+
+                bool matchesSearch = true;
+                bool matchesCategory = true;
+                bool matchesUnit = true;
+
+                if (!string.IsNullOrWhiteSpace(searchTerm))
+                {
+                    matchesSearch = 
+                        (product.Barcode?.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                        (product.Name?.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ?? false);
+                }
+
+                if (categoryId.HasValue && categoryId > 0)
+                {
+                    matchesCategory = product.CategoryId == categoryId;
+                }
+
+                if (unitId.HasValue && unitId > 0)
+                {
+                    matchesUnit = product.UnitId == unitId;
+                }
+
+                if (matchesSearch && matchesCategory && matchesUnit)
+                {
+                    // Asignar nombres de categoría y unidad
+                    product.CategoryName = categoryDict.TryGetValue(product.CategoryId, out var catName) ? catName : "";
+                    product.UnitName = unitDict.TryGetValue(product.UnitId, out var unitName) ? unitName : "";
+                    results.Add(product);
+                }
+            }
+
+            return results;
         }
 
         public async Task<TicketData?> RecoverTicketAsync(int saleId)
