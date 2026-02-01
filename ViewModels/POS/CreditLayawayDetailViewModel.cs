@@ -1,6 +1,8 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Text.Json;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -271,7 +273,7 @@ namespace CasaCejaRemake.ViewModels.POS
                     Folio = payment.Folio,
                     Date = payment.PaymentDate,
                     Amount = payment.AmountPaid,
-                    PaymentMethod = payment.PaymentMethod,
+                    PaymentMethod = ParsePaymentMethod(payment.PaymentMethod),
                     Notes = payment.Notes ?? ""
                 });
             }
@@ -291,7 +293,7 @@ namespace CasaCejaRemake.ViewModels.POS
                     Folio = payment.Folio,
                     Date = payment.PaymentDate,
                     Amount = payment.AmountPaid,
-                    PaymentMethod = payment.PaymentMethod,
+                    PaymentMethod = ParsePaymentMethod(payment.PaymentMethod),
                     Notes = payment.Notes ?? ""
                 });
             }
@@ -386,6 +388,48 @@ namespace CasaCejaRemake.ViewModels.POS
                     Close();
                     break;
             }
+        }
+
+        /// <summary>
+        /// Parse payment method string - could be JSON for mixed payments or a simple string
+        /// </summary>
+        private static string ParsePaymentMethod(string paymentMethod)
+        {
+            if (string.IsNullOrWhiteSpace(paymentMethod))
+                return "N/A";
+
+            // Intentar parsear como JSON (pagos mixtos)
+            if (paymentMethod.TrimStart().StartsWith("{"))
+            {
+                try
+                {
+                    var dict = JsonSerializer.Deserialize<Dictionary<string, decimal>>(paymentMethod);
+                    if (dict != null && dict.Count > 0)
+                    {
+                        // Formatear como: "Efectivo: $100, Débito: $50"
+                        var parts = dict.Select(kvp => 
+                        {
+                            string methodName = kvp.Key switch
+                            {
+                                "efectivo" => "Efectivo",
+                                "tarjeta_debito" => "Débito",
+                                "tarjeta_credito" => "Crédito",
+                                "transferencia" => "Transfer.",
+                                _ => kvp.Key
+                            };
+                            return $"{methodName}: ${kvp.Value:F2}";
+                        });
+                        return string.Join(", ", parts);
+                    }
+                }
+                catch
+                {
+                    // Si falla el parsing, devolver el string original
+                }
+            }
+
+            // Si no es JSON o falla el parsing, devolver el string tal cual
+            return paymentMethod;
         }
     }
 

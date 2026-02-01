@@ -242,6 +242,56 @@ namespace CasaCejaRemake.Services
             return await AddPaymentInternalAsync(layaway, amount, method, userId, notes);
         }
 
+        /// <summary>
+        /// Agrega un abono con pagos mixtos (múltiples métodos de pago)
+        /// </summary>
+        public async Task<bool> AddPaymentWithMixedAsync(int layawayId, decimal amount, string paymentJson, int userId, string? notes)
+        {
+            var layaway = await _layawayRepository.GetByIdAsync(layawayId);
+            if (layaway == null) return false;
+
+            if (layaway.Status == 2 || layaway.Status == 4)
+                return false;
+
+            var remaining = layaway.RemainingBalance;
+            if (amount > remaining)
+                amount = remaining;
+
+            if (amount <= 0) return false;
+
+            try
+            {
+                var paymentFolio = $"PAGO-{layaway.Folio}-{DateTime.Now:HHmmss}";
+
+                // Crear registro de pago con JSON guardado en PaymentMethod
+                var payment = new LayawayPayment
+                {
+                    Folio = paymentFolio,
+                    LayawayId = layawayId,
+                    UserId = userId,
+                    AmountPaid = amount,
+                    PaymentMethod = paymentJson, // Guardar el JSON directamente
+                    PaymentDate = DateTime.Now,
+                    CashCloseFolio = string.Empty,
+                    Notes = notes,
+                    SyncStatus = 1
+                };
+
+                await _layawayPaymentRepository.AddAsync(payment);
+
+                // Actualizar saldo del apartado
+                layaway.TotalPaid += amount;
+                layaway.UpdatedAt = DateTime.Now;
+
+                await _layawayRepository.UpdateAsync(layaway);
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
         private async Task<bool> AddPaymentInternalAsync(Layaway layaway, decimal amount, PaymentMethod method, int userId, string? notes)
         {
             try

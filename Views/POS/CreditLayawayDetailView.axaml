@@ -245,7 +245,18 @@
                                 <DataGridTextColumn Header="Folio" Binding="{Binding Folio}" Width="140" />
                                 <DataGridTextColumn Header="Fecha" Binding="{Binding DateFormatted}" Width="140" />
                                 <DataGridTextColumn Header="Monto" Binding="{Binding Amount, StringFormat='{}{0:C2}'}" Width="120" />
-                                <DataGridTextColumn Header="Método" Binding="{Binding PaymentMethod}" Width="120" />
+                                <DataGridTemplateColumn Header="Método" Width="200">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding PaymentMethod}" 
+                                                       VerticalAlignment="Center"
+                                                       TextTrimming="CharacterEllipsis"
+                                                       ToolTip.Tip="{Binding PaymentMethod}"
+                                                       ToolTip.ShowDelay="0"
+                                                       Margin="10,0"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
                                 <DataGridTextColumn Header="Notas" Binding="{Binding Notes}" Width="*" />
                             </DataGrid.Columns>
                         </DataGrid>
