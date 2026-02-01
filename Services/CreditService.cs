@@ -243,6 +243,62 @@ namespace CasaCejaRemake.Services
             return await AddPaymentInternalAsync(credit, amount, method, userId, notes);
         }
 
+        /// <summary>
+        /// Agrega un abono con pagos mixtos (múltiples métodos de pago)
+        /// </summary>
+        public async Task<bool> AddPaymentWithMixedAsync(int creditId, decimal amount, string paymentJson, int userId, string? notes)
+        {
+            var credit = await _creditRepository.GetByIdAsync(creditId);
+            if (credit == null) return false;
+
+            if (credit.Status == 2 || credit.Status == 4)
+                return false;
+
+            var remaining = credit.RemainingBalance;
+            if (amount > remaining)
+                amount = remaining;
+
+            if (amount <= 0) return false;
+
+            try
+            {
+                var paymentFolio = $"PAGO-{credit.Folio}-{DateTime.Now:HHmmss}";
+
+                // Crear registro de pago con JSON guardado en PaymentMethod
+                var payment = new CreditPayment
+                {
+                    Folio = paymentFolio,
+                    CreditId = creditId,
+                    UserId = userId,
+                    AmountPaid = amount,
+                    PaymentMethod = paymentJson, // Guardar el JSON directamente
+                    PaymentDate = DateTime.Now,
+                    CashCloseFolio = string.Empty,
+                    Notes = notes,
+                    SyncStatus = 1
+                };
+
+                await _creditPaymentRepository.AddAsync(payment);
+
+                // Actualizar saldo del crédito
+                credit.TotalPaid += amount;
+                credit.UpdatedAt = DateTime.Now;
+
+                // Si se pagó todo, marcar como completado
+                if (credit.TotalPaid >= credit.Total)
+                {
+                    credit.Status = 2; // Completado
+                }
+
+                await _creditRepository.UpdateAsync(credit);
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
         private async Task<bool> AddPaymentInternalAsync(Credit credit, decimal amount, PaymentMethod method, int userId, string? notes)
         {
             try

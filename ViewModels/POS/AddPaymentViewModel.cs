@@ -1,5 +1,7 @@
 using System;
 using System.Collections.ObjectModel;
+using System.Collections.Generic;
+using System.Text.Json;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -37,6 +39,13 @@ namespace CasaCejaRemake.ViewModels.POS
         }
     }
 
+    // Representa un pago individual en la lista de pagos mixtos
+    public class AddPaymentEntry
+    {
+        public string Method { get; set; } = string.Empty;
+        public decimal Amount { get; set; }
+    }
+
     public partial class AddPaymentViewModel : ViewModelBase
     {
         private readonly CreditService _creditService;
@@ -65,12 +74,36 @@ namespace CasaCejaRemake.ViewModels.POS
         [ObservableProperty]
         private DateTime _dueDate;
 
-        // Pago
+        // Pago actual (pagos mixtos)
         [ObservableProperty]
-        private decimal _amountToPay;
+        private decimal _currentAmount;
 
         [ObservableProperty]
-        private PaymentMethod _paymentMethod = PaymentMethod.Efectivo;
+        private string _currentMethodName = "Efectivo";
+
+        [ObservableProperty]
+        private PaymentMethod _currentMethod = PaymentMethod.Efectivo;
+
+        [ObservableProperty]
+        private bool _isEffectivoSelected = true;
+
+        [ObservableProperty]
+        private bool _isDebitoSelected;
+
+        [ObservableProperty]
+        private bool _isCreditoSelected;
+
+        [ObservableProperty]
+        private bool _isTransferenciaSelected;
+
+        [ObservableProperty]
+        private decimal _totalCurrentlyPaid; // Total abonado en esta sesión
+
+        [ObservableProperty]
+        private decimal _currentRemaining; // Lo que falta por abonar en esta sesión
+
+        [ObservableProperty]
+        private string _currentRemainingColor = "#FF9800";
 
         [ObservableProperty]
         private string _notes = string.Empty;
@@ -85,20 +118,20 @@ namespace CasaCejaRemake.ViewModels.POS
         [ObservableProperty]
         private bool _hasError;
 
+        [ObservableProperty]
+        private bool _canConfirm;
+
+        [ObservableProperty]
+        private bool _hasPayments;
+
         // Datos internos
         private int _creditId;
         private int _layawayId;
         private bool _isCredit;
         private Customer? _customer;
 
-        // Metodos de pago disponibles
-        public ObservableCollection<PaymentMethod> PaymentMethods { get; } = new()
-        {
-            PaymentMethod.Efectivo,
-            PaymentMethod.TarjetaDebito,
-            PaymentMethod.TarjetaCredito,
-            PaymentMethod.Transferencia
-        };
+        // Lista de pagos agregados en esta sesión
+        public ObservableCollection<AddPaymentEntry> PaymentsList { get; } = new();
 
         public event EventHandler<PaymentResult>? PaymentCompleted;
         public event EventHandler? Cancelled;
@@ -134,7 +167,8 @@ namespace CasaCejaRemake.ViewModels.POS
                 TotalPaid = credit.TotalPaid;
                 RemainingBalance = credit.RemainingBalance;
                 DueDate = credit.DueDate;
-                AmountToPay = RemainingBalance;
+                CurrentAmount = RemainingBalance; // Sugerir pagar todo
+                CurrentRemaining = RemainingBalance;
             }
         }
 
@@ -154,38 +188,138 @@ namespace CasaCejaRemake.ViewModels.POS
                 TotalPaid = layaway.TotalPaid;
                 RemainingBalance = layaway.RemainingBalance;
                 DueDate = layaway.PickupDate;
-                AmountToPay = RemainingBalance;
+                CurrentAmount = RemainingBalance; // Sugerir pagar todo
+                CurrentRemaining = RemainingBalance;
             }
         }
 
-        partial void OnAmountToPayChanged(decimal value)
+        private void UpdateState()
         {
-            // Asegurar que no sea mayor al saldo pendiente
-            if (value > RemainingBalance)
+            // Calcular total abonado en esta sesión
+            decimal sum = 0;
+            foreach (var p in PaymentsList)
             {
-                AmountToPay = RemainingBalance;
+                sum += p.Amount;
+            }
+            TotalCurrentlyPaid = sum;
+
+            // Restante es el balance original menos lo abonado en esta sesión
+            CurrentRemaining = RemainingBalance - TotalCurrentlyPaid;
+
+            // Color del restante
+            if (CurrentRemaining <= 0)
+                CurrentRemainingColor = "#4CAF50"; // Verde - pagado
+            else if (CurrentRemaining < RemainingBalance)
+                CurrentRemainingColor = "#2196F3"; // Azul - parcialmente pagado
+            else
+                CurrentRemainingColor = "#FF9800"; // Naranja - sin abonar
+
+            // Puede confirmar si se abonó algo (no necesariamente todo)
+            HasPayments = PaymentsList.Count > 0;
+            CanConfirm = HasPayments;
+        }
+
+        [RelayCommand]
+        private void SelectMethod(string method)
+        {
+            CurrentMethodName = method switch
+            {
+                "Efectivo" => "Efectivo",
+                "Debito" => "Tarjeta Débito",
+                "Credito" => "Tarjeta Crédito",
+                "Transferencia" => "Transferencia",
+                _ => "Efectivo"
+            };
+
+            CurrentMethod = method switch
+            {
+                "Efectivo" => PaymentMethod.Efectivo,
+                "Debito" => PaymentMethod.TarjetaDebito,
+                "Credito" => PaymentMethod.TarjetaCredito,
+                "Transferencia" => PaymentMethod.Transferencia,
+                _ => PaymentMethod.Efectivo
+            };
+
+            // Actualizar estados de selección visual
+            IsEffectivoSelected = method == "Efectivo";
+            IsDebitoSelected = method == "Debito";
+            IsCreditoSelected = method == "Credito";
+            IsTransferenciaSelected = method == "Transferencia";
+
+            // Si no es efectivo, sugerir el restante
+            if (CurrentMethod != PaymentMethod.Efectivo && CurrentRemaining > 0)
+            {
+                CurrentAmount = CurrentRemaining;
             }
         }
 
         [RelayCommand]
-        private void PayAll()
+        private void AddToCurrent(string monto)
         {
-            AmountToPay = RemainingBalance;
+            if (decimal.TryParse(monto, out decimal cantidad))
+            {
+                CurrentAmount += cantidad;
+            }
+        }
+
+        [RelayCommand]
+        private void ClearCurrent()
+        {
+            CurrentAmount = 0;
+        }
+
+        [RelayCommand]
+        private void PayRemaining()
+        {
+            CurrentAmount = CurrentRemaining > 0 ? CurrentRemaining : 0;
+        }
+
+        [RelayCommand]
+        private void AddPayment()
+        {
+            if (CurrentAmount <= 0)
+            {
+                ShowError("El monto debe ser mayor a 0");
+                return;
+            }
+
+            if (CurrentAmount > CurrentRemaining)
+            {
+                ShowError("El monto no puede ser mayor al saldo pendiente");
+                return;
+            }
+
+            // Agregar pago a la lista
+            PaymentsList.Add(new AddPaymentEntry
+            {
+                Method = CurrentMethodName,
+                Amount = CurrentAmount
+            });
+
+            ClearError();
+            UpdateState();
+
+            // Preparar para siguiente pago
+            CurrentAmount = CurrentRemaining > 0 ? CurrentRemaining : 0;
+        }
+
+        [RelayCommand]
+        private void RemovePayment(AddPaymentEntry payment)
+        {
+            if (payment != null)
+            {
+                PaymentsList.Remove(payment);
+                UpdateState();
+                CurrentAmount = CurrentRemaining > 0 ? CurrentRemaining : 0;
+            }
         }
 
         [RelayCommand]
         private async Task ConfirmAsync()
         {
-            // Validaciones
-            if (AmountToPay <= 0)
+            if (!CanConfirm)
             {
-                ShowError("El monto a abonar debe ser mayor a 0.");
-                return;
-            }
-
-            if (AmountToPay > RemainingBalance)
-            {
-                ShowError("El monto no puede ser mayor al saldo pendiente.");
+                ShowError("Debe agregar al menos un pago");
                 return;
             }
 
@@ -194,30 +328,47 @@ namespace CasaCejaRemake.ViewModels.POS
                 IsProcessing = true;
                 ClearError();
 
+                // Generar JSON de pagos mixtos
+                var paymentDict = new Dictionary<string, decimal>();
+                foreach (var p in PaymentsList)
+                {
+                    string key = p.Method.ToLower()
+                        .Replace("á", "a").Replace("é", "e").Replace("í", "i")
+                        .Replace("ó", "o").Replace("ú", "u")
+                        .Replace(" ", "_");
+
+                    if (paymentDict.ContainsKey(key))
+                        paymentDict[key] += p.Amount;
+                    else
+                        paymentDict[key] = p.Amount;
+                }
+
+                string paymentJson = JsonSerializer.Serialize(paymentDict);
+
                 bool success;
-                
+
                 if (_isCredit)
                 {
-                    success = await _creditService.AddPaymentAsync(
+                    success = await _creditService.AddPaymentWithMixedAsync(
                         _creditId,
-                        AmountToPay,
-                        PaymentMethod,
+                        TotalCurrentlyPaid,
+                        paymentJson,
                         _authService.CurrentUser?.Id ?? 0,
                         string.IsNullOrWhiteSpace(Notes) ? null : Notes);
                 }
                 else
                 {
-                    success = await _layawayService.AddPaymentAsync(
+                    success = await _layawayService.AddPaymentWithMixedAsync(
                         _layawayId,
-                        AmountToPay,
-                        PaymentMethod,
+                        TotalCurrentlyPaid,
+                        paymentJson,
                         _authService.CurrentUser?.Id ?? 0,
                         string.IsNullOrWhiteSpace(Notes) ? null : Notes);
                 }
 
                 if (success)
                 {
-                    PaymentCompleted?.Invoke(this, PaymentResult.Ok(AmountToPay, Folio, _isCredit));
+                    PaymentCompleted?.Invoke(this, PaymentResult.Ok(TotalCurrentlyPaid, Folio, _isCredit));
                 }
                 else
                 {
@@ -252,6 +403,12 @@ namespace CasaCejaRemake.ViewModels.POS
             HasError = false;
         }
 
+        // Incrementar/decrementar con flechas (igual que PaymentViewModel)
+        public void AdjustAmount(int delta)
+        {
+            CurrentAmount = Math.Max(0, CurrentAmount + delta);
+        }
+
         public void HandleKeyPress(string key)
         {
             switch (key.ToUpper())
@@ -260,7 +417,7 @@ namespace CasaCejaRemake.ViewModels.POS
                     _ = ConfirmAsync();
                     break;
                 case "F4":
-                    PayAll();
+                    PayRemaining();
                     break;
                 case "ESCAPE":
                     Cancel();
