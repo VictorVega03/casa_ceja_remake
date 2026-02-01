@@ -70,7 +70,171 @@ namespace CasaCejaRemake.Views.POS
                 _viewModel.SaleCompleted += OnSaleCompleted;
                 _viewModel.RequestClearCartConfirmation += OnRequestClearCartConfirmation;
                 _viewModel.RequestExitConfirmation += OnRequestExitConfirmation;
+                _viewModel.CollectionIndicatorsChanged += OnCollectionIndicatorsChanged;
             }
+
+            // Configurar botones de cobranza
+            SetupCollectionButtons();
+            UpdateCollectionIndicators();
+
+            // Configurar botón de clientes
+            var btnCustomers = this.FindControl<Button>("BtnCustomers");
+            if (btnCustomers != null)
+            {
+                btnCustomers.Click += (s, e) => ShowCustomersDialogAsync();
+            }
+
+            TxtBarcode.Focus();
+        }
+
+        private void SetupCollectionButtons()
+        {
+            // Botones de navegación
+            var btnPrev = this.FindControl<Button>("BtnPrevCollection");
+            var btnNext = this.FindControl<Button>("BtnNextCollection");
+            
+            if (btnPrev != null)
+                btnPrev.Click += (s, e) => _viewModel?.ChangeCollectionPreviousCommand.Execute(null);
+            if (btnNext != null)
+                btnNext.Click += (s, e) => _viewModel?.ChangeCollectionCommand.Execute(null);
+
+            // Botones de selección directa
+            var btnA = this.FindControl<Button>("BtnCollectionA");
+            var btnB = this.FindControl<Button>("BtnCollectionB");
+            var btnC = this.FindControl<Button>("BtnCollectionC");
+            var btnD = this.FindControl<Button>("BtnCollectionD");
+
+            if (btnA != null) btnA.Click += (s, e) => SelectCollection('A');
+            if (btnB != null) btnB.Click += (s, e) => SelectCollection('B');
+            if (btnC != null) btnC.Click += (s, e) => SelectCollection('C');
+            if (btnD != null) btnD.Click += (s, e) => SelectCollection('D');
+        }
+
+        private void SelectCollection(char identifier)
+        {
+            _viewModel?.SelectCollectionCommand.Execute(identifier);
+            UpdateCollectionIndicators();
+        }
+
+        private void UpdateCollectionIndicators()
+        {
+            if (_viewModel == null) return;
+
+            var collections = _viewModel.GetAllCollectionsInfo();
+            
+            foreach (var (id, items, total, isActive) in collections)
+            {
+                var btn = this.FindControl<Button>($"BtnCollection{id}");
+                if (btn != null)
+                {
+                    // Color según estado
+                    if (isActive)
+                    {
+                        btn.Background = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#66BB6A")); // Verde - activa
+                        btn.Foreground = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Colors.White);
+                    }
+                    else if (items > 0)
+                    {
+                        btn.Background = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#FF9800")); // Naranja - tiene items
+                        btn.Foreground = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Colors.White);
+                    }
+                    else
+                    {
+                        btn.Background = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#444")); // Gris - vacía
+                        btn.Foreground = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#888"));
+                    }
+                }
+            }
+        }
+
+        private void OnCollectionIndicatorsChanged(object? sender, EventArgs e)
+        {
+            Dispatcher.UIThread.Post(() => UpdateCollectionIndicators());
+        }
+
+        /// <summary>
+        /// Muestra el diálogo de búsqueda de clientes.
+        /// </summary>
+        private async void ShowCustomersDialogAsync()
+        {
+            var app = (App)Application.Current!;
+            var customerService = app.GetCustomerService();
+
+            if (customerService == null)
+            {
+                ShowMessageDialog("Error", "Servicio de clientes no disponible");
+                return;
+            }
+
+            var searchView = new CustomerSearchView();
+            var searchViewModel = new CustomerSearchViewModel(customerService);
+            searchView.DataContext = searchViewModel;
+            
+            // Inicializar para cargar clientes (también se hace en OnLoaded pero por si acaso)
+            await searchViewModel.InitializeAsync();
+
+            searchViewModel.CustomerSelected += (s, customer) =>
+            {
+                if (customer != null)
+                {
+                    OnShowMessage(this, $"Cliente seleccionado: {customer.Name}");
+                }
+                searchView.Close();
+            };
+
+            searchViewModel.Cancelled += (s, args) =>
+            {
+                searchView.Close();
+            };
+
+            searchViewModel.CreateNewRequested += async (s, args) =>
+            {
+                searchView.Close();
+                await ShowQuickCustomerDialogAsync();
+            };
+
+            _hasOpenDialog = true;
+            await searchView.ShowDialog(this);
+            _hasOpenDialog = false;
+
+            TxtBarcode.Focus();
+        }
+
+        /// <summary>
+        /// Muestra el diálogo de alta rápida de cliente.
+        /// </summary>
+        private async Task ShowQuickCustomerDialogAsync()
+        {
+            var app = (App)Application.Current!;
+            var customerService = app.GetCustomerService();
+
+            if (customerService == null)
+            {
+                ShowMessageDialog("Error", "Servicio de clientes no disponible");
+                return;
+            }
+
+            var quickView = new QuickCustomerView();
+            var quickViewModel = new QuickCustomerViewModel(customerService);
+            quickView.DataContext = quickViewModel;
+
+            quickViewModel.CustomerCreated += (s, customer) =>
+            {
+                if (customer != null)
+                {
+                    OnShowMessage(this, $"Cliente creado: {customer.Name}");
+                }
+                quickView.Close();
+            };
+
+            quickViewModel.Cancelled += (s, args) =>
+            {
+                quickView.Close();
+            };
+
+            _hasOpenDialog = true;
+            await quickView.ShowDialog(this);
+            _hasOpenDialog = false;
 
             TxtBarcode.Focus();
         }
@@ -92,6 +256,7 @@ namespace CasaCejaRemake.Views.POS
                 _viewModel.SaleCompleted -= OnSaleCompleted;
                 _viewModel.RequestClearCartConfirmation -= OnRequestClearCartConfirmation;
                 _viewModel.RequestExitConfirmation -= OnRequestExitConfirmation;
+                _viewModel.CollectionIndicatorsChanged -= OnCollectionIndicatorsChanged;
                 _viewModel.Cleanup();
             }
         }
@@ -130,8 +295,10 @@ namespace CasaCejaRemake.Views.POS
                     { Key.F2, () => _viewModel.ModifyQuantityCommand.Execute(null) },
                     { Key.F3, () => _viewModel.SearchProductCommand.Execute(null) },
                     { Key.F4, () => _viewModel.ChangeCollectionCommand.Execute(null) },
+                    { Key.F5, () => _viewModel.ChangeCollectionPreviousCommand.Execute(null) },
                     { Key.F6, () => ShowCashMovementDialogAsync(true) },
                     { Key.F7, () => ShowCashMovementDialogAsync(false) },
+                    { Key.F8, () => ShowCustomersDialogAsync() },
                     { Key.F10, () => ShowCashCloseDialogAsync() },
                     { Key.F11, () => _viewModel.PayCommand.Execute(null) },
                     { Key.F12, () => _viewModel.CreditsLayawaysCommand.Execute(null) },
@@ -491,10 +658,16 @@ namespace CasaCejaRemake.Views.POS
             await closeView.ShowDialog(this);
             _hasOpenDialog = false;
 
-            if (closeView.Tag is CashClose closedCash)
+            if (closeView.Tag is CashCloseResult result && result.CashClose != null)
             {
+                // Mostrar ticket de corte si se generó
+                if (!string.IsNullOrEmpty(result.TicketText))
+                {
+                    ShowTicketDialog(result.CashClose.Folio, result.TicketText);
+                }
+                
                 // Corte completado exitosamente
-                OnShowMessage(this, $"Corte de caja completado. Folio: {closedCash.Folio}");
+                OnShowMessage(this, $"Corte de caja completado. Folio: {result.CashClose.Folio}");
                 
                 // Salir del POS (el usuario debe volver a abrir caja)
                 Tag = "exit";

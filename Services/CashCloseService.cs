@@ -160,34 +160,72 @@ namespace CasaCejaRemake.Services
 
             try
             {
+                Console.WriteLine($"[CashCloseService] CalculateTotalsAsync - cashCloseId={cashCloseId}, openingDate={openingDate}");
+                
                 // Obtener ventas desde la apertura
                 var allSales = await _saleRepository.GetAllAsync();
+                Console.WriteLine($"[CashCloseService] Total ventas en BD: {allSales.Count}");
+                
                 var salesSinceOpen = allSales
                     .Where(s => s.SaleDate >= openingDate)
                     .ToList();
+                    
+                Console.WriteLine($"[CashCloseService] Ventas desde apertura: {salesSinceOpen.Count}");
+                foreach (var sale in salesSinceOpen)
+                {
+                    Console.WriteLine($"  - Venta #{sale.Id}: Fecha={sale.SaleDate}, Total={sale.Total}, PaymentMethod={sale.PaymentMethod}");
+                }
 
                 totals.SalesCount = salesSinceOpen.Count;
 
-                // Totales por método de pago
-                totals.TotalCash = salesSinceOpen
-                    .Where(s => s.PaymentMethod == "cash" || s.PaymentMethod == "Efectivo")
-                    .Sum(s => s.Total);
-
-                totals.TotalDebit = salesSinceOpen
-                    .Where(s => s.PaymentMethod == "debit" || s.PaymentMethod == "Tarjeta Débito")
-                    .Sum(s => s.Total);
-
-                totals.TotalCredit = salesSinceOpen
-                    .Where(s => s.PaymentMethod == "credit" || s.PaymentMethod == "Tarjeta Crédito")
-                    .Sum(s => s.Total);
-
-                totals.TotalTransfer = salesSinceOpen
-                    .Where(s => s.PaymentMethod == "transfer" || s.PaymentMethod == "Transferencia")
-                    .Sum(s => s.Total);
-
-                totals.TotalCheck = salesSinceOpen
-                    .Where(s => s.PaymentMethod == "check" || s.PaymentMethod == "Cheque")
-                    .Sum(s => s.Total);
+                // Procesar ventas - pueden ser pago simple o mixto (JSON)
+                foreach (var sale in salesSinceOpen)
+                {
+                    // Verificar si es pago mixto (JSON)
+                    if (sale.PaymentMethod.StartsWith("{"))
+                    {
+                        try
+                        {
+                            var payments = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, decimal>>(sale.PaymentMethod);
+                            if (payments != null)
+                            {
+                                if (payments.TryGetValue("efectivo", out decimal efectivo))
+                                    totals.TotalCash += efectivo;
+                                if (payments.TryGetValue("tarjeta_debito", out decimal debito))
+                                    totals.TotalDebit += debito;
+                                if (payments.TryGetValue("tarjeta_credito", out decimal credito))
+                                    totals.TotalCredit += credito;
+                                if (payments.TryGetValue("transferencia", out decimal transfer))
+                                    totals.TotalTransfer += transfer;
+                            }
+                        }
+                        catch
+                        {
+                            // Si falla el parse, ignorar
+                        }
+                    }
+                    else
+                    {
+                        // Pago simple
+                        switch (sale.PaymentMethod)
+                        {
+                            case "Efectivo":
+                                totals.TotalCash += sale.Total;
+                                break;
+                            case "TarjetaDebito":
+                                totals.TotalDebit += sale.Total;
+                                break;
+                            case "TarjetaCredito":
+                                totals.TotalCredit += sale.Total;
+                                break;
+                            case "Transferencia":
+                                totals.TotalTransfer += sale.Total;
+                                break;
+                        }
+                    }
+                }
+                
+                totals.TotalCheck = 0; // No hay cheques en el sistema
 
                 // Abonos de apartados
                 var allLayawayPayments = await _layawayPaymentRepository.GetAllAsync();
@@ -197,7 +235,7 @@ namespace CasaCejaRemake.Services
 
                 totals.LayawayTotal = layawayPaymentsSinceOpen.Sum(p => p.AmountPaid);
                 totals.LayawayCash = layawayPaymentsSinceOpen
-                    .Where(p => p.PaymentMethod == "cash" || p.PaymentMethod == "Efectivo")
+                    .Where(p => p.PaymentMethod == "Efectivo")
                     .Sum(p => p.AmountPaid);
 
                 // Abonos de créditos
@@ -208,7 +246,7 @@ namespace CasaCejaRemake.Services
 
                 totals.CreditPaymentsTotal = creditPaymentsSinceOpen.Sum(p => p.AmountPaid);
                 totals.CreditPaymentsCash = creditPaymentsSinceOpen
-                    .Where(p => p.PaymentMethod == "cash" || p.PaymentMethod == "Efectivo")
+                    .Where(p => p.PaymentMethod == "Efectivo")
                     .Sum(p => p.AmountPaid);
 
                 // Movimientos (gastos e ingresos)
@@ -233,8 +271,13 @@ namespace CasaCejaRemake.Services
         {
             try
             {
+                Console.WriteLine($"[CashCloseService] CloseCashAsync iniciado - Id={cashClose.Id}, Folio={cashClose.Folio}");
+                
                 // Calcular totales
                 var totals = await CalculateTotalsAsync(cashClose.Id, cashClose.OpeningDate);
+                
+                Console.WriteLine($"[CashCloseService] Totales calculados - TotalCash={totals.TotalCash}, TotalDebit={totals.TotalDebit}, " +
+                                  $"TotalCredit={totals.TotalCredit}, SalesCount={totals.SalesCount}");
 
                 // Actualizar campos de totales
                 cashClose.TotalCash = totals.TotalCash;

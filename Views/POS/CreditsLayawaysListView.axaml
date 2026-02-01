@@ -9,7 +9,7 @@
         x:Class="CasaCejaRemake.Views.POS.CreditsLayawaysListView"
         x:DataType="vm:CreditsLayawaysListViewModel"
         Title="Lista de Creditos y Apartados"
-        Width="950" Height="550"
+        Width="1100" Height="700"
         WindowStartupLocation="CenterOwner"
         CanResize="False"
         ShowInTaskbar="False"

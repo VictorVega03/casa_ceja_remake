@@ -7,7 +7,7 @@
         x:Class="CasaCejaRemake.Views.POS.CreditsLayawaysMenuView"
         x:DataType="vm:CreditsLayawaysMenuViewModel"
         Title="Creditos y Apartados"
-        Width="350" Height="350"
+        Width="350" Height="280"
         WindowStartupLocation="CenterOwner"
         CanResize="False"
         ShowInTaskbar="False"
@@ -59,14 +59,6 @@
                 <StackPanel Orientation="Horizontal" Spacing="10">
                     <TextBlock Text="F2" Foreground="#2196F3" FontWeight="Bold"/>
                     <TextBlock Text="Nuevo o Abonar"/>
-                </StackPanel>
-            </Button>
-
-            <Button Classes="menu-button"
-                    Command="{Binding SelectCustomerListCommand}">
-                <StackPanel Orientation="Horizontal" Spacing="10">
-                    <TextBlock Text="F3" Foreground="#FF9800" FontWeight="Bold"/>
-                    <TextBlock Text="Lista de Clientes"/>
                 </StackPanel>
             </Button>
         </StackPanel>

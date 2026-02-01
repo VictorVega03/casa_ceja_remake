@@ -3,11 +3,11 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:vm="using:CasaCejaRemake.ViewModels.POS"
-        mc:Ignorable="d" d:DesignWidth="400" d:DesignHeight="400"
+        mc:Ignorable="d" d:DesignWidth="550" d:DesignHeight="350"
         x:Class="CasaCejaRemake.Views.POS.QuickCustomerView"
         x:DataType="vm:QuickCustomerViewModel"
-        Title="Alta Rapida de Cliente"
-        Width="400" Height="400"
+        Title="Alta de Cliente"
+        Width="550" Height="350"
         WindowStartupLocation="CenterOwner"
         CanResize="False"
         ShowInTaskbar="False"
@@ -20,12 +20,12 @@
             <Setter Property="Foreground" Value="White"/>
             <Setter Property="BorderBrush" Value="#3D3D3D"/>
             <Setter Property="Padding" Value="10"/>
-            <Setter Property="Margin" Value="0,5"/>
+            <Setter Property="Margin" Value="0,3"/>
         </Style>
         <Style Selector="TextBlock.label">
             <Setter Property="Foreground" Value="#AAAAAA"/>
             <Setter Property="FontSize" Value="12"/>
-            <Setter Property="Margin" Value="0,8,0,2"/>
+            <Setter Property="Margin" Value="0,5,0,2"/>
         </Style>
         <Style Selector="TextBlock.required">
             <Setter Property="Foreground" Value="#FF5252"/>
@@ -35,53 +35,63 @@
     <Grid RowDefinitions="Auto,*,Auto,Auto">
         <!-- Header -->
         <Border Grid.Row="0" Background="#2D2D2D" Padding="15">
-            <TextBlock Text="ALTA RAPIDA DE CLIENTE"
+            <TextBlock Text="ALTA DE CLIENTE"
                        FontSize="18"
                        FontWeight="Bold"
                        Foreground="White"
                        HorizontalAlignment="Center"/>
         </Border>
 
-        <!-- Form -->
+        <!-- Form - Grid de 2 columnas -->
         <ScrollViewer Grid.Row="1" Margin="20,10">
-            <StackPanel>
-                <!-- Nombre (obligatorio) -->
-                <StackPanel Orientation="Horizontal">
-                    <TextBlock Text="Nombre" Classes="label"/>
-                    <TextBlock Text=" *" Classes="label required"/>
+            <Grid ColumnDefinitions="*,20,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto">
+                
+                <!-- Fila 1: Nombre y Teléfono -->
+                <StackPanel Grid.Row="0" Grid.Column="0">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="Nombre" Classes="label"/>
+                        <TextBlock Text=" *" Classes="label required"/>
+                    </StackPanel>
+                    <TextBox x:Name="NameBox"
+                             Text="{Binding Name}"
+                             Watermark="Nombre completo"/>
                 </StackPanel>
-                <TextBox x:Name="NameBox"
-                         Text="{Binding Name}"
-                         Watermark="Nombre completo del cliente"/>
-
-                <!-- Telefono (obligatorio) -->
-                <StackPanel Orientation="Horizontal">
-                    <TextBlock Text="Telefono" Classes="label"/>
-                    <TextBlock Text=" *" Classes="label required"/>
+                
+                <StackPanel Grid.Row="0" Grid.Column="2">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="Teléfono" Classes="label"/>
+                        <TextBlock Text=" *" Classes="label required"/>
+                    </StackPanel>
+                    <TextBox Text="{Binding Phone}"
+                             Watermark="10 dígitos"/>
                 </StackPanel>
-                <TextBox Text="{Binding Phone}"
-                         Watermark="10 digitos"/>
 
-                <!-- Email (opcional) -->
-                <TextBlock Text="Email" Classes="label"/>
-                <TextBox Text="{Binding Email}"
-                         Watermark="correo@ejemplo.com"/>
+                <!-- Fila 2: Email y RFC -->
+                <StackPanel Grid.Row="1" Grid.Column="0">
+                    <TextBlock Text="Email" Classes="label"/>
+                    <TextBox Text="{Binding Email}"
+                             Watermark="correo@ejemplo.com"/>
+                </StackPanel>
+                
+                <StackPanel Grid.Row="1" Grid.Column="2">
+                    <TextBlock Text="RFC" Classes="label"/>
+                    <TextBox Text="{Binding Rfc}"
+                             Watermark="RFC (opcional)"/>
+                </StackPanel>
 
-                <!-- RFC (opcional) -->
-                <TextBlock Text="RFC" Classes="label"/>
-                <TextBox Text="{Binding Rfc}"
-                         Watermark="RFC (opcional)"/>
-
-                <!-- Calle (opcional) -->
-                <TextBlock Text="Calle" Classes="label"/>
-                <TextBox Text="{Binding Street}"
-                         Watermark="Direccion"/>
-
-                <!-- Ciudad (opcional) -->
-                <TextBlock Text="Ciudad" Classes="label"/>
-                <TextBox Text="{Binding City}"
-                         Watermark="Ciudad"/>
-            </StackPanel>
+                <!-- Fila 3: Calle y Ciudad -->
+                <StackPanel Grid.Row="2" Grid.Column="0">
+                    <TextBlock Text="Calle" Classes="label"/>
+                    <TextBox Text="{Binding Street}"
+                             Watermark="Dirección"/>
+                </StackPanel>
+                
+                <StackPanel Grid.Row="2" Grid.Column="2">
+                    <TextBlock Text="Ciudad" Classes="label"/>
+                    <TextBox Text="{Binding City}"
+                             Watermark="Ciudad"/>
+                </StackPanel>
+            </Grid>
         </ScrollViewer>
 
         <!-- Error Message -->

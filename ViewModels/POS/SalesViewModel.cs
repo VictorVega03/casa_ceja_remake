@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
@@ -67,6 +68,7 @@ namespace CasaCejaRemake.ViewModels.POS
         public event EventHandler<SaleResult>? SaleCompleted;
         public event EventHandler? RequestClearCartConfirmation;
         public event EventHandler? RequestExitConfirmation;
+        public event EventHandler? CollectionIndicatorsChanged;
 
         public SalesViewModel(
             CartService cartService,
@@ -97,6 +99,7 @@ namespace CasaCejaRemake.ViewModels.POS
         private void OnCartChanged(object? sender, EventArgs e)
         {
             UpdateTotals();
+            CollectionIndicatorsChanged?.Invoke(this, EventArgs.Empty);
         }
 
         private void OnCollectionChanged(object? sender, char e)
@@ -104,6 +107,7 @@ namespace CasaCejaRemake.ViewModels.POS
             CurrentCollection = e;
             OnPropertyChanged(nameof(Items));
             UpdateTotals();
+            CollectionIndicatorsChanged?.Invoke(this, EventArgs.Empty);
         }
 
         private void UpdateTotals()
@@ -269,6 +273,42 @@ namespace CasaCejaRemake.ViewModels.POS
         {
             _cartService.ChangeCollection();
             StatusMessage = $"Cobranza {CurrentCollection}";
+        }
+
+        /// <summary>
+        /// F5 - Retroceder a la cobranza anterior
+        /// </summary>
+        [RelayCommand]
+        private void ChangeCollectionPrevious()
+        {
+            _cartService.ChangeCollectionPrevious();
+            StatusMessage = $"Cobranza {CurrentCollection}";
+        }
+
+        /// <summary>
+        /// Cambiar a una cobranza específica
+        /// </summary>
+        [RelayCommand]
+        private void SelectCollection(char identifier)
+        {
+            _cartService.ChangeCollection(identifier);
+            StatusMessage = $"Cobranza {CurrentCollection}";
+        }
+
+        /// <summary>
+        /// Obtiene información de todas las cobranzas para mostrar en la UI
+        /// </summary>
+        public List<(char Id, int Items, decimal Total, bool IsActive)> GetAllCollectionsInfo()
+        {
+            return _cartService.GetAllCollectionsInfo();
+        }
+
+        /// <summary>
+        /// Verifica si una cobranza específica tiene items
+        /// </summary>
+        public bool CollectionHasItems(char identifier)
+        {
+            return _cartService.CollectionHasItems(identifier);
         }
 
         [RelayCommand]

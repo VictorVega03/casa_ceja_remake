@@ -316,6 +316,17 @@ namespace CasaCejaRemake.Data
             return await _database.ExecuteAsync(sql, args);
         }
 
+        /// <summary>
+        /// Ejecuta una query SQL que retorna un valor escalar
+        /// </summary>
+        public async Task<T> ExecuteScalarAsync<T>(string sql, params object[] args)
+        {
+            if (_database == null)
+                throw new InvalidOperationException("Database not initialized");
+
+            return await _database.ExecuteScalarAsync<T>(sql, args);
+        }
+
         
         /// Ejecuta operaciones en una transacción    
         public async Task RunInTransactionAsync(Action<SQLiteConnection> action)

@@ -26,7 +26,7 @@ namespace CasaCejaRemake.Views.POS
             Focus();
         }
 
-        private void OnLoaded(object? sender, RoutedEventArgs e)
+        private async void OnLoaded(object? sender, RoutedEventArgs e)
         {
             _viewModel = DataContext as CustomerSearchViewModel;
             
@@ -35,6 +35,9 @@ namespace CasaCejaRemake.Views.POS
                 _viewModel.CustomerSelected += OnCustomerSelected;
                 _viewModel.CreateNewRequested += OnCreateNewRequested;
                 _viewModel.Cancelled += OnCancelled;
+                
+                // Cargar clientes iniciales
+                await _viewModel.InitializeAsync();
             }
             
             SearchBox?.Focus();

@@ -62,7 +62,32 @@
                     </StackPanel>
                     <StackPanel>
                         <TextBlock Text="COBRANZA" FontSize="10" Foreground="#888"/>
-                        <TextBlock Text="{Binding CurrentCollection}" FontSize="24" Foreground="#66BB6A" FontWeight="Bold"/>
+                        <StackPanel Orientation="Horizontal" Spacing="5">
+                            <Button x:Name="BtnPrevCollection" 
+                                    Content="◀" 
+                                    Background="#444" 
+                                    Foreground="White"
+                                    Padding="8,2"
+                                    FontSize="14"
+                                    VerticalAlignment="Center"
+                                    ToolTip.Tip="Cobranza anterior (F5)"/>
+                            <TextBlock Text="{Binding CurrentCollection}" FontSize="24" Foreground="#66BB6A" FontWeight="Bold" VerticalAlignment="Center"/>
+                            <Button x:Name="BtnNextCollection" 
+                                    Content="▶" 
+                                    Background="#444" 
+                                    Foreground="White"
+                                    Padding="8,2"
+                                    FontSize="14"
+                                    VerticalAlignment="Center"
+                                    ToolTip.Tip="Siguiente cobranza (F4)"/>
+                        </StackPanel>
+                    </StackPanel>
+                    <!-- Indicadores de cobranzas con items -->
+                    <StackPanel Orientation="Horizontal" Spacing="3" VerticalAlignment="Center">
+                        <Button x:Name="BtnCollectionA" Content="A" Width="28" Height="28" FontSize="12" FontWeight="Bold" CornerRadius="4" Padding="0" ToolTip.Tip="Ir a cobranza A"/>
+                        <Button x:Name="BtnCollectionB" Content="B" Width="28" Height="28" FontSize="12" FontWeight="Bold" CornerRadius="4" Padding="0" ToolTip.Tip="Ir a cobranza B"/>
+                        <Button x:Name="BtnCollectionC" Content="C" Width="28" Height="28" FontSize="12" FontWeight="Bold" CornerRadius="4" Padding="0" ToolTip.Tip="Ir a cobranza C"/>
+                        <Button x:Name="BtnCollectionD" Content="D" Width="28" Height="28" FontSize="12" FontWeight="Bold" CornerRadius="4" Padding="0" ToolTip.Tip="Ir a cobranza D"/>
                     </StackPanel>
                 </StackPanel>
 
@@ -236,7 +261,14 @@
                             <Button Classes="action-button" Command="{Binding ChangeCollectionCommand}" HorizontalAlignment="Stretch" Height="40">
                                 <StackPanel Orientation="Horizontal" Spacing="10">
                                     <TextBlock Text="F4" FontWeight="Bold"/>
-                                    <TextBlock Text="Cambiar Cobranza"/>
+                                    <TextBlock Text="Siguiente Cobranza"/>
+                                </StackPanel>
+                            </Button>
+                            
+                            <Button Classes="action-button" Command="{Binding ChangeCollectionPreviousCommand}" HorizontalAlignment="Stretch" Height="40">
+                                <StackPanel Orientation="Horizontal" Spacing="10">
+                                    <TextBlock Text="F5" FontWeight="Bold"/>
+                                    <TextBlock Text="Cobranza Anterior"/>
                                 </StackPanel>
                             </Button>
                             
@@ -257,6 +289,17 @@
                             </Button>
                             
                             <Separator Background="#444" Margin="0,5"/>
+                            
+                            <Button Classes="action-button" 
+                                    x:Name="BtnCustomers"
+                                    HorizontalAlignment="Stretch"
+                                    Background="#FF9800"
+                                    Height="40">
+                                <StackPanel Orientation="Horizontal" Spacing="10">
+                                    <TextBlock Text="F8" FontWeight="Bold"/>
+                                    <TextBlock Text="Clientes"/>
+                                </StackPanel>
+                            </Button>
                             
                             <Button Classes="action-button" 
                                     Command="{Binding CreditsLayawaysCommand}" 

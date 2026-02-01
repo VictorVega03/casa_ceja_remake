@@ -43,6 +43,9 @@ namespace CasaCejaRemake.Services
 
         public event EventHandler<char>? CollectionChanged;
 
+        /// <summary>
+        /// Avanza a la siguiente cobranza (A→B→C→D→A)
+        /// </summary>
         public void ChangeCollection()
         {
             _currentCollection = _currentCollection switch
@@ -57,6 +60,26 @@ namespace CasaCejaRemake.Services
             CartChanged?.Invoke(this, EventArgs.Empty);
         }
 
+        /// <summary>
+        /// Retrocede a la cobranza anterior (A←B←C←D←A)
+        /// </summary>
+        public void ChangeCollectionPrevious()
+        {
+            _currentCollection = _currentCollection switch
+            {
+                'A' => 'D',
+                'B' => 'A',
+                'C' => 'B',
+                'D' => 'C',
+                _ => 'A'
+            };
+            CollectionChanged?.Invoke(this, _currentCollection);
+            CartChanged?.Invoke(this, EventArgs.Empty);
+        }
+
+        /// <summary>
+        /// Cambia a una cobranza específica
+        /// </summary>
         public void ChangeCollection(char identifier)
         {
             if (_collections.ContainsKey(identifier))
@@ -156,6 +179,24 @@ namespace CasaCejaRemake.Services
                 .Where(c => !c.IsEmpty)
                 .Select(c => (c.Identifier, c.TotalItems, c.Total))
                 .ToList();
+        }
+
+        /// <summary>
+        /// Obtiene información de todas las cobranzas (vacías o no)
+        /// </summary>
+        public List<(char Id, int Items, decimal Total, bool IsActive)> GetAllCollectionsInfo()
+        {
+            return _collections.Values
+                .Select(c => (c.Identifier, c.TotalItems, c.Total, c.Identifier == _currentCollection))
+                .ToList();
+        }
+
+        /// <summary>
+        /// Verifica si una cobranza específica tiene items
+        /// </summary>
+        public bool CollectionHasItems(char identifier)
+        {
+            return _collections.ContainsKey(identifier) && !_collections[identifier].IsEmpty;
         }
 
         public bool HasPendingCollections()

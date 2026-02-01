@@ -684,6 +684,140 @@ namespace CasaCejaRemake.Services
             return lines;
         }
 
+        /// <summary>
+        /// Genera el texto del ticket para corte de caja
+        /// </summary>
+        public string GenerateCashCloseTicketText(
+            string branchName,
+            string branchAddress,
+            string branchPhone,
+            string folio,
+            string userName,
+            DateTime openingDate,
+            DateTime closeDate,
+            decimal openingCash,
+            decimal totalCash,
+            decimal totalDebit,
+            decimal totalCredit,
+            decimal totalTransfer,
+            decimal totalChecks,
+            decimal layawayCash,
+            decimal creditCash,
+            decimal totalExpenses,
+            decimal totalIncome,
+            decimal expectedCash,
+            decimal declaredAmount,
+            decimal difference,
+            int salesCount,
+            List<(string Concept, decimal Amount)>? expenses = null,
+            List<(string Concept, decimal Amount)>? incomes = null,
+            int lineWidth = 40)
+        {
+            var lines = new List<string>();
+            var separator = new string('-', lineWidth);
+            var doubleSeparator = new string('=', lineWidth);
+
+            // Header
+            lines.Add(CenterText(branchName, lineWidth));
+            if (!string.IsNullOrEmpty(branchAddress))
+                lines.Add(CenterText(branchAddress, lineWidth));
+            if (!string.IsNullOrEmpty(branchPhone))
+                lines.Add(CenterText($"Tel: {branchPhone}", lineWidth));
+            lines.Add(separator);
+            lines.Add(CenterText("*** CORTE DE CAJA ***", lineWidth));
+            lines.Add(separator);
+
+            // Info del corte
+            lines.Add($"Folio: {folio}");
+            lines.Add($"Cajero: {userName}");
+            lines.Add($"Apertura: {openingDate:dd/MM/yyyy HH:mm}");
+            lines.Add($"Cierre:   {closeDate:dd/MM/yyyy HH:mm}");
+            lines.Add($"Ventas realizadas: {salesCount}");
+            lines.Add(separator);
+
+            // Fondo de apertura
+            lines.Add("FONDO DE APERTURA");
+            lines.Add(FormatAmountLine("Fondo inicial:", openingCash, lineWidth));
+            lines.Add(separator);
+
+            // Ventas por método de pago
+            lines.Add("VENTAS POR METODO DE PAGO");
+            lines.Add(FormatAmountLine("Efectivo:", totalCash, lineWidth));
+            lines.Add(FormatAmountLine("Tarjeta Debito:", totalDebit, lineWidth));
+            lines.Add(FormatAmountLine("Tarjeta Credito:", totalCredit, lineWidth));
+            lines.Add(FormatAmountLine("Transferencia:", totalTransfer, lineWidth));
+            lines.Add(FormatAmountLine("Cheques:", totalChecks, lineWidth));
+            decimal totalSales = totalCash + totalDebit + totalCredit + totalTransfer + totalChecks;
+            lines.Add(FormatAmountLine("TOTAL VENTAS:", totalSales, lineWidth));
+            lines.Add(separator);
+
+            // Abonos en efectivo
+            lines.Add("ABONOS EN EFECTIVO");
+            lines.Add(FormatAmountLine("Apartados:", layawayCash, lineWidth));
+            lines.Add(FormatAmountLine("Creditos:", creditCash, lineWidth));
+            lines.Add(separator);
+
+            // Gastos
+            lines.Add("GASTOS (RETIROS)");
+            if (expenses != null && expenses.Count > 0)
+            {
+                foreach (var expense in expenses)
+                {
+                    lines.Add(FormatAmountLine($"  {expense.Concept}:", expense.Amount, lineWidth));
+                }
+            }
+            lines.Add(FormatAmountLine("TOTAL GASTOS:", totalExpenses, lineWidth, "-"));
+            lines.Add(separator);
+
+            // Ingresos
+            lines.Add("INGRESOS (DEPOSITOS)");
+            if (incomes != null && incomes.Count > 0)
+            {
+                foreach (var income in incomes)
+                {
+                    lines.Add(FormatAmountLine($"  {income.Concept}:", income.Amount, lineWidth));
+                }
+            }
+            lines.Add(FormatAmountLine("TOTAL INGRESOS:", totalIncome, lineWidth, "+"));
+            lines.Add(separator);
+
+            // Resumen de efectivo
+            lines.Add(doubleSeparator);
+            lines.Add(CenterText("RESUMEN DE EFECTIVO", lineWidth));
+            lines.Add(doubleSeparator);
+            lines.Add(FormatAmountLine("Fondo:", openingCash, lineWidth));
+            lines.Add(FormatAmountLine("+ Ventas efectivo:", totalCash, lineWidth));
+            lines.Add(FormatAmountLine("+ Abonos apartados:", layawayCash, lineWidth));
+            lines.Add(FormatAmountLine("+ Abonos creditos:", creditCash, lineWidth));
+            lines.Add(FormatAmountLine("+ Ingresos:", totalIncome, lineWidth));
+            lines.Add(FormatAmountLine("- Gastos:", totalExpenses, lineWidth));
+            lines.Add(separator);
+            lines.Add(FormatAmountLine("ESPERADO EN CAJA:", expectedCash, lineWidth));
+            lines.Add(FormatAmountLine("DECLARADO:", declaredAmount, lineWidth));
+            lines.Add(doubleSeparator);
+
+            // Diferencia
+            string diffText = difference > 0 ? "SOBRANTE:" : difference < 0 ? "FALTANTE:" : "DIFERENCIA:";
+            string diffPrefix = difference > 0 ? "+" : difference < 0 ? "-" : "";
+            lines.Add(FormatAmountLine(diffText, Math.Abs(difference), lineWidth, diffPrefix));
+            lines.Add(doubleSeparator);
+
+            // Footer
+            lines.Add("");
+            lines.Add(CenterText($"Generado: {DateTime.Now:dd/MM/yyyy HH:mm:ss}", lineWidth));
+            lines.Add(CenterText("Casa Ceja POS v1.0", lineWidth));
+
+            return string.Join(Environment.NewLine, lines);
+        }
+
+        private string FormatAmountLine(string label, decimal amount, int lineWidth, string prefix = "")
+        {
+            string amountStr = $"{prefix}${amount:N2}";
+            int spaces = lineWidth - label.Length - amountStr.Length;
+            if (spaces < 1) spaces = 1;
+            return $"{label}{new string(' ', spaces)}{amountStr}";
+        }
+
         private string CenterText(string text, int width)
         {
             if (text.Length >= width) return text;
