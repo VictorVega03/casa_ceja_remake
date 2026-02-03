@@ -196,11 +196,11 @@ namespace CasaCejaRemake.ViewModels.POS
                 var totals = await _cashCloseService.CalculateTotalsAsync(_currentCashClose.Id, _currentCashClose.OpeningDate);
 
                 // ==================== VENTAS DIRECTAS ====================
-                TotalCash = totals.SalesCash;
-                TotalDebit = totals.SalesDebit;
-                TotalCredit = totals.SalesCredit;
-                TotalTransfer = totals.SalesTransfer;
-                TotalCheck = totals.SalesCheck;
+                TotalCash = totals.TotalCash;
+                TotalDebit = totals.TotalDebitCard;
+                TotalCredit = totals.TotalCreditCard;
+                TotalTransfer = totals.TotalTransfers;
+                TotalCheck = totals.TotalChecks;
                 SalesCount = totals.SalesCount;
                 
                 // ==================== CRÉDITOS ====================

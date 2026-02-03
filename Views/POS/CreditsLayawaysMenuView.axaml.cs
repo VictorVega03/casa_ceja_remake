@@ -607,6 +607,8 @@ namespace CasaCejaRemake.Views.POS
                 return false;
             }
 
+            var balanceBefore = layaway.RemainingBalance;
+            
             var addPaymentView = new AddPaymentView();
             var addPaymentViewModel = new AddPaymentViewModel(
                 null!,
@@ -620,6 +622,18 @@ namespace CasaCejaRemake.Views.POS
 
             if (addPaymentView.Tag is PaymentResult result && result.Success)
             {
+                // Verificar si el apartado se completó con este pago
+                var updatedLayaway = await _layawayService.GetByIdAsync(layaway.Id);
+                if (updatedLayaway != null && updatedLayaway.RemainingBalance <= 0 && balanceBefore > 0)
+                {
+                    // Apartado completado, preguntar si desea entregar
+                    var shouldDeliver = await ShowConfirmDeliverDialog();
+                    if (shouldDeliver)
+                    {
+                        await ShowDeliverLayaway(updatedLayaway);
+                    }
+                }
+                
                 return true;
             }
             
@@ -705,6 +719,78 @@ namespace CasaCejaRemake.Views.POS
             await confirmDialog.ShowDialog(this);
 
             return confirmDialog.Tag is string tag && tag == "delivered";
+        }
+
+        private async Task<bool> ShowConfirmDeliverDialog()
+        {
+            var confirmDialog = new Window
+            {
+                Title = "Apartado Completado",
+                Width = 400,
+                Height = 180,
+                WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                Background = Brushes.DimGray
+            };
+
+            var stackPanel = new StackPanel
+            {
+                Margin = new Thickness(20),
+                Spacing = 15
+            };
+
+            var textBlock = new TextBlock
+            {
+                Text = "El apartado ha sido pagado.\n¿Desea entregar la mercancía al cliente?",
+                Foreground = Brushes.White,
+                FontSize = 16,
+                TextWrapping = Avalonia.Media.TextWrapping.Wrap,
+                TextAlignment = Avalonia.Media.TextAlignment.Center
+            };
+
+            var buttonsPanel = new StackPanel
+            {
+                Orientation = Avalonia.Layout.Orientation.Horizontal,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                Spacing = 10
+            };
+
+            var btnYes = new Button
+            {
+                Content = "Sí, Entregar",
+                Width = 120,
+                Background = new SolidColorBrush(Color.Parse("#4CAF50")),
+                Foreground = Brushes.White
+            };
+
+            var btnNo = new Button
+            {
+                Content = "No, Después",
+                Width = 120,
+                Background = new SolidColorBrush(Color.Parse("#666")),
+                Foreground = Brushes.White
+            };
+
+            bool shouldDeliver = false;
+
+            btnYes.Click += (s, e) =>
+            {
+                shouldDeliver = true;
+                confirmDialog.Close();
+            };
+
+            btnNo.Click += (s, e) => confirmDialog.Close();
+
+            buttonsPanel.Children.Add(btnYes);
+            buttonsPanel.Children.Add(btnNo);
+
+            stackPanel.Children.Add(textBlock);
+            stackPanel.Children.Add(buttonsPanel);
+
+            confirmDialog.Content = stackPanel;
+
+            await confirmDialog.ShowDialog(this);
+
+            return shouldDeliver;
         }
 
         private async Task ShowMessageDialogAsync(string title, string message)

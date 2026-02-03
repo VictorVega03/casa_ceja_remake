@@ -92,12 +92,12 @@ namespace CasaCejaRemake.ViewModels.POS
                     
                     // Calcular efectivo disponible actual
                     decimal availableCash = cashClose.OpeningCash + totals.TotalCash + 
-                                           totals.LayawayCash + totals.CreditPaymentsCash + 
+                                           totals.LayawayCash + totals.CreditCash + 
                                            totals.TotalIncome - totals.TotalExpenses;
 
                     Console.WriteLine($"[CashMovementVM] Efectivo disponible: ${availableCash:N2}");
                     Console.WriteLine($"[CashMovementVM] Fondo: ${cashClose.OpeningCash}, Ventas: ${totals.TotalCash}, " +
-                                    $"Abonos: ${totals.LayawayCash + totals.CreditPaymentsCash}, " +
+                                    $"Abonos: ${totals.LayawayCash + totals.CreditCash}, " +
                                     $"Ingresos: ${totals.TotalIncome}, Gastos: ${totals.TotalExpenses}");
 
                     // No permitir retiros que dejen la caja en negativo

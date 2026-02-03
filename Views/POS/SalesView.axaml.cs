@@ -71,6 +71,7 @@ namespace CasaCejaRemake.Views.POS
                 _viewModel.RequestClearCartConfirmation += OnRequestClearCartConfirmation;
                 _viewModel.RequestExitConfirmation += OnRequestExitConfirmation;
                 _viewModel.CollectionIndicatorsChanged += OnCollectionIndicatorsChanged;
+                _viewModel.ProductAddedToCart += OnProductAddedToCart;
             }
 
             // Configurar botones de cobranza
@@ -257,6 +258,7 @@ namespace CasaCejaRemake.Views.POS
                 _viewModel.RequestClearCartConfirmation -= OnRequestClearCartConfirmation;
                 _viewModel.RequestExitConfirmation -= OnRequestExitConfirmation;
                 _viewModel.CollectionIndicatorsChanged -= OnCollectionIndicatorsChanged;
+                _viewModel.ProductAddedToCart -= OnProductAddedToCart;
                 _viewModel.Cleanup();
             }
         }
@@ -276,6 +278,14 @@ namespace CasaCejaRemake.Views.POS
 
             if (_viewModel != null)
             {
+                // Control de cantidad con flechas izquierda/derecha
+                if ((e.Key == Key.Left || e.Key == Key.Right) && _viewModel.SelectedItemIndex >= 0)
+                {
+                    HandleQuantityArrowKey(e.Key);
+                    e.Handled = true;
+                    return;
+                }
+
                 // Atajos complejos con modificadores (Alt+F4, Shift+F5)
                 var complexShortcuts = new Dictionary<(Key, KeyModifiers), Action>
                 {
@@ -321,6 +331,84 @@ namespace CasaCejaRemake.Views.POS
 
             // Solo propagar si no se manejó
             base.OnKeyDown(e);
+        }
+
+        private DispatcherTimer? _quantityTimer;
+        private Key _currentArrowKey;
+
+        private void HandleQuantityArrowKey(Key key)
+        {
+            _currentArrowKey = key;
+            
+            // Ejecutar cambio inmediato
+            ChangeQuantityByArrow(key);
+            
+            // Iniciar timer para cambios continuos si se mantiene presionada
+            if (_quantityTimer == null)
+            {
+                _quantityTimer = new DispatcherTimer
+                {
+                    Interval = TimeSpan.FromMilliseconds(150) // Repetición cada 150ms
+                };
+                _quantityTimer.Tick += (s, e) => ChangeQuantityByArrow(_currentArrowKey);
+            }
+            
+            if (!_quantityTimer.IsEnabled)
+            {
+                _quantityTimer.Start();
+            }
+        }
+
+        protected override void OnKeyUp(KeyEventArgs e)
+        {
+            // Detener el timer cuando se suelta la tecla
+            if ((e.Key == Key.Left || e.Key == Key.Right) && _quantityTimer != null && _quantityTimer.IsEnabled)
+            {
+                _quantityTimer.Stop();
+            }
+            
+            base.OnKeyUp(e);
+        }
+
+        private async void ChangeQuantityByArrow(Key key)
+        {
+            if (_viewModel == null || _viewModel.SelectedItemIndex < 0) return;
+            
+            var item = _viewModel.Items[_viewModel.SelectedItemIndex];
+            var newQuantity = item.Quantity;
+            
+            if (key == Key.Left)
+            {
+                newQuantity = Math.Max(1, newQuantity - 1); // No menor a 1
+            }
+            else if (key == Key.Right)
+            {
+                newQuantity += 1; // Sin límite superior
+            }
+            
+            if (newQuantity != item.Quantity)
+            {
+                await _viewModel.ApplyNewQuantityAsync(newQuantity);
+            }
+        }
+
+        private void OnProductAddedToCart(object? sender, EventArgs e)
+        {
+            Dispatcher.UIThread.Post(() =>
+            {
+                // Seleccionar el último item agregado
+                if (_viewModel != null && _viewModel.Items.Count > 0)
+                {
+                    _viewModel.SelectedItemIndex = _viewModel.Items.Count - 1;
+                    
+                    // Scroll al item seleccionado en el DataGrid
+                    var grid = this.FindControl<DataGrid>("GridProducts");
+                    if (grid != null && _viewModel.SelectedItemIndex >= 0)
+                    {
+                        grid.ScrollIntoView(_viewModel.Items[_viewModel.SelectedItemIndex], null);
+                    }
+                }
+            });
         }
 
         private void OnRequestFocusBarcode(object? sender, EventArgs e)
@@ -502,10 +590,10 @@ namespace CasaCejaRemake.Views.POS
             await menuView.ShowDialog(this);
             _hasOpenDialog = false;
 
-            // Si se creó un crédito o apartado, limpiar el carrito
+            // Si se creó un crédito o apartado, limpiar el carrito automáticamente
             if (menuView.Tag is string result && result == "ItemCreated")
             {
-                _viewModel?.ClearCartCommand.Execute(null);
+                _viewModel?.ConfirmClearCart();
             }
 
             TxtBarcode.Focus();

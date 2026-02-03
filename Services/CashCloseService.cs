@@ -50,22 +50,22 @@ namespace CasaCejaRemake.Services
         // Se usa el TOTAL de la venta (no el monto pagado). El cambio está implícito.
         
         /// <summary>Ventas directas pagadas en efectivo (Total de venta, no AmountPaid)</summary>
-        public decimal SalesCash { get; set; }
+        public decimal TotalCash { get; set; }
         
         /// <summary>Ventas directas pagadas con tarjeta débito</summary>
-        public decimal SalesDebit { get; set; }
+        public decimal TotalDebitCard { get; set; }
         
         /// <summary>Ventas directas pagadas con tarjeta crédito</summary>
-        public decimal SalesCredit { get; set; }
+        public decimal TotalCreditCard { get; set; }
         
         /// <summary>Ventas directas pagadas con transferencia</summary>
-        public decimal SalesTransfer { get; set; }
+        public decimal TotalTransfers { get; set; }
         
         /// <summary>Ventas directas pagadas con cheque</summary>
-        public decimal SalesCheck { get; set; }
+        public decimal TotalChecks { get; set; }
         
         /// <summary>Total de ventas directas (todos los métodos)</summary>
-        public decimal SalesDirectTotal { get; set; }
+        public decimal TotalSales { get; set; }
         
         /// <summary>Número de ventas directas</summary>
         public int SalesCount { get; set; }
@@ -106,7 +106,7 @@ namespace CasaCejaRemake.Services
         /// TOTAL DEL CORTE: Mide la productividad total del turno.
         /// = Ventas Directas + Créditos Creados + Apartados Creados
         /// </summary>
-        public decimal TotalDelCorte => SalesDirectTotal + CreditTotalCreated + LayawayTotalCreated;
+        public decimal TotalDelCorte => TotalSales + CreditTotalCreated + LayawayTotalCreated;
 
         /// <summary>
         /// EFECTIVO ESPERADO: Lo que debería haber físicamente en caja.
@@ -115,19 +115,8 @@ namespace CasaCejaRemake.Services
         /// </summary>
         public decimal CalcularEfectivoEsperado(decimal fondoApertura)
         {
-            return fondoApertura + SalesCash + CreditCash + LayawayCash + TotalIncome - TotalExpenses;
+            return fondoApertura + TotalCash + CreditCash + LayawayCash + TotalIncome - TotalExpenses;
         }
-
-        // Propiedades legacy para compatibilidad con código existente
-        public decimal TotalCash => SalesCash;
-        public decimal TotalDebit => SalesDebit;
-        public decimal TotalCredit => SalesCredit;
-        public decimal TotalTransfer => SalesTransfer;
-        public decimal TotalCheck => SalesCheck;
-        public decimal SalesTotal => SalesDirectTotal;
-        public decimal LayawayTotal => LayawayTotalCreated;
-        public decimal CreditPaymentsTotal => CreditTotalCreated;
-        public decimal CreditPaymentsCash => CreditCash;
     }
 
     /// <summary>
@@ -268,26 +257,26 @@ namespace CasaCejaRemake.Services
                         switch (sale.PaymentMethod)
                         {
                             case "Efectivo":
-                                totals.SalesCash += sale.Total;
+                                totals.TotalCash += sale.Total;
                                 break;
                             case "TarjetaDebito":
-                                totals.SalesDebit += sale.Total;
+                                totals.TotalDebitCard += sale.Total;
                                 break;
                             case "TarjetaCredito":
-                                totals.SalesCredit += sale.Total;
+                                totals.TotalCreditCard += sale.Total;
                                 break;
                             case "Transferencia":
-                                totals.SalesTransfer += sale.Total;
+                                totals.TotalTransfers += sale.Total;
                                 break;
                             case "Cheque":
-                                totals.SalesCheck += sale.Total;
+                                totals.TotalChecks += sale.Total;
                                 break;
                         }
                     }
                 }
                 
-                totals.SalesDirectTotal = totals.SalesCash + totals.SalesDebit + 
-                                          totals.SalesCredit + totals.SalesTransfer + totals.SalesCheck;
+                totals.TotalSales = totals.TotalCash + totals.TotalDebitCard + 
+                                    totals.TotalCreditCard + totals.TotalTransfers + totals.TotalChecks;
 
                 // ==================== 2. CRÉDITOS CREADOS ====================
                 // El TOTAL del crédito suma al "Total del Corte" (productividad)
@@ -345,11 +334,11 @@ namespace CasaCejaRemake.Services
                 // ==================== RESUMEN ====================
                 Console.WriteLine($"[CashCloseService] === RESUMEN DE CÁLCULOS ===");
                 Console.WriteLine($"  VENTAS DIRECTAS:");
-                Console.WriteLine($"    Efectivo: ${totals.SalesCash}");
-                Console.WriteLine($"    Débito: ${totals.SalesDebit}");
-                Console.WriteLine($"    Crédito: ${totals.SalesCredit}");
-                Console.WriteLine($"    Transferencia: ${totals.SalesTransfer}");
-                Console.WriteLine($"    Total Ventas Directas: ${totals.SalesDirectTotal}");
+                Console.WriteLine($"    Efectivo: ${totals.TotalCash}");
+                Console.WriteLine($"    Débito: ${totals.TotalDebitCard}");
+                Console.WriteLine($"    Crédito: ${totals.TotalCreditCard}");
+                Console.WriteLine($"    Transferencia: ${totals.TotalTransfers}");
+                Console.WriteLine($"    Total Ventas Directas: ${totals.TotalSales}");
                 Console.WriteLine($"  CRÉDITOS:");
                 Console.WriteLine($"    Creados (Total): ${totals.CreditTotalCreated} ({totals.CreditCount})");
                 Console.WriteLine($"    Efectivo Abonos: ${totals.CreditCash}");
@@ -392,19 +381,19 @@ namespace CasaCejaRemake.Services
                     switch (kvp.Key.ToLower())
                     {
                         case "efectivo":
-                            totals.SalesCash += amountForMethod;
+                            totals.TotalCash += amountForMethod;
                             break;
                         case "tarjeta_debito":
-                            totals.SalesDebit += amountForMethod;
+                            totals.TotalDebitCard += amountForMethod;
                             break;
                         case "tarjeta_credito":
-                            totals.SalesCredit += amountForMethod;
+                            totals.TotalCreditCard += amountForMethod;
                             break;
                         case "transferencia":
-                            totals.SalesTransfer += amountForMethod;
+                            totals.TotalTransfers += amountForMethod;
                             break;
                         case "cheque":
-                            totals.SalesCheck += amountForMethod;
+                            totals.TotalChecks += amountForMethod;
                             break;
                     }
                 }
@@ -469,7 +458,7 @@ namespace CasaCejaRemake.Services
                 var totals = await CalculateTotalsAsync(cashClose.Id, cashClose.OpeningDate);
                 
                 Console.WriteLine($"[CashCloseService] Totales calculados:");
-                Console.WriteLine($"  - Ventas efectivo: ${totals.SalesCash}");
+                Console.WriteLine($"  - Ventas efectivo: ${totals.TotalCash}");
                 Console.WriteLine($"  - Créditos creados: ${totals.CreditTotalCreated}");
                 Console.WriteLine($"  - Apartados creados: ${totals.LayawayTotalCreated}");
                 Console.WriteLine($"  - Efectivo abonos créditos: ${totals.CreditCash}");
@@ -480,11 +469,11 @@ namespace CasaCejaRemake.Services
                 // problemas de precisión de punto flotante en la base de datos
                 
                 // Ventas directas por método de pago
-                cashClose.TotalCash = Math.Round(totals.SalesCash, 2);
-                cashClose.TotalDebitCard = Math.Round(totals.SalesDebit, 2);
-                cashClose.TotalCreditCard = Math.Round(totals.SalesCredit, 2);
-                cashClose.TotalTransfers = Math.Round(totals.SalesTransfer, 2);
-                cashClose.TotalChecks = Math.Round(totals.SalesCheck, 2);
+                cashClose.TotalCash = Math.Round(totals.TotalCash, 2);
+                cashClose.TotalDebitCard = Math.Round(totals.TotalDebitCard, 2);
+                cashClose.TotalCreditCard = Math.Round(totals.TotalCreditCard, 2);
+                cashClose.TotalTransfers = Math.Round(totals.TotalTransfers, 2);
+                cashClose.TotalChecks = Math.Round(totals.TotalChecks, 2);
                 
                 // Créditos y Apartados CREADOS (para Total del Corte / productividad)
                 cashClose.CreditTotalCreated = Math.Round(totals.CreditTotalCreated, 2);
@@ -495,7 +484,7 @@ namespace CasaCejaRemake.Services
                 cashClose.LayawayCash = Math.Round(totals.LayawayCash, 2);
                 
                 // Total de ventas directas
-                cashClose.TotalSales = Math.Round(totals.SalesDirectTotal, 2);
+                cashClose.TotalSales = Math.Round(totals.TotalSales, 2);
 
                 // Serializar gastos e ingresos como JSON
                 var movements = await GetMovementsAsync(cashClose.Id);
@@ -515,7 +504,7 @@ namespace CasaCejaRemake.Services
                 //                   + Ingresos Extra
                 //                   - Gastos
                 decimal expectedCash = cashClose.OpeningCash 
-                                     + totals.SalesCash      // Ventas directas en efectivo
+                                     + totals.TotalCash      // Ventas directas en efectivo
                                      + totals.CreditCash     // Efectivo de abonos créditos
                                      + totals.LayawayCash    // Efectivo de abonos apartados
                                      + totals.TotalIncome    // Ingresos extra
@@ -531,7 +520,7 @@ namespace CasaCejaRemake.Services
 
                 Console.WriteLine($"[CashCloseService] === CORTE DE CAJA COMPLETADO ===");
                 Console.WriteLine($"  Fondo inicial: ${cashClose.OpeningCash}");
-                Console.WriteLine($"  + Ventas efectivo: ${totals.SalesCash}");
+                Console.WriteLine($"  + Ventas efectivo: ${totals.TotalCash}");
                 Console.WriteLine($"  + Abonos créditos (efectivo): ${totals.CreditCash}");
                 Console.WriteLine($"  + Abonos apartados (efectivo): ${totals.LayawayCash}");
                 Console.WriteLine($"  + Ingresos extra: ${totals.TotalIncome}");

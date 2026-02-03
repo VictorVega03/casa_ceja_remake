@@ -69,6 +69,7 @@ namespace CasaCejaRemake.ViewModels.POS
         public event EventHandler? RequestClearCartConfirmation;
         public event EventHandler? RequestExitConfirmation;
         public event EventHandler? CollectionIndicatorsChanged;
+        public event EventHandler? ProductAddedToCart;
 
         public SalesViewModel(
             CartService cartService,
@@ -177,6 +178,7 @@ namespace CasaCejaRemake.ViewModels.POS
                 {
                     _cartService.AddProduct(cartItem);
                     StatusMessage = $"Agregado: {product.Name}";
+                    ProductAddedToCart?.Invoke(this, EventArgs.Empty);
                 }
 
                 Barcode = string.Empty;
@@ -265,6 +267,7 @@ namespace CasaCejaRemake.ViewModels.POS
             {
                 _cartService.AddProduct(cartItem);
                 StatusMessage = $"Agregado: {product.Name} x {quantity}";
+                ProductAddedToCart?.Invoke(this, EventArgs.Empty);
             }
         }
 
