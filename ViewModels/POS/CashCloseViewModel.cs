@@ -12,6 +12,16 @@ namespace CasaCejaRemake.ViewModels.POS
 {
     /// <summary>
     /// ViewModel para la vista de corte de caja.
+    /// 
+    /// CONCEPTOS IMPORTANTES (de reglas_corte.md):
+    /// 
+    /// 1. TOTAL DEL CORTE (Productividad):
+    ///    = Ventas Directas + Créditos CREADOS + Apartados CREADOS
+    ///    Esto mide la productividad del turno.
+    /// 
+    /// 2. EFECTIVO ESPERADO (Caja física):
+    ///    = Fondo + Ventas Efectivo + Abonos Créditos (efectivo) + Abonos Apartados (efectivo) + Ingresos - Gastos
+    ///    NOTA: El cambio NO se resta porque ya está implícito al usar sale.Total
     /// </summary>
     public partial class CashCloseViewModel : ViewModelBase
     {
@@ -35,7 +45,7 @@ namespace CasaCejaRemake.ViewModels.POS
         [ObservableProperty]
         private string _userName = string.Empty;
 
-        // ========== TOTALES POR MÉTODO DE PAGO ==========
+        // ========== VENTAS DIRECTAS POR MÉTODO DE PAGO ==========
         [ObservableProperty]
         private decimal _totalCash;
 
@@ -51,18 +61,42 @@ namespace CasaCejaRemake.ViewModels.POS
         [ObservableProperty]
         private decimal _totalCheck;
 
-        // ========== APARTADOS Y CRÉDITOS ==========
+        /// <summary>
+        /// Total de todas las ventas directas (suma de todos los métodos de pago).
+        /// </summary>
+        public decimal TotalSalesDirectas => TotalCash + TotalDebit + TotalCredit + TotalTransfer + TotalCheck;
+
+        // ========== CRÉDITOS ===========
+        /// <summary>
+        /// Total de CRÉDITOS CREADOS durante el turno (suma al Total del Corte).
+        /// </summary>
+        [ObservableProperty]
+        private decimal _creditTotalCreated;
+
+        /// <summary>
+        /// Efectivo recibido por abonos/enganches de créditos (suma al Efectivo Esperado).
+        /// </summary>
+        [ObservableProperty]
+        private decimal _creditCash;
+
+        [ObservableProperty]
+        private int _creditCount;
+
+        // ========== APARTADOS ===========
+        /// <summary>
+        /// Total de APARTADOS CREADOS durante el turno (suma al Total del Corte).
+        /// </summary>
+        [ObservableProperty]
+        private decimal _layawayTotalCreated;
+
+        /// <summary>
+        /// Efectivo recibido por abonos de apartados (suma al Efectivo Esperado).
+        /// </summary>
         [ObservableProperty]
         private decimal _layawayCash;
 
         [ObservableProperty]
-        private decimal _layawayTotal;
-
-        [ObservableProperty]
-        private decimal _creditPaymentsCash;
-
-        [ObservableProperty]
-        private decimal _creditPaymentsTotal;
+        private int _layawayCount;
 
         // ========== GASTOS E INGRESOS ==========
         [ObservableProperty]
@@ -75,6 +109,16 @@ namespace CasaCejaRemake.ViewModels.POS
         public ObservableCollection<CashMovement> Incomes { get; } = new();
 
         // ========== TOTALES Y DIFERENCIA ==========
+        /// <summary>
+        /// Total del Corte = Productividad del turno
+        /// = Ventas Directas + Créditos Creados + Apartados Creados
+        /// </summary>
+        public decimal TotalDelCorte => TotalSalesDirectas + CreditTotalCreated + LayawayTotalCreated;
+
+        /// <summary>
+        /// Total de efectivo que se espera en caja.
+        /// = Fondo + Efectivo Ventas + Efectivo Abonos + Ingresos - Gastos
+        /// </summary>
         [ObservableProperty]
         private decimal _expectedAmount;
 
@@ -148,29 +192,46 @@ namespace CasaCejaRemake.ViewModels.POS
 
             try
             {
-                // Calcular totales
+                // Calcular totales según reglas de negocio
                 var totals = await _cashCloseService.CalculateTotalsAsync(_currentCashClose.Id, _currentCashClose.OpeningDate);
 
-                TotalCash = totals.TotalCash;
-                TotalDebit = totals.TotalDebit;
-                TotalCredit = totals.TotalCredit;
-                TotalTransfer = totals.TotalTransfer;
-                TotalCheck = totals.TotalCheck;
-                LayawayCash = totals.LayawayCash;
-                LayawayTotal = totals.LayawayTotal;
-                CreditPaymentsCash = totals.CreditPaymentsCash;
-                CreditPaymentsTotal = totals.CreditPaymentsTotal;
+                // ==================== VENTAS DIRECTAS ====================
+                TotalCash = totals.SalesCash;
+                TotalDebit = totals.SalesDebit;
+                TotalCredit = totals.SalesCredit;
+                TotalTransfer = totals.SalesTransfer;
+                TotalCheck = totals.SalesCheck;
+                SalesCount = totals.SalesCount;
+                
+                // ==================== CRÉDITOS ====================
+                CreditTotalCreated = totals.CreditTotalCreated;  // Total para productividad
+                CreditCash = totals.CreditCash;                   // Efectivo recibido
+                CreditCount = totals.CreditCount;
+                
+                // ==================== APARTADOS ====================
+                LayawayTotalCreated = totals.LayawayTotalCreated; // Total para productividad
+                LayawayCash = totals.LayawayCash;                  // Efectivo recibido
+                LayawayCount = totals.LayawayCount;
+                
+                // ==================== MOVIMIENTOS ====================
                 TotalExpenses = totals.TotalExpenses;
                 TotalIncome = totals.TotalIncome;
-                SalesCount = totals.SalesCount;
 
-                // Calcular efectivo esperado
-                ExpectedAmount = OpeningAmount + TotalCash + LayawayCash + CreditPaymentsCash + TotalIncome - TotalExpenses;
+                // ==================== EFECTIVO ESPERADO ====================
+                // FÓRMULA (de reglas_corte.md):
+                // = Fondo + Efectivo Ventas + Efectivo Abonos Créditos + Efectivo Abonos Apartados + Ingresos - Gastos
+                // NOTA: El cambio NO se resta porque ya está implícito al usar sale.Total
+                ExpectedAmount = OpeningAmount 
+                               + TotalCash           // Ventas en efectivo
+                               + CreditCash          // Abonos/enganches créditos en efectivo
+                               + LayawayCash         // Abonos apartados en efectivo
+                               + TotalIncome         // Ingresos extra
+                               - TotalExpenses;      // Gastos
                 
                 // Por defecto, el monto declarado es el esperado
                 DeclaredAmount = ExpectedAmount;
 
-                // Cargar movimientos
+                // Cargar movimientos para mostrar en la UI
                 var movements = await _cashCloseService.GetMovementsAsync(_currentCashClose.Id);
                 
                 Expenses.Clear();
@@ -184,7 +245,23 @@ namespace CasaCejaRemake.ViewModels.POS
                         Incomes.Add(movement);
                 }
 
-                Console.WriteLine($"[CashCloseVM] Datos cargados: {SalesCount} ventas, Esperado=${ExpectedAmount}");
+                // Notificar propiedades calculadas
+                OnPropertyChanged(nameof(TotalSalesDirectas));
+                OnPropertyChanged(nameof(TotalDelCorte));
+
+                Console.WriteLine($"[CashCloseVM] === DATOS CARGADOS ===");
+                Console.WriteLine($"  Ventas directas: {SalesCount} ventas, ${TotalSalesDirectas}");
+                Console.WriteLine($"    Efectivo: ${TotalCash}");
+                Console.WriteLine($"    Débito: ${TotalDebit}");
+                Console.WriteLine($"    Crédito: ${TotalCredit}");
+                Console.WriteLine($"    Transfer: ${TotalTransfer}");
+                Console.WriteLine($"  Créditos creados: {CreditCount}, Total: ${CreditTotalCreated}");
+                Console.WriteLine($"    Efectivo abonos: ${CreditCash}");
+                Console.WriteLine($"  Apartados creados: {LayawayCount}, Total: ${LayawayTotalCreated}");
+                Console.WriteLine($"    Efectivo abonos: ${LayawayCash}");
+                Console.WriteLine($"  ---");
+                Console.WriteLine($"  TOTAL DEL CORTE (Productividad): ${TotalDelCorte}");
+                Console.WriteLine($"  EFECTIVO ESPERADO: ${ExpectedAmount}");
             }
             catch (Exception ex)
             {

@@ -48,6 +48,21 @@ namespace CasaCejaRemake.Models
         [Column("credit_cash")]
         public decimal CreditCash { get; set; } = 0;
 
+        // ============ TOTALES DE CRÉDITOS Y APARTADOS CREADOS ============
+        /// <summary>
+        /// Total de TODOS los créditos creados durante el turno (valor completo, no solo abonos).
+        /// Esto suma al "Total del Corte" para medir productividad.
+        /// </summary>
+        [Column("credit_total_created")]
+        public decimal CreditTotalCreated { get; set; } = 0;
+
+        /// <summary>
+        /// Total de TODOS los apartados creados durante el turno (valor completo, no solo abonos).
+        /// Esto suma al "Total del Corte" para medir productividad.
+        /// </summary>
+        [Column("layaway_total_created")]
+        public decimal LayawayTotalCreated { get; set; } = 0;
+
         // ============ GASTOS E INGRESOS (JSON TEXT) ============
         [Column("expenses")]
         public string Expenses { get; set; } = "[]"; // JSON: [{"description": "Comida", "amount": 100}]
@@ -94,44 +109,54 @@ namespace CasaCejaRemake.Models
         // ========== PROPIEDADES CALCULADAS ==========
         
         /// <summary>
-        /// Total de todos los métodos de pago (sin contar efectivo inicial)
+        /// Total del Corte: Suma de TODAS las ventas del turno (mide productividad).
+        /// Incluye ventas directas + créditos creados + apartados creados.
+        /// </summary>
+        [Ignore]
+        public decimal TotalDelCorte => TotalCash + TotalDebitCard + TotalCreditCard + 
+                                        TotalChecks + TotalTransfers + 
+                                        CreditTotalCreated + LayawayTotalCreated;
+
+        /// <summary>
+        /// Total de todos los métodos de pago de ventas directas (sin créditos/apartados).
         /// </summary>
         [Ignore]
         public decimal TotalPayments => TotalCash + TotalDebitCard + TotalCreditCard + 
-                                        TotalChecks + TotalTransfers + LayawayCash + CreditCash;
+                                        TotalChecks + TotalTransfers;
 
         /// <summary>
-        /// Efectivo final esperado en caja
+        /// Efectivo Total que pasó por la caja (para cálculos de arqueo).
+        /// = Fondo + Efectivo Directo + Efectivo Abonos + Ingresos - Gastos
         /// </summary>
         [Ignore]
-        public decimal ExpectedFinalCash => OpeningCash + TotalCash + LayawayCash + CreditCash;
+        public decimal EfectivoTotal => OpeningCash + TotalCash + LayawayCash + CreditCash;
 
         /// <summary>
-        /// Indica si hay sobrante de efectivo
+        /// Indica si hay sobrante de efectivo.
         /// </summary>
         [Ignore]
         public bool HasSurplus => Surplus > 0;
 
         /// <summary>
-        /// Indica si hay faltante de efectivo
+        /// Indica si hay faltante de efectivo.
         /// </summary>
         [Ignore]
         public bool HasShortage => Surplus < 0;
 
         /// <summary>
-        /// Indica si el corte está balanceado (sin sobrante ni faltante)
+        /// Indica si el corte está balanceado (sin sobrante ni faltante).
         /// </summary>
         [Ignore]
         public bool IsBalanced => Surplus == 0;
 
         /// <summary>
-        /// Duración del turno en horas
+        /// Duración del turno en horas.
         /// </summary>
         [Ignore]
         public double ShiftDurationHours => (CloseDate - OpeningDate).TotalHours;
 
         /// <summary>
-        /// Total de ventas por métodos electrónicos
+        /// Total de ventas por métodos electrónicos.
         /// </summary>
         [Ignore]
         public decimal TotalElectronicPayments => TotalDebitCard + TotalCreditCard + 

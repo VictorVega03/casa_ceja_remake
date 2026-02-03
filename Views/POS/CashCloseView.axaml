@@ -4,8 +4,8 @@
         x:Class="CasaCejaRemake.Views.POS.CashCloseView"
         x:DataType="vm:CashCloseViewModel"
         Title="Corte de Caja"
-        Width="800"
-        Height="650"
+        Width="900"
+        Height="700"
         WindowStartupLocation="CenterOwner"
         CanResize="False"
         Background="#1E1E1E">
@@ -26,16 +26,16 @@
         </Style>
         <Style Selector="TextBlock.label">
             <Setter Property="Foreground" Value="#888"/>
-            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="FontSize" Value="12"/>
         </Style>
         <Style Selector="TextBlock.value">
             <Setter Property="Foreground" Value="White"/>
-            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontSize" Value="15"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
         </Style>
         <Style Selector="TextBlock.value-green">
             <Setter Property="Foreground" Value="#4CAF50"/>
-            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontSize" Value="15"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
         </Style>
         <Style Selector="Button.primary">
@@ -83,40 +83,109 @@
                     <Border Classes="section">
                         <StackPanel>
                             <TextBlock Text="INFORMACIÓN DEL TURNO" FontWeight="Bold" Foreground="White" Margin="0,0,0,10"/>
-                            <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto">
+                            <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto,Auto">
                                 <TextBlock Grid.Row="0" Grid.Column="0" Classes="label" Text="Fondo de Apertura:"/>
                                 <TextBlock Grid.Row="0" Grid.Column="1" Classes="value-green" Text="{Binding OpeningAmount, StringFormat='${0:N2}'}"/>
                                 <TextBlock Grid.Row="1" Grid.Column="0" Classes="label" Text="Fecha Apertura:"/>
                                 <TextBlock Grid.Row="1" Grid.Column="1" Classes="value" Text="{Binding OpeningDate, StringFormat='{}{0:dd/MM/yyyy HH:mm}'}"/>
                                 <TextBlock Grid.Row="2" Grid.Column="0" Classes="label" Text="Cajero:"/>
                                 <TextBlock Grid.Row="2" Grid.Column="1" Classes="value" Text="{Binding UserName}"/>
+                                <TextBlock Grid.Row="3" Grid.Column="0" Classes="label" Text="Ventas directas:"/>
+                                <TextBlock Grid.Row="3" Grid.Column="1" Classes="value" Text="{Binding SalesCount}"/>
                             </Grid>
                         </StackPanel>
                     </Border>
 
-                    <!-- Ventas en efectivo -->
+                    <!-- VENTAS DIRECTAS -->
                     <Border Classes="section">
                         <StackPanel>
-                            <TextBlock Text="VENTAS EN EFECTIVO" FontWeight="Bold" Foreground="White" Margin="0,0,0,10"/>
-                            <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto">
-                                <TextBlock Grid.Row="0" Grid.Column="0" Classes="label" Text="Total Ventas Efectivo:"/>
+                            <TextBlock Text="VENTAS DIRECTAS" FontWeight="Bold" Foreground="White" Margin="0,0,0,10"/>
+                            <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto">
+                                <TextBlock Grid.Row="0" Grid.Column="0" Classes="label" Text="Efectivo:"/>
                                 <TextBlock Grid.Row="0" Grid.Column="1" Classes="value-green" Text="{Binding TotalCash, StringFormat='${0:N2}'}"/>
-                                <TextBlock Grid.Row="1" Grid.Column="0" Classes="label" Text="Número de Ventas:"/>
-                                <TextBlock Grid.Row="1" Grid.Column="1" Classes="value" Text="{Binding SalesCount}"/>
+                                <TextBlock Grid.Row="1" Grid.Column="0" Classes="label" Text="Tarjeta Débito:"/>
+                                <TextBlock Grid.Row="1" Grid.Column="1" Classes="value" Text="{Binding TotalDebit, StringFormat='${0:N2}'}"/>
+                                <TextBlock Grid.Row="2" Grid.Column="0" Classes="label" Text="Tarjeta Crédito:"/>
+                                <TextBlock Grid.Row="2" Grid.Column="1" Classes="value" Text="{Binding TotalCredit, StringFormat='${0:N2}'}"/>
+                                <TextBlock Grid.Row="3" Grid.Column="0" Classes="label" Text="Transferencias:"/>
+                                <TextBlock Grid.Row="3" Grid.Column="1" Classes="value" Text="{Binding TotalTransfer, StringFormat='${0:N2}'}"/>
+                                <TextBlock Grid.Row="4" Grid.Column="0" Classes="label" Text="Cheques:"/>
+                                <TextBlock Grid.Row="4" Grid.Column="1" Classes="value" Text="{Binding TotalCheck, StringFormat='${0:N2}'}"/>
+                                <!-- Subtotal -->
+                                <Border Grid.Row="5" Grid.ColumnSpan="2" BorderThickness="0,1,0,0" BorderBrush="#444" Margin="0,8,0,0" Padding="0,8,0,0">
+                                    <Grid ColumnDefinitions="*,Auto">
+                                        <TextBlock Grid.Column="0" Text="Total Ventas Directas:" FontWeight="SemiBold" Foreground="#CCC"/>
+                                        <TextBlock Grid.Column="1" Text="{Binding TotalSalesDirectas, StringFormat='${0:N2}'}" FontWeight="Bold" Foreground="White"/>
+                                    </Grid>
+                                </Border>
                             </Grid>
                         </StackPanel>
                     </Border>
 
-                    <!-- Apartados y Créditos -->
+                    <!-- CRÉDITOS CREADOS -->
                     <Border Classes="section">
                         <StackPanel>
-                            <TextBlock Text="ABONOS (EFECTIVO)" FontWeight="Bold" Foreground="White" Margin="0,0,0,10"/>
-                            <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto">
-                                <TextBlock Grid.Row="0" Grid.Column="0" Classes="label" Text="Efectivo de Apartados:"/>
-                                <TextBlock Grid.Row="0" Grid.Column="1" Classes="value-green" Text="{Binding LayawayCash, StringFormat='${0:N2}'}"/>
-                                <TextBlock Grid.Row="1" Grid.Column="0" Classes="label" Text="Efectivo de Créditos:"/>
-                                <TextBlock Grid.Row="1" Grid.Column="1" Classes="value-green" Text="{Binding CreditPaymentsCash, StringFormat='${0:N2}'}"/>
+                            <TextBlock Text="CRÉDITOS CREADOS" FontWeight="Bold" Foreground="White" Margin="0,0,0,10"/>
+                            <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto,Auto">
+                                <TextBlock Grid.Row="0" Grid.Column="0" Classes="label" Text="Cantidad:"/>
+                                <TextBlock Grid.Row="0" Grid.Column="1" Classes="value" Text="{Binding CreditCount}"/>
+                                <TextBlock Grid.Row="1" Grid.Column="0" Classes="label" Text="Total (productividad):"/>
+                                <TextBlock Grid.Row="1" Grid.Column="1" Classes="value" Text="{Binding CreditTotalCreated, StringFormat='${0:N2}'}" Foreground="#64B5F6"/>
+                                <TextBlock Grid.Row="2" Grid.Column="0" Classes="label" Text="Efectivo recibido:"/>
+                                <TextBlock Grid.Row="2" Grid.Column="1" Classes="value-green" Text="{Binding CreditCash, StringFormat='${0:N2}'}"/>
+                                <!-- Divider -->
+                                <Border Grid.Row="3" Grid.ColumnSpan="2" BorderThickness="0,1,0,0" BorderBrush="#444" Margin="0,8,0,0" Padding="0,8,0,0">
+                                    <Grid ColumnDefinitions="*,Auto">
+                                        <TextBlock Grid.Column="0" Text="Total Créditos (valor):" FontWeight="SemiBold" Foreground="#CCC"/>
+                                        <TextBlock Grid.Column="1" Text="{Binding CreditTotalCreated, StringFormat='${0:N2}'}" FontWeight="Bold" Foreground="#64B5F6"/>
+                                    </Grid>
+                                </Border>
                             </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- APARTADOS CREADOS -->
+                    <Border Classes="section">
+                        <StackPanel>
+                            <TextBlock Text="APARTADOS CREADOS" FontWeight="Bold" Foreground="White" Margin="0,0,0,10"/>
+                            <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto,Auto">
+                                <TextBlock Grid.Row="0" Grid.Column="0" Classes="label" Text="Cantidad:"/>
+                                <TextBlock Grid.Row="0" Grid.Column="1" Classes="value" Text="{Binding LayawayCount}"/>
+                                <TextBlock Grid.Row="1" Grid.Column="0" Classes="label" Text="Total (productividad):"/>
+                                <TextBlock Grid.Row="1" Grid.Column="1" Classes="value" Text="{Binding LayawayTotalCreated, StringFormat='${0:N2}'}" Foreground="#FFB74D"/>
+                                <TextBlock Grid.Row="2" Grid.Column="0" Classes="label" Text="Efectivo recibido:"/>
+                                <TextBlock Grid.Row="2" Grid.Column="1" Classes="value-green" Text="{Binding LayawayCash, StringFormat='${0:N2}'}"/>
+                                <!-- Divider -->
+                                <Border Grid.Row="3" Grid.ColumnSpan="2" BorderThickness="0,1,0,0" BorderBrush="#444" Margin="0,8,0,0" Padding="0,8,0,0">
+                                    <Grid ColumnDefinitions="*,Auto">
+                                        <TextBlock Grid.Column="0" Text="Total Apartados (valor):" FontWeight="SemiBold" Foreground="#CCC"/>
+                                        <TextBlock Grid.Column="1" Text="{Binding LayawayTotalCreated, StringFormat='${0:N2}'}" FontWeight="Bold" Foreground="#FFB74D"/>
+                                    </Grid>
+                                </Border>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
+
+            <!-- COLUMNA DERECHA -->
+            <ScrollViewer Grid.Column="1" Margin="10,0,0,0">
+                <StackPanel>
+
+                    <!-- TOTAL DEL CORTE (Productividad) -->
+                    <Border Background="#1A237E" CornerRadius="4" Padding="12" Margin="0,0,0,10">
+                        <StackPanel>
+                            <TextBlock Text="TOTAL DEL CORTE" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center"/>
+                            <TextBlock Text="(Productividad del turno)" FontSize="10" Foreground="#9FA8DA" HorizontalAlignment="Center"/>
+                            <TextBlock Text="{Binding TotalDelCorte, StringFormat='${0:N2}'}" 
+                                       FontSize="28" 
+                                       FontWeight="Bold" 
+                                       Foreground="#64B5F6"
+                                       HorizontalAlignment="Center"
+                                       Margin="0,5,0,0"/>
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="10" Margin="0,8,0,0">
+                                <TextBlock Text="Ventas + Créditos + Apartados" FontSize="10" Foreground="#9FA8DA"/>
+                            </StackPanel>
                         </StackPanel>
                     </Border>
 
@@ -137,29 +206,6 @@
                                     </DataTemplate>
                                 </ItemsControl.ItemTemplate>
                             </ItemsControl>
-                        </StackPanel>
-                    </Border>
-                </StackPanel>
-            </ScrollViewer>
-
-            <!-- COLUMNA DERECHA -->
-            <ScrollViewer Grid.Column="1" Margin="10,0,0,0">
-                <StackPanel>
-                    
-                    <!-- Ventas con otros métodos -->
-                    <Border Classes="section">
-                        <StackPanel>
-                            <TextBlock Text="VENTAS POR MÉTODO DE PAGO" FontWeight="Bold" Foreground="White" Margin="0,0,0,10"/>
-                            <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto,Auto">
-                                <TextBlock Grid.Row="0" Grid.Column="0" Classes="label" Text="Tarjeta Débito:"/>
-                                <TextBlock Grid.Row="0" Grid.Column="1" Classes="value" Text="{Binding TotalDebit, StringFormat='${0:N2}'}"/>
-                                <TextBlock Grid.Row="1" Grid.Column="0" Classes="label" Text="Tarjeta Crédito:"/>
-                                <TextBlock Grid.Row="1" Grid.Column="1" Classes="value" Text="{Binding TotalCredit, StringFormat='${0:N2}'}"/>
-                                <TextBlock Grid.Row="2" Grid.Column="0" Classes="label" Text="Transferencias:"/>
-                                <TextBlock Grid.Row="2" Grid.Column="1" Classes="value" Text="{Binding TotalTransfer, StringFormat='${0:N2}'}"/>
-                                <TextBlock Grid.Row="3" Grid.Column="0" Classes="label" Text="Cheques:"/>
-                                <TextBlock Grid.Row="3" Grid.Column="1" Classes="value" Text="{Binding TotalCheck, StringFormat='${0:N2}'}"/>
-                            </Grid>
                         </StackPanel>
                     </Border>
 
@@ -183,22 +229,34 @@
                         </StackPanel>
                     </Border>
 
+                    <!-- EFECTIVO EN CAJA -->
+                    <Border Background="#1B5E20" CornerRadius="4" Padding="12" Margin="0,0,0,10">
+                        <StackPanel>
+                            <TextBlock Text="EFECTIVO ESPERADO EN CAJA" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center"/>
+                            <TextBlock Text="{Binding ExpectedAmount, StringFormat='${0:N2}'}" 
+                                       FontSize="26" 
+                                       FontWeight="Bold" 
+                                       Foreground="#81C784"
+                                       HorizontalAlignment="Center"
+                                       Margin="0,5,0,0"/>
+                            <TextBlock Text="Fondo + Efectivo Ventas + Efectivo Abonos + Ingresos - Gastos" 
+                                       FontSize="9" 
+                                       Foreground="#A5D6A7" 
+                                       HorizontalAlignment="Center"
+                                       TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </Border>
+
                     <!-- Monto declarado -->
                     <Border Classes="section">
                         <StackPanel>
-                            <TextBlock Text="EFECTIVO EN CAJA" FontWeight="Bold" Foreground="White" Margin="0,0,0,10"/>
-                            <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto" Margin="0,0,0,15">
-                                <TextBlock Grid.Row="0" Grid.Column="0" Classes="label" Text="Efectivo Esperado:"/>
-                                <TextBlock Grid.Row="0" Grid.Column="1" Classes="value-green" Text="{Binding ExpectedAmount, StringFormat='${0:N2}'}" FontSize="18"/>
-                            </Grid>
-                            
-                            <TextBlock Text="MONTO DECLARADO" Classes="label" Margin="0,0,0,5"/>
+                            <TextBlock Text="MONTO DECLARADO POR CAJERO" FontWeight="Bold" Foreground="White" Margin="0,0,0,10"/>
                             <Grid ColumnDefinitions="Auto,*">
-                                <TextBlock Grid.Column="0" Text="$" FontSize="20" FontWeight="Bold" Foreground="White" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                <TextBlock Grid.Column="0" Text="$" FontSize="22" FontWeight="Bold" Foreground="White" VerticalAlignment="Center" Margin="0,0,8,0"/>
                                 <TextBox x:Name="TxtDeclaredAmount"
                                          Grid.Column="1"
                                          Text="{Binding DeclaredAmount, Mode=TwoWay, StringFormat='{}{0:F2}'}"
-                                         FontSize="20"
+                                         FontSize="22"
                                          FontWeight="Bold"
                                          HorizontalContentAlignment="Right"/>
                             </Grid>

@@ -42,25 +42,97 @@ namespace CasaCejaRemake.Services
 
     /// <summary>
     /// Totales calculados para el corte de caja.
+    /// Basado en las reglas de negocio documentadas en reglas_corte.md
     /// </summary>
     public class CashCloseTotals
     {
-        public decimal TotalCash { get; set; }
-        public decimal TotalDebit { get; set; }
-        public decimal TotalCredit { get; set; }
-        public decimal TotalTransfer { get; set; }
-        public decimal TotalCheck { get; set; }
-        public decimal LayawayCash { get; set; }
-        public decimal LayawayTotal { get; set; }
-        public decimal CreditPaymentsCash { get; set; }
-        public decimal CreditPaymentsTotal { get; set; }
-        public decimal TotalExpenses { get; set; }
-        public decimal TotalIncome { get; set; }
+        // ==================== VENTAS DIRECTAS POR MÉTODO DE PAGO ====================
+        // Se usa el TOTAL de la venta (no el monto pagado). El cambio está implícito.
+        
+        /// <summary>Ventas directas pagadas en efectivo (Total de venta, no AmountPaid)</summary>
+        public decimal SalesCash { get; set; }
+        
+        /// <summary>Ventas directas pagadas con tarjeta débito</summary>
+        public decimal SalesDebit { get; set; }
+        
+        /// <summary>Ventas directas pagadas con tarjeta crédito</summary>
+        public decimal SalesCredit { get; set; }
+        
+        /// <summary>Ventas directas pagadas con transferencia</summary>
+        public decimal SalesTransfer { get; set; }
+        
+        /// <summary>Ventas directas pagadas con cheque</summary>
+        public decimal SalesCheck { get; set; }
+        
+        /// <summary>Total de ventas directas (todos los métodos)</summary>
+        public decimal SalesDirectTotal { get; set; }
+        
+        /// <summary>Número de ventas directas</summary>
         public int SalesCount { get; set; }
+
+        // ==================== CRÉDITOS ====================
+        
+        /// <summary>Total de TODOS los créditos CREADOS en el turno (valor completo)</summary>
+        public decimal CreditTotalCreated { get; set; }
+        
+        /// <summary>Efectivo recibido por abonos/enganches de créditos</summary>
+        public decimal CreditCash { get; set; }
+        
+        /// <summary>Número de créditos creados</summary>
+        public int CreditCount { get; set; }
+
+        // ==================== APARTADOS ====================
+        
+        /// <summary>Total de TODOS los apartados CREADOS en el turno (valor completo)</summary>
+        public decimal LayawayTotalCreated { get; set; }
+        
+        /// <summary>Efectivo recibido por abonos de apartados</summary>
+        public decimal LayawayCash { get; set; }
+        
+        /// <summary>Número de apartados creados</summary>
+        public int LayawayCount { get; set; }
+
+        // ==================== MOVIMIENTOS DE CAJA ====================
+        
+        /// <summary>Total de gastos registrados (sale de caja)</summary>
+        public decimal TotalExpenses { get; set; }
+        
+        /// <summary>Total de ingresos extra registrados (entra a caja)</summary>
+        public decimal TotalIncome { get; set; }
+
+        // ==================== PROPIEDADES CALCULADAS ====================
+
+        /// <summary>
+        /// TOTAL DEL CORTE: Mide la productividad total del turno.
+        /// = Ventas Directas + Créditos Creados + Apartados Creados
+        /// </summary>
+        public decimal TotalDelCorte => SalesDirectTotal + CreditTotalCreated + LayawayTotalCreated;
+
+        /// <summary>
+        /// EFECTIVO ESPERADO: Lo que debería haber físicamente en caja.
+        /// = Fondo + Efectivo Ventas + Efectivo Abonos + Ingresos - Gastos
+        /// NOTA: El cambio NO se resta porque ya está implícito al usar sale.Total
+        /// </summary>
+        public decimal CalcularEfectivoEsperado(decimal fondoApertura)
+        {
+            return fondoApertura + SalesCash + CreditCash + LayawayCash + TotalIncome - TotalExpenses;
+        }
+
+        // Propiedades legacy para compatibilidad con código existente
+        public decimal TotalCash => SalesCash;
+        public decimal TotalDebit => SalesDebit;
+        public decimal TotalCredit => SalesCredit;
+        public decimal TotalTransfer => SalesTransfer;
+        public decimal TotalCheck => SalesCheck;
+        public decimal SalesTotal => SalesDirectTotal;
+        public decimal LayawayTotal => LayawayTotalCreated;
+        public decimal CreditPaymentsTotal => CreditTotalCreated;
+        public decimal CreditPaymentsCash => CreditCash;
     }
 
     /// <summary>
     /// Servicio para gestión de apertura y cierre de caja.
+    /// Implementa las reglas de negocio documentadas en reglas_corte.md
     /// </summary>
     public class CashCloseService
     {
@@ -68,6 +140,8 @@ namespace CasaCejaRemake.Services
         private readonly BaseRepository<CashClose> _cashCloseRepository;
         private readonly BaseRepository<CashMovement> _movementRepository;
         private readonly BaseRepository<Sale> _saleRepository;
+        private readonly BaseRepository<Credit> _creditRepository;
+        private readonly BaseRepository<Layaway> _layawayRepository;
         private readonly BaseRepository<LayawayPayment> _layawayPaymentRepository;
         private readonly BaseRepository<CreditPayment> _creditPaymentRepository;
 
@@ -77,6 +151,8 @@ namespace CasaCejaRemake.Services
             _cashCloseRepository = new BaseRepository<CashClose>(databaseService);
             _movementRepository = new BaseRepository<CashMovement>(databaseService);
             _saleRepository = new BaseRepository<Sale>(databaseService);
+            _creditRepository = new BaseRepository<Credit>(databaseService);
+            _layawayRepository = new BaseRepository<Layaway>(databaseService);
             _layawayPaymentRepository = new BaseRepository<LayawayPayment>(databaseService);
             _creditPaymentRepository = new BaseRepository<CreditPayment>(databaseService);
         }
@@ -152,7 +228,13 @@ namespace CasaCejaRemake.Services
         }
 
         /// <summary>
-        /// Calcula los totales para el corte de caja.
+        /// Calcula los totales para el corte de caja según las reglas de negocio.
+        /// 
+        /// REGLAS CLAVE (de reglas_corte.md):
+        /// 1. Para ventas se usa sale.Total (NO AmountPaid). El cambio está implícito.
+        /// 2. Los créditos/apartados CREADOS suman al Total del Corte (productividad).
+        /// 3. Solo el efectivo de abonos/enganches suma al Efectivo Esperado.
+        /// 4. El cambio NO se resta (ya está contemplado al usar Total en vez de AmountPaid).
         /// </summary>
         public async Task<CashCloseTotals> CalculateTotalsAsync(int cashCloseId, DateTime openingDate)
         {
@@ -160,49 +242,25 @@ namespace CasaCejaRemake.Services
 
             try
             {
-                Console.WriteLine($"[CashCloseService] CalculateTotalsAsync - cashCloseId={cashCloseId}, openingDate={openingDate}");
+                Console.WriteLine($"[CashCloseService] CalculateTotalsAsync - openingDate={openingDate}");
                 
-                // Obtener ventas desde la apertura
+                // ==================== 1. VENTAS DIRECTAS ====================
+                // Se contabiliza el TOTAL de la venta (NO AmountPaid)
+                // El cambio dado ya está implícito en esta operación
+                
                 var allSales = await _saleRepository.GetAllAsync();
-                Console.WriteLine($"[CashCloseService] Total ventas en BD: {allSales.Count}");
+                var salesSinceOpen = allSales.Where(s => s.SaleDate >= openingDate).ToList();
                 
-                var salesSinceOpen = allSales
-                    .Where(s => s.SaleDate >= openingDate)
-                    .ToList();
-                    
-                Console.WriteLine($"[CashCloseService] Ventas desde apertura: {salesSinceOpen.Count}");
-                foreach (var sale in salesSinceOpen)
-                {
-                    Console.WriteLine($"  - Venta #{sale.Id}: Fecha={sale.SaleDate}, Total={sale.Total}, PaymentMethod={sale.PaymentMethod}");
-                }
-
                 totals.SalesCount = salesSinceOpen.Count;
+                Console.WriteLine($"[CashCloseService] Ventas directas: {salesSinceOpen.Count}");
 
-                // Procesar ventas - pueden ser pago simple o mixto (JSON)
                 foreach (var sale in salesSinceOpen)
                 {
-                    // Verificar si es pago mixto (JSON)
+                    // Clasificar por método de pago usando el TOTAL de la venta
                     if (sale.PaymentMethod.StartsWith("{"))
                     {
-                        try
-                        {
-                            var payments = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, decimal>>(sale.PaymentMethod);
-                            if (payments != null)
-                            {
-                                if (payments.TryGetValue("efectivo", out decimal efectivo))
-                                    totals.TotalCash += efectivo;
-                                if (payments.TryGetValue("tarjeta_debito", out decimal debito))
-                                    totals.TotalDebit += debito;
-                                if (payments.TryGetValue("tarjeta_credito", out decimal credito))
-                                    totals.TotalCredit += credito;
-                                if (payments.TryGetValue("transferencia", out decimal transfer))
-                                    totals.TotalTransfer += transfer;
-                            }
-                        }
-                        catch
-                        {
-                            // Si falla el parse, ignorar
-                        }
+                        // Pago mixto (JSON) - distribuir proporcionalmente
+                        ProcessMixedPaymentSale(sale, totals);
                     }
                     else
                     {
@@ -210,51 +268,99 @@ namespace CasaCejaRemake.Services
                         switch (sale.PaymentMethod)
                         {
                             case "Efectivo":
-                                totals.TotalCash += sale.Total;
+                                totals.SalesCash += sale.Total;
                                 break;
                             case "TarjetaDebito":
-                                totals.TotalDebit += sale.Total;
+                                totals.SalesDebit += sale.Total;
                                 break;
                             case "TarjetaCredito":
-                                totals.TotalCredit += sale.Total;
+                                totals.SalesCredit += sale.Total;
                                 break;
                             case "Transferencia":
-                                totals.TotalTransfer += sale.Total;
+                                totals.SalesTransfer += sale.Total;
+                                break;
+                            case "Cheque":
+                                totals.SalesCheck += sale.Total;
                                 break;
                         }
                     }
                 }
                 
-                totals.TotalCheck = 0; // No hay cheques en el sistema
+                totals.SalesDirectTotal = totals.SalesCash + totals.SalesDebit + 
+                                          totals.SalesCredit + totals.SalesTransfer + totals.SalesCheck;
 
-                // Abonos de apartados
-                var allLayawayPayments = await _layawayPaymentRepository.GetAllAsync();
-                var layawayPaymentsSinceOpen = allLayawayPayments
-                    .Where(p => p.PaymentDate >= openingDate)
-                    .ToList();
+                // ==================== 2. CRÉDITOS CREADOS ====================
+                // El TOTAL del crédito suma al "Total del Corte" (productividad)
+                // Solo el efectivo de enganches/abonos suma al "Efectivo Esperado"
+                
+                var allCredits = await _creditRepository.GetAllAsync();
+                var creditsCreated = allCredits.Where(c => c.CreditDate >= openingDate).ToList();
+                
+                totals.CreditCount = creditsCreated.Count;
+                totals.CreditTotalCreated = creditsCreated.Sum(c => c.Total);
+                
+                Console.WriteLine($"[CashCloseService] Créditos creados: {creditsCreated.Count}, Total: ${totals.CreditTotalCreated}");
 
-                totals.LayawayTotal = layawayPaymentsSinceOpen.Sum(p => p.AmountPaid);
-                totals.LayawayCash = layawayPaymentsSinceOpen
-                    .Where(p => p.PaymentMethod == "Efectivo")
-                    .Sum(p => p.AmountPaid);
-
-                // Abonos de créditos
+                // Abonos de créditos (incluyendo enganches) en efectivo
                 var allCreditPayments = await _creditPaymentRepository.GetAllAsync();
-                var creditPaymentsSinceOpen = allCreditPayments
-                    .Where(p => p.PaymentDate >= openingDate)
-                    .ToList();
+                var creditPaymentsSinceOpen = allCreditPayments.Where(p => p.PaymentDate >= openingDate).ToList();
+                
+                foreach (var payment in creditPaymentsSinceOpen)
+                {
+                    decimal cashAmount = ExtractCashFromPaymentMethod(payment.PaymentMethod, payment.AmountPaid);
+                    totals.CreditCash += cashAmount;
+                }
+                
+                Console.WriteLine($"[CashCloseService] Efectivo de créditos (abonos): ${totals.CreditCash}");
 
-                totals.CreditPaymentsTotal = creditPaymentsSinceOpen.Sum(p => p.AmountPaid);
-                totals.CreditPaymentsCash = creditPaymentsSinceOpen
-                    .Where(p => p.PaymentMethod == "Efectivo")
-                    .Sum(p => p.AmountPaid);
+                // ==================== 3. APARTADOS CREADOS ====================
+                // El TOTAL del apartado suma al "Total del Corte" (productividad)
+                // Solo el efectivo de abonos suma al "Efectivo Esperado"
+                
+                var allLayaways = await _layawayRepository.GetAllAsync();
+                var layawaysCreated = allLayaways.Where(l => l.LayawayDate >= openingDate).ToList();
+                
+                totals.LayawayCount = layawaysCreated.Count;
+                totals.LayawayTotalCreated = layawaysCreated.Sum(l => l.Total);
+                
+                Console.WriteLine($"[CashCloseService] Apartados creados: {layawaysCreated.Count}, Total: ${totals.LayawayTotalCreated}");
 
-                // Movimientos (gastos e ingresos)
+                // Abonos de apartados en efectivo
+                var allLayawayPayments = await _layawayPaymentRepository.GetAllAsync();
+                var layawayPaymentsSinceOpen = allLayawayPayments.Where(p => p.PaymentDate >= openingDate).ToList();
+                
+                foreach (var payment in layawayPaymentsSinceOpen)
+                {
+                    decimal cashAmount = ExtractCashFromPaymentMethod(payment.PaymentMethod, payment.AmountPaid);
+                    totals.LayawayCash += cashAmount;
+                }
+                
+                Console.WriteLine($"[CashCloseService] Efectivo de apartados (abonos): ${totals.LayawayCash}");
+
+                // ==================== 4. MOVIMIENTOS DE CAJA ====================
                 var movements = await GetMovementsAsync(cashCloseId);
                 totals.TotalExpenses = movements.Where(m => m.IsExpense).Sum(m => m.Amount);
                 totals.TotalIncome = movements.Where(m => m.IsIncome).Sum(m => m.Amount);
 
-                Console.WriteLine($"[CashCloseService] Totales calculados: Ventas={totals.SalesCount}, Efectivo=${totals.TotalCash}");
+                // ==================== RESUMEN ====================
+                Console.WriteLine($"[CashCloseService] === RESUMEN DE CÁLCULOS ===");
+                Console.WriteLine($"  VENTAS DIRECTAS:");
+                Console.WriteLine($"    Efectivo: ${totals.SalesCash}");
+                Console.WriteLine($"    Débito: ${totals.SalesDebit}");
+                Console.WriteLine($"    Crédito: ${totals.SalesCredit}");
+                Console.WriteLine($"    Transferencia: ${totals.SalesTransfer}");
+                Console.WriteLine($"    Total Ventas Directas: ${totals.SalesDirectTotal}");
+                Console.WriteLine($"  CRÉDITOS:");
+                Console.WriteLine($"    Creados (Total): ${totals.CreditTotalCreated} ({totals.CreditCount})");
+                Console.WriteLine($"    Efectivo Abonos: ${totals.CreditCash}");
+                Console.WriteLine($"  APARTADOS:");
+                Console.WriteLine($"    Creados (Total): ${totals.LayawayTotalCreated} ({totals.LayawayCount})");
+                Console.WriteLine($"    Efectivo Abonos: ${totals.LayawayCash}");
+                Console.WriteLine($"  MOVIMIENTOS:");
+                Console.WriteLine($"    Gastos: ${totals.TotalExpenses}");
+                Console.WriteLine($"    Ingresos: ${totals.TotalIncome}");
+                Console.WriteLine($"  ---");
+                Console.WriteLine($"  TOTAL DEL CORTE (Productividad): ${totals.TotalDelCorte}");
             }
             catch (Exception ex)
             {
@@ -265,7 +371,93 @@ namespace CasaCejaRemake.Services
         }
 
         /// <summary>
+        /// Procesa una venta con pago mixto (JSON) distribuyendo el Total proporcionalmente.
+        /// </summary>
+        private void ProcessMixedPaymentSale(Sale sale, CashCloseTotals totals)
+        {
+            try
+            {
+                var payments = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, decimal>>(sale.PaymentMethod);
+                if (payments == null || payments.Count == 0) return;
+
+                decimal totalPaidInJson = payments.Values.Sum();
+                if (totalPaidInJson <= 0) return;
+
+                // Distribuir el Total de la venta proporcionalmente
+                foreach (var kvp in payments)
+                {
+                    decimal proportion = kvp.Value / totalPaidInJson;
+                    decimal amountForMethod = sale.Total * proportion;
+
+                    switch (kvp.Key.ToLower())
+                    {
+                        case "efectivo":
+                            totals.SalesCash += amountForMethod;
+                            break;
+                        case "tarjeta_debito":
+                            totals.SalesDebit += amountForMethod;
+                            break;
+                        case "tarjeta_credito":
+                            totals.SalesCredit += amountForMethod;
+                            break;
+                        case "transferencia":
+                            totals.SalesTransfer += amountForMethod;
+                            break;
+                        case "cheque":
+                            totals.SalesCheck += amountForMethod;
+                            break;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[CashCloseService] Error procesando pago mixto: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Extrae el monto en efectivo de un PaymentMethod (puede ser JSON o string simple)
+        /// </summary>
+        /// <param name="paymentMethod">Método de pago (JSON o string)</param>
+        /// <param name="totalAmount">Monto total del pago (usado si es pago simple en efectivo)</param>
+        private decimal ExtractCashFromPaymentMethod(string paymentMethod, decimal totalAmount)
+        {
+            if (string.IsNullOrEmpty(paymentMethod))
+                return 0;
+
+            // Si es "Efectivo" string simple, el abono completo es en efectivo
+            if (paymentMethod == "Efectivo")
+                return totalAmount;
+
+            // Si es JSON
+            if (paymentMethod.StartsWith("{"))
+            {
+                try
+                {
+                    var payments = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, decimal>>(paymentMethod);
+                    if (payments != null && payments.TryGetValue("efectivo", out decimal cash))
+                    {
+                        return cash;
+                    }
+                }
+                catch
+                {
+                    // Ignorar errores de parsing
+                }
+            }
+
+            return 0;
+        }
+
+        /// <summary>
         /// Cierra la caja con los datos finales.
+        /// 
+        /// FÓRMULA (de reglas_corte.md):
+        /// EFECTIVO ESPERADO = Fondo + Efectivo Ventas + Efectivo Abonos Créditos 
+        ///                   + Efectivo Abonos Apartados + Ingresos - Gastos
+        /// 
+        /// NOTA: El cambio NO se resta porque ya está implícito al usar sale.Total
+        /// en lugar de sale.AmountPaid.
         /// </summary>
         public async Task<CashCloseResult> CloseCashAsync(CashClose cashClose, decimal declaredAmount)
         {
@@ -273,22 +465,37 @@ namespace CasaCejaRemake.Services
             {
                 Console.WriteLine($"[CashCloseService] CloseCashAsync iniciado - Id={cashClose.Id}, Folio={cashClose.Folio}");
                 
-                // Calcular totales
+                // Calcular totales según reglas de negocio
                 var totals = await CalculateTotalsAsync(cashClose.Id, cashClose.OpeningDate);
                 
-                Console.WriteLine($"[CashCloseService] Totales calculados - TotalCash={totals.TotalCash}, TotalDebit={totals.TotalDebit}, " +
-                                  $"TotalCredit={totals.TotalCredit}, SalesCount={totals.SalesCount}");
+                Console.WriteLine($"[CashCloseService] Totales calculados:");
+                Console.WriteLine($"  - Ventas efectivo: ${totals.SalesCash}");
+                Console.WriteLine($"  - Créditos creados: ${totals.CreditTotalCreated}");
+                Console.WriteLine($"  - Apartados creados: ${totals.LayawayTotalCreated}");
+                Console.WriteLine($"  - Efectivo abonos créditos: ${totals.CreditCash}");
+                Console.WriteLine($"  - Efectivo abonos apartados: ${totals.LayawayCash}");
 
-                // Actualizar campos de totales
-                cashClose.TotalCash = totals.TotalCash;
-                cashClose.TotalDebitCard = totals.TotalDebit;
-                cashClose.TotalCreditCard = totals.TotalCredit;
-                cashClose.TotalTransfers = totals.TotalTransfer;
-                cashClose.TotalChecks = totals.TotalCheck;
-                cashClose.LayawayCash = totals.LayawayCash;
-                cashClose.CreditCash = totals.CreditPaymentsCash;
-                cashClose.TotalSales = totals.TotalCash + totals.TotalDebit + totals.TotalCredit + 
-                                       totals.TotalTransfer + totals.TotalCheck;
+                // ==================== ACTUALIZAR CAMPOS DEL MODELO ====================
+                // IMPORTANTE: Redondear todos los valores a 2 decimales para evitar
+                // problemas de precisión de punto flotante en la base de datos
+                
+                // Ventas directas por método de pago
+                cashClose.TotalCash = Math.Round(totals.SalesCash, 2);
+                cashClose.TotalDebitCard = Math.Round(totals.SalesDebit, 2);
+                cashClose.TotalCreditCard = Math.Round(totals.SalesCredit, 2);
+                cashClose.TotalTransfers = Math.Round(totals.SalesTransfer, 2);
+                cashClose.TotalChecks = Math.Round(totals.SalesCheck, 2);
+                
+                // Créditos y Apartados CREADOS (para Total del Corte / productividad)
+                cashClose.CreditTotalCreated = Math.Round(totals.CreditTotalCreated, 2);
+                cashClose.LayawayTotalCreated = Math.Round(totals.LayawayTotalCreated, 2);
+                
+                // Efectivo de abonos (para Efectivo Esperado)
+                cashClose.CreditCash = Math.Round(totals.CreditCash, 2);
+                cashClose.LayawayCash = Math.Round(totals.LayawayCash, 2);
+                
+                // Total de ventas directas
+                cashClose.TotalSales = Math.Round(totals.SalesDirectTotal, 2);
 
                 // Serializar gastos e ingresos como JSON
                 var movements = await GetMovementsAsync(cashClose.Id);
@@ -298,22 +505,42 @@ namespace CasaCejaRemake.Services
                 cashClose.Expenses = System.Text.Json.JsonSerializer.Serialize(expenses);
                 cashClose.Income = System.Text.Json.JsonSerializer.Serialize(income);
 
-                // Calcular efectivo esperado
-                // Fondo + Ventas en efectivo + Abonos en efectivo + Ingresos - Gastos
-                decimal expectedCash = cashClose.OpeningCash + totals.TotalCash + 
-                                       totals.LayawayCash + totals.CreditPaymentsCash +
-                                       totals.TotalIncome - totals.TotalExpenses;
+                // ==================== FÓRMULA DE EFECTIVO ESPERADO ====================
+                // IMPORTANTE: NO restamos cambio porque al usar sale.Total ya está implícito.
+                // 
+                // Efectivo Esperado = Fondo Inicial 
+                //                   + Ventas en Efectivo (sale.Total, no AmountPaid)
+                //                   + Efectivo de Abonos/Enganches de Créditos
+                //                   + Efectivo de Abonos de Apartados
+                //                   + Ingresos Extra
+                //                   - Gastos
+                decimal expectedCash = cashClose.OpeningCash 
+                                     + totals.SalesCash      // Ventas directas en efectivo
+                                     + totals.CreditCash     // Efectivo de abonos créditos
+                                     + totals.LayawayCash    // Efectivo de abonos apartados
+                                     + totals.TotalIncome    // Ingresos extra
+                                     - totals.TotalExpenses; // Gastos
 
-                cashClose.ExpectedCash = expectedCash;
-                cashClose.Surplus = declaredAmount - expectedCash;
+                // Redondear a 2 decimales
+                cashClose.ExpectedCash = Math.Round(expectedCash, 2);
+                cashClose.Surplus = Math.Round(declaredAmount - expectedCash, 2);
                 cashClose.CloseDate = DateTime.Now;
                 cashClose.UpdatedAt = DateTime.Now;
 
                 await _cashCloseRepository.UpdateAsync(cashClose);
 
-                Console.WriteLine($"[CashCloseService] Caja cerrada: Folio={cashClose.Folio}, " +
-                                  $"Esperado=${expectedCash}, Declarado=${declaredAmount}, Diferencia=${cashClose.Surplus}");
-                Console.WriteLine($"[CashCloseService] Gastos: {expenses.Count}, Ingresos: {income.Count}");
+                Console.WriteLine($"[CashCloseService] === CORTE DE CAJA COMPLETADO ===");
+                Console.WriteLine($"  Fondo inicial: ${cashClose.OpeningCash}");
+                Console.WriteLine($"  + Ventas efectivo: ${totals.SalesCash}");
+                Console.WriteLine($"  + Abonos créditos (efectivo): ${totals.CreditCash}");
+                Console.WriteLine($"  + Abonos apartados (efectivo): ${totals.LayawayCash}");
+                Console.WriteLine($"  + Ingresos extra: ${totals.TotalIncome}");
+                Console.WriteLine($"  - Gastos: ${totals.TotalExpenses}");
+                Console.WriteLine($"  = EFECTIVO ESPERADO: ${expectedCash}");
+                Console.WriteLine($"  Declarado por cajero: ${declaredAmount}");
+                Console.WriteLine($"  Diferencia (sobrante/faltante): ${cashClose.Surplus}");
+                Console.WriteLine($"  ---");
+                Console.WriteLine($"  TOTAL DEL CORTE (Productividad): ${totals.TotalDelCorte}");
 
                 return CashCloseResult.Ok(cashClose);
             }

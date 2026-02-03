@@ -183,6 +183,13 @@ namespace CasaCejaRemake.ViewModels.POS
                 return;
             }
 
+            // Validación: métodos que NO son efectivo no pueden exceder el restante
+            if (CurrentMethod != PaymentMethod.Efectivo && CurrentAmount > RemainingAmount)
+            {
+                ErrorMessage = $"Con {CurrentMethodName} no puede pagar más del restante (${RemainingAmount:N2})";
+                return;
+            }
+
             // Agregar pago a la lista
             PaymentsList.Add(new PaymentEntry
             {
