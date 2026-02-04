@@ -322,14 +322,11 @@ namespace CasaCejaRemake.ViewModels.POS
         {
             switch (key.ToUpper())
             {
-                case "F5":
+                case "ENTER":
                     AddPayment();
                     break;
                 case "F6":
                     if (!IsCreditsMode) Deliver();
-                    break;
-                case "F7":
-                    Print();
                     break;
                 case "ESCAPE":
                     Cancel();

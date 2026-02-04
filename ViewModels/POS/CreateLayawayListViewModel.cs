@@ -71,6 +71,7 @@ namespace CasaCejaRemake.ViewModels.POS
         private readonly LayawayService _layawayService;
         private readonly CustomerService _customerService;
         private readonly int _branchId;
+        private ObservableCollection<CreditLayawayListItemWrapper> _allItems = new();
 
         [ObservableProperty]
         private ListFilterType _filterType = ListFilterType.All;
@@ -89,6 +90,9 @@ namespace CasaCejaRemake.ViewModels.POS
 
         [ObservableProperty]
         private int _totalCount;
+
+        [ObservableProperty]
+        private string _searchText = string.Empty;
 
         public ObservableCollection<CreditLayawayListItemWrapper> Items { get; } = new();
 
@@ -122,7 +126,7 @@ namespace CasaCejaRemake.ViewModels.POS
             try
             {
                 IsLoading = true;
-                Items.Clear();
+                _allItems.Clear();
 
                 if (FilterType == ListFilterType.All || FilterType == ListFilterType.Credits)
                 {
@@ -132,7 +136,7 @@ namespace CasaCejaRemake.ViewModels.POS
                     foreach (var credit in credits)
                     {
                         var customer = await _customerService.GetByIdAsync(credit.CustomerId);
-                        Items.Add(new CreditLayawayListItemWrapper
+                        _allItems.Add(new CreditLayawayListItemWrapper
                         {
                             Item = credit,
                             IsCredit = true,
@@ -149,7 +153,7 @@ namespace CasaCejaRemake.ViewModels.POS
                     foreach (var layaway in layaways)
                     {
                         var customer = await _customerService.GetByIdAsync(layaway.CustomerId);
-                        Items.Add(new CreditLayawayListItemWrapper
+                        _allItems.Add(new CreditLayawayListItemWrapper
                         {
                             Item = layaway,
                             IsCredit = false,
@@ -158,15 +162,14 @@ namespace CasaCejaRemake.ViewModels.POS
                     }
                 }
 
-                var sorted = Items.OrderByDescending(i => i.CreatedDate).ToList();
-                Items.Clear();
+                var sorted = _allItems.OrderByDescending(i => i.CreatedDate).ToList();
+                _allItems.Clear();
                 foreach (var item in sorted)
                 {
-                    Items.Add(item);
+                    _allItems.Add(item);
                 }
 
-                TotalCount = Items.Count;
-                StatusMessage = $"{TotalCount} registro(s) encontrado(s)";
+                ApplySearch();
             }
             catch (Exception ex)
             {
@@ -176,6 +179,35 @@ namespace CasaCejaRemake.ViewModels.POS
             {
                 IsLoading = false;
             }
+        }
+
+        private void ApplySearch()
+        {
+            Items.Clear();
+
+            var filtered = _allItems.AsEnumerable();
+
+            if (!string.IsNullOrWhiteSpace(SearchText))
+            {
+                var search = SearchText.Trim().ToLower();
+                filtered = filtered.Where(item =>
+                    item.Folio.ToLower().Contains(search) ||
+                    item.CustomerName.ToLower().Contains(search));
+            }
+
+            foreach (var item in filtered)
+            {
+                Items.Add(item);
+            }
+
+            TotalCount = Items.Count;
+            StatusMessage = $"{TotalCount} registro(s) encontrado(s)";
+        }
+
+        [RelayCommand]
+        private void ExecuteSearch()
+        {
+            ApplySearch();
         }
 
         partial void OnFilterTypeChanged(ListFilterType value)

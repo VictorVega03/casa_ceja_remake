@@ -41,6 +41,13 @@ namespace CasaCejaRemake.Views.POS
                 }
             }
             
+            // Configurar el TextBox de búsqueda
+            var searchTextBox = this.FindControl<TextBox>("SearchTextBox");
+            if (searchTextBox != null)
+            {
+                searchTextBox.KeyDown += SearchTextBox_KeyDown;
+            }
+            
             // Establecer focus en el DataGrid
             var dataGrid = this.FindControl<DataGrid>("DataGridItems");
             if (dataGrid != null)
@@ -61,6 +68,19 @@ namespace CasaCejaRemake.Views.POS
         {
             Tag = ("ItemSelected", e);
             Close();
+        }
+
+        private void SearchTextBox_KeyDown(object? sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Enter && _viewModel != null)
+            {
+                _viewModel.ExecuteSearchCommand.Execute(null);
+                e.Handled = true;
+                
+                // Mover focus al DataGrid después de buscar
+                var dataGrid = this.FindControl<DataGrid>("DataGridItems");
+                dataGrid?.Focus();
+            }
         }
 
         private void DataGrid_PreviewKeyDown(object? sender, KeyEventArgs e)
@@ -86,7 +106,12 @@ namespace CasaCejaRemake.Views.POS
                     { Key.F3, () => _viewModel.SetFilterCommand.Execute("LAYAWAYS") },
                     { Key.F4, () => _viewModel.SetFilterCommand.Execute("PENDING") },
                     { Key.F5, () => _viewModel.SetFilterCommand.Execute("PAID") },
-                    { Key.F6, () => _viewModel.SetFilterCommand.Execute("OVERDUE") }
+                    { Key.F6, () => _viewModel.SetFilterCommand.Execute("OVERDUE") },
+                    { Key.F7, () => {
+                        var searchTextBox = this.FindControl<TextBox>("SearchTextBox");
+                        searchTextBox?.Focus();
+                        searchTextBox?.SelectAll();
+                    }}
                 };
 
                 if (KeyboardShortcutHelper.HandleShortcut(e, shortcuts))

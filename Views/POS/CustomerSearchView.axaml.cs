@@ -74,15 +74,49 @@ namespace CasaCejaRemake.Views.POS
             Close();
         }
 
-        private void OnViewCustomerCreditsLayaways(object? sender, (Customer customer, bool isCreditsMode) e)
+        private async void OnViewCustomerCreditsLayaways(object? sender, (Customer customer, bool isCreditsMode) e)
         {
-            Tag = ("ViewCreditsLayaways", e.customer, e.isCreditsMode);
-            Close();
+            // NO cerrar la vista, mantenerla abierta
+            // Abrir CustomerCreditsLayawaysView como diálogo hijo
+            await ShowCustomerCreditsLayawaysDialog(e.customer, e.isCreditsMode);
         }
 
         private void OnCancelled(object? sender, EventArgs e)
         {
             Close();
+        }
+
+        private async System.Threading.Tasks.Task ShowCustomerCreditsLayawaysDialog(Customer customer, bool isCreditsMode)
+        {
+            // Obtener los servicios necesarios
+            var app = (Avalonia.Application.Current as App);
+            if (app == null) return;
+
+            var creditService = app.GetCreditService();
+            var layawayService = app.GetLayawayService();
+            var authService = app.GetAuthService();
+
+            if (creditService == null || layawayService == null || authService == null)
+            {
+                return;
+            }
+
+            // Crear vista y ViewModel de créditos/apartados
+            var creditsLayawaysView = new CustomerCreditsLayawaysView();
+            var creditsLayawaysViewModel = new CustomerCreditsLayawaysViewModel(
+                creditService,
+                layawayService,
+                authService);
+
+            creditsLayawaysViewModel.SetCustomerAndMode(customer, isCreditsMode);
+            await creditsLayawaysViewModel.InitializeAsync();
+            creditsLayawaysView.DataContext = creditsLayawaysViewModel;
+
+            // Mostrar como diálogo HIJO - CustomerSearchView permanece abierta
+            await creditsLayawaysView.ShowDialog(this);
+            
+            // Cuando regrese aquí, dar focus al SearchBox
+            SearchBox?.Focus();
         }
 
         protected override void OnKeyDown(KeyEventArgs e)

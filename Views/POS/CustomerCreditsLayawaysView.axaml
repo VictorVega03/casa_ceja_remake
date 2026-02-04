@@ -73,7 +73,10 @@
                     <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,8,0,0">
                         <Border Background="#00000030" Padding="10,5" CornerRadius="4">
                             <StackPanel Orientation="Horizontal" Spacing="5">
-                                <TextBlock Text="👤" FontSize="14"/>
+                                <TextBlock Text="Cliente:" 
+                                           FontSize="14"
+                                           Foreground="#ffffffff"
+                                           FontWeight="Bold"/>
                                 <TextBlock Text="{Binding CustomerName}"
                                            FontSize="14"
                                            Foreground="White"
@@ -82,7 +85,10 @@
                         </Border>
                         <Border Background="#00000030" Padding="10,5" CornerRadius="4">
                             <StackPanel Orientation="Horizontal" Spacing="5">
-                                <TextBlock Text="📞" FontSize="14"/>
+                                <TextBlock Text="Teléfono:" 
+                                           FontSize="14"
+                                           Foreground="#ffffffff"
+                                           FontWeight="Bold"/>
                                 <TextBlock Text="{Binding CustomerPhone}"
                                            FontSize="14"
                                            Foreground="White"/>
@@ -173,6 +179,7 @@
 
         <!-- Credits DataGrid (visible when IsCreditsMode) -->
         <DataGrid Grid.Row="3"
+                  x:Name="CreditsDataGrid"
                   ItemsSource="{Binding Credits}"
                   SelectedItem="{Binding SelectedCredit, Mode=TwoWay}"
                   IsVisible="{Binding IsCreditsMode}"
@@ -192,6 +199,7 @@
 
         <!-- Layaways DataGrid (visible when NOT IsCreditsMode) -->
         <DataGrid Grid.Row="3"
+                  x:Name="LayawaysDataGrid"
                   ItemsSource="{Binding Layaways}"
                   SelectedItem="{Binding SelectedLayaway, Mode=TwoWay}"
                   IsVisible="{Binding !IsCreditsMode}"
@@ -212,50 +220,24 @@
         <!-- Buttons -->
         <Border Grid.Row="4" Background="#2D2D2D" Padding="15" CornerRadius="8" Margin="0,15,0,0">
             <Grid ColumnDefinitions="*,Auto,Auto,Auto,Auto,*">
-                <!-- Add Payment Button -->
+                <!-- Select Button -->
                 <Button Grid.Column="1"
                         Command="{Binding AddPaymentCommand}"
                         Background="#4CAF50"
                         Classes="action">
                     <StackPanel Orientation="Horizontal" Spacing="8">
-                        <TextBlock Text="F5" FontSize="12" Opacity="0.8"/>
-                        <TextBlock Text="💰"/>
-                        <TextBlock Text="Abonar"/>
-                    </StackPanel>
-                </Button>
-
-                <!-- Deliver Button (only for layaways) -->
-                <Button Grid.Column="2"
-                        Command="{Binding DeliverCommand}"
-                        IsVisible="{Binding !IsCreditsMode}"
-                        Background="#2196F3"
-                        Classes="action">
-                    <StackPanel Orientation="Horizontal" Spacing="8">
-                        <TextBlock Text="F6" FontSize="12" Opacity="0.8"/>
-                        <TextBlock Text="📦"/>
-                        <TextBlock Text="Entregar"/>
-                    </StackPanel>
-                </Button>
-
-                <!-- Print Button -->
-                <Button Grid.Column="3"
-                        Command="{Binding PrintCommand}"
-                        Background="#FF9800"
-                        Classes="action">
-                    <StackPanel Orientation="Horizontal" Spacing="8">
-                        <TextBlock Text="F7" FontSize="12" Opacity="0.8"/>
-                        <TextBlock Text="🖨️"/>
-                        <TextBlock Text="Imprimir"/>
+                        <TextBlock Text="[Enter]" FontSize="12" Opacity="0.8" FontWeight="Bold"/>
+                        <TextBlock Text="Seleccionar"/>
                     </StackPanel>
                 </Button>
 
                 <!-- Close Button -->
-                <Button Grid.Column="4"
+                <Button Grid.Column="2"
                         Command="{Binding CloseCommand}"
                         Background="#555555"
                         Classes="action">
                     <StackPanel Orientation="Horizontal" Spacing="8">
-                        <TextBlock Text="Esc" FontSize="12" Opacity="0.8"/>
+                        <TextBlock Text="[Esc]" FontSize="12" Opacity="0.8" FontWeight="Bold"/>
                         <TextBlock Text="Salir"/>
                     </StackPanel>
                 </Button>
