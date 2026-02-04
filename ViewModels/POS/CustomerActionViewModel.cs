@@ -8,9 +8,7 @@ namespace CasaCejaRemake.ViewModels.POS
     public enum CustomerActionOption
     {
         NewCredit = 1,      // F1 - Nuevo Credito
-        NewLayaway = 2,     // F2 - Nuevo Apartado
-        MyCredits = 3,      // F3 - Mis Creditos
-        MyLayaways = 4      // F4 - Mis Apartados
+        NewLayaway = 2      // F2 - Nuevo Apartado
     }
 
     public partial class CustomerActionViewModel : ViewModelBase
@@ -31,6 +29,12 @@ namespace CasaCejaRemake.ViewModels.POS
 
         [ObservableProperty]
         private bool _hasCartItems;
+
+        /// <summary>
+        /// Indica si la vista está en modo "crear desde POS" (tiene carrito).
+        /// </summary>
+        [ObservableProperty]
+        private bool _isCreateMode;
 
         public event EventHandler<CustomerActionOption>? ActionSelected;
         public event EventHandler? Cancelled;
@@ -53,6 +57,14 @@ namespace CasaCejaRemake.ViewModels.POS
         {
             Customer = customer;
             HasCartItems = hasCartItems;
+            IsCreateMode = hasCartItems; // Si tiene carrito, está en modo crear
+        }
+
+        public void SetCustomerForCreate(Customer customer, bool hasCartItems)
+        {
+            Customer = customer;
+            HasCartItems = hasCartItems;
+            IsCreateMode = true; // Fuerza modo crear (solo Nuevo Crédito/Apartado)
         }
 
         [RelayCommand]
@@ -78,18 +90,6 @@ namespace CasaCejaRemake.ViewModels.POS
         }
 
         [RelayCommand]
-        private void MyCredits()
-        {
-            ActionSelected?.Invoke(this, CustomerActionOption.MyCredits);
-        }
-
-        [RelayCommand]
-        private void MyLayaways()
-        {
-            ActionSelected?.Invoke(this, CustomerActionOption.MyLayaways);
-        }
-
-        [RelayCommand]
         private void Cancel()
         {
             Cancelled?.Invoke(this, EventArgs.Empty);
@@ -104,12 +104,6 @@ namespace CasaCejaRemake.ViewModels.POS
                     break;
                 case "F2":
                     NewLayaway();
-                    break;
-                case "F3":
-                    MyCredits();
-                    break;
-                case "F4":
-                    MyLayaways();
                     break;
                 case "ESCAPE":
                     Cancel();

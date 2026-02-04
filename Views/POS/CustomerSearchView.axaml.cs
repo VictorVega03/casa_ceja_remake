@@ -34,6 +34,7 @@ namespace CasaCejaRemake.Views.POS
             {
                 _viewModel.CustomerSelected += OnCustomerSelected;
                 _viewModel.CreateNewRequested += OnCreateNewRequested;
+                _viewModel.ViewCustomerCreditsLayaways += OnViewCustomerCreditsLayaways;
                 _viewModel.Cancelled += OnCancelled;
                 
                 // Cargar clientes iniciales
@@ -73,6 +74,12 @@ namespace CasaCejaRemake.Views.POS
             Close();
         }
 
+        private void OnViewCustomerCreditsLayaways(object? sender, (Customer customer, bool isCreditsMode) e)
+        {
+            Tag = ("ViewCreditsLayaways", e.customer, e.isCreditsMode);
+            Close();
+        }
+
         private void OnCancelled(object? sender, EventArgs e)
         {
             Close();
@@ -97,8 +104,37 @@ namespace CasaCejaRemake.Views.POS
                     return;
                 }
 
-                // Delegar otros atajos al ViewModel
-                vm.HandleKeyPress(e.Key.ToString());
+                // Manejar atajos de créditos/apartados solo si están visibles
+                if (vm.ShowActionButtons)
+                {
+                    if (e.Key == Key.F3)
+                    {
+                        vm.ViewCreditsCommand.Execute(null);
+                        e.Handled = true;
+                        return;
+                    }
+
+                    if (e.Key == Key.F4)
+                    {
+                        vm.ViewLayawaysCommand.Execute(null);
+                        e.Handled = true;
+                        return;
+                    }
+                }
+
+                if (e.Key == Key.F5)
+                {
+                    vm.CreateNewCommand.Execute(null);
+                    e.Handled = true;
+                    return;
+                }
+
+                if (e.Key == Key.Escape)
+                {
+                    vm.CancelCommand.Execute(null);
+                    e.Handled = true;
+                    return;
+                }
             }
 
             base.OnKeyDown(e);
@@ -110,6 +146,7 @@ namespace CasaCejaRemake.Views.POS
             {
                 _viewModel.CustomerSelected -= OnCustomerSelected;
                 _viewModel.CreateNewRequested -= OnCreateNewRequested;
+                _viewModel.ViewCustomerCreditsLayaways -= OnViewCustomerCreditsLayaways;
                 _viewModel.Cancelled -= OnCancelled;
             }
             base.OnClosed(e);

@@ -160,6 +160,8 @@ namespace CasaCejaRemake.Views.POS
         {
             var app = (App)Application.Current!;
             var customerService = app.GetCustomerService();
+            var creditService = app.GetCreditService();
+            var layawayService = app.GetLayawayService();
 
             if (customerService == null)
             {
@@ -169,18 +171,20 @@ namespace CasaCejaRemake.Views.POS
 
             var searchView = new CustomerSearchView();
             var searchViewModel = new CustomerSearchViewModel(customerService);
+            searchViewModel.ShowActionButtons = true;
             searchView.DataContext = searchViewModel;
-            
-            // Inicializar para cargar clientes (también se hace en OnLoaded pero por si acaso)
+
+            // Inicializar para cargar clientes
             await searchViewModel.InitializeAsync();
 
-            searchViewModel.CustomerSelected += (s, customer) =>
+            searchViewModel.CustomerSelected += async (s, customer) =>
             {
                 if (customer != null)
                 {
-                    OnShowMessage(this, $"Cliente seleccionado: {customer.Name}");
+                    searchView.Close();
+                    // Mostrar detalles del cliente
+                    await ShowCustomerDetailAsync(customer, customerService, creditService, layawayService);
                 }
-                searchView.Close();
             };
 
             searchViewModel.Cancelled += (s, args) =>
@@ -198,7 +202,88 @@ namespace CasaCejaRemake.Views.POS
             await searchView.ShowDialog(this);
             _hasOpenDialog = false;
 
+            // Manejar navegación a créditos/apartados por Tag (evita crash por async void)
+            if (searchView.Tag is ValueTuple<string, Customer, bool> viewResult && viewResult.Item1 == "ViewCreditsLayaways")
+            {
+                await ShowCustomerCreditsLayawaysAsync(viewResult.Item2, viewResult.Item3);
+            }
+
             TxtBarcode.Focus();
+        }
+
+        /// <summary>
+        /// Muestra la vista de detalles de un cliente.
+        /// </summary>
+        private async Task ShowCustomerDetailAsync(
+            Customer customer,
+            CustomerService customerService,
+            CreditService? creditService,
+            LayawayService? layawayService)
+        {
+            if (creditService == null || layawayService == null)
+            {
+                ShowMessageDialog("Error", "Servicios no disponibles");
+                return;
+            }
+
+            var detailView = new CustomerDetailView();
+            var detailViewModel = new CustomerDetailViewModel(
+                customerService,
+                creditService,
+                layawayService);
+
+            await detailViewModel.InitializeAsync(customer.Id);
+            detailView.DataContext = detailViewModel;
+
+            detailViewModel.ViewCreditsRequested += async (s, e) =>
+            {
+                detailView.Close();
+                // Abrir vista de créditos del cliente
+                await ShowCustomerCreditsLayawaysAsync(customer, true);
+            };
+
+            detailViewModel.ViewLayawaysRequested += async (s, e) =>
+            {
+                detailView.Close();
+                // Abrir vista de apartados del cliente
+                await ShowCustomerCreditsLayawaysAsync(customer, false);
+            };
+
+            _hasOpenDialog = true;
+            await detailView.ShowDialog(this);
+            _hasOpenDialog = false;
+        }
+
+        /// <summary>
+        /// Muestra la vista de créditos/apartados de un cliente específico.
+        /// </summary>
+        private async Task ShowCustomerCreditsLayawaysAsync(Customer customer, bool showCredits)
+        {
+            var app = (App)Application.Current!;
+            var creditService = app.GetCreditService();
+            var layawayService = app.GetLayawayService();
+            var customerService = app.GetCustomerService();
+            var authService = app.GetAuthService();
+
+            if (creditService == null || layawayService == null || customerService == null || authService == null)
+            {
+                ShowMessageDialog("Error", "Servicios no disponibles");
+                return;
+            }
+
+            var customerView = new CustomerCreditsLayawaysView();
+            var customerViewModel = new CustomerCreditsLayawaysViewModel(
+                creditService,
+                layawayService,
+                authService);
+
+            customerViewModel.SetCustomerAndMode(customer, showCredits);
+            await customerViewModel.InitializeAsync();
+            customerView.DataContext = customerViewModel;
+
+            _hasOpenDialog = true;
+            await customerView.ShowDialog(this);
+            _hasOpenDialog = false;
         }
 
         /// <summary>

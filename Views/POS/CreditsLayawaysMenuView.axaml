@@ -3,74 +3,95 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:vm="using:CasaCejaRemake.ViewModels.POS"
-        mc:Ignorable="d" d:DesignWidth="350" d:DesignHeight="280"
+        mc:Ignorable="d" d:DesignWidth="550" d:DesignHeight="275"
         x:Class="CasaCejaRemake.Views.POS.CreditsLayawaysMenuView"
         x:DataType="vm:CreditsLayawaysMenuViewModel"
         Title="Creditos y Apartados"
-        Width="350" Height="280"
+        Width="550" Height="275"
         WindowStartupLocation="CenterOwner"
         CanResize="False"
         ShowInTaskbar="False"
         Focusable="True"
         Background="#1E1E1E">
-    
+
     <Window.Styles>
         <Style Selector="Button.menu-button">
-            <Setter Property="Height" Value="50"/>
-            <Setter Property="Margin" Value="5"/>
             <Setter Property="Background" Value="#2D2D2D"/>
             <Setter Property="Foreground" Value="White"/>
-            <Setter Property="FontSize" Value="14"/>
-            <Setter Property="FontWeight" Value="Bold"/>
-            <Setter Property="CornerRadius" Value="5"/>
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
             <Setter Property="HorizontalContentAlignment" Value="Center"/>
             <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Padding" Value="20,18"/>
+            <Setter Property="BorderBrush" Value="#3D3D3D"/>
+            <Setter Property="BorderThickness" Value="2"/>
         </Style>
         <Style Selector="Button.menu-button:pointerover">
             <Setter Property="Background" Value="#3D3D3D"/>
+            <Setter Property="BorderBrush" Value="#4D4D4D"/>
         </Style>
         <Style Selector="Button.menu-button:pressed">
             <Setter Property="Background" Value="#4D4D4D"/>
         </Style>
     </Window.Styles>
 
-    <Grid RowDefinitions="Auto,*,Auto">
+    <Grid RowDefinitions="Auto,*,Auto" Margin="15,12">
         <!-- Header -->
-        <Border Grid.Row="0" Background="#2D2D2D" Padding="15">
+        <Border Grid.Row="0" Background="#2D2D2D" Padding="15,10" CornerRadius="8" Margin="0,0,0,10">
             <TextBlock Text="CREDITOS Y APARTADOS"
-                       FontSize="18"
+                       FontSize="20"
                        FontWeight="Bold"
                        Foreground="White"
                        HorizontalAlignment="Center"/>
         </Border>
 
-        <!-- Botones -->
-        <StackPanel Grid.Row="1" Margin="15" VerticalAlignment="Center">
-            <Button Classes="menu-button"
+        <!-- Botones en 1 fila, 2 columnas -->
+        <Grid Grid.Row="1" ColumnDefinitions="*,10,*" Margin="0,0,0,10" VerticalAlignment="Center">
+            <Button Grid.Column="0"
+                    Classes="menu-button"
                     Command="{Binding SelectListCommand}">
-                <StackPanel Orientation="Horizontal" Spacing="10">
-                    <TextBlock Text="F1" Foreground="#4CAF50" FontWeight="Bold"/>
-                    <TextBlock Text="Lista Creditos/Apartados"/>
+                <StackPanel Spacing="6">
+                    <TextBlock Text="F1"
+                               Foreground="#4CAF50"
+                               FontWeight="Bold"
+                               FontSize="20"
+                               HorizontalAlignment="Center"/>
+                    <TextBlock Text="Lista Creditos/Apartados"
+                               TextAlignment="Center"
+                               TextWrapping="Wrap"
+                               FontSize="14"/>
                 </StackPanel>
             </Button>
 
-            <Button Classes="menu-button"
+            <Button Grid.Column="2"
+                    Classes="menu-button"
                     Command="{Binding SelectNewOrPaymentCommand}">
-                <StackPanel Orientation="Horizontal" Spacing="10">
-                    <TextBlock Text="F2" Foreground="#2196F3" FontWeight="Bold"/>
-                    <TextBlock Text="Nuevo o Abonar"/>
+                <StackPanel Spacing="6">
+                    <TextBlock Text="F2"
+                               Foreground="#2196F3"
+                               FontWeight="Bold"
+                               FontSize="20"
+                               HorizontalAlignment="Center"/>
+                    <TextBlock Text="Crear Nuevo"
+                               TextAlignment="Center"
+                               TextWrapping="Wrap"
+                               FontSize="14"/>
                 </StackPanel>
             </Button>
-        </StackPanel>
+        </Grid>
 
         <!-- Footer -->
-        <Border Grid.Row="2" Background="#2D2D2D" Padding="10">
+        <Border Grid.Row="2" Background="#2D2D2D" Padding="10" CornerRadius="8">
             <Button Content="Cancelar (Esc)"
                     Command="{Binding CancelCommand}"
                     HorizontalAlignment="Center"
                     Background="#555555"
                     Foreground="White"
-                    Padding="20,8"/>
+                    Padding="25,8"
+                    CornerRadius="6"
+                    FontSize="13"/>
         </Border>
     </Grid>
 </Window>

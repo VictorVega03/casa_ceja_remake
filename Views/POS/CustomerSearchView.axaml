@@ -94,37 +94,66 @@
         </DataGrid>
 
         <!-- Status -->
-        <Border Grid.Row="3" Margin="15,5" Padding="5">
-            <TextBlock Text="{Binding StatusMessage}"
-                       Foreground="#888888"
-                       FontSize="12"/>
+        <Border Grid.Row="3" Margin="15,5,15,0" Padding="5,3">
+            <Grid ColumnDefinitions="*,Auto">
+                <TextBlock Grid.Column="0"
+                           Text="{Binding StatusMessage}"
+                           Foreground="#888888"
+                           FontSize="12"
+                           VerticalAlignment="Center"/>
+                <TextBlock Grid.Column="1"
+                           Text="Enter para seleccionar"
+                           Foreground="#666666"
+                           FontSize="16"
+                           FontStyle="Italic"
+                           VerticalAlignment="Center"
+                           IsVisible="{Binding HasSelectedCustomer}"/>
+            </Grid>
         </Border>
 
         <!-- Buttons -->
         <Border Grid.Row="4" Background="#2D2D2D" Padding="10">
-            <Grid ColumnDefinitions="*,*,*">
+            <Grid ColumnDefinitions="Auto,Auto,*,Auto,Auto">
                 <Button Grid.Column="0"
-                        Content="Seleccionar (Enter)"
-                        Command="{Binding SelectCustomerCommand}"
                         Classes="action-button"
+                        Command="{Binding ViewCreditsCommand}"
+                        IsEnabled="{Binding HasSelectedCustomer}"
+                        IsVisible="{Binding ShowActionButtons}"
                         Background="#4CAF50"
-                        HorizontalAlignment="Center"/>
+                        HorizontalAlignment="Left">
+                    <StackPanel Orientation="Horizontal" Spacing="5">
+                        <TextBlock Text="F3"/>
+                        <TextBlock Text="Ver Créditos"/>
+                    </StackPanel>
+                </Button>
                 <Button Grid.Column="1"
                         Classes="action-button"
-                        Command="{Binding CreateNewCommand}"
+                        Command="{Binding ViewLayawaysCommand}"
+                        IsEnabled="{Binding HasSelectedCustomer}"
+                        IsVisible="{Binding ShowActionButtons}"
                         Background="#2196F3"
+                        HorizontalAlignment="Left">
+                    <StackPanel Orientation="Horizontal" Spacing="5">
+                        <TextBlock Text="F4"/>
+                        <TextBlock Text="Ver Apartados"/>
+                    </StackPanel>
+                </Button>
+                <Button Grid.Column="3"
+                        Classes="action-button"
+                        Command="{Binding CreateNewCommand}"
+                        Background="#FF9800"
                         HorizontalAlignment="Center">
                     <StackPanel Orientation="Horizontal" Spacing="5">
                         <TextBlock Text="F5"/>
-                        <TextBlock Text="Alta Rapida"/>
+                        <TextBlock Text="Alta Rápida"/>
                     </StackPanel>
                 </Button>
-                <Button Grid.Column="2"
+                <Button Grid.Column="4"
                         Content="Cancelar (Esc)"
                         Command="{Binding CancelCommand}"
                         Classes="action-button"
                         Background="#555555"
-                        HorizontalAlignment="Center"/>
+                        HorizontalAlignment="Right"/>
             </Grid>
         </Border>
     </Grid>

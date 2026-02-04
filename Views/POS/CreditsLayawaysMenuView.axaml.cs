@@ -164,6 +164,12 @@ namespace CasaCejaRemake.Views.POS
                     await ShowCustomerCreditsLayaways(customer);
                 }
             }
+            else if (searchView.Tag is ValueTuple<string, Customer, bool> viewResult && viewResult.Item1 == "ViewCreditsLayaways")
+            {
+                var customer = viewResult.Item2;
+                var isCreditsMode = viewResult.Item3;
+                await ShowCustomerCreditsLayaways(customer, isCreditsMode);
+            }
             else if (searchView.Tag is string tag && tag == "CreateNew")
             {
                 await ShowQuickCustomer();
@@ -195,7 +201,9 @@ namespace CasaCejaRemake.Views.POS
                 var actionViewModel = new CustomerActionViewModel();
                 var hasItems = _cartItems != null && _cartItems.Count > 0;
                 
-                actionViewModel.SetCustomer(customer, hasCartItems: hasItems);
+                // Usar SetCustomerForCreate para forzar modo "crear desde POS"
+                // Esto solo muestra Nuevo Crédito/Apartado (oculta Mis Créditos/Apartados)
+                actionViewModel.SetCustomerForCreate(customer, hasCartItems: hasItems);
                 actionView.DataContext = actionViewModel;
 
                 await actionView.ShowDialog(this);
@@ -247,10 +255,6 @@ namespace CasaCejaRemake.Views.POS
                     return await ShowCreateCredit(customer);
                 case CustomerActionOption.NewLayaway:
                     return await ShowCreateLayaway(customer);
-                case CustomerActionOption.MyCredits:
-                    return await ShowCustomerCreditsLayaways(customer, isCreditsMode: true);
-                case CustomerActionOption.MyLayaways:
-                    return await ShowCustomerCreditsLayaways(customer, isCreditsMode: false);
                 default:
                     return false;
             }

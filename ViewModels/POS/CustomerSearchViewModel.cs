@@ -24,15 +24,26 @@ namespace CasaCejaRemake.ViewModels.POS
         [ObservableProperty]
         private string _statusMessage = string.Empty;
 
+        [ObservableProperty]
+        private bool _showActionButtons;
+
         public ObservableCollection<Customer> Customers { get; } = new();
 
         public event EventHandler<Customer>? CustomerSelected;
         public event EventHandler? CreateNewRequested;
+        public event EventHandler<(Customer customer, bool isCreditsMode)>? ViewCustomerCreditsLayaways;
         public event EventHandler? Cancelled;
+
+        public bool HasSelectedCustomer => SelectedCustomer != null;
 
         public CustomerSearchViewModel(CustomerService customerService)
         {
             _customerService = customerService;
+        }
+
+        partial void OnSelectedCustomerChanged(Customer? value)
+        {
+            OnPropertyChanged(nameof(HasSelectedCustomer));
         }
 
         public async Task InitializeAsync()
@@ -82,6 +93,30 @@ namespace CasaCejaRemake.ViewModels.POS
         }
 
         [RelayCommand]
+        private void ViewCredits()
+        {
+            if (SelectedCustomer == null)
+            {
+                StatusMessage = "Seleccione un cliente";
+                return;
+            }
+
+            ViewCustomerCreditsLayaways?.Invoke(this, (SelectedCustomer, true));
+        }
+
+        [RelayCommand]
+        private void ViewLayaways()
+        {
+            if (SelectedCustomer == null)
+            {
+                StatusMessage = "Seleccione un cliente";
+                return;
+            }
+
+            ViewCustomerCreditsLayaways?.Invoke(this, (SelectedCustomer, false));
+        }
+
+        [RelayCommand]
         private void CreateNew()
         {
             CreateNewRequested?.Invoke(this, EventArgs.Empty);
@@ -95,21 +130,8 @@ namespace CasaCejaRemake.ViewModels.POS
 
         public void HandleKeyPress(string key)
         {
-            switch (key.ToUpper())
-            {
-                case "ENTER":
-                    if (SelectedCustomer != null)
-                        SelectCustomer();
-                    else
-                        _ = SearchAsync();
-                    break;
-                case "F5":
-                    CreateNew();
-                    break;
-                case "ESCAPE":
-                    Cancel();
-                    break;
-            }
+            // Este método ya no es necesario porque ahora manejamos las teclas directamente en la vista
+            // Lo dejamos vacío por compatibilidad pero ya no se usa
         }
 
         partial void OnSearchTermChanged(string value)
