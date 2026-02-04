@@ -175,30 +175,49 @@ namespace CasaCejaRemake.ViewModels.POS
 
         private async Task LoadCreditsAsync()
         {
-            Credits.Clear();
-            
+            // Obtener los datos primero
             var credits = await _creditService.GetPendingByCustomerAsync(_customer!.Id);
             
+            // Limpiar y agregar todos de una vez para evitar múltiples notificaciones
+            Credits.Clear();
             foreach (var credit in credits)
             {
                 Credits.Add(credit);
             }
 
             StatusMessage = $"{Credits.Count} credito(s) encontrado(s)";
+            NotifyComputedProperties();
         }
 
         private async Task LoadLayawaysAsync()
         {
-            Layaways.Clear();
-            
+            // Obtener los datos primero
             var layaways = await _layawayService.GetPendingByCustomerAsync(_customer!.Id);
             
+            // Limpiar y agregar todos de una vez para evitar múltiples notificaciones
+            Layaways.Clear();
             foreach (var layaway in layaways)
             {
                 Layaways.Add(layaway);
             }
 
             StatusMessage = $"{Layaways.Count} apartado(s) encontrado(s)";
+            NotifyComputedProperties();
+        }
+
+        private void NotifyComputedProperties()
+        {
+            OnPropertyChanged(nameof(ItemCount));
+            OnPropertyChanged(nameof(PendingCount));
+            OnPropertyChanged(nameof(PaidCount));
+            OnPropertyChanged(nameof(TotalPending));
+            OnPropertyChanged(nameof(TotalDebt));
+            OnPropertyChanged(nameof(TotalPaidSum));
+            OnPropertyChanged(nameof(TotalPendingBalance));
+            OnPropertyChanged(nameof(TotalRecords));
+            OnPropertyChanged(nameof(HasSelection));
+            OnPropertyChanged(nameof(CanAddPayment));
+            OnPropertyChanged(nameof(CanDeliver));
         }
 
         [RelayCommand]

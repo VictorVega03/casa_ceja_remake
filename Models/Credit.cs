@@ -81,25 +81,47 @@ namespace CasaCejaRemake.Models
         [Column("ticket_data")]
         public byte[]? TicketData { get; set; }
        
-         // Propiedades calculadas
+        // Propiedades calculadas para bindings (con setter privado para evitar loops)
         [Ignore]
-        public decimal RemainingBalance => Total - TotalPaid;
+        public decimal RemainingBalance 
+        { 
+            get => Total - TotalPaid;
+            private set { } // Setter vacío para evitar loops de binding
+        }
 
         [Ignore]
-        public bool IsPaid => Status == 2 || RemainingBalance <= 0;
+        public bool IsPaid 
+        { 
+            get => Status == 2 || RemainingBalance <= 0;
+            private set { }
+        }
 
         [Ignore]
-        public bool IsOverdue => Status == 3 || (DateTime.Now > DueDate && Status == 1);
+        public bool IsOverdue 
+        { 
+            get => Status == 3 || (DateTime.Now > DueDate && Status == 1);
+            private set { }
+        }
 
         [Ignore]
-        public string StatusName => Status switch
+        public string StatusName 
+        { 
+            get => Status switch
+            {
+                1 => "Pendiente",
+                2 => "Pagado",
+                3 => "Vencido",
+                4 => "Cancelado",
+                _ => "Desconocido"
+            };
+            private set { }
+        }
+
+        // Método para validar si se puede agregar un pago
+        public bool CanAddPayment()
         {
-            1 => "Pendiente",
-            2 => "Pagado",
-            3 => "Vencido",
-            4 => "Cancelado",
-            _ => "Desconocido"
-        };
+            return (Status == 1 || Status == 3) && RemainingBalance > 0;
+        }
     
     }
 }

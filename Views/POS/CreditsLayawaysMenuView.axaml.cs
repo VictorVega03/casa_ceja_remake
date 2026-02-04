@@ -334,7 +334,11 @@ namespace CasaCejaRemake.Views.POS
                     _authService);
 
                 customerViewModel.SetCustomerAndMode(customer, isCreditsMode);
+                
+                // Cargar datos ANTES de asignar DataContext
                 await customerViewModel.InitializeAsync();
+                
+                // Asignar DataContext - ahora es seguro con los setters privados en los modelos
                 customerView.DataContext = customerViewModel;
 
                 await customerView.ShowDialog(this);

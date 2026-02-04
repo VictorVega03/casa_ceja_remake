@@ -44,6 +44,15 @@ namespace CasaCejaRemake.ViewModels.POS
         partial void OnSelectedCustomerChanged(Customer? value)
         {
             OnPropertyChanged(nameof(HasSelectedCustomer));
+            ViewCreditsCommand.NotifyCanExecuteChanged();
+            ViewLayawaysCommand.NotifyCanExecuteChanged();
+            SelectCustomerCommand.NotifyCanExecuteChanged();
+        }
+
+        partial void OnShowActionButtonsChanged(bool value)
+        {
+            ViewCreditsCommand.NotifyCanExecuteChanged();
+            ViewLayawaysCommand.NotifyCanExecuteChanged();
         }
 
         public async Task InitializeAsync()
@@ -80,7 +89,7 @@ namespace CasaCejaRemake.ViewModels.POS
             }
         }
 
-        [RelayCommand]
+        [RelayCommand(CanExecute = nameof(HasSelectedCustomer))]
         private void SelectCustomer()
         {
             if (SelectedCustomer == null)
@@ -92,7 +101,7 @@ namespace CasaCejaRemake.ViewModels.POS
             CustomerSelected?.Invoke(this, SelectedCustomer);
         }
 
-        [RelayCommand]
+        [RelayCommand(CanExecute = nameof(CanViewCreditsOrLayaways))]
         private void ViewCredits()
         {
             if (SelectedCustomer == null)
@@ -104,7 +113,7 @@ namespace CasaCejaRemake.ViewModels.POS
             ViewCustomerCreditsLayaways?.Invoke(this, (SelectedCustomer, true));
         }
 
-        [RelayCommand]
+        [RelayCommand(CanExecute = nameof(CanViewCreditsOrLayaways))]
         private void ViewLayaways()
         {
             if (SelectedCustomer == null)
@@ -114,6 +123,11 @@ namespace CasaCejaRemake.ViewModels.POS
             }
 
             ViewCustomerCreditsLayaways?.Invoke(this, (SelectedCustomer, false));
+        }
+
+        private bool CanViewCreditsOrLayaways()
+        {
+            return SelectedCustomer != null && ShowActionButtons;
         }
 
         [RelayCommand]

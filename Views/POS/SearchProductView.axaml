@@ -90,8 +90,8 @@
         <Border Grid.Row="2" Background="#2D2D2D" Padding="5" CornerRadius="4">
             <DataGrid x:Name="GridResults"
                       ItemsSource="{Binding SearchResults}"
-                      SelectedItem="{Binding SelectedProduct, Mode=TwoWay}"
-                      SelectedIndex="{Binding SelectedProductIndex, Mode=TwoWay}"
+                      SelectedItem="{ReflectionBinding SelectedProduct, Mode=TwoWay}"
+                      SelectedIndex="{ReflectionBinding SelectedProductIndex, Mode=TwoWay}"
                       AutoGenerateColumns="False"
                       IsReadOnly="True"
                       GridLinesVisibility="Horizontal"

@@ -1,5 +1,4 @@
 <!-- CustomerCreditsLayawaysView.axaml -->
-<!-- Renombrar a .axaml para usar -->
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -7,6 +6,7 @@
         xmlns:vm="using:CasaCejaRemake.ViewModels.POS"
         mc:Ignorable="d" d:DesignWidth="850" d:DesignHeight="600"
         x:Class="CasaCejaRemake.Views.POS.CustomerCreditsLayawaysView"
+        x:CompileBindings="False"
         x:DataType="vm:CustomerCreditsLayawaysViewModel"
         Title="{Binding WindowTitle}"
         Width="850" Height="600"
@@ -172,52 +172,40 @@
         <Border Grid.Row="2" Height="1" Background="#3D3D3D" Margin="0,0,0,15"/>
 
         <!-- Credits DataGrid (visible when IsCreditsMode) -->
-        <DataGrid x:Name="DataGridCredits"
-                  Grid.Row="3"
+        <DataGrid Grid.Row="3"
                   ItemsSource="{Binding Credits}"
-                  SelectedItem="{Binding SelectedCredit}"
+                  SelectedItem="{Binding SelectedCredit, Mode=TwoWay}"
+                  IsVisible="{Binding IsCreditsMode}"
                   AutoGenerateColumns="False"
                   IsReadOnly="True"
-                  IsVisible="{Binding IsCreditsMode}"
-                  SelectionMode="Single"
-                  KeyDown="DataGrid_KeyDown">
+                  SelectionMode="Single">
             <DataGrid.Columns>
-                <DataGridTextColumn Header="FOLIO" Binding="{Binding Folio}" Width="150"/>
-                <DataGridTextColumn Header="TOTAL" Binding="{Binding Total, StringFormat='{}{0:C2}'}" Width="110"/>
-                <DataGridTextColumn Header="PAGADO" Binding="{Binding TotalPaid, StringFormat='{}{0:C2}'}" Width="110"/>
-                <DataGridTextColumn Header="SALDO" Binding="{Binding RemainingBalance, StringFormat='{}{0:C2}'}" Width="110"/>
-                <DataGridTextColumn Header="MESES" Binding="{Binding MonthsToPay}" Width="70"/>
-                <DataGridTextColumn Header="VENCE" Binding="{Binding DueDate, StringFormat='{}{0:dd/MM/yyyy}'}" Width="100"/>
-                <DataGridTextColumn Header="ESTADO" Binding="{Binding StatusName}" Width="*"/>
+                <DataGridTextColumn Header="FOLIO" Binding="{Binding Folio, Mode=OneWay}" Width="150"/>
+                <DataGridTextColumn Header="TOTAL" Binding="{Binding Total, StringFormat='{}{0:C2}', Mode=OneWay}" Width="110"/>
+                <DataGridTextColumn Header="PAGADO" Binding="{Binding TotalPaid, StringFormat='{}{0:C2}', Mode=OneWay}" Width="110"/>
+                <DataGridTextColumn Header="SALDO" Binding="{Binding RemainingBalance, StringFormat='{}{0:C2}', Mode=OneWay}" Width="110"/>
+                <DataGridTextColumn Header="MESES" Binding="{Binding MonthsToPay, Mode=OneWay}" Width="70"/>
+                <DataGridTextColumn Header="VENCE" Binding="{Binding DueDate, StringFormat='{}{0:dd/MM/yyyy}', Mode=OneWay}" Width="100"/>
+                <DataGridTextColumn Header="ESTADO" Binding="{Binding StatusName, Mode=OneWay}" Width="*"/>
             </DataGrid.Columns>
         </DataGrid>
 
         <!-- Layaways DataGrid (visible when NOT IsCreditsMode) -->
-        <DataGrid x:Name="DataGridLayaways"
-                  Grid.Row="3"
+        <DataGrid Grid.Row="3"
                   ItemsSource="{Binding Layaways}"
-                  SelectedItem="{Binding SelectedLayaway}"
+                  SelectedItem="{Binding SelectedLayaway, Mode=TwoWay}"
+                  IsVisible="{Binding !IsCreditsMode}"
                   AutoGenerateColumns="False"
                   IsReadOnly="True"
-                  IsVisible="{Binding !IsCreditsMode}"
-                  SelectionMode="Single"
-                  KeyDown="DataGrid_KeyDown">
+                  SelectionMode="Single">
             <DataGrid.Columns>
-                <DataGridTextColumn Header="FOLIO" Binding="{Binding Folio}" Width="150"/>
-                <DataGridTextColumn Header="TOTAL" Binding="{Binding Total, StringFormat='{}{0:C2}'}" Width="110"/>
-                <DataGridTextColumn Header="PAGADO" Binding="{Binding TotalPaid, StringFormat='{}{0:C2}'}" Width="110"/>
-                <DataGridTextColumn Header="SALDO" Binding="{Binding RemainingBalance, StringFormat='{}{0:C2}'}" Width="110"/>
-                <DataGridTextColumn Header="ENTREGA" Binding="{Binding PickupDate, StringFormat='{}{0:dd/MM/yyyy}'}" Width="100"/>
-                <DataGridTextColumn Header="ESTADO" Binding="{Binding StatusName}" Width="*"/>
-                <DataGridTemplateColumn Header="LISTO" Width="70">
-                    <DataGridTemplateColumn.CellTemplate>
-                        <DataTemplate>
-                            <TextBlock Text="{Binding CanDeliver}" 
-                                       FontWeight="Bold"
-                                       HorizontalAlignment="Center"/>
-                        </DataTemplate>
-                    </DataGridTemplateColumn.CellTemplate>
-                </DataGridTemplateColumn>
+                <DataGridTextColumn Header="FOLIO" Binding="{Binding Folio, Mode=OneWay}" Width="150"/>
+                <DataGridTextColumn Header="TOTAL" Binding="{Binding Total, StringFormat='{}{0:C2}', Mode=OneWay}" Width="110"/>
+                <DataGridTextColumn Header="PAGADO" Binding="{Binding TotalPaid, StringFormat='{}{0:C2}', Mode=OneWay}" Width="110"/>
+                <DataGridTextColumn Header="SALDO" Binding="{Binding RemainingBalance, StringFormat='{}{0:C2}', Mode=OneWay}" Width="110"/>
+                <DataGridTextColumn Header="ENTREGA" Binding="{Binding PickupDate, StringFormat='{}{0:dd/MM/yyyy}', Mode=OneWay}" Width="100"/>
+                <DataGridTextColumn Header="ESTADO" Binding="{Binding StatusName, Mode=OneWay}" Width="*"/>
+                <DataGridTextColumn Header="LISTO" Binding="{Binding CanDeliver, Mode=OneWay}" Width="70"/>
             </DataGrid.Columns>
         </DataGrid>
 
@@ -228,8 +216,7 @@
                 <Button Grid.Column="1"
                         Command="{Binding AddPaymentCommand}"
                         Background="#4CAF50"
-                        Classes="action"
-                        IsEnabled="{Binding CanAddPayment}">
+                        Classes="action">
                     <StackPanel Orientation="Horizontal" Spacing="8">
                         <TextBlock Text="F5" FontSize="12" Opacity="0.8"/>
                         <TextBlock Text="💰"/>
@@ -240,10 +227,9 @@
                 <!-- Deliver Button (only for layaways) -->
                 <Button Grid.Column="2"
                         Command="{Binding DeliverCommand}"
-                        Background="#2196F3"
-                        Classes="action"
                         IsVisible="{Binding !IsCreditsMode}"
-                        IsEnabled="{Binding CanDeliver}">
+                        Background="#2196F3"
+                        Classes="action">
                     <StackPanel Orientation="Horizontal" Spacing="8">
                         <TextBlock Text="F6" FontSize="12" Opacity="0.8"/>
                         <TextBlock Text="📦"/>
@@ -255,8 +241,7 @@
                 <Button Grid.Column="3"
                         Command="{Binding PrintCommand}"
                         Background="#FF9800"
-                        Classes="action"
-                        IsEnabled="{Binding HasSelection}">
+                        Classes="action">
                     <StackPanel Orientation="Horizontal" Spacing="8">
                         <TextBlock Text="F7" FontSize="12" Opacity="0.8"/>
                         <TextBlock Text="🖨️"/>

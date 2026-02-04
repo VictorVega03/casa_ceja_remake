@@ -79,7 +79,7 @@
         <DataGrid Grid.Row="2"
                   x:Name="CustomersGrid"
                   ItemsSource="{Binding Customers}"
-                  SelectedItem="{Binding SelectedCustomer}"
+                  SelectedItem="{ReflectionBinding SelectedCustomer, Mode=TwoWay}"
                   AutoGenerateColumns="False"
                   IsReadOnly="True"
                   Margin="15,0"

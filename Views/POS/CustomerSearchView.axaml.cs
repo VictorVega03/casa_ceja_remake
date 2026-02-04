@@ -94,7 +94,10 @@ namespace CasaCejaRemake.Views.POS
                 {
                     if (vm.SelectedCustomer != null)
                     {
-                        vm.SelectCustomerCommand.Execute(null);
+                        if (vm.SelectCustomerCommand.CanExecute(null))
+                        {
+                            vm.SelectCustomerCommand.Execute(null);
+                        }
                     }
                     else
                     {
@@ -104,22 +107,25 @@ namespace CasaCejaRemake.Views.POS
                     return;
                 }
 
-                // Manejar atajos de créditos/apartados solo si están visibles
-                if (vm.ShowActionButtons)
+                // Manejar atajos de créditos/apartados solo si están visibles y habilitados
+                if (e.Key == Key.F3)
                 {
-                    if (e.Key == Key.F3)
+                    if (vm.ViewCreditsCommand.CanExecute(null))
                     {
                         vm.ViewCreditsCommand.Execute(null);
-                        e.Handled = true;
-                        return;
                     }
+                    e.Handled = true;
+                    return;
+                }
 
-                    if (e.Key == Key.F4)
+                if (e.Key == Key.F4)
+                {
+                    if (vm.ViewLayawaysCommand.CanExecute(null))
                     {
                         vm.ViewLayawaysCommand.Execute(null);
-                        e.Handled = true;
-                        return;
                     }
+                    e.Handled = true;
+                    return;
                 }
 
                 if (e.Key == Key.F5)
