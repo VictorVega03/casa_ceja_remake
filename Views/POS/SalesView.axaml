@@ -367,6 +367,7 @@
                             <Separator/>
                             <MenuItem Header="💰 Corte de Caja (F10)" Click="OnCashCloseClick"/>
                             <MenuItem Header="📊 Historial de Cortes (F9)" Click="OnCashCloseHistoryClick"/>
+                            <MenuItem Header="📋 Historial de Ventas" Click="OnSalesHistoryClick"/>
                             <Separator/>
                             <MenuItem Header="➖ Gasto (F6)" Click="OnExpenseClick"/>
                             <MenuItem Header="➕ Ingreso (F7)" Click="OnIncomeClick"/>

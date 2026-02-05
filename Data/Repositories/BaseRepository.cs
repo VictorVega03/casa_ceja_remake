@@ -143,24 +143,27 @@ namespace CasaCejaRemake.Data.Repositories
                 SetCreatedAt(entity);
                 SetUpdatedAt(entity);
 
-                var result = await _databaseService.InsertAsync(entity);
+                await _databaseService.InsertAsync(entity);
                 
-                // Después de insertar, recuperar el ID generado y asignarlo al entity
-                // sqlite-net-pcl actualiza automáticamente la propiedad PrimaryKey después del insert
-                // pero solo si se usa InsertAsync correctamente. Verificamos que el ID se actualizó.
+                // Después de insertar, recuperar el ID generado
                 var idProperty = typeof(T).GetProperty("Id");
                 if (idProperty != null)
                 {
                     var currentId = (int)(idProperty.GetValue(entity) ?? 0);
+                    
+                    // Si sqlite-net-pcl no actualizó el ID automáticamente, obtenerlo manualmente
                     if (currentId == 0)
                     {
-                        // Si el ID sigue siendo 0, obtener el último ID insertado
                         var lastId = await _databaseService.ExecuteScalarAsync<int>("SELECT last_insert_rowid()");
                         idProperty.SetValue(entity, lastId);
+                        return lastId;
                     }
+                    
+                    return currentId;
                 }
                 
-                return result;
+                // Si la entidad no tiene propiedad Id, devolver 1 (éxito genérico)
+                return 1;
             }
             catch (Exception ex)
             {

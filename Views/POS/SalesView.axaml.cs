@@ -970,5 +970,41 @@ namespace CasaCejaRemake.Views.POS
         {
             ShowCashMovementDialogAsync(false);
         }
+
+        private void OnSalesHistoryClick(object? sender, RoutedEventArgs e)
+        {
+            ShowSalesHistoryDialogAsync();
+        }
+
+        /// <summary>
+        /// Muestra el diálogo de historial de ventas.
+        /// </summary>
+        private async void ShowSalesHistoryDialogAsync()
+        {
+            var app = (App)Application.Current!;
+            var salesService = app.GetSaleService();
+
+            if (salesService == null)
+            {
+                ShowMessageDialog("Error", "Servicio de ventas no disponible");
+                return;
+            }
+
+            var historyView = new SalesHistoryView();
+            var historyViewModel = new SalesHistoryViewModel(
+                salesService,
+                _viewModel?.BranchId ?? 1);
+
+            historyView.DataContext = historyViewModel;
+            
+            // Cargar datos antes de mostrar
+            await historyViewModel.InitializeAsync();
+
+            _hasOpenDialog = true;
+            await historyView.ShowDialog(this);
+            _hasOpenDialog = false;
+
+            TxtBarcode.Focus();
+        }
     }
 }

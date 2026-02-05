@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using CasaCejaRemake.Data;
 using CasaCejaRemake.Data.Repositories;
@@ -189,9 +190,13 @@ namespace CasaCejaRemake.Services
                 };
 
                 // Guardar venta
+                Console.WriteLine($"[SalesService] Guardando venta con {items.Count} productos");
                 var saleId = await _saleRepository.AddAsync(sale);
+                Console.WriteLine($"[SalesService] Venta guardada con ID: {saleId}");
 
                 // Guardar productos de la venta
+                Console.WriteLine($"[SalesService] Iniciando guardado de productos...");
+                int productCount = 0;
                 foreach (var item in items)
                 {
                     // Crear SaleProduct
@@ -212,11 +217,16 @@ namespace CasaCejaRemake.Services
                         // CreatedAt lo asigna automáticamente BaseRepository.AddAsync()
                     };
 
-                    await _saleProductRepository.AddAsync(saleProduct);
+                    Console.WriteLine($"[SalesService] Guardando producto {productCount + 1}: {item.ProductName} (Cantidad: {item.Quantity})");
+                    var saleProductId = await _saleProductRepository.AddAsync(saleProduct);
+                    Console.WriteLine($"[SalesService] Producto guardado con ID: {saleProductId}");
+                    productCount++;
 
                     // TODO: Implement stock update from inventory table
                     // Update stock entries/outputs here
                 }
+
+                Console.WriteLine($"[SalesService] Total de productos guardados: {productCount}");
 
                 // Generar texto del ticket para impresion
                 string ticketText = _ticketService.GenerateTicketText(ticketData);
@@ -225,6 +235,8 @@ namespace CasaCejaRemake.Services
             }
             catch (Exception ex)
             {
+                Console.WriteLine($"[SalesService] ERROR en ProcessSaleAsync: {ex.Message}");
+                Console.WriteLine($"[SalesService] StackTrace: {ex.StackTrace}");
                 return SaleResult.Error($"Error al procesar la venta: {ex.Message}");
             }
         }
@@ -319,9 +331,13 @@ namespace CasaCejaRemake.Services
                 };
 
                 // Guardar venta
+                Console.WriteLine($"[SalesService.MixedPayment] Guardando venta con {items.Count} productos");
                 var saleId = await _saleRepository.AddAsync(sale);
+                Console.WriteLine($"[SalesService.MixedPayment] Venta guardada con ID: {saleId}");
 
                 // Guardar productos de la venta
+                Console.WriteLine($"[SalesService.MixedPayment] Iniciando guardado de productos...");
+                int productCount = 0;
                 foreach (var item in items)
                 {
                     var saleProduct = new SaleProduct
@@ -340,8 +356,15 @@ namespace CasaCejaRemake.Services
                         PricingData = JsonCompressor.Compress(item.PricingData)
                     };
 
-                    await _saleProductRepository.AddAsync(saleProduct);
+                    Console.WriteLine($"[SalesService.MixedPayment] Guardando producto {productCount + 1}: {item.ProductName} (Cantidad: {item.Quantity})");
+                    var saleProductId = await _saleProductRepository.AddAsync(saleProduct);
+                    Console.WriteLine($"[SalesService.MixedPayment] Producto guardado con ID: {saleProductId}");
+                    productCount++;
+
+                    // TODO: Implement stock update from inventory table
                 }
+
+                Console.WriteLine($"[SalesService.MixedPayment] Total de productos guardados: {productCount}");
 
                 // Generar texto del ticket para impresion
                 string ticketText = _ticketService.GenerateTicketText(ticketData);
@@ -350,6 +373,8 @@ namespace CasaCejaRemake.Services
             }
             catch (Exception ex)
             {
+                Console.WriteLine($"[SalesService.MixedPayment] ERROR: {ex.Message}");
+                Console.WriteLine($"[SalesService.MixedPayment] StackTrace: {ex.StackTrace}");
                 return SaleResult.Error($"Error al procesar la venta: {ex.Message}");
             }
         }
@@ -591,6 +616,76 @@ namespace CasaCejaRemake.Services
             }
 
             return results;
+        }
+
+        /// <summary>
+        /// Obtiene el historial de ventas paginado para una sucursal específica.
+        /// </summary>
+        public async Task<List<Sale>> GetSalesHistoryPagedAsync(
+            int branchId,
+            int page,
+            int pageSize,
+            DateTime? startDate = null,
+            DateTime? endDate = null)
+        {
+            var sales = await _saleRepository.FindAsync(s => s.BranchId == branchId);
+
+            // Aplicar filtros de fecha
+            if (startDate.HasValue)
+            {
+                sales = sales.Where(s => s.SaleDate.Date >= startDate.Value.Date).ToList();
+            }
+            if (endDate.HasValue)
+            {
+                sales = sales.Where(s => s.SaleDate.Date <= endDate.Value.Date).ToList();
+            }
+
+            // Ordenar por fecha descendente y paginar
+            return sales
+                .OrderByDescending(s => s.SaleDate)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToList();
+        }
+
+        /// <summary>
+        /// Cuenta el total de ventas para paginación.
+        /// </summary>
+        public async Task<int> GetSalesCountAsync(
+            int branchId,
+            DateTime? startDate = null,
+            DateTime? endDate = null)
+        {
+            var sales = await _saleRepository.FindAsync(s => s.BranchId == branchId);
+
+            if (startDate.HasValue)
+            {
+                sales = sales.Where(s => s.SaleDate.Date >= startDate.Value.Date).ToList();
+            }
+            if (endDate.HasValue)
+            {
+                sales = sales.Where(s => s.SaleDate.Date <= endDate.Value.Date).ToList();
+            }
+
+            return sales.Count;
+        }
+
+        /// <summary>
+        /// Obtiene los productos de una venta específica.
+        /// </summary>
+        public async Task<List<SaleProduct>> GetSaleProductsAsync(int saleId)
+        {
+            return await _saleProductRepository.FindAsync(sp => sp.SaleId == saleId);
+        }
+
+        /// <summary>
+        /// Obtiene el nombre de un usuario por su ID.
+        /// </summary>
+        public async Task<string> GetUserNameAsync(int userId)
+        {
+            var userRepo = new BaseRepository<User>(_databaseService);
+            var user = await userRepo.GetByIdAsync(userId);
+            return user?.Name ?? $"Usuario #{userId}";
         }
 
         public async Task<TicketData?> RecoverTicketAsync(int saleId)
