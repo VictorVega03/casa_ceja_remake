@@ -1,0 +1,427 @@
+<!-- CashCloseDetailView.axaml -->
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="using:CasaCejaRemake.ViewModels.POS"
+        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="700"
+        x:Class="CasaCejaRemake.Views.POS.CashCloseDetailView"
+        x:DataType="vm:CashCloseDetailViewModel"
+        Title="Detalle del Corte de Caja"
+        WindowStartupLocation="CenterScreen"
+        WindowState="Maximized"
+        ShowInTaskbar="False"
+        Focusable="True"
+        Background="#1E1E1E">
+
+    <Window.Styles>
+        <Style Selector="TextBlock.label">
+            <Setter Property="Foreground" Value="#AAAAAA"/>
+            <Setter Property="FontSize" Value="12"/>
+        </Style>
+        <Style Selector="TextBlock.value">
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+        </Style>
+        <Style Selector="TextBlock.section-title">
+            <Setter Property="Foreground" Value="#4CAF50"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Margin" Value="0,0,0,10"/>
+        </Style>
+        <Style Selector="Border.section">
+            <Setter Property="Background" Value="#2D2D2D"/>
+            <Setter Property="CornerRadius" Value="5"/>
+            <Setter Property="Padding" Value="15"/>
+            <Setter Property="Margin" Value="0,0,0,10"/>
+        </Style>
+        <Style Selector="Border.highlight">
+            <Setter Property="Background" Value="#3D3D3D"/>
+            <Setter Property="CornerRadius" Value="5"/>
+            <Setter Property="Padding" Value="10"/>
+        </Style>
+    </Window.Styles>
+
+    <Grid RowDefinitions="Auto,*,Auto">
+        <!-- Header -->
+        <Border Grid.Row="0" Background="#2D2D2D" Padding="15">
+            <Grid ColumnDefinitions="*,Auto">
+                <StackPanel>
+                    <TextBlock Text="DETALLE DEL CORTE DE CAJA"
+                               FontSize="18"
+                               FontWeight="Bold"
+                               Foreground="White"/>
+                    <StackPanel Orientation="Horizontal" Spacing="20" Margin="0,5,0,0">
+                        <TextBlock Text="{Binding Folio}" Foreground="#4CAF50" FontWeight="Bold" FontSize="16"/>
+                        <TextBlock Text="{Binding UserName}" Foreground="#AAAAAA"/>
+                        <TextBlock Text="{Binding BranchName}" Foreground="#AAAAAA"/>
+                    </StackPanel>
+                </StackPanel>
+                
+                <!-- Estado del corte -->
+                <Border Grid.Column="1" 
+                        Background="{Binding SurplusColor}"
+                        CornerRadius="5"
+                        Padding="15,10">
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <TextBlock Text="{Binding SurplusIcon}" 
+                                   FontSize="20" 
+                                   Foreground="White"
+                                   VerticalAlignment="Center"/>
+                        <StackPanel>
+                            <TextBlock Text="{Binding SurplusStatus}" 
+                                       Foreground="White" 
+                                       FontWeight="Bold"
+                                       FontSize="14"/>
+                            <TextBlock Text="{Binding Surplus, StringFormat='{}{0:C2}'}" 
+                                       Foreground="White"
+                                       FontSize="16"
+                                       FontWeight="Bold"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </Border>
+
+        <!-- Content -->
+        <ScrollViewer Grid.Row="1" 
+                      Padding="15"
+                      VerticalScrollBarVisibility="Auto"
+                      HorizontalScrollBarVisibility="Disabled">
+            <StackPanel Spacing="10">
+                
+                <!-- Información General -->
+                <Border Classes="section">
+                    <Grid ColumnDefinitions="*,*,*,*">
+                        <StackPanel Grid.Column="0">
+                            <TextBlock Text="FECHA APERTURA" Classes="label"/>
+                            <TextBlock Text="{Binding OpeningDate, StringFormat='{}{0:dd/MM/yyyy HH:mm}'}" Classes="value"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="1">
+                            <TextBlock Text="FECHA CIERRE" Classes="label"/>
+                            <TextBlock Text="{Binding CloseDate, StringFormat='{}{0:dd/MM/yyyy HH:mm}'}" Classes="value"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="2">
+                            <TextBlock Text="DURACIÓN" Classes="label"/>
+                            <TextBlock Text="{Binding ShiftDuration}" Classes="value"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="3">
+                            <TextBlock Text="FONDO INICIAL" Classes="label"/>
+                            <TextBlock Text="{Binding OpeningCash, StringFormat='{}{0:C2}'}" Classes="value" Foreground="#66BB6A"/>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <!-- Ventas Directas por Método -->
+                <Border Classes="section">
+                    <StackPanel>
+                        <TextBlock Text="VENTAS DIRECTAS POR MÉTODO DE PAGO" Classes="section-title"/>
+                        <Grid ColumnDefinitions="*,*,*,*,*" RowDefinitions="Auto,Auto">
+                            <!-- Labels -->
+                            <TextBlock Grid.Row="0" Grid.Column="0" Text="Efectivo" Classes="label" HorizontalAlignment="Center"/>
+                            <TextBlock Grid.Row="0" Grid.Column="1" Text="T. Débito" Classes="label" HorizontalAlignment="Center"/>
+                            <TextBlock Grid.Row="0" Grid.Column="2" Text="T. Crédito" Classes="label" HorizontalAlignment="Center"/>
+                            <TextBlock Grid.Row="0" Grid.Column="3" Text="Transferencia" Classes="label" HorizontalAlignment="Center"/>
+                            <TextBlock Grid.Row="0" Grid.Column="4" Text="Cheque" Classes="label" HorizontalAlignment="Center"/>
+                            
+                            <!-- Values -->
+                            <TextBlock Grid.Row="1" Grid.Column="0" Text="{Binding TotalCash, StringFormat='{}{0:C2}'}" 
+                                       Classes="value" HorizontalAlignment="Center" Foreground="#66BB6A"/>
+                            <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding TotalDebitCard, StringFormat='{}{0:C2}'}" 
+                                       Classes="value" HorizontalAlignment="Center" Foreground="#42A5F5"/>
+                            <TextBlock Grid.Row="1" Grid.Column="2" Text="{Binding TotalCreditCard, StringFormat='{}{0:C2}'}" 
+                                       Classes="value" HorizontalAlignment="Center" Foreground="#AB47BC"/>
+                            <TextBlock Grid.Row="1" Grid.Column="3" Text="{Binding TotalTransfers, StringFormat='{}{0:C2}'}" 
+                                       Classes="value" HorizontalAlignment="Center" Foreground="#26A69A"/>
+                            <TextBlock Grid.Row="1" Grid.Column="4" Text="{Binding TotalChecks, StringFormat='{}{0:C2}'}" 
+                                       Classes="value" HorizontalAlignment="Center" Foreground="#FF9800"/>
+                        </Grid>
+                        
+                        <Separator Background="#444" Margin="0,15,0,10"/>
+                        
+                        <Grid ColumnDefinitions="*,Auto">
+                            <TextBlock Text="TOTAL VENTAS DIRECTAS:" FontWeight="Bold" Foreground="White"/>
+                            <TextBlock Grid.Column="1" Text="{Binding TotalSales, StringFormat='{}{0:C2}'}" 
+                                       FontWeight="Bold" FontSize="16" Foreground="#4CAF50"/>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <!-- Créditos y Apartados -->
+                <Border Classes="section">
+                    <StackPanel>
+                        <TextBlock Text="CRÉDITOS Y APARTADOS" Classes="section-title"/>
+                        <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto">
+                            <!-- Headers -->
+                            <TextBlock Grid.Row="0" Grid.Column="0" Text="CRÉDITOS" Classes="label" FontWeight="Bold" HorizontalAlignment="Center"/>
+                            <TextBlock Grid.Row="0" Grid.Column="1" Text="APARTADOS" Classes="label" FontWeight="Bold" HorizontalAlignment="Center"/>
+                            
+                            <!-- Totales Creados -->
+                            <Border Grid.Row="1" Grid.Column="0" Classes="highlight" Margin="0,5,5,5">
+                                <StackPanel HorizontalAlignment="Center">
+                                    <TextBlock Text="Total Creados" Classes="label" HorizontalAlignment="Center"/>
+                                    <TextBlock Text="{Binding CreditTotalCreated, StringFormat='{}{0:C2}'}" 
+                                               Classes="value" Foreground="#AB47BC" HorizontalAlignment="Center"/>
+                                </StackPanel>
+                            </Border>
+                            <Border Grid.Row="1" Grid.Column="1" Classes="highlight" Margin="5,5,0,5">
+                                <StackPanel HorizontalAlignment="Center">
+                                    <TextBlock Text="Total Creados" Classes="label" HorizontalAlignment="Center"/>
+                                    <TextBlock Text="{Binding LayawayTotalCreated, StringFormat='{}{0:C2}'}" 
+                                               Classes="value" Foreground="#FF9800" HorizontalAlignment="Center"/>
+                                </StackPanel>
+                            </Border>
+                            
+                            <!-- Efectivo de Abonos -->
+                            <Border Grid.Row="2" Grid.Column="0" Classes="highlight" Margin="0,0,5,0">
+                                <StackPanel HorizontalAlignment="Center">
+                                    <TextBlock Text="Efectivo Abonos" Classes="label" HorizontalAlignment="Center"/>
+                                    <TextBlock Text="{Binding CreditCash, StringFormat='{}{0:C2}'}" 
+                                               Classes="value" Foreground="#66BB6A" HorizontalAlignment="Center"/>
+                                </StackPanel>
+                            </Border>
+                            <Border Grid.Row="2" Grid.Column="1" Classes="highlight" Margin="5,0,0,0">
+                                <StackPanel HorizontalAlignment="Center">
+                                    <TextBlock Text="Efectivo Abonos" Classes="label" HorizontalAlignment="Center"/>
+                                    <TextBlock Text="{Binding LayawayCash, StringFormat='{}{0:C2}'}" 
+                                               Classes="value" Foreground="#66BB6A" HorizontalAlignment="Center"/>
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <!-- Movimientos de Caja -->
+                <Border Classes="section" IsVisible="{Binding HasMovements}">
+                    <StackPanel>
+                        <TextBlock Text="MOVIMIENTOS DE CAJA (GASTOS E INGRESOS)" Classes="section-title"/>
+                        <ItemsControl ItemsSource="{Binding Movements}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Background="#3D3D3D" CornerRadius="3" Padding="10" Margin="0,2">
+                                        <Grid ColumnDefinitions="80,*,Auto">
+                                            <TextBlock Grid.Column="0" 
+                                                       Text="{Binding Type}" 
+                                                       Foreground="{Binding TypeColor}"
+                                                       FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="1" Text="{Binding Concept}" Foreground="White"/>
+                                            <TextBlock Grid.Column="2" 
+                                                       Text="{Binding Amount, StringFormat='{}{0:C2}'}" 
+                                                       Foreground="{Binding TypeColor}"
+                                                       FontWeight="Bold"/>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        
+                        <Separator Background="#444" Margin="0,10"/>
+                        
+                        <Grid ColumnDefinitions="*,Auto,Auto">
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="20">
+                                <StackPanel>
+                                    <TextBlock Text="Total Gastos:" Classes="label"/>
+                                    <TextBlock Text="{Binding TotalExpenses, StringFormat='-{0:C2}'}" 
+                                               Foreground="#F44336" FontWeight="Bold"/>
+                                </StackPanel>
+                                <StackPanel>
+                                    <TextBlock Text="Total Ingresos:" Classes="label"/>
+                                    <TextBlock Text="{Binding TotalIncome, StringFormat='+{0:C2}'}" 
+                                               Foreground="#4CAF50" FontWeight="Bold"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <!-- Resumen Final -->
+                <Border Classes="section">
+                    <StackPanel>
+                        <TextBlock Text="RESUMEN DEL CORTE" Classes="section-title"/>
+                        
+                        <!-- Información del Turno -->
+                        <Border Classes="highlight" Margin="0,0,0,10">
+                            <Grid ColumnDefinitions="*,*,*" RowDefinitions="Auto,Auto">
+                                <StackPanel Grid.Row="0" Grid.Column="0">
+                                    <TextBlock Text="VENTAS DIRECTAS" Classes="label" HorizontalAlignment="Center"/>
+                                    <TextBlock Text="{Binding TotalSales, StringFormat='{}{0:C2}'}" 
+                                               FontSize="16" FontWeight="Bold" Foreground="#66BB6A" HorizontalAlignment="Center"/>
+                                </StackPanel>
+                                
+                                <StackPanel Grid.Row="0" Grid.Column="1">
+                                    <TextBlock Text="TOTAL DEL CORTE" Classes="label" HorizontalAlignment="Center"/>
+                                    <TextBlock Text="(Ventas + Créditos + Apartados)" Foreground="#888" FontSize="9" HorizontalAlignment="Center"/>
+                                    <TextBlock Text="{Binding TotalDelCorte, StringFormat='{}{0:C2}'}" 
+                                               FontSize="18" FontWeight="Bold" Foreground="#4CAF50" HorizontalAlignment="Center"/>
+                                </StackPanel>
+                                
+                                <StackPanel Grid.Row="0" Grid.Column="2">
+                                    <TextBlock Text="PAGOS ELECTRÓNICOS" Classes="label" HorizontalAlignment="Center"/>
+                                    <TextBlock Text="{Binding TotalElectronicPayments, StringFormat='{}{0:C2}'}" 
+                                               FontSize="16" FontWeight="Bold" Foreground="#AB47BC" HorizontalAlignment="Center"/>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+                        
+                        <Separator Background="#444" Margin="0,0,0,10"/>
+                        
+                        <!-- Efectivo -->
+                        <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto">
+                            <!-- Fondo Inicial -->
+                            <TextBlock Grid.Row="0" Grid.Column="0" 
+                                       Text="Fondo Inicial:" 
+                                       Foreground="#AAAAAA" 
+                                       Margin="0,5"/>
+                            <TextBlock Grid.Row="0" Grid.Column="1" 
+                                       Text="{Binding OpeningCash, StringFormat='{}{0:C2}'}" 
+                                       Foreground="White" 
+                                       FontWeight="Bold"
+                                       HorizontalAlignment="Right"
+                                       Margin="0,5"/>
+                            
+                            <!-- Efectivo Ventas -->
+                            <TextBlock Grid.Row="1" Grid.Column="0" 
+                                       Text="+ Efectivo Ventas:" 
+                                       Foreground="#AAAAAA" 
+                                       Margin="0,5"/>
+                            <TextBlock Grid.Row="1" Grid.Column="1" 
+                                       Text="{Binding TotalCash, StringFormat='{}{0:C2}'}" 
+                                       Foreground="#66BB6A" 
+                                       FontWeight="Bold"
+                                       HorizontalAlignment="Right"
+                                       Margin="0,5"/>
+                            
+                            <!-- Efectivo Abonos Créditos -->
+                            <TextBlock Grid.Row="2" Grid.Column="0" 
+                                       Text="+ Efectivo Abonos Créditos:" 
+                                       Foreground="#AAAAAA" 
+                                       Margin="0,5"/>
+                            <TextBlock Grid.Row="2" Grid.Column="1" 
+                                       Text="{Binding CreditCash, StringFormat='{}{0:C2}'}" 
+                                       Foreground="#66BB6A" 
+                                       FontWeight="Bold"
+                                       HorizontalAlignment="Right"
+                                       Margin="0,5"/>
+                            
+                            <!-- Efectivo Abonos Apartados -->
+                            <TextBlock Grid.Row="3" Grid.Column="0" 
+                                       Text="+ Efectivo Abonos Apartados:" 
+                                       Foreground="#AAAAAA" 
+                                       Margin="0,5"/>
+                            <TextBlock Grid.Row="3" Grid.Column="1" 
+                                       Text="{Binding LayawayCash, StringFormat='{}{0:C2}'}" 
+                                       Foreground="#66BB6A" 
+                                       FontWeight="Bold"
+                                       HorizontalAlignment="Right"
+                                       Margin="0,5"/>
+                            
+                            <Separator Grid.Row="4" Grid.ColumnSpan="2" Background="#444" Margin="0,10"/>
+                        </Grid>
+                        
+                        <!-- Movimientos -->
+                        <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto" IsVisible="{Binding HasMovements}">
+                            <!-- Ingresos Extra -->
+                            <TextBlock Grid.Row="0" Grid.Column="0" 
+                                       Text="+ Ingresos Extra:" 
+                                       Foreground="#AAAAAA" 
+                                       Margin="0,5"/>
+                            <TextBlock Grid.Row="0" Grid.Column="1" 
+                                       Text="{Binding TotalIncome, StringFormat='{}{0:C2}'}" 
+                                       Foreground="#4CAF50" 
+                                       FontWeight="Bold"
+                                       HorizontalAlignment="Right"
+                                       Margin="0,5"/>
+                            
+                            <!-- Gastos -->
+                            <TextBlock Grid.Row="1" Grid.Column="0" 
+                                       Text="- Gastos:" 
+                                       Foreground="#AAAAAA" 
+                                       Margin="0,5"/>
+                            <TextBlock Grid.Row="1" Grid.Column="1" 
+                                       Text="{Binding TotalExpenses, StringFormat='{}{0:C2}'}" 
+                                       Foreground="#F44336" 
+                                       FontWeight="Bold"
+                                       HorizontalAlignment="Right"
+                                       Margin="0,5"/>
+                            
+                            <Separator Grid.Row="2" Grid.ColumnSpan="2" Background="#444" Margin="0,10"/>
+                        </Grid>
+                        
+                        <!-- Efectivo Total en Caja -->
+                        <Border Background="#1A3A1A" CornerRadius="5" Padding="15" Margin="0,0,0,10">
+                            <Grid ColumnDefinitions="*,Auto">
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="EFECTIVO EN CAJA" 
+                                               Foreground="#AAAAAA" 
+                                               FontSize="11"/>
+                                    <TextBlock Text="(Fondo + Ventas + Abonos + Ingresos - Gastos)" 
+                                               Foreground="#666" 
+                                               FontSize="9"/>
+                                </StackPanel>
+                                <TextBlock Grid.Column="1" 
+                                           Text="{Binding EfectivoTotal, StringFormat='{}{0:C2}'}" 
+                                           FontSize="20" 
+                                           FontWeight="Bold" 
+                                           Foreground="#42A5F5"
+                                           VerticalAlignment="Center"/>
+                            </Grid>
+                        </Border>
+                        
+                        <!-- Efectivo Esperado -->
+                        <Border Background="#3A3A1A" CornerRadius="5" Padding="15">
+                            <DockPanel LastChildFill="True">
+                                <TextBlock DockPanel.Dock="Left"
+                                           Text="EFECTIVO ESPERADO" 
+                                           Foreground="#AAAAAA" 
+                                           FontSize="12"
+                                           VerticalAlignment="Center"/>
+                                <StackPanel DockPanel.Dock="Right" 
+                                            Orientation="Horizontal" 
+                                            Spacing="15"
+                                            HorizontalAlignment="Right">
+                                    <TextBlock Text="{Binding SurplusStatus}" 
+                                               Foreground="White" 
+                                               FontWeight="Bold"
+                                               FontSize="11"
+                                               VerticalAlignment="Center"/>
+                                    <TextBlock Text="{Binding SurplusIcon}" 
+                                               FontSize="16" 
+                                               Foreground="{Binding SurplusColor}"
+                                               VerticalAlignment="Center"/>
+                                    <TextBlock Text="{Binding ExpectedCash, StringFormat='{}{0:C2}'}" 
+                                               FontSize="20" 
+                                               FontWeight="Bold" 
+                                               Foreground="#FFC107"
+                                               VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </DockPanel>
+                        </Border>
+                    </StackPanel>
+                </Border>
+
+                <!-- Notas -->
+                <Border Classes="section" IsVisible="{Binding HasNotes}">
+                    <StackPanel>
+                        <TextBlock Text="NOTAS" Classes="section-title"/>
+                        <TextBlock Text="{Binding Notes}" 
+                                   Foreground="White" 
+                                   TextWrapping="Wrap"/>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- Buttons -->
+        <Border Grid.Row="2" Background="#2D2D2D" Padding="15">
+            <Grid ColumnDefinitions="*,Auto,*">
+                <Button Grid.Column="1"
+                        Content="Cerrar (Esc)"
+                        Command="{Binding CloseCommand}"
+                        Background="#555555"
+                        Foreground="White"
+                        Padding="30,10"/>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>

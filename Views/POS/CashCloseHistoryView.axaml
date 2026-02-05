@@ -1,0 +1,195 @@
+<!-- CashCloseHistoryView.axaml -->
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="using:CasaCejaRemake.ViewModels.POS"
+        mc:Ignorable="d" d:DesignWidth="900" d:DesignHeight="600"
+        x:Class="CasaCejaRemake.Views.POS.CashCloseHistoryView"
+        x:DataType="vm:CashCloseHistoryViewModel"
+        Title="Historial de Cortes de Caja"
+        WindowStartupLocation="CenterScreen"
+        WindowState="Maximized"
+        ShowInTaskbar="False"
+        Focusable="True"
+        Background="#1E1E1E">
+
+    <Window.Styles>
+        <Style Selector="Button.filter">
+            <Setter Property="Background" Value="#3D3D3D"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Padding" Value="15,8"/>
+            <Setter Property="Margin" Value="5,0"/>
+            <Setter Property="CornerRadius" Value="5"/>
+        </Style>
+        <Style Selector="Button.filter:pointerover">
+            <Setter Property="Background" Value="#4D4D4D"/>
+        </Style>
+        <Style Selector="DataGrid">
+            <Setter Property="Background" Value="#1E1E1E"/>
+            <Setter Property="RowBackground" Value="#2D2D2D"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderBrush" Value="#3D3D3D"/>
+            <Setter Property="GridLinesVisibility" Value="Horizontal"/>
+            <Setter Property="HorizontalGridLinesBrush" Value="#3D3D3D"/>
+        </Style>
+        <Style Selector="DataGridRow:nth-child(2n) /template/ Rectangle#BackgroundRectangle">
+            <Setter Property="Fill" Value="#252525"/>
+        </Style>
+        <Style Selector="DataGridColumnHeader">
+            <Setter Property="Background" Value="#3D3D3D"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Padding" Value="10,8"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+        </Style>
+        <Style Selector="DataGridRow:selected /template/ Rectangle#BackgroundRectangle">
+            <Setter Property="Fill" Value="#4CAF50"/>
+        </Style>
+        <Style Selector="CalendarDatePicker">
+            <Setter Property="Background" Value="#3D3D3D"/>
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+    </Window.Styles>
+
+    <Grid RowDefinitions="Auto,Auto,*,Auto">
+        <!-- Header -->
+        <Border Grid.Row="0" Background="#2D2D2D" Padding="15">
+            <Grid ColumnDefinitions="*,Auto">
+                <TextBlock Text="HISTORIAL DE CORTES DE CAJA"
+                           FontSize="18"
+                           FontWeight="Bold"
+                           Foreground="White"
+                           VerticalAlignment="Center"/>
+                <StackPanel Grid.Column="1" Orientation="Horizontal">
+                    <TextBlock Text="Total: " Foreground="#AAAAAA" VerticalAlignment="Center"/>
+                    <TextBlock Text="{Binding TotalCount}" 
+                               Foreground="#4CAF50" 
+                               FontWeight="Bold"
+                               FontSize="16"
+                               VerticalAlignment="Center"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Filters -->
+        <Border Grid.Row="1" Background="#252525" Padding="10">
+            <Grid RowDefinitions="Auto,Auto">
+                <!-- Search Box -->
+                <Border Grid.Row="0" 
+                        Background="#2D2D2D" 
+                        CornerRadius="5" 
+                        Padding="10"
+                        Margin="0,0,0,10">
+                    <Grid ColumnDefinitions="Auto,*,Auto,Auto,Auto,Auto,Auto">
+                        <TextBlock Grid.Column="0"
+                                   Text="Buscar:" 
+                                   Foreground="#AAAAAA" 
+                                   VerticalAlignment="Center"
+                                   Margin="0,0,10,0"/>
+                        <TextBox x:Name="SearchTextBox"
+                                 Grid.Column="1"
+                                 Text="{Binding SearchText, Mode=TwoWay}"
+                                 Watermark="Buscar por folio o usuario... (presione Enter)"
+                                 Background="#3D3D3D"
+                                 Foreground="White"
+                                 BorderBrush="#555555"
+                                 Padding="8,6"
+                                 Margin="0,0,15,0"/>
+                        
+                        <!-- Date Filters -->
+                        <TextBlock Grid.Column="2"
+                                   Text="Desde:" 
+                                   Foreground="#AAAAAA" 
+                                   VerticalAlignment="Center"
+                                   Margin="0,0,5,0"/>
+                        <CalendarDatePicker Grid.Column="3"
+                                            SelectedDate="{Binding FilterDateFrom}"
+                                            Background="#3D3D3D"
+                                            Foreground="White"
+                                            Margin="0,0,10,0"/>
+                        
+                        <TextBlock Grid.Column="4"
+                                   Text="Hasta:" 
+                                   Foreground="#AAAAAA" 
+                                   VerticalAlignment="Center"
+                                   Margin="0,0,5,0"/>
+                        <CalendarDatePicker Grid.Column="5"
+                                            SelectedDate="{Binding FilterDateTo}"
+                                            Background="#3D3D3D"
+                                            Foreground="White"
+                                            Margin="0,0,10,0"/>
+                        
+                        <Button Grid.Column="6"
+                                Content="Aplicar Filtros (F5)"
+                                Command="{Binding ApplyDateFilterCommand}"
+                                Classes="filter"
+                                Background="#0078D4"/>
+                    </Grid>
+                </Border>
+                
+                <!-- Quick Filters -->
+                <Grid Grid.Row="1" ColumnDefinitions="Auto,*,Auto">
+                    <StackPanel Grid.Column="0" Orientation="Horizontal">
+                        <TextBlock Text="Acciones:" 
+                                   Foreground="#AAAAAA" 
+                                   VerticalAlignment="Center"
+                                   Margin="0,0,10,0"/>
+                        <Button Content="F6 Limpiar Filtros"
+                                Command="{Binding ClearFiltersCommand}"
+                                Classes="filter"/>
+                        <Button Content="F7 Buscar"
+                                Command="{Binding ExecuteSearchCommand}"
+                                Classes="filter"
+                                Background="#FF9800"/>
+                    </StackPanel>
+                </Grid>
+            </Grid>
+        </Border>
+
+        <!-- DataGrid -->
+        <DataGrid x:Name="DataGridItems"
+                  Grid.Row="2"
+                  ItemsSource="{Binding Items}"
+                  SelectedItem="{ReflectionBinding SelectedItem, Mode=TwoWay}"
+                  AutoGenerateColumns="False"
+                  IsReadOnly="True"
+                  Margin="10"
+                  SelectionMode="Single">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="FOLIO" Binding="{Binding Folio}" Width="160"/>
+                <DataGridTextColumn Header="USUARIO" Binding="{Binding UserName}" Width="180"/>
+                <DataGridTextColumn Header="FECHA CIERRE" Binding="{Binding CloseDate, StringFormat='{}{0:dd/MM/yyyy HH:mm}'}" Width="160"/>
+                <DataGridTextColumn Header="FONDO" Binding="{Binding OpeningCash, StringFormat='{}{0:C2}'}" Width="130"/>
+                <DataGridTextColumn Header="TOTAL CORTE" Binding="{Binding TotalDelCorte, StringFormat='{}{0:C2}'}" Width="140"/>
+                <DataGridTextColumn Header="ESPERADO" Binding="{Binding ExpectedCash, StringFormat='{}{0:C2}'}" Width="130"/>
+                <DataGridTextColumn Header="DIFERENCIA" Binding="{Binding Surplus, StringFormat='{}{0:C2}'}" Width="130"/>
+                <DataGridTextColumn Header="ESTADO" Binding="{Binding SurplusStatus}" Width="*"/>
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <!-- Buttons -->
+        <Border Grid.Row="3" Background="#2D2D2D" Padding="15">
+            <Grid ColumnDefinitions="*,Auto,Auto,*">
+                <Button Grid.Column="1"
+                        Command="{Binding SelectItemCommand}"
+                        Background="#4CAF50"
+                        Foreground="White"
+                        Padding="20,10"
+                        Margin="5,0"
+                        IsEnabled="{Binding HasSelectedItem}">
+                    <StackPanel Orientation="Horizontal" Spacing="5">
+                        <TextBlock Text="Enter"/>
+                        <TextBlock Text="Ver Detalle"/>
+                    </StackPanel>
+                </Button>
+                <Button Grid.Column="2"
+                        Content="Salir (Esc)"
+                        Command="{Binding CloseCommand}"
+                        Background="#555555"
+                        Foreground="White"
+                        Padding="20,10"
+                        Margin="5,0"/>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>

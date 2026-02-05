@@ -398,6 +398,7 @@ namespace CasaCejaRemake.Views.POS
                     { Key.F6, () => ShowCashMovementDialogAsync(true) },
                     { Key.F7, () => ShowCashMovementDialogAsync(false) },
                     { Key.F8, () => ShowCustomersDialogAsync() },
+                    { Key.F9, () => ShowCashCloseHistoryDialogAsync() },
                     { Key.F10, () => ShowCashCloseDialogAsync() },
                     { Key.F11, () => _viewModel.PayCommand.Execute(null) },
                     { Key.F12, () => _viewModel.CreditsLayawaysCommand.Execute(null) },
@@ -805,6 +806,72 @@ namespace CasaCejaRemake.Views.POS
         }
 
         /// <summary>
+        /// Muestra el diálogo de historial de cortes de caja.
+        /// </summary>
+        private async void ShowCashCloseHistoryDialogAsync()
+        {
+            var app = (App)Application.Current!;
+            var cashCloseService = app.GetCashCloseService();
+            var authService = app.GetAuthService();
+
+            if (cashCloseService == null || authService == null)
+            {
+                ShowMessageDialog("Error", "Servicios no disponibles");
+                return;
+            }
+
+            var historyView = new CashCloseHistoryView();
+            var historyViewModel = new CashCloseHistoryViewModel(
+                cashCloseService,
+                authService,
+                _viewModel?.BranchId ?? 1);
+
+            historyView.DataContext = historyViewModel;
+            
+            // Cargar datos antes de mostrar
+            await historyViewModel.InitializeAsync();
+
+            _hasOpenDialog = true;
+            await historyView.ShowDialog(this);
+            _hasOpenDialog = false;
+
+            // Si se seleccionó un item, mostrar el detalle
+            if (historyView.Tag is ValueTuple<string, CashCloseListItemWrapper> result && result.Item1 == "ItemSelected")
+            {
+                await ShowCashCloseDetailAsync(result.Item2);
+            }
+
+            TxtBarcode.Focus();
+        }
+
+        /// <summary>
+        /// Muestra el detalle de un corte de caja específico.
+        /// </summary>
+        private async Task ShowCashCloseDetailAsync(CashCloseListItemWrapper item)
+        {
+            var app = (App)Application.Current!;
+            var cashCloseService = app.GetCashCloseService();
+
+            if (cashCloseService == null)
+            {
+                ShowMessageDialog("Error", "Servicio no disponible");
+                return;
+            }
+
+            var detailView = new CashCloseDetailView();
+            var detailViewModel = new CashCloseDetailViewModel(cashCloseService);
+
+            // Inicializar con los datos del corte
+            await detailViewModel.InitializeAsync(item.CashClose, item.UserName, item.BranchName);
+            
+            detailView.DataContext = detailViewModel;
+
+            _hasOpenDialog = true;
+            await detailView.ShowDialog(this);
+            _hasOpenDialog = false;
+        }
+
+        /// <summary>
         /// Muestra el diálogo de corte de caja.
         /// </summary>
         private async void ShowCashCloseDialogAsync()
@@ -887,6 +954,11 @@ namespace CasaCejaRemake.Views.POS
         private void OnCashCloseClick(object? sender, RoutedEventArgs e)
         {
             ShowCashCloseDialogAsync();
+        }
+
+        private void OnCashCloseHistoryClick(object? sender, RoutedEventArgs e)
+        {
+            ShowCashCloseHistoryDialogAsync();
         }
 
         private void OnExpenseClick(object? sender, RoutedEventArgs e)
