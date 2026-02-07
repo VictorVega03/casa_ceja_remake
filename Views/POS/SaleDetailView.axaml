@@ -59,8 +59,8 @@
             </Grid>
         </Border>
 
-        <!-- Main Content: 50/50 Split -->
-        <Grid Grid.Row="1" ColumnDefinitions="*,2,*">
+        <!-- Main Content: 65/35 Split -->
+        <Grid Grid.Row="1" ColumnDefinitions="65*,2,35*">
             
             <!-- LEFT SIDE: Sale Details and Products -->
             <Grid Grid.Column="0" RowDefinitions="Auto,*,Auto" Margin="10">
@@ -111,10 +111,10 @@
                                   HeadersVisibility="Column">
                             <DataGrid.Columns>
                                 <DataGridTextColumn Header="PRODUCTO" Binding="{Binding ProductName}" Width="*"/>
-                                <DataGridTextColumn Header="CANT" Binding="{Binding Quantity}" Width="60"/>
-                                <DataGridTextColumn Header="P. LISTA" Binding="{Binding ListPrice, StringFormat='{}{0:C2}'}" Width="90"/>
-                                <DataGridTextColumn Header="P. FINAL" Binding="{Binding FinalUnitPrice, StringFormat='{}{0:C2}'}" Width="90"/>
-                                <DataGridTextColumn Header="TOTAL" Binding="{Binding LineTotal, StringFormat='{}{0:C2}'}" Width="90"/>
+                                <DataGridTextColumn Header="CANT" Binding="{Binding Quantity}" Width="75"/>
+                                <DataGridTextColumn Header="P. LISTA" Binding="{Binding ListPrice, StringFormat='{}{0:C2}'}" Width="95"/>
+                                <DataGridTextColumn Header="P. FINAL" Binding="{Binding FinalUnitPrice, StringFormat='{}{0:C2}'}" Width="95"/>
+                                <DataGridTextColumn Header="TOTAL" Binding="{Binding LineTotal, StringFormat='{}{0:C2}'}" Width="95"/>
                             </DataGrid.Columns>
                         </DataGrid>
                     </Grid>
