@@ -51,7 +51,9 @@ namespace CasaCejaRemake.Services
         private readonly BaseRepository<SaleProduct> _saleProductRepository;
         private readonly BaseRepository<Product> _productRepository;
         private readonly BaseRepository<Branch> _branchRepository;
+        private readonly BaseRepository<Category> _categoryRepository;
         private readonly TicketService _ticketService;
+        private readonly PricingService _pricingService;
 
         public SalesService(DatabaseService databaseService)
         {
@@ -60,7 +62,9 @@ namespace CasaCejaRemake.Services
             _saleProductRepository = new BaseRepository<SaleProduct>(databaseService);
             _productRepository = new BaseRepository<Product>(databaseService);
             _branchRepository = new BaseRepository<Branch>(databaseService);
+            _categoryRepository = new BaseRepository<Category>(databaseService);
             _ticketService = new TicketService();
+            _pricingService = new PricingService();
         }
 
         public async Task<StockValidationResult> ValidateStockAsync(List<CartItem> items)
@@ -456,14 +460,14 @@ namespace CasaCejaRemake.Services
             var product = await _productRepository.GetByIdAsync(productId);
             if (product == null) return null;
 
-            // Obtener categoria y unidad para el item
+            // Obtener categoría para cálculo de descuentos y display
+            Category? category = null;
             string categoryName = "";
             string unitName = "";
 
             if (product.CategoryId > 0)
             {
-                var categoryRepo = new BaseRepository<Category>(_databaseService);
-                var category = await categoryRepo.GetByIdAsync(product.CategoryId);
+                category = await _categoryRepository.GetByIdAsync(product.CategoryId);
                 categoryName = category?.Name ?? "";
             }
 
@@ -474,30 +478,15 @@ namespace CasaCejaRemake.Services
                 unitName = unit?.Name ?? "";
             }
 
-            // Calcular precio segun reglas de negocio
-            decimal listPrice = product.PriceRetail;
-            decimal finalPrice = listPrice;
-            decimal discount = 0;
-            string priceType = "retail";
-            string discountInfo = "";
+            // Usar PricingService para calcular precio con todas las reglas de negocio
+            var priceCalc = _pricingService.CalculatePrice(product, quantity, category);
 
-            // Verificar precio mayoreo (solo aplica si cumple cantidad mínima)
-            if (product.QualifiesForWholesale(quantity))
-            {
-                finalPrice = product.PriceWholesale;
-                priceType = "wholesale";
-                discountInfo = $"Precio mayoreo ({product.WholesaleQuantity}+ piezas)";
-            }
-
-            // NOTA: El precio especial NO se aplica automáticamente.
-            // Debe ser activado manualmente por el usuario o por promociones específicas.
-            // El precio especial está disponible en product.PriceSpecial si se necesita.
-
-            // Si no es precio especial, calcular descuento si aplica
-            if (priceType != "special")
-            {
-                discount = listPrice - finalPrice;
-            }
+            // Determinar el tipo de precio para el row color:
+            // Si hay descuento de categoría, usar "category" para el color morado
+            // Si no, usar el tipo aplicado (retail, wholesale, special, dealer)
+            string priceType = priceCalc.CategoryDiscountPercent > 0 
+                ? "category" 
+                : priceCalc.AppliedPriceType.ToString().ToLower();
 
             return new CartItem
             {
@@ -507,12 +496,106 @@ namespace CasaCejaRemake.Services
                 CategoryName = categoryName,
                 UnitName = unitName,
                 Quantity = quantity,
-                ListPrice = listPrice,
-                FinalUnitPrice = finalPrice,
-                TotalDiscount = discount,
+                ListPrice = priceCalc.ListPrice,
+                FinalUnitPrice = priceCalc.FinalPrice,
+                TotalDiscount = priceCalc.TotalDiscount,
                 PriceType = priceType,
-                DiscountInfo = discountInfo
+                DiscountInfo = priceCalc.DiscountInfo
             };
+        }
+
+        /// <summary>
+        /// Crea un CartItem con un tipo de precio forzado (especial o vendedor)
+        /// Usado cuando el usuario presiona F2 o F3 inmediatamente después de agregar
+        /// </summary>
+        public async Task<CartItem?> CreateCartItemWithPriceTypeAsync(
+            int productId, 
+            int quantity, 
+            int userId, 
+            PriceType priceType)
+        {
+            var product = await _productRepository.GetByIdAsync(productId);
+            if (product == null) return null;
+
+            // Obtener categoría (aunque en precios aislados no se usa)
+            Category? category = null;
+            string categoryName = "";
+            string unitName = "";
+
+            if (product.CategoryId > 0)
+            {
+                category = await _categoryRepository.GetByIdAsync(product.CategoryId);
+                categoryName = category?.Name ?? "";
+            }
+
+            if (product.UnitId > 0)
+            {
+                var unitRepo = new BaseRepository<Unit>(_databaseService);
+                var unit = await unitRepo.GetByIdAsync(product.UnitId);
+                unitName = unit?.Name ?? "";
+            }
+
+            // Forzar tipo de precio
+            var priceCalc = _pricingService.CalculatePrice(product, quantity, category, priceType);
+
+            return new CartItem
+            {
+                ProductId = product.Id,
+                Barcode = product.Barcode ?? "",
+                ProductName = product.Name ?? "Sin nombre",
+                CategoryName = categoryName,
+                UnitName = unitName,
+                Quantity = quantity,
+                ListPrice = priceCalc.ListPrice,
+                FinalUnitPrice = priceCalc.FinalPrice,
+                TotalDiscount = priceCalc.TotalDiscount,
+                PriceType = priceCalc.AppliedPriceType.ToString().ToLower(),
+                DiscountInfo = priceCalc.DiscountInfo
+            };
+        }
+
+        /// <summary>
+        /// Intenta aplicar precio especial a un item existente (F2)
+        /// </summary>
+        public async Task<(bool Success, string Message)> ApplySpecialPriceAsync(CartItem item)
+        {
+            var product = await _productRepository.GetByIdAsync(item.ProductId);
+            if (product == null)
+                return (false, "Producto no encontrado.");
+
+            return _pricingService.ApplySpecialPrice(item, product);
+        }
+
+        /// <summary>
+        /// Intenta aplicar precio vendedor a un item existente (F3)
+        /// </summary>
+        public async Task<(bool Success, string Message)> ApplyDealerPriceAsync(CartItem item)
+        {
+            var product = await _productRepository.GetByIdAsync(item.ProductId);
+            if (product == null)
+                return (false, "Producto no encontrado.");
+
+            return _pricingService.ApplyDealerPrice(item, product);
+        }
+
+        /// <summary>
+        /// Revierte un item a su precio original de menudeo
+        /// </summary>
+        public async Task<(bool Success, string Message)> RevertToRetailPriceAsync(CartItem item)
+        {
+            var product = await _productRepository.GetByIdAsync(item.ProductId);
+            if (product == null)
+                return (false, "Producto no encontrado.");
+
+            return _pricingService.RevertToRetailPrice(item, product);
+        }
+
+        /// <summary>
+        /// Obtiene el producto por ID (para validaciones de UI)
+        /// </summary>
+        public async Task<Product?> GetProductByIdAsync(int productId)
+        {
+            return await _productRepository.GetByIdAsync(productId);
         }
 
         public async Task<List<Sale>> GetDailySalesAsync(int branchId)

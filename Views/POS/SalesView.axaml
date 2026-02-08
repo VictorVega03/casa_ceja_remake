@@ -1,6 +1,7 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:CasaCejaRemake.ViewModels.POS"
+        xmlns:converters="using:CasaCejaRemake.Converters"
         x:Class="CasaCejaRemake.Views.POS.SalesView"
         x:DataType="vm:SalesViewModel"
         Title="Punto de Venta - Casa Ceja"
@@ -155,21 +156,33 @@
                     <DataGrid x:Name="GridProducts"
                               ItemsSource="{Binding Items}"
                               SelectedIndex="{Binding SelectedItemIndex, Mode=TwoWay}"
+                              SelectedItem="{Binding SelectedItem, Mode=TwoWay}"
                               AutoGenerateColumns="False"
                               IsReadOnly="True"
                               GridLinesVisibility="Horizontal"
                               HeadersVisibility="Column"
                               Background="#2D2D2D"
                               BorderThickness="0">
+                        <DataGrid.RowBackground>
+                            <SolidColorBrush Color="#2D2D2D"/>
+                        </DataGrid.RowBackground>
                         <DataGrid.Styles>
+                            <!-- Color base para filas normales -->
                             <Style Selector="DataGridRow">
                                 <Setter Property="Background" Value="#2D2D2D"/>
                             </Style>
                             <Style Selector="DataGridRow:nth-child(even)">
                                 <Setter Property="Background" Value="#353535"/>
                             </Style>
+                            <!-- Selector con color sólido que cubre el fondo -->
+                            <Style Selector="DataGridRow:pointerover">
+                                <Setter Property="Background" Value="#3D3D3D"/>
+                            </Style>
                             <Style Selector="DataGridRow:selected">
-                                <Setter Property="Background" Value="#4A4A4A"/>
+                                <Setter Property="Background" Value="#0078D4"/>
+                            </Style>
+                            <Style Selector="DataGridRow:selected:pointerover">
+                                <Setter Property="Background" Value="#1084D8"/>
                             </Style>
                             <Style Selector="DataGridCell">
                                 <Setter Property="Foreground" Value="White"/>
@@ -221,7 +234,7 @@
                         <Grid ColumnDefinitions="*,Auto">
                             <TextBlock Text="TOTAL:" FontSize="20" Foreground="White" FontWeight="Bold"/>
                             <TextBlock Grid.Column="1" 
-                                       Text="{Binding Total, StringFormat='{}{0:C2}'}" 
+                                       Text="{Binding FinalTotal, StringFormat='{}{0:C2}'}" 
                                        FontSize="28" 
                                        Foreground="#66BB6A" 
                                        FontWeight="Bold"/>
@@ -309,6 +322,45 @@
                                 <StackPanel Orientation="Horizontal" Spacing="10">
                                     <TextBlock Text="F12" FontWeight="Bold"/>
                                     <TextBlock Text="Créditos/Apartados"/>
+                                </StackPanel>
+                            </Button>
+                            
+                            <Separator Background="#444" Margin="0,5"/>
+                            
+                            <!-- Botones de Descuento -->
+                            <Button x:Name="BtnSpecialPrice"
+                                    Classes="action-button" 
+                                    Command="{Binding ApplySpecialPriceCommand}" 
+                                    HorizontalAlignment="Stretch"
+                                    Background="#FFC107"
+                                    Height="40">
+                                <StackPanel Orientation="Horizontal" Spacing="10">
+                                    <TextBlock Text="Ctrl+F2" FontWeight="Bold" Foreground="#333"/>
+                                    <TextBlock Text="Precio Especial" Foreground="#333"/>
+                                </StackPanel>
+                            </Button>
+                            
+                            <Button x:Name="BtnDealerPrice"
+                                    Classes="action-button" 
+                                    Command="{Binding ApplyDealerPriceCommand}" 
+                                    HorizontalAlignment="Stretch"
+                                    Background="#2196F3"
+                                    Height="40">
+                                <StackPanel Orientation="Horizontal" Spacing="10">
+                                    <TextBlock Text="Ctrl+F3" FontWeight="Bold"/>
+                                    <TextBlock Text="Precio Vendedor"/>
+                                </StackPanel>
+                            </Button>
+                            
+                            <Button x:Name="BtnGeneralDiscount"
+                                    Classes="action-button" 
+                                    Command="{Binding ShowGeneralDiscountCommand}" 
+                                    HorizontalAlignment="Stretch"
+                                    Background="#4CAF50"
+                                    Height="40">
+                                <StackPanel Orientation="Horizontal" Spacing="10">
+                                    <TextBlock Text="Ctrl+F6" FontWeight="Bold"/>
+                                    <TextBlock Text="Descuento General"/>
                                 </StackPanel>
                             </Button>
                         </StackPanel>

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.ObjectModel;
 using System.Linq;
+using Avalonia.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace CasaCejaRemake.Models
@@ -52,6 +53,7 @@ namespace CasaCejaRemake.Models
        
         /// Tipo de precio aplicado: "retail", "wholesale", "special", "dealer"       
         [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(RowBackgroundColor))]
         private string _priceType = "retail";
        
         /// Información descriptiva del descuento aplicado       
@@ -60,6 +62,19 @@ namespace CasaCejaRemake.Models
        
         /// Indica si el item tiene descuento aplicado       
         public bool HasDiscount => TotalDiscount > 0;
+        
+        /// Color de fondo del row según tipo de precio aplicado
+        /// - Retail/Wholesale: color por defecto del grid (gris oscuro)
+        /// - Category: Púrpura oscuro (#7B1FA2)
+        /// - Special: Verde oscuro (#2E7D32) - como el diálogo de descuento aplicado
+        /// - Dealer: Naranja oscuro (#E65100) - visible y distintivo
+        public IBrush RowBackgroundColor => PriceType switch
+        {
+            "category" => new SolidColorBrush(Color.Parse("#7B1FA2")),  // Púrpura oscuro
+            "special" => new SolidColorBrush(Color.Parse("#2E7D32")),   // Verde oscuro
+            "dealer" => new SolidColorBrush(Color.Parse("#e9953cff")),    // Naranja oscuro
+            _ => new SolidColorBrush(Color.Parse("#2D2D2D"))            // Color por defecto
+        };
        
         /// Datos de pricing serializados y comprimidos (inmutables para auditoría)       
         public byte[]? PricingData { get; set; }
@@ -87,5 +102,28 @@ namespace CasaCejaRemake.Models
        
         /// Indica si la colección está vacía
         public bool IsEmpty => Items.Count == 0;
+        
+        // ========== DESCUENTO GENERAL (ahora por colección) ==========
+        
+        /// <summary>Porcentaje de descuento general (si aplica)</summary>
+        public decimal GeneralDiscountPercent { get; set; } = 0;
+        
+        /// <summary>Monto fijo de descuento general (si aplica)</summary>
+        public decimal GeneralDiscountAmount { get; set; } = 0;
+        
+        /// <summary>Indica si el descuento es porcentaje (true) o cantidad fija (false)</summary>
+        public bool IsGeneralDiscountPercentage { get; set; } = true;
+        
+        /// <summary>Indica si hay un descuento general aplicado</summary>
+        public bool HasGeneralDiscount => (IsGeneralDiscountPercentage && GeneralDiscountPercent > 0) || 
+                                          (!IsGeneralDiscountPercentage && GeneralDiscountAmount > 0);
+        
+        /// <summary>Descuento general calculado</summary>
+        public decimal CalculatedGeneralDiscount => IsGeneralDiscountPercentage 
+            ? Total * (GeneralDiscountPercent / 100m)
+            : Math.Min(GeneralDiscountAmount, Total);
+        
+        /// <summary>Total final después de descuento general</summary>
+        public decimal FinalTotal => Total - CalculatedGeneralDiscount;
     }
 }

@@ -9,6 +9,7 @@ using Avalonia.Interactivity;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Threading;
+using Avalonia.VisualTree;
 using CasaCejaRemake.ViewModels.POS;
 using casa_ceja_remake.Helpers;
 using CasaCejaRemake.Services;
@@ -72,6 +73,11 @@ namespace CasaCejaRemake.Views.POS
                 _viewModel.RequestExitConfirmation += OnRequestExitConfirmation;
                 _viewModel.CollectionIndicatorsChanged += OnCollectionIndicatorsChanged;
                 _viewModel.ProductAddedToCart += OnProductAddedToCart;
+                
+                // Eventos de descuentos
+                _viewModel.ShowDiscountApplied += OnShowDiscountApplied;
+                _viewModel.ShowDiscountBlocked += OnShowDiscountBlocked;
+                _viewModel.RequestShowGeneralDiscount += OnRequestShowGeneralDiscount;
             }
 
             // Configurar botones de cobranza
@@ -83,6 +89,35 @@ namespace CasaCejaRemake.Views.POS
             if (btnCustomers != null)
             {
                 btnCustomers.Click += (s, e) => ShowCustomersDialogAsync();
+            }
+
+            // Configurar coloreado dinámico de filas del DataGrid
+            var gridProducts = this.FindControl<DataGrid>("GridProducts");
+            if (gridProducts != null)
+            {
+                gridProducts.LoadingRow += OnDataGridLoadingRow;
+                
+                // Usar AddHandler con Tunnel para capturar teclas ANTES de que el DataGrid las procese
+                // Esto sobrescribe el comportamiento nativo de cambiar columnas con flechas izq/der
+                gridProducts.AddHandler(KeyDownEvent, (sender, e) =>
+                {
+                    if ((e.Key == Key.Left || e.Key == Key.Right) && _viewModel != null && _viewModel.SelectedItemIndex >= 0)
+                    {
+                        HandleQuantityArrowKey(e.Key);
+                        e.Handled = true; // Prevenir propagación al DataGrid
+                    }
+                    // Permitir flechas arriba/abajo para navegar por las filas
+                }, RoutingStrategies.Tunnel, handledEventsToo: true);
+                
+                // También capturar KeyUp para el timer
+                gridProducts.AddHandler(KeyUpEvent, (sender, e) =>
+                {
+                    if ((e.Key == Key.Left || e.Key == Key.Right) && _quantityTimer != null && _quantityTimer.IsEnabled)
+                    {
+                        _quantityTimer.Stop();
+                        e.Handled = true;
+                    }
+                }, RoutingStrategies.Tunnel, handledEventsToo: true);
             }
 
             TxtBarcode.Focus();
@@ -348,6 +383,12 @@ namespace CasaCejaRemake.Views.POS
                 _viewModel.RequestExitConfirmation -= OnRequestExitConfirmation;
                 _viewModel.CollectionIndicatorsChanged -= OnCollectionIndicatorsChanged;
                 _viewModel.ProductAddedToCart -= OnProductAddedToCart;
+                
+                // Desuscribir eventos de descuentos
+                _viewModel.ShowDiscountApplied -= OnShowDiscountApplied;
+                _viewModel.ShowDiscountBlocked -= OnShowDiscountBlocked;
+                _viewModel.RequestShowGeneralDiscount -= OnRequestShowGeneralDiscount;
+                
                 _viewModel.Cleanup();
             }
         }
@@ -375,11 +416,15 @@ namespace CasaCejaRemake.Views.POS
                     return;
                 }
 
-                // Atajos complejos con modificadores (Alt+F4, Shift+F5)
+                // Atajos complejos con modificadores (Alt+F4, Shift+F5, Ctrl+F para descuentos)
                 var complexShortcuts = new Dictionary<(Key, KeyModifiers), Action>
                 {
                     { (Key.F4, KeyModifiers.Alt), () => _viewModel.ExitCommand.Execute(null) },
-                    { (Key.F5, KeyModifiers.Shift), () => _viewModel.ClearCartCommand.Execute(null) }
+                    { (Key.F5, KeyModifiers.Shift), () => _viewModel.ClearCartCommand.Execute(null) },
+                    // Descuentos con Ctrl+F
+                    { (Key.F2, KeyModifiers.Control), () => _viewModel.ApplySpecialPriceCommand.Execute(null) },   // Ctrl+F2: Precio especial
+                    { (Key.F3, KeyModifiers.Control), () => _viewModel.ApplyDealerPriceCommand.Execute(null) },    // Ctrl+F3: Precio vendedor
+                    { (Key.F6, KeyModifiers.Control), () => _viewModel.ShowGeneralDiscountCommand.Execute(null) }  // Ctrl+F6: Descuento general
                 };
 
                 if (KeyboardShortcutHelper.HandleComplexShortcut(e, complexShortcuts))
@@ -387,7 +432,7 @@ namespace CasaCejaRemake.Views.POS
                     return;
                 }
 
-                // Atajos simples
+                // Atajos simples (ORIGINALES - sin cambiar)
                 var shortcuts = new Dictionary<Key, Action>
                 {
                     { Key.F1, () => _viewModel.FocusBarcodeCommand.Execute(null) },
@@ -395,11 +440,11 @@ namespace CasaCejaRemake.Views.POS
                     { Key.F3, () => _viewModel.SearchProductCommand.Execute(null) },
                     { Key.F4, () => _viewModel.ChangeCollectionCommand.Execute(null) },
                     { Key.F5, () => _viewModel.ChangeCollectionPreviousCommand.Execute(null) },
-                    { Key.F6, () => ShowCashMovementDialogAsync(true) },
-                    { Key.F7, () => ShowCashMovementDialogAsync(false) },
-                    { Key.F8, () => ShowCustomersDialogAsync() },
-                    { Key.F9, () => ShowCashCloseHistoryDialogAsync() },
-                    { Key.F10, () => ShowCashCloseDialogAsync() },
+                    { Key.F6, () => ShowCashMovementDialogAsync(true) },   // Gasto
+                    { Key.F7, () => ShowCashMovementDialogAsync(false) },  // Ingreso
+                    { Key.F8, () => ShowCustomersDialogAsync() },          // Clientes
+                    { Key.F9, () => ShowCashCloseHistoryDialogAsync() },   // Historial Cortes
+                    { Key.F10, () => ShowCashCloseDialogAsync() },         // Corte de Caja
                     { Key.F11, () => _viewModel.PayCommand.Execute(null) },
                     { Key.F12, () => _viewModel.CreditsLayawaysCommand.Execute(null) },
                     { Key.Delete, () => _viewModel.RemoveProductCommand.Execute(null) }
@@ -1005,6 +1050,458 @@ namespace CasaCejaRemake.Views.POS
             _hasOpenDialog = false;
 
             TxtBarcode.Focus();
+        }
+
+        // ========== HANDLERS PARA DESCUENTOS ==========
+
+        /// <summary>
+        /// Muestra diálogo emergente cuando se aplica un descuento.
+        /// Color neutral oscuro fijo - el color del row indica el tipo de descuento.
+        /// Se cierra con Enter o Escape para flujo rápido.
+        /// </summary>
+        private async void OnShowDiscountApplied(object? sender, string message)
+        {
+            var dialog = new Window
+            {
+                Title = "Descuento Aplicado",
+                Width = 450,
+                Height = 280,
+                WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                CanResize = false,
+                Background = new SolidColorBrush(Color.Parse("#2D2D2D")), // Color neutral oscuro fijo
+                Topmost = true
+            };
+
+            var panel = new StackPanel
+            {
+                Margin = new Thickness(30),
+                Spacing = 15,
+                VerticalAlignment = VerticalAlignment.Center,
+                Focusable = true // Para que reciba el KeyDown
+            };
+
+            // Icono de check verde (sin emoji)
+            var iconBorder = new Border
+            {
+                Width = 60,
+                Height = 60,
+                CornerRadius = new CornerRadius(30),
+                Background = new SolidColorBrush(Color.Parse("#2E7D32")), // Verde
+                HorizontalAlignment = HorizontalAlignment.Center
+            };
+            var iconText = new TextBlock
+            {
+                Text = "OK",
+                FontSize = 20,
+                FontWeight = FontWeight.Bold,
+                Foreground = Brushes.White,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center
+            };
+            iconBorder.Child = iconText;
+
+            var messageText = new TextBlock
+            {
+                Text = message,
+                Foreground = Brushes.White,
+                TextWrapping = TextWrapping.Wrap,
+                FontSize = 16, // Texto más grande
+                HorizontalAlignment = HorizontalAlignment.Center,
+                TextAlignment = TextAlignment.Center
+            };
+
+            var instructionText = new TextBlock
+            {
+                Text = "Presiona Enter para continuar",
+                Foreground = new SolidColorBrush(Color.Parse("#888888")),
+                FontSize = 12,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                Margin = new Thickness(0, 10, 0, 0)
+            };
+
+            // Cerrar con Enter o Escape
+            dialog.KeyDown += (s, e) =>
+            {
+                if (e.Key == Key.Enter || e.Key == Key.Escape)
+                {
+                    dialog.Close();
+                    e.Handled = true;
+                }
+            };
+
+            // Forzar focus al panel cuando se abre el diálogo
+            dialog.Opened += (s, e) =>
+            {
+                panel.Focus();
+            };
+
+            panel.Children.Add(iconBorder);
+            panel.Children.Add(messageText);
+            panel.Children.Add(instructionText);
+            dialog.Content = panel;
+
+            _hasOpenDialog = true;
+            await dialog.ShowDialog(this);
+            _hasOpenDialog = false;
+            TxtBarcode.Focus();
+        }
+
+        /// <summary>
+        /// Muestra diálogo emergente cuando no se puede aplicar un descuento.
+        /// Color neutral oscuro fijo con icono de advertencia.
+        /// Se cierra con Enter o Escape para flujo rápido.
+        /// </summary>
+        private async void OnShowDiscountBlocked(object? sender, string message)
+        {
+            var dialog = new Window
+            {
+                Title = "No se puede aplicar",
+                Width = 450,
+                Height = 300,
+                WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                CanResize = false,
+                Background = new SolidColorBrush(Color.Parse("#2D2D2D")), // Color neutral oscuro fijo
+                Topmost = true
+            };
+
+            var panel = new StackPanel
+            {
+                Margin = new Thickness(30),
+                Spacing = 15,
+                VerticalAlignment = VerticalAlignment.Center,
+                Focusable = true // Para que reciba el KeyDown
+            };
+
+            // Icono de advertencia rojo (sin emoji)
+            var iconBorder = new Border
+            {
+                Width = 60,
+                Height = 60,
+                CornerRadius = new CornerRadius(30),
+                Background = new SolidColorBrush(Color.Parse("#D32F2F")), // Rojo
+                HorizontalAlignment = HorizontalAlignment.Center
+            };
+            var iconText = new TextBlock
+            {
+                Text = "X",
+                FontSize = 24,
+                FontWeight = FontWeight.Bold,
+                Foreground = Brushes.White,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center
+            };
+            iconBorder.Child = iconText;
+
+            var messageText = new TextBlock
+            {
+                Text = message,
+                Foreground = Brushes.White,
+                TextWrapping = TextWrapping.Wrap,
+                FontSize = 15, // Texto más grande
+                HorizontalAlignment = HorizontalAlignment.Center,
+                TextAlignment = TextAlignment.Center
+            };
+
+            var instructionText = new TextBlock
+            {
+                Text = "Presiona Enter para continuar",
+                Foreground = new SolidColorBrush(Color.Parse("#888888")),
+                FontSize = 12,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                Margin = new Thickness(0, 10, 0, 0)
+            };
+
+            // Cerrar con Enter o Escape
+            dialog.KeyDown += (s, e) =>
+            {
+                if (e.Key == Key.Enter || e.Key == Key.Escape)
+                {
+                    dialog.Close();
+                    e.Handled = true;
+                }
+            };
+
+            // Forzar focus al panel cuando se abre el diálogo
+            dialog.Opened += (s, e) =>
+            {
+                panel.Focus();
+            };
+
+            panel.Children.Add(iconBorder);
+            panel.Children.Add(messageText);
+            panel.Children.Add(instructionText);
+            dialog.Content = panel;
+
+            _hasOpenDialog = true;
+            await dialog.ShowDialog(this);
+            _hasOpenDialog = false;
+            TxtBarcode.Focus();
+        }
+
+        /// <summary>
+        /// Muestra el diálogo para aplicar descuento general (Ctrl+F6)
+        /// </summary>
+        private async void OnRequestShowGeneralDiscount(object? sender, EventArgs e)
+        {
+            if (_viewModel == null) return;
+
+            var dialog = new Window
+            {
+                Title = "Descuento General (Ctrl+F6)",
+                Width = 380,
+                Height = 320,
+                WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                CanResize = false,
+                Background = new SolidColorBrush(Color.Parse("#2D2D2D"))
+            };
+
+            var panel = new StackPanel
+            {
+                Margin = new Thickness(20),
+                Spacing = 15
+            };
+
+            // Subtotal actual
+            var subtotalLabel = new TextBlock
+            {
+                Text = $"Subtotal: {_viewModel.Total:C2}",
+                Foreground = Brushes.White,
+                FontSize = 18,
+                FontWeight = FontWeight.Bold,
+                HorizontalAlignment = HorizontalAlignment.Center
+            };
+
+            // Tipo de descuento con botones estilizados (azul = seleccionado)
+            var typePanel = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 15, HorizontalAlignment = HorizontalAlignment.Center };
+            var btnPercent = new Button 
+            { 
+                Content = "Porcentaje %", 
+                Width = 140,
+                Padding = new Thickness(10, 8),
+                Background = new SolidColorBrush(Color.Parse("#0078D4")), // Azul = seleccionado
+                Foreground = Brushes.White
+            };
+            var btnFixed = new Button 
+            { 
+                Content = "Cantidad $", 
+                Width = 140,
+                Padding = new Thickness(10, 8),
+                Background = new SolidColorBrush(Color.Parse("#3A3A3A")), // Gris = no seleccionado
+                Foreground = Brushes.White
+            };
+            
+            bool isPercentMode = true;
+            
+            typePanel.Children.Add(btnPercent);
+            typePanel.Children.Add(btnFixed);
+
+            // Campo de valor (oculto por defecto en modo porcentaje)
+            var valueInput = new NumericUpDown
+            {
+                Value = 0,
+                Minimum = 0,
+                Maximum = 100,
+                Increment = 1,
+                FormatString = "N2",
+                Width = 180,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                IsVisible = false  // Oculto en modo porcentaje
+            };
+
+            // Botones de porcentaje rápido (solo visibles cuando es porcentaje)
+            var quickButtonsPanel = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, HorizontalAlignment = HorizontalAlignment.Center };
+            var btnQuick5 = new Button { Content = "5%", Width = 65, Tag = 5m, Padding = new Thickness(10, 8) };
+            var btnQuick10 = new Button { Content = "10%", Width = 65, Tag = 10m, Padding = new Thickness(10, 8) };
+            var btnQuick15 = new Button { Content = "15%", Width = 65, Tag = 15m, Padding = new Thickness(10, 8) };
+            var btnQuick20 = new Button { Content = "20%", Width = 65, Tag = 20m, Padding = new Thickness(10, 8) };
+
+            decimal selectedValue = 0;
+
+            quickButtonsPanel.Children.Add(btnQuick5);
+            quickButtonsPanel.Children.Add(btnQuick10);
+            quickButtonsPanel.Children.Add(btnQuick15);
+            quickButtonsPanel.Children.Add(btnQuick20);
+
+            // Preview
+            var previewLabel = new TextBlock
+            {
+                Text = $"Total: {_viewModel.Total:C2}",
+                Foreground = new SolidColorBrush(Color.Parse("#66BB6A")),
+                FontSize = 20,
+                FontWeight = FontWeight.Bold,
+                HorizontalAlignment = HorizontalAlignment.Center
+            };
+
+            // Actualizar preview (definida después de previewLabel)
+            void UpdatePreview()
+            {
+                var value = isPercentMode ? selectedValue : (decimal)(valueInput.Value ?? 0);
+                var discount = isPercentMode ? _viewModel.Total * (value / 100m) : Math.Min(value, _viewModel.Total);
+                var finalTotal = _viewModel.Total - discount;
+                previewLabel.Text = $"Total: {finalTotal:C2}";
+            }
+            
+            // Configurar handlers de botones rápidos
+            void ApplyQuickPercent(object? s, RoutedEventArgs args)
+            {
+                if (s is Button btn && btn.Tag is decimal percent)
+                {
+                    selectedValue = percent;
+                    UpdatePreview();
+                }
+            }
+            btnQuick5.Click += ApplyQuickPercent;
+            btnQuick10.Click += ApplyQuickPercent;
+            btnQuick15.Click += ApplyQuickPercent;
+            btnQuick20.Click += ApplyQuickPercent;
+
+            valueInput.ValueChanged += (s, args) => UpdatePreview();
+            
+            // Cambio de modo porcentaje
+            btnPercent.Click += (s, args) =>
+            {
+                isPercentMode = true;
+                btnPercent.Background = new SolidColorBrush(Color.Parse("#0078D4")); // Azul = seleccionado
+                btnFixed.Background = new SolidColorBrush(Color.Parse("#3A3A3A")); // Gris = no seleccionado
+                valueInput.IsVisible = false; // Ocultar campo numérico
+                quickButtonsPanel.IsVisible = true; // Mostrar botones %
+                UpdatePreview();
+            };
+
+            // Cambio de modo cantidad fija
+            btnFixed.Click += (s, args) =>
+            {
+                isPercentMode = false;
+                btnFixed.Background = new SolidColorBrush(Color.Parse("#0078D4")); // Azul = seleccionado
+                btnPercent.Background = new SolidColorBrush(Color.Parse("#3A3A3A")); // Gris = no seleccionado
+                valueInput.Maximum = _viewModel.Total;
+                valueInput.IsVisible = true; // Mostrar campo numérico
+                quickButtonsPanel.IsVisible = false; // Ocultar botones %
+                UpdatePreview();
+            };
+
+            // Botones de acción
+            var buttonsPanel = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 10, HorizontalAlignment = HorizontalAlignment.Center };
+            var btnApply = new Button
+            {
+                Content = "Aplicar",
+                Padding = new Thickness(20, 8),
+                Background = new SolidColorBrush(Color.Parse("#388E3C")),
+                Foreground = Brushes.White
+            };
+            var btnClear = new Button
+            {
+                Content = "Quitar",
+                Padding = new Thickness(20, 8),
+                Background = new SolidColorBrush(Color.Parse("#FF9800")),
+                Foreground = Brushes.White
+            };
+            var btnCancel = new Button
+            {
+                Content = "Cancelar",
+                Padding = new Thickness(20, 8)
+            };
+
+            btnApply.Click += (s, args) =>
+            {
+                var value = isPercentMode ? selectedValue : (decimal)(valueInput.Value ?? 0);
+                if (value > 0)
+                {
+                    _viewModel.ApplyGeneralDiscountValue(value, isPercentMode);
+                }
+                dialog.Close();
+            };
+
+            btnClear.Click += (s, args) =>
+            {
+                _viewModel.ClearGeneralDiscount();
+                dialog.Close();
+            };
+
+            btnCancel.Click += (s, args) => dialog.Close();
+
+            // Keyboard shortcuts
+            dialog.KeyDown += (s, args) =>
+            {
+                if (args.Key == Key.Enter)
+                {
+                    var value = isPercentMode ? selectedValue : (decimal)(valueInput.Value ?? 0);
+                    if (value > 0)
+                    {
+                        _viewModel.ApplyGeneralDiscountValue(value, isPercentMode);
+                    }
+                    dialog.Close();
+                    args.Handled = true;
+                }
+                else if (args.Key == Key.Escape)
+                {
+                    dialog.Close();
+                    args.Handled = true;
+                }
+            };
+
+            buttonsPanel.Children.Add(btnClear);
+            buttonsPanel.Children.Add(btnCancel);
+            buttonsPanel.Children.Add(btnApply);
+
+            panel.Children.Add(subtotalLabel);
+            panel.Children.Add(typePanel);
+            panel.Children.Add(valueInput);
+            panel.Children.Add(quickButtonsPanel);
+            panel.Children.Add(previewLabel);
+            panel.Children.Add(buttonsPanel);
+
+            dialog.Content = panel;
+
+            _hasOpenDialog = true;
+            await dialog.ShowDialog(this);
+            _hasOpenDialog = false;
+            TxtBarcode.Focus();
+        }
+
+        // ========== COLOREADO DINÁMICO DE FILAS DEL DATAGRID ==========
+
+        /// <summary>
+        /// Handler para colorear las filas del DataGrid según el tipo de precio del CartItem.
+        /// </summary>
+        private void OnDataGridLoadingRow(object? sender, DataGridRowEventArgs e)
+        {
+            if (e.Row.DataContext is CartItem item)
+            {
+                // Aplicar el color de fondo basado en el PriceType
+                e.Row.Background = item.RowBackgroundColor;
+
+                // Suscribir a cambios de PriceType para actualizar el color
+                item.PropertyChanged -= OnCartItemPropertyChanged;
+                item.PropertyChanged += OnCartItemPropertyChanged;
+            }
+        }
+
+        /// <summary>
+        /// Handler para actualizar el color de la fila cuando cambia el PriceType de un CartItem.
+        /// </summary>
+        private void OnCartItemPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(CartItem.RowBackgroundColor) || e.PropertyName == nameof(CartItem.PriceType))
+            {
+                // Forzar actualización del DataGrid
+                Dispatcher.UIThread.Post(() =>
+                {
+                    var grid = this.FindControl<DataGrid>("GridProducts");
+                    if (grid != null && sender is CartItem item)
+                    {
+                        // Buscar la fila correspondiente y actualizar su color
+                        foreach (var row in grid.GetVisualDescendants().OfType<DataGridRow>())
+                        {
+                            if (row.DataContext == item)
+                            {
+                                row.Background = item.RowBackgroundColor;
+                                break;
+                            }
+                        }
+                    }
+                });
+            }
         }
     }
 }

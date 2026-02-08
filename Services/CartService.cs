@@ -39,9 +39,72 @@ namespace CasaCejaRemake.Services
 
         public bool IsEmpty => CurrentCollection.IsEmpty;
 
+        // ========== DESCUENTO GENERAL SOBRE LA VENTA ==========
+        // NOTA: Ahora cada colección mantiene su propio descuento general
+        
+        /// <summary>Porcentaje de descuento general (si aplica)</summary>
+        public decimal GeneralDiscountPercent => CurrentCollection.GeneralDiscountPercent;
+
+        /// <summary>Monto fijo de descuento general (si aplica)</summary>
+        public decimal GeneralDiscountAmount => CurrentCollection.GeneralDiscountAmount;
+
+        /// <summary>Indica si el descuento es porcentaje (true) o cantidad fija (false)</summary>
+        public bool IsGeneralDiscountPercentage => CurrentCollection.IsGeneralDiscountPercentage;
+
+        /// <summary>Indica si hay un descuento general aplicado</summary>
+        public bool HasGeneralDiscount => CurrentCollection.HasGeneralDiscount;
+
+        /// <summary>Descuento general calculado</summary>
+        public decimal CalculatedGeneralDiscount => CurrentCollection.CalculatedGeneralDiscount;
+
+        /// <summary>Total final después de descuento general</summary>
+        public decimal FinalTotal => CurrentCollection.FinalTotal;
+
+        /// <summary>
+        /// Aplica un descuento general sobre el total de la venta
+        /// </summary>
+        /// <param name="value">Valor del descuento (porcentaje o monto fijo)</param>
+        /// <param name="isPercentage">true = porcentaje, false = monto fijo</param>
+        public void ApplyGeneralDiscount(decimal value, bool isPercentage)
+        {
+            CurrentCollection.IsGeneralDiscountPercentage = isPercentage;
+            if (isPercentage)
+            {
+                CurrentCollection.GeneralDiscountPercent = Math.Max(0, Math.Min(100, value)); // Limitar entre 0 y 100
+                CurrentCollection.GeneralDiscountAmount = 0;
+            }
+            else
+            {
+                CurrentCollection.GeneralDiscountAmount = Math.Max(0, Math.Min(value, CurrentCollection.Total)); // No exceder total
+                CurrentCollection.GeneralDiscountPercent = 0;
+            }
+            CartChanged?.Invoke(this, EventArgs.Empty);
+        }
+
+        /// <summary>
+        /// Limpia el descuento general
+        /// </summary>
+        public void ClearGeneralDiscount()
+        {
+            CurrentCollection.GeneralDiscountPercent = 0;
+            CurrentCollection.GeneralDiscountAmount = 0;
+            CurrentCollection.IsGeneralDiscountPercentage = true;
+            CartChanged?.Invoke(this, EventArgs.Empty);
+        }
+
+        // ========== FIN DESCUENTO GENERAL ==========
+
         public event EventHandler? CartChanged;
 
         public event EventHandler<char>? CollectionChanged;
+
+        /// <summary>
+        /// Notifica que el carrito ha cambiado (para uso externo)
+        /// </summary>
+        public void NotifyCartChanged()
+        {
+            CartChanged?.Invoke(this, EventArgs.Empty);
+        }
 
         /// <summary>
         /// Avanza a la siguiente cobranza (A→B→C→D→A)
@@ -161,7 +224,7 @@ namespace CasaCejaRemake.Services
         public void ClearCart()
         {
             Items.Clear();
-            CartChanged?.Invoke(this, EventArgs.Empty);
+            ClearGeneralDiscount(); // También limpia el descuento general
         }
 
         public void ClearAllCollections()

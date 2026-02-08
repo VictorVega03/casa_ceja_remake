@@ -50,11 +50,31 @@ namespace CasaCejaRemake.ViewModels.POS
         [ObservableProperty]
         private int _selectedItemIndex = -1;
 
+        /// <summary>
+        /// Item seleccionado actualmente en el DataGrid.
+        /// Importante usar esta propiedad en lugar del índice cuando el DataGrid puede estar ordenado.
+        /// </summary>
+        [ObservableProperty]
+        private CartItem? _selectedItem;
+
         [ObservableProperty]
         private string _statusMessage = string.Empty;
 
         [ObservableProperty]
         private bool _isProcessing;
+
+        // Propiedades de descuento general
+        [ObservableProperty]
+        private decimal _generalDiscountPercent;
+
+        [ObservableProperty]
+        private decimal _calculatedGeneralDiscount;
+
+        [ObservableProperty]
+        private decimal _finalTotal;
+
+        [ObservableProperty]
+        private bool _hasGeneralDiscount;
 
         public ObservableCollection<CartItem> Items => _cartService.Items;
 
@@ -70,6 +90,11 @@ namespace CasaCejaRemake.ViewModels.POS
         public event EventHandler? RequestExitConfirmation;
         public event EventHandler? CollectionIndicatorsChanged;
         public event EventHandler? ProductAddedToCart;
+        
+        // Eventos para descuentos
+        public event EventHandler<string>? ShowDiscountApplied;     // Muestra diálogo de confirmación de descuento
+        public event EventHandler<string>? ShowDiscountBlocked;     // Muestra diálogo de bloqueo de descuento
+        public event EventHandler? RequestShowGeneralDiscount;       // Muestra diálogo de descuento general (F6)
 
         public SalesViewModel(
             CartService cartService,
@@ -116,6 +141,12 @@ namespace CasaCejaRemake.ViewModels.POS
             Total = _cartService.Total;
             TotalDiscount = _cartService.TotalDiscount;
             TotalItems = _cartService.TotalItems;
+            
+            // Propiedades de descuento general
+            GeneralDiscountPercent = _cartService.GeneralDiscountPercent;
+            CalculatedGeneralDiscount = _cartService.CalculatedGeneralDiscount;
+            FinalTotal = _cartService.FinalTotal;
+            HasGeneralDiscount = _cartService.HasGeneralDiscount;
         }
 
         private void UpdateDateTime()
@@ -179,6 +210,12 @@ namespace CasaCejaRemake.ViewModels.POS
                     _cartService.AddProduct(cartItem);
                     StatusMessage = $"Agregado: {product.Name}";
                     ProductAddedToCart?.Invoke(this, EventArgs.Empty);
+                    
+                    // Notificar si se aplicó descuento de categoría
+                    if (cartItem.TotalDiscount > 0)
+                    {
+                        NotifyCategoryDiscount(cartItem);
+                    }
                 }
 
                 Barcode = string.Empty;
@@ -268,6 +305,12 @@ namespace CasaCejaRemake.ViewModels.POS
                 _cartService.AddProduct(cartItem);
                 StatusMessage = $"Agregado: {product.Name} x {quantity}";
                 ProductAddedToCart?.Invoke(this, EventArgs.Empty);
+                
+                // Notificar si se aplicó descuento de categoría
+                if (cartItem.TotalDiscount > 0)
+                {
+                    NotifyCategoryDiscount(cartItem);
+                }
             }
         }
 
@@ -431,6 +474,162 @@ namespace CasaCejaRemake.ViewModels.POS
         {
             _cartService.CartChanged -= OnCartChanged;
             _cartService.CollectionChanged -= OnCollectionChanged;
+        }
+
+        // ========== COMANDOS DE DESCUENTOS (F2, F3, F6) ==========
+
+        /// <summary>
+        /// Ctrl+F2 - Aplicar/Quitar precio especial al producto seleccionado.
+        /// El precio especial es AISLADO: no se combina con otros descuentos.
+        /// Si el producto ya tiene precio especial, se revierte al precio original.
+        /// </summary>
+        [RelayCommand]
+        private async Task ApplySpecialPrice()
+        {
+            // Usar SelectedItem en lugar del índice para evitar bugs cuando el DataGrid está ordenado
+            if (SelectedItem == null)
+            {
+                ShowMessage?.Invoke(this, "Seleccione un producto para aplicar/quitar precio especial.");
+                return;
+            }
+
+            var item = SelectedItem;
+            
+            // Toggle: si ya tiene precio especial, revertir
+            if (item.PriceType == "special")
+            {
+                var revertResult = await _salesService.RevertToRetailPriceAsync(item);
+                if (revertResult.Success)
+                {
+                    _cartService.NotifyCartChanged();
+                    StatusMessage = $"Precio especial removido: {item.ProductName}";
+                    ShowDiscountApplied?.Invoke(this, revertResult.Message);
+                }
+                else
+                {
+                    ShowDiscountBlocked?.Invoke(this, revertResult.Message);
+                }
+                return;
+            }
+            
+            // Aplicar precio especial
+            var result = await _salesService.ApplySpecialPriceAsync(item);
+            
+            if (result.Success)
+            {
+                _cartService.NotifyCartChanged();
+                StatusMessage = $"Precio especial aplicado: {item.ProductName}";
+                ShowDiscountApplied?.Invoke(this, result.Message);
+            }
+            else
+            {
+                ShowDiscountBlocked?.Invoke(this, result.Message);
+            }
+        }
+
+        /// <summary>
+        /// Ctrl+F3 - Aplicar/Quitar precio vendedor al producto seleccionado.
+        /// El precio vendedor es AISLADO: no se combina con otros descuentos.
+        /// Si el producto ya tiene precio vendedor, se revierte al precio original.
+        /// </summary>
+        [RelayCommand]
+        private async Task ApplyDealerPrice()
+        {
+            // Usar SelectedItem en lugar del índice para evitar bugs cuando el DataGrid está ordenado
+            if (SelectedItem == null)
+            {
+                ShowMessage?.Invoke(this, "Seleccione un producto para aplicar/quitar precio vendedor.");
+                return;
+            }
+
+            var item = SelectedItem;
+            
+            // Toggle: si ya tiene precio vendedor, revertir
+            if (item.PriceType == "dealer")
+            {
+                var revertResult = await _salesService.RevertToRetailPriceAsync(item);
+                if (revertResult.Success)
+                {
+                    _cartService.NotifyCartChanged();
+                    StatusMessage = $"Precio vendedor removido: {item.ProductName}";
+                    ShowDiscountApplied?.Invoke(this, revertResult.Message);
+                }
+                else
+                {
+                    ShowDiscountBlocked?.Invoke(this, revertResult.Message);
+                }
+                return;
+            }
+            
+            // Aplicar precio vendedor
+            var result = await _salesService.ApplyDealerPriceAsync(item);
+            
+            if (result.Success)
+            {
+                _cartService.NotifyCartChanged();
+                StatusMessage = $"Precio vendedor aplicado: {item.ProductName}";
+                ShowDiscountApplied?.Invoke(this, result.Message);
+            }
+            else
+            {
+                ShowDiscountBlocked?.Invoke(this, result.Message);
+            }
+        }
+
+        /// <summary>
+        /// F6 - Mostrar diálogo para aplicar descuento general sobre la venta
+        /// </summary>
+        [RelayCommand]
+        private void ShowGeneralDiscount()
+        {
+            if (_cartService.IsEmpty)
+            {
+                ShowMessage?.Invoke(this, "No hay productos en el carrito.");
+                return;
+            }
+            
+            RequestShowGeneralDiscount?.Invoke(this, EventArgs.Empty);
+        }
+
+        /// <summary>
+        /// Aplica un descuento general sobre el total de la venta.
+        /// Llamado desde el diálogo de descuento general.
+        /// </summary>
+        /// <param name="value">Valor del descuento</param>
+        /// <param name="isPercentage">true = porcentaje, false = monto fijo</param>
+        public void ApplyGeneralDiscountValue(decimal value, bool isPercentage)
+        {
+            _cartService.ApplyGeneralDiscount(value, isPercentage);
+            StatusMessage = isPercentage 
+                ? $"Descuento general {value}% aplicado"
+                : $"Descuento general ${value:N2} aplicado";
+        }
+
+        /// <summary>
+        /// Limpia el descuento general
+        /// </summary>
+        public void ClearGeneralDiscount()
+        {
+            _cartService.ClearGeneralDiscount();
+            StatusMessage = "Descuento general eliminado";
+        }
+
+        /// <summary>
+        /// Notifica cuando se aplica un descuento de categoría automáticamente.
+        /// Llamado después de agregar un producto con descuento de categoría.
+        /// </summary>
+        public void NotifyCategoryDiscount(CartItem item)
+        {
+            if (!string.IsNullOrEmpty(item.DiscountInfo) && item.TotalDiscount > 0)
+            {
+                var message = $"✓ Descuento aplicado a \"{item.ProductName}\"\n\n" +
+                    $"• {item.DiscountInfo}\n\n" +
+                    $"Precio original: ${item.ListPrice:N2}\n" +
+                    $"Precio final: ${item.FinalUnitPrice:N2}\n" +
+                    $"Ahorro: ${item.TotalDiscount:N2} por unidad";
+                
+                ShowDiscountApplied?.Invoke(this, message);
+            }
         }
     }
 }
