@@ -211,8 +211,17 @@ namespace CasaCejaRemake.ViewModels.POS
                     StatusMessage = $"Agregado: {product.Name}";
                     ProductAddedToCart?.Invoke(this, EventArgs.Empty);
                     
-                    // Notificar si se aplicó descuento de categoría
-                    if (cartItem.TotalDiscount > 0)
+                    // Notificar si entró a precio de mayoreo
+                    // Revisar DiscountInfo porque puede tener mayoreo + descuento de categoría
+                    bool hasWholesale = cartItem.PriceType == "wholesale" || 
+                                       (cartItem.DiscountInfo?.Contains("Mayoreo") == true);
+                    
+                    if (hasWholesale)
+                    {
+                        NotifyWholesalePrice(cartItem);
+                    }
+                    // Notificar si se aplicó solo descuento de categoría (sin mayoreo)
+                    else if (cartItem.TotalDiscount > 0 && cartItem.PriceType == "category")
                     {
                         NotifyCategoryDiscount(cartItem);
                     }
@@ -260,6 +269,9 @@ namespace CasaCejaRemake.ViewModels.POS
             // Recalcular precio si aplica mayoreo
             if (newQuantity != item.Quantity && product != null)
             {
+                var oldPriceType = item.PriceType; // Guardar tipo anterior
+                var oldDiscountInfo = item.DiscountInfo; // Guardar info anterior
+                
                 var newItem = await _salesService.CreateCartItemAsync(
                     product.Id, 
                     newQuantity, 
@@ -272,6 +284,23 @@ namespace CasaCejaRemake.ViewModels.POS
                     item.TotalDiscount = newItem.TotalDiscount;
                     item.PriceType = newItem.PriceType;
                     item.DiscountInfo = newItem.DiscountInfo;
+                    
+                    // Detectar si el nuevo item tiene mayoreo (puede tener mayoreo + categoría)
+                    bool oldHasWholesale = oldPriceType == "wholesale" || 
+                                          (oldDiscountInfo?.Contains("Mayoreo") == true);
+                    bool newHasWholesale = newItem.PriceType == "wholesale" || 
+                                          (newItem.DiscountInfo?.Contains("Mayoreo") == true);
+                    
+                    // Notificar si cambió a precio de mayoreo
+                    if (!oldHasWholesale && newHasWholesale)
+                    {
+                        NotifyWholesalePrice(newItem);
+                    }
+                    // Notificar si salió de mayoreo
+                    else if (oldHasWholesale && !newHasWholesale)
+                    {
+                        ShowMessage?.Invoke(this, $"Producto salió de precio de mayoreo: {newItem.ProductName}");
+                    }
                 }
             }
 
@@ -626,6 +655,20 @@ namespace CasaCejaRemake.ViewModels.POS
                     $"• {item.DiscountInfo}\n\n" +
                     $"Precio original: ${item.ListPrice:N2}\n" +
                     $"Precio final: ${item.FinalUnitPrice:N2}\n" +
+                    $"Ahorro: ${item.TotalDiscount:N2} por unidad";
+                
+                ShowDiscountApplied?.Invoke(this, message);
+            }
+        }
+        
+        public void NotifyWholesalePrice(CartItem item)
+        {
+            if (!string.IsNullOrEmpty(item.DiscountInfo))
+            {
+                var message = $"✓ Precio de Mayoreo aplicado a \"{item.ProductName}\"\n\n" +
+                    $"• {item.DiscountInfo}\n\n" +
+                    $"Precio menudeo: ${item.ListPrice:N2}\n" +
+                    $"Precio mayoreo: ${item.FinalUnitPrice:N2}\n" +
                     $"Ahorro: ${item.TotalDiscount:N2} por unidad";
                 
                 ShowDiscountApplied?.Invoke(this, message);

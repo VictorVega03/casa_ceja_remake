@@ -523,6 +523,14 @@ namespace CasaCejaRemake.Views.POS
             
             if (newQuantity != item.Quantity)
             {
+                // CRÍTICO: Detener el timer ANTES de aplicar la cantidad
+                // Si ApplyNewQuantityAsync muestra un diálogo, el KeyUp nunca se captura
+                // y el timer seguiría corriendo infinitamente
+                if (_quantityTimer != null && _quantityTimer.IsEnabled)
+                {
+                    _quantityTimer.Stop();
+                }
+                
                 await _viewModel.ApplyNewQuantityAsync(newQuantity);
             }
         }
