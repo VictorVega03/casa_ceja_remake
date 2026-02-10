@@ -275,6 +275,18 @@
                                        Margin="0,5,0,0"/>
                         </StackPanel>
                     </Border>
+
+                    <!-- Notas del corte -->
+                    <Border Classes="section">
+                        <StackPanel>
+                            <TextBlock Text="NOTAS DEL CORTE" FontWeight="Bold" Foreground="White" Margin="0,0,0,10"/>
+                            <TextBox Text="{Binding Notes, Mode=TwoWay}"
+                                     AcceptsReturn="True"
+                                     TextWrapping="Wrap"
+                                     Height="100"
+                                     Watermark="Escribir observaciones o notas sobre el turno..."/>
+                        </StackPanel>
+                    </Border>
                 </StackPanel>
             </ScrollViewer>
         </Grid>

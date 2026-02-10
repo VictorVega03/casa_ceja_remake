@@ -128,6 +128,9 @@ namespace CasaCejaRemake.ViewModels.POS
         [ObservableProperty]
         private int _salesCount;
 
+        [ObservableProperty]
+        private string _notes = string.Empty;
+
         public decimal Difference => DeclaredAmount - ExpectedAmount;
 
         public string DifferenceText
@@ -291,6 +294,9 @@ namespace CasaCejaRemake.ViewModels.POS
 
             try
             {
+                // Asignar las notas al corte actual antes de cerrar
+                _currentCashClose.Notes = Notes;
+                
                 var result = await _cashCloseService.CloseCashAsync(_currentCashClose, DeclaredAmount);
 
                 if (result.Success && result.CashClose != null)
