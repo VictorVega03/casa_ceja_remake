@@ -109,7 +109,10 @@ namespace CasaCejaRemake.Services
             decimal amountPaid,
             int userId,
             string userName,
-            int branchId)
+            int branchId,
+            decimal generalDiscount = 0,
+            decimal generalDiscountPercent = 0,
+            bool isGeneralDiscountPercentage = true)
         {
             // Validar que hay items
             if (items == null || items.Count == 0)
@@ -134,14 +137,17 @@ namespace CasaCejaRemake.Services
                 totalDiscount += item.TotalDiscount * item.Quantity;
             }
 
+            // Calcular total final con descuento general
+            var finalTotal = total - generalDiscount;
+
             // Validar pago
-            if (paymentMethod == PaymentMethod.Efectivo && amountPaid < total)
+            if (paymentMethod == PaymentMethod.Efectivo && amountPaid < finalTotal)
             {
-                return SaleResult.Error($"El monto recibido (${amountPaid:N2}) es menor al total (${total:N2}).");
+                return SaleResult.Error($"El monto recibido (${amountPaid:N2}) es menor al total (${finalTotal:N2}).");
             }
 
             // Calcular cambio
-            decimal change = paymentMethod == PaymentMethod.Efectivo ? amountPaid - total : 0;
+            decimal change = paymentMethod == PaymentMethod.Efectivo ? amountPaid - finalTotal : 0;
 
             // Obtener informacion de sucursal
             var branch = await _branchRepository.GetByIdAsync(branchId);
@@ -165,7 +171,10 @@ namespace CasaCejaRemake.Services
                 items,
                 paymentMethod,
                 amountPaid,
-                change
+                change,
+                generalDiscount,
+                generalDiscountPercent,
+                isGeneralDiscountPercentage
             );
 
             // Serializar y comprimir ticket
@@ -178,9 +187,9 @@ namespace CasaCejaRemake.Services
                 var sale = new Sale
                 {
                     Folio = folio,
-                    Total = total,
+                    Total = finalTotal,
                     Subtotal = total + totalDiscount,
-                    Discount = totalDiscount,
+                    Discount = totalDiscount + generalDiscount,
                     PaymentMethod = paymentMethod.ToString(),
                     AmountPaid = amountPaid,
                     ChangeGiven = change,
@@ -214,7 +223,7 @@ namespace CasaCejaRemake.Services
                         ListPrice = item.ListPrice,
                         FinalUnitPrice = item.FinalUnitPrice,
                         LineTotal = item.LineTotal,
-                        TotalDiscountAmount = item.TotalDiscount,
+                        TotalDiscountAmount = item.TotalDiscount * item.Quantity,
                         PriceType = item.PriceType,
                         DiscountInfo = item.DiscountInfo,
                         PricingData = JsonCompressor.Compress(item.PricingData)
@@ -255,7 +264,10 @@ namespace CasaCejaRemake.Services
             decimal changeGiven,
             int userId,
             string userName,
-            int branchId)
+            int branchId,
+            decimal generalDiscount = 0,
+            decimal generalDiscountPercent = 0,
+            bool isGeneralDiscountPercentage = true)
         {
             // Validar que hay items
             if (items == null || items.Count == 0)
@@ -280,10 +292,13 @@ namespace CasaCejaRemake.Services
                 totalDiscount += item.TotalDiscount * item.Quantity;
             }
 
+            // Calcular total final con descuento general
+            var finalTotal = total - generalDiscount;
+
             // Validar que el pago cubre el total
-            if (totalPaid < total)
+            if (totalPaid < finalTotal)
             {
-                return SaleResult.Error($"El monto pagado (${totalPaid:N2}) es menor al total (${total:N2}).");
+                return SaleResult.Error($"El monto pagado (${totalPaid:N2}) es menor al total (${finalTotal:N2}).");
             }
 
             // Obtener informacion de sucursal
@@ -308,7 +323,10 @@ namespace CasaCejaRemake.Services
                 items,
                 paymentJson,
                 totalPaid,
-                changeGiven
+                changeGiven,
+                generalDiscount,
+                generalDiscountPercent,
+                isGeneralDiscountPercentage
             );
 
             // Serializar y comprimir ticket
@@ -320,9 +338,9 @@ namespace CasaCejaRemake.Services
                 var sale = new Sale
                 {
                     Folio = folio,
-                    Total = total,
+                    Total = finalTotal,
                     Subtotal = total + totalDiscount,
-                    Discount = totalDiscount,
+                    Discount = totalDiscount + generalDiscount,
                     PaymentMethod = paymentJson, // JSON: {"efectivo": 500, "tarjeta_debito": 300}
                     AmountPaid = totalPaid,
                     ChangeGiven = changeGiven,
@@ -354,7 +372,7 @@ namespace CasaCejaRemake.Services
                         ListPrice = item.ListPrice,
                         FinalUnitPrice = item.FinalUnitPrice,
                         LineTotal = item.LineTotal,
-                        TotalDiscountAmount = item.TotalDiscount,
+                        TotalDiscountAmount = item.TotalDiscount * item.Quantity,
                         PriceType = item.PriceType,
                         DiscountInfo = item.DiscountInfo,
                         PricingData = JsonCompressor.Compress(item.PricingData)
@@ -579,7 +597,8 @@ namespace CasaCejaRemake.Services
         }
 
         /// <summary>
-        /// Revierte un item a su precio original de menudeo
+        /// Revierte un item a su precio calculado (puede ser mayoreo/categoría según cantidad).
+        /// Ya no hardcodea "retail", sino que recalcula con las reglas de negocio.
         /// </summary>
         public async Task<(bool Success, string Message)> RevertToRetailPriceAsync(CartItem item)
         {
@@ -587,7 +606,36 @@ namespace CasaCejaRemake.Services
             if (product == null)
                 return (false, "Producto no encontrado.");
 
-            return _pricingService.RevertToRetailPrice(item, product);
+            if (item.PriceType != "special" && item.PriceType != "dealer")
+                return (false, "El producto no tiene un precio especial o vendedor aplicado.");
+
+            var oldPrice = item.FinalUnitPrice;
+            var oldPriceType = item.PriceType == "special" ? "especial" : "vendedor";
+
+            // Recalcular con las reglas de negocio (mayoreo + categoría si aplican)
+            Category? category = null;
+            if (product.CategoryId > 0)
+                category = await _categoryRepository.GetByIdAsync(product.CategoryId);
+
+            var priceCalc = _pricingService.CalculatePrice(product, item.Quantity, category);
+
+            // Determinar PriceType para el row color
+            string priceType = priceCalc.CategoryDiscountPercent > 0 
+                ? "category" 
+                : priceCalc.AppliedPriceType.ToString().ToLower();
+
+            // Actualizar el item
+            item.FinalUnitPrice = priceCalc.FinalPrice;
+            item.TotalDiscount = priceCalc.TotalDiscount;
+            item.PriceType = priceType;
+            item.DiscountInfo = priceCalc.DiscountInfo;
+
+            var newPrice = priceCalc.FinalPrice;
+            var newPriceLabel = string.IsNullOrEmpty(priceCalc.DiscountInfo) ? "menudeo" : priceCalc.DiscountInfo;
+
+            return (true, $"✓ Precio {oldPriceType} removido de \"{item.ProductName}\"\n\n" +
+                $"Precio anterior: ${oldPrice:N2}\n" +
+                $"Precio actual ({newPriceLabel}): ${newPrice:N2}");
         }
 
         /// <summary>

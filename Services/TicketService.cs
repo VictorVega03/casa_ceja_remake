@@ -127,6 +127,16 @@ namespace CasaCejaRemake.Services
 
         [JsonPropertyName("ic")]
         public int ItemCount { get; set; }
+        
+        // Descuento general
+        [JsonPropertyName("gd")]
+        public decimal GeneralDiscount { get; set; }
+        
+        [JsonPropertyName("gdp")]
+        public decimal GeneralDiscountPercent { get; set; }
+        
+        [JsonPropertyName("gdi")]
+        public bool IsGeneralDiscountPercentage { get; set; }
     }
 
     public class TicketPayment
@@ -202,7 +212,10 @@ namespace CasaCejaRemake.Services
             List<CartItem> items,
             PaymentMethod paymentMethod,
             decimal amountPaid,
-            decimal change)
+            decimal change,
+            decimal generalDiscount = 0,
+            decimal generalDiscountPercent = 0,
+            bool isGeneralDiscountPercentage = true)
         {
             var now = DateTime.Now;
 
@@ -254,8 +267,11 @@ namespace CasaCejaRemake.Services
                     Subtotal = subtotal + totalDiscount,
                     TotalDiscount = totalDiscount,
                     Tax = 0,
-                    GrandTotal = subtotal,
-                    ItemCount = itemCount
+                    GrandTotal = subtotal - generalDiscount,
+                    ItemCount = itemCount,
+                    GeneralDiscount = generalDiscount,
+                    GeneralDiscountPercent = generalDiscountPercent,
+                    IsGeneralDiscountPercentage = isGeneralDiscountPercentage
                 },
                 Payment = new TicketPayment
                 {
@@ -287,7 +303,10 @@ namespace CasaCejaRemake.Services
             List<CartItem> items,
             string paymentJson,
             decimal totalPaid,
-            decimal change)
+            decimal change,
+            decimal generalDiscount = 0,
+            decimal generalDiscountPercent = 0,
+            bool isGeneralDiscountPercentage = true)
         {
             var now = DateTime.Now;
 
@@ -366,8 +385,11 @@ namespace CasaCejaRemake.Services
                     Subtotal = subtotal + totalDiscount,
                     TotalDiscount = totalDiscount,
                     Tax = 0,
-                    GrandTotal = subtotal,
-                    ItemCount = itemCount
+                    GrandTotal = subtotal - generalDiscount,
+                    ItemCount = itemCount,
+                    GeneralDiscount = generalDiscount,
+                    GeneralDiscountPercent = generalDiscountPercent,
+                    IsGeneralDiscountPercentage = isGeneralDiscountPercentage
                 },
                 Payment = new TicketPayment
                 {
@@ -587,19 +609,42 @@ namespace CasaCejaRemake.Services
 
             foreach (var product in ticket.Products)
             {
+                // Línea del producto
                 lines.Add($"{product.Quantity} x {product.Name}");
                 lines.Add($"  ${product.UnitPrice:N2} c/u = ${product.LineTotal:N2}");
 
+                // Mostrar información de descuento si existe
+                if (!string.IsNullOrEmpty(product.DiscountInfo))
+                {
+                    lines.Add($"  ({product.DiscountInfo})");
+                }
+                
+                // Mostrar ahorro si hay descuento
                 if (product.Discount > 0)
-                    lines.Add($"  Desc: -${product.Discount:N2}");
+                {
+                    lines.Add($"  Ahorro: -${product.Discount:N2}");
+                }
             }
 
             lines.Add(new string('-', lineWidth));
 
-            if (ticket.Totals.TotalDiscount > 0)
+            // Mostrar desglose de descuentos solo si existen
+            if (ticket.Totals.TotalDiscount > 0 || ticket.Totals.GeneralDiscount > 0)
             {
                 lines.Add($"Subtotal: ${ticket.Totals.Subtotal:N2}");
-                lines.Add($"Descuento: -${ticket.Totals.TotalDiscount:N2}");
+                
+                if (ticket.Totals.TotalDiscount > 0)
+                {
+                    lines.Add($"Desc. Items: -${ticket.Totals.TotalDiscount:N2}");
+                }
+                
+                if (ticket.Totals.GeneralDiscount > 0)
+                {
+                    string discountLabel = ticket.Totals.IsGeneralDiscountPercentage
+                        ? $"Desc. Gral ({ticket.Totals.GeneralDiscountPercent}%)"
+                        : "Desc. Gral";
+                    lines.Add($"{discountLabel}: -${ticket.Totals.GeneralDiscount:N2}");
+                }
             }
 
             lines.Add($"TOTAL: ${ticket.Totals.GrandTotal:N2}");

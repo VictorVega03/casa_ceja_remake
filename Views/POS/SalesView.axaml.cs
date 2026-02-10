@@ -120,6 +120,29 @@ namespace CasaCejaRemake.Views.POS
                 }, RoutingStrategies.Tunnel, handledEventsToo: true);
             }
 
+            // Fix 9: Arrow Down desde barcode → focus al DataGrid
+            TxtBarcode.KeyDown += (s, e) =>
+            {
+                if (e.Key == Key.Down && _viewModel?.Items.Count > 0)
+                {
+                    var grid = this.FindControl<DataGrid>("GridProducts");
+                    if (grid != null)
+                    {
+                        grid.Focus();
+                        if (_viewModel.SelectedItemIndex < 0)
+                            _viewModel.SelectedItemIndex = 0;
+                    }
+                    e.Handled = true;
+                }
+            };
+
+            // Botón de ayuda - Leyenda de colores
+            var btnHelp = this.FindControl<Button>("BtnHelp");
+            if (btnHelp != null)
+            {
+                btnHelp.Click += (s, e) => ShowColorLegendDialog();
+            }
+
             TxtBarcode.Focus();
         }
 
@@ -508,6 +531,13 @@ namespace CasaCejaRemake.Views.POS
         private async void ChangeQuantityByArrow(Key key)
         {
             if (_viewModel == null || _viewModel.SelectedItemIndex < 0) return;
+            
+            // Fix 6: No cambiar cantidad si hay un diálogo abierto
+            if (_hasOpenDialog) 
+            {
+                _quantityTimer?.Stop();
+                return;
+            }
             
             var item = _viewModel.Items[_viewModel.SelectedItemIndex];
             var newQuantity = item.Quantity;
@@ -1147,6 +1177,121 @@ namespace CasaCejaRemake.Views.POS
             panel.Children.Add(messageText);
             panel.Children.Add(instructionText);
             dialog.Content = panel;
+
+            _hasOpenDialog = true;
+            await dialog.ShowDialog(this);
+            _hasOpenDialog = false;
+            TxtBarcode.Focus();
+        }
+
+        /// <summary>
+        /// Muestra diálogo con la leyenda de colores para los diferentes tipos de precios
+        /// </summary>
+        private async void ShowColorLegendDialog()
+        {
+            var dialog = new Window
+            {
+                Title = "Leyenda de Colores - Tipos de Precio",
+                Width = 450,
+                Height = 380,
+                WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                CanResize = false,
+                Background = new SolidColorBrush(Color.Parse("#2D2D2D")),
+                Topmost = true
+            };
+
+            var panel = new StackPanel
+            {
+                Margin = new Thickness(25),
+                Spacing = 20
+            };
+
+            // Título
+            panel.Children.Add(new TextBlock
+            {
+                Text = "Colores de Filas en el Carrito",
+                FontSize = 18,
+                FontWeight = FontWeight.Bold,
+                Foreground = Brushes.White,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                Margin = new Thickness(0, 0, 0, 10)
+            });
+
+            // Función helper para crear una fila con bolita de color
+            void AddColorRow(string color, string title, string description)
+            {
+                var row = new StackPanel
+                {
+                    Orientation = Orientation.Horizontal,
+                    Spacing = 12
+                };
+
+                // Texto (emoji ya incluido en title)
+                var textPanel = new StackPanel { Spacing = 2 };
+                textPanel.Children.Add(new TextBlock
+                {
+                    Text = title,
+                    FontSize = 14,
+                    FontWeight = FontWeight.Bold,
+                    Foreground = Brushes.White
+                });
+                textPanel.Children.Add(new TextBlock
+                {
+                    Text = description,
+                    FontSize = 12,
+                    Foreground = new SolidColorBrush(Color.Parse("#AAAAAA"))
+                });
+
+                row.Children.Add(textPanel);
+                panel.Children.Add(row);
+            }
+
+            // Agregar cada tipo de precio con su color
+            AddColorRow("#00897B", "🟢 Mayoreo", "Precio por mayoreo (cantidad mínima alcanzada)");
+            AddColorRow("#9C27B0", "🟣 Descuento de Categoría", "Descuento por categoría del producto");
+            AddColorRow("#2196F3", "🔵 Precio Especial", "Precio especial de promoción (Ctrl+F2)");
+            AddColorRow("#E65100", "🟠 Precio Vendedor", "Precio especial para vendedores (Ctrl+F3)");
+
+            panel.Children.Add(new Separator
+            {
+                Background = new SolidColorBrush(Color.Parse("#444")),
+                Margin = new Thickness(0, 10, 0, 10)
+            });
+
+            // Nota informativa
+            panel.Children.Add(new TextBlock
+            {
+                Text = "💡 Los colores indican qué descuento se aplicó automáticamente a cada producto.",
+                FontSize = 11,
+                Foreground = new SolidColorBrush(Color.Parse("#999")),
+                TextWrapping = TextWrapping.Wrap
+            });
+
+            // Botón Cerrar
+            var closeButton = new Button
+            {
+                Content = "Cerrar",
+                Width = 100,
+                Height = 35,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                Margin = new Thickness(0, 10, 0, 0),
+                Background = new SolidColorBrush(Color.Parse("#444")),
+                Foreground = Brushes.White
+            };
+            closeButton.Click += (s, e) => dialog.Close();
+            panel.Children.Add(closeButton);
+
+            dialog.Content = panel;
+
+            // Cerrar con Enter o Escape
+            dialog.KeyDown += (s, e) =>
+            {
+                if (e.Key == Key.Enter || e.Key == Key.Escape)
+                {
+                    dialog.Close();
+                    e.Handled = true;
+                }
+            };
 
             _hasOpenDialog = true;
             await dialog.ShowDialog(this);

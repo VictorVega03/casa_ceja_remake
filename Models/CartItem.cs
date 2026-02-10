@@ -64,15 +64,17 @@ namespace CasaCejaRemake.Models
         public bool HasDiscount => TotalDiscount > 0;
         
         /// Color de fondo del row según tipo de precio aplicado
-        /// - Retail/Wholesale: color por defecto del grid (gris oscuro)
-        /// - Category: Púrpura oscuro (#7B1FA2)
-        /// - Special: Verde oscuro (#2E7D32) - como el diálogo de descuento aplicado
-        /// - Dealer: Naranja oscuro (#E65100) - visible y distintivo
+        /// - Retail: color por defecto del grid (gris oscuro)
+        /// - Wholesale: Verde esmeralda (#00897B) - destaca ahorro
+        /// - Category: Púrpura vibrante (#9C27B0) - categoría especial
+        /// - Special: Azul brillante (#2196F3) - oferta/promoción
+        /// - Dealer: Naranja profundo (#E65100) - precio vendedor
         public IBrush RowBackgroundColor => PriceType switch
         {
-            "category" => new SolidColorBrush(Color.Parse("#7B1FA2")),  // Púrpura oscuro
-            "special" => new SolidColorBrush(Color.Parse("#2E7D32")),   // Verde oscuro
-            "dealer" => new SolidColorBrush(Color.Parse("#e9953cff")),    // Naranja oscuro
+            "wholesale" => new SolidColorBrush(Color.Parse("#00897B")), // Verde esmeralda (teal)
+            "category" => new SolidColorBrush(Color.Parse("#9C27B0")),  // Púrpura vibrante
+            "special" => new SolidColorBrush(Color.Parse("#2196F3")),   // Azul brillante
+            "dealer" => new SolidColorBrush(Color.Parse("#E65100")),    // Naranja profundo
             _ => new SolidColorBrush(Color.Parse("#2D2D2D"))            // Color por defecto
         };
        

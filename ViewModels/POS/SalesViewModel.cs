@@ -76,6 +76,12 @@ namespace CasaCejaRemake.ViewModels.POS
         [ObservableProperty]
         private bool _hasGeneralDiscount;
 
+        /// <summary>
+        /// Descuento total para display: suma de descuentos de items + descuento general
+        /// </summary>
+        [ObservableProperty]
+        private decimal _totalDiscountDisplay;
+
         public ObservableCollection<CartItem> Items => _cartService.Items;
 
         public event EventHandler? RequestFocusBarcode;
@@ -147,6 +153,9 @@ namespace CasaCejaRemake.ViewModels.POS
             CalculatedGeneralDiscount = _cartService.CalculatedGeneralDiscount;
             FinalTotal = _cartService.FinalTotal;
             HasGeneralDiscount = _cartService.HasGeneralDiscount;
+            
+            // Descuento total para display (items + general)
+            TotalDiscountDisplay = TotalDiscount + CalculatedGeneralDiscount;
         }
 
         private void UpdateDateTime()
@@ -199,31 +208,76 @@ namespace CasaCejaRemake.ViewModels.POS
                 //     return;
                 // }
 
-                // Crear item de carrito con precio calculado
-                var cartItem = await _salesService.CreateCartItemAsync(
-                    product.Id, 
-                    1, 
-                    _authService.CurrentUser?.Id ?? 0);
-
-                if (cartItem != null)
+                // Verificar si el producto ya existe en el carrito
+                var existingItem = Items.FirstOrDefault(i => i.ProductId == product.Id);
+                
+                if (existingItem != null)
                 {
-                    _cartService.AddProduct(cartItem);
+                    // Producto ya existe: recalcular con cantidad total para que mayoreo aplique
+                    var newTotalQuantity = existingItem.Quantity + 1;
+                    var oldPriceType = existingItem.PriceType;
+                    var oldDiscountInfo = existingItem.DiscountInfo;
+                    
+                    // Si tiene precio aislado (special/dealer), solo incrementar cantidad
+                    if (existingItem.PriceType == "special" || existingItem.PriceType == "dealer")
+                    {
+                        existingItem.Quantity = newTotalQuantity;
+                        _cartService.NotifyCartChanged();
+                    }
+                    else
+                    {
+                        // Recalcular precio con la cantidad total
+                        var recalcItem = await _salesService.CreateCartItemAsync(
+                            product.Id, newTotalQuantity, _authService.CurrentUser?.Id ?? 0);
+                        
+                        if (recalcItem != null)
+                        {
+                            existingItem.Quantity = recalcItem.Quantity;
+                            existingItem.FinalUnitPrice = recalcItem.FinalUnitPrice;
+                            existingItem.TotalDiscount = recalcItem.TotalDiscount;
+                            existingItem.PriceType = recalcItem.PriceType;
+                            existingItem.DiscountInfo = recalcItem.DiscountInfo;
+                            _cartService.NotifyCartChanged();
+                            
+                            // Detectar cambio a/desde mayoreo
+                            bool oldHasWholesale = oldPriceType == "wholesale" || 
+                                                  (oldDiscountInfo?.Contains("Mayoreo") == true);
+                            bool newHasWholesale = recalcItem.PriceType == "wholesale" || 
+                                                  (recalcItem.DiscountInfo?.Contains("Mayoreo") == true);
+                            
+                            if (!oldHasWholesale && newHasWholesale)
+                                NotifyWholesalePrice(recalcItem);
+                            else if (oldHasWholesale && !newHasWholesale)
+                            {
+                                var message = $"✓ Producto salió de Precio de Mayoreo: \"{recalcItem.ProductName}\"\n\n" +
+                                    $"Precio actual: ${recalcItem.FinalUnitPrice:N2}";
+                                ShowDiscountApplied?.Invoke(this, message);
+                            }
+                        }
+                    }
+                    
                     StatusMessage = $"Agregado: {product.Name}";
                     ProductAddedToCart?.Invoke(this, EventArgs.Empty);
-                    
-                    // Notificar si entró a precio de mayoreo
-                    // Revisar DiscountInfo porque puede tener mayoreo + descuento de categoría
-                    bool hasWholesale = cartItem.PriceType == "wholesale" || 
-                                       (cartItem.DiscountInfo?.Contains("Mayoreo") == true);
-                    
-                    if (hasWholesale)
+                }
+                else
+                {
+                    // Producto nuevo: crear y agregar normalmente
+                    var cartItem = await _salesService.CreateCartItemAsync(
+                        product.Id, 1, _authService.CurrentUser?.Id ?? 0);
+
+                    if (cartItem != null)
                     {
-                        NotifyWholesalePrice(cartItem);
-                    }
-                    // Notificar si se aplicó solo descuento de categoría (sin mayoreo)
-                    else if (cartItem.TotalDiscount > 0 && cartItem.PriceType == "category")
-                    {
-                        NotifyCategoryDiscount(cartItem);
+                        _cartService.AddProduct(cartItem);
+                        StatusMessage = $"Agregado: {product.Name}";
+                        ProductAddedToCart?.Invoke(this, EventArgs.Empty);
+                        
+                        bool hasWholesale = cartItem.PriceType == "wholesale" || 
+                                           (cartItem.DiscountInfo?.Contains("Mayoreo") == true);
+                        
+                        if (hasWholesale)
+                            NotifyWholesalePrice(cartItem);
+                        else if (cartItem.TotalDiscount > 0 && cartItem.PriceType == "category")
+                            NotifyCategoryDiscount(cartItem);
                     }
                 }
 
@@ -259,47 +313,48 @@ namespace CasaCejaRemake.ViewModels.POS
 
             // Validar stock
             var product = await _salesService.GetProductByCodeAsync(item.Barcode);
-            // TODO: Validar stock desde tabla de inventario
-            // if (product != null && newQuantity > product.Stock)
-            // {
-            //     ShowMessage?.Invoke(this, $"Stock insuficiente. Disponible: {product.Stock}");
-            //     return;
-            // }
 
             // Recalcular precio si aplica mayoreo
             if (newQuantity != item.Quantity && product != null)
             {
-                var oldPriceType = item.PriceType; // Guardar tipo anterior
-                var oldDiscountInfo = item.DiscountInfo; // Guardar info anterior
-                
-                var newItem = await _salesService.CreateCartItemAsync(
-                    product.Id, 
-                    newQuantity, 
-                    _authService.CurrentUser?.Id ?? 0);
-
-                if (newItem != null)
+                // Si tiene precio aislado (special/dealer), solo cambiar cantidad sin recalcular
+                if (item.PriceType == "special" || item.PriceType == "dealer")
                 {
-                    item.Quantity = newItem.Quantity;
-                    item.FinalUnitPrice = newItem.FinalUnitPrice;
-                    item.TotalDiscount = newItem.TotalDiscount;
-                    item.PriceType = newItem.PriceType;
-                    item.DiscountInfo = newItem.DiscountInfo;
+                    // No recalcular: el precio aislado se mantiene
+                }
+                else
+                {
+                    var oldPriceType = item.PriceType;
+                    var oldDiscountInfo = item.DiscountInfo;
                     
-                    // Detectar si el nuevo item tiene mayoreo (puede tener mayoreo + categoría)
-                    bool oldHasWholesale = oldPriceType == "wholesale" || 
-                                          (oldDiscountInfo?.Contains("Mayoreo") == true);
-                    bool newHasWholesale = newItem.PriceType == "wholesale" || 
-                                          (newItem.DiscountInfo?.Contains("Mayoreo") == true);
-                    
-                    // Notificar si cambió a precio de mayoreo
-                    if (!oldHasWholesale && newHasWholesale)
+                    var newItem = await _salesService.CreateCartItemAsync(
+                        product.Id, 
+                        newQuantity, 
+                        _authService.CurrentUser?.Id ?? 0);
+
+                    if (newItem != null)
                     {
-                        NotifyWholesalePrice(newItem);
-                    }
-                    // Notificar si salió de mayoreo
-                    else if (oldHasWholesale && !newHasWholesale)
-                    {
-                        ShowMessage?.Invoke(this, $"Producto salió de precio de mayoreo: {newItem.ProductName}");
+                        item.Quantity = newItem.Quantity;
+                        item.FinalUnitPrice = newItem.FinalUnitPrice;
+                        item.TotalDiscount = newItem.TotalDiscount;
+                        item.PriceType = newItem.PriceType;
+                        item.DiscountInfo = newItem.DiscountInfo;
+                        
+                        // Detectar si el nuevo item tiene mayoreo
+                        bool oldHasWholesale = oldPriceType == "wholesale" || 
+                                              (oldDiscountInfo?.Contains("Mayoreo") == true);
+                        bool newHasWholesale = newItem.PriceType == "wholesale" || 
+                                              (newItem.DiscountInfo?.Contains("Mayoreo") == true);
+                        
+                        if (!oldHasWholesale && newHasWholesale)
+                            NotifyWholesalePrice(newItem);
+                        else if (oldHasWholesale && !newHasWholesale)
+                        {
+                            var message = $"✓ Producto salió de Precio de Mayoreo: \"{newItem.ProductName}\"\n\n" +
+                                $"Precio mayoreo: ${item.ListPrice - item.TotalDiscount:N2}\n" +
+                                $"Precio actual: ${newItem.FinalUnitPrice:N2}";
+                            ShowDiscountApplied?.Invoke(this, message);
+                        }
                     }
                 }
             }
@@ -317,28 +372,52 @@ namespace CasaCejaRemake.ViewModels.POS
         {
             if (product == null) return;
 
-            // TODO: Implement stock validation from inventory table
-            // if (product.Stock < quantity)
-            // {
-            //     ShowMessage?.Invoke(this, $"Stock insuficiente. Disponible: {product.Stock}");
-            //     return;
-            // }
-
-            var cartItem = await _salesService.CreateCartItemAsync(
-                product.Id, 
-                quantity, 
-                _authService.CurrentUser?.Id ?? 0);
-
-            if (cartItem != null)
+            // Verificar si el producto ya existe en el carrito
+            var existingItem = Items.FirstOrDefault(i => i.ProductId == product.Id);
+            
+            if (existingItem != null)
             {
-                _cartService.AddProduct(cartItem);
+                // Producto ya existe: recalcular con cantidad total
+                var newTotalQuantity = existingItem.Quantity + quantity;
+                
+                // Si tiene precio aislado (special/dealer), solo incrementar cantidad
+                if (existingItem.PriceType == "special" || existingItem.PriceType == "dealer")
+                {
+                    existingItem.Quantity = newTotalQuantity;
+                    _cartService.NotifyCartChanged();
+                }
+                else
+                {
+                    var recalcItem = await _salesService.CreateCartItemAsync(
+                        product.Id, newTotalQuantity, _authService.CurrentUser?.Id ?? 0);
+                    
+                    if (recalcItem != null)
+                    {
+                        existingItem.Quantity = recalcItem.Quantity;
+                        existingItem.FinalUnitPrice = recalcItem.FinalUnitPrice;
+                        existingItem.TotalDiscount = recalcItem.TotalDiscount;
+                        existingItem.PriceType = recalcItem.PriceType;
+                        existingItem.DiscountInfo = recalcItem.DiscountInfo;
+                        _cartService.NotifyCartChanged();
+                    }
+                }
+                
                 StatusMessage = $"Agregado: {product.Name} x {quantity}";
                 ProductAddedToCart?.Invoke(this, EventArgs.Empty);
-                
-                // Notificar si se aplicó descuento de categoría
-                if (cartItem.TotalDiscount > 0)
+            }
+            else
+            {
+                var cartItem = await _salesService.CreateCartItemAsync(
+                    product.Id, quantity, _authService.CurrentUser?.Id ?? 0);
+
+                if (cartItem != null)
                 {
-                    NotifyCategoryDiscount(cartItem);
+                    _cartService.AddProduct(cartItem);
+                    StatusMessage = $"Agregado: {product.Name} x {quantity}";
+                    ProductAddedToCart?.Invoke(this, EventArgs.Empty);
+                    
+                    if (cartItem.TotalDiscount > 0)
+                        NotifyCategoryDiscount(cartItem);
                 }
             }
         }
@@ -445,7 +524,10 @@ namespace CasaCejaRemake.ViewModels.POS
                     changeGiven,
                     _authService.CurrentUser?.Id ?? 0,
                     _authService.CurrentUser?.Name ?? "Usuario",
-                    _branchId);
+                    _branchId,
+                    _cartService.CalculatedGeneralDiscount,
+                    _cartService.GeneralDiscountPercent,
+                    _cartService.IsGeneralDiscountPercentage);
 
                 if (result.Success)
                 {
