@@ -155,9 +155,11 @@ namespace CasaCejaRemake.Services
             string branchAddress = branch?.Address ?? "";
             string branchPhone = branch?.Email ?? ""; // Branch no tiene Phone, usando Email
 
-            // Generar folio
-            int consecutivo = await GetNextConsecutiveAsync(branchId);
-            string folio = _ticketService.GenerateFolio(branchId, consecutivo);
+            // Generar folio usando FolioService
+            // Extraer cajaId del TerminalId configurado (ej: "CAJA-01" -> 1)
+            var terminalId = App.ConfigService?.PosTerminalConfig.TerminalId ?? "CAJA-01";
+            var cajaId = int.TryParse(terminalId.Replace("CAJA-", ""), out var caja) ? caja : 1;
+            string folio = await App.FolioService!.GenerarFolioVentaAsync(branchId, cajaId);
 
             // Generar ticket (INMUTABLE - se genera antes de guardar)
             var ticketData = _ticketService.GenerateTicket(
@@ -307,9 +309,11 @@ namespace CasaCejaRemake.Services
             string branchAddress = branch?.Address ?? "";
             string branchPhone = branch?.Email ?? "";
 
-            // Generar folio
-            int consecutivo = await GetNextConsecutiveAsync(branchId);
-            string folio = _ticketService.GenerateFolio(branchId, consecutivo);
+            // Generar folio usando FolioService
+            // Extraer cajaId del TerminalId configurado (ej: "CAJA-01" -> 1)
+            var terminalId = App.ConfigService?.PosTerminalConfig.TerminalId ?? "CAJA-01";
+            var cajaId = int.TryParse(terminalId.Replace("CAJA-", ""), out var caja) ? caja : 1;
+            string folio = await App.FolioService!.GenerarFolioVentaAsync(branchId, cajaId);
 
             // Generar ticket con pagos mixtos
             var ticketData = _ticketService.GenerateTicketWithMixedPayment(

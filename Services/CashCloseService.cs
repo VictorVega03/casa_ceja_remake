@@ -518,6 +518,42 @@ namespace CasaCejaRemake.Services
 
                 await _cashCloseRepository.UpdateAsync(cashClose);
 
+                // ==================== ASIGNAR FOLIO DE CORTE A TODAS LAS TRANSACCIONES ====================
+                // Actualizar ventas con el folio del corte
+                var salesSinceOpen = await _saleRepository.FindAsync(s => s.SaleDate >= cashClose.OpeningDate);
+                foreach (var sale in salesSinceOpen)
+                {
+                    if (string.IsNullOrEmpty(sale.CashCloseFolio))
+                    {
+                        sale.CashCloseFolio = cashClose.Folio;
+                        await _saleRepository.UpdateAsync(sale);
+                    }
+                }
+
+                // Actualizar pagos de créditos con el folio del corte
+                var creditPaymentsSinceOpen = await _creditPaymentRepository.FindAsync(p => p.PaymentDate >= cashClose.OpeningDate);
+                foreach (var payment in creditPaymentsSinceOpen)
+                {
+                    if (string.IsNullOrEmpty(payment.CashCloseFolio))
+                    {
+                        payment.CashCloseFolio = cashClose.Folio;
+                        await _creditPaymentRepository.UpdateAsync(payment);
+                    }
+                }
+
+                // Actualizar pagos de apartados con el folio del corte
+                var layawayPaymentsSinceOpen = await _layawayPaymentRepository.FindAsync(p => p.PaymentDate >= cashClose.OpeningDate);
+                foreach (var payment in layawayPaymentsSinceOpen)
+                {
+                    if (string.IsNullOrEmpty(payment.CashCloseFolio))
+                    {
+                        payment.CashCloseFolio = cashClose.Folio;
+                        await _layawayPaymentRepository.UpdateAsync(payment);
+                    }
+                }
+
+                Console.WriteLine($"[CashCloseService] Folio de corte asignado a transacciones: {cashClose.Folio}");
+
                 Console.WriteLine($"[CashCloseService] === CORTE DE CAJA COMPLETADO ===");
                 Console.WriteLine($"  Fondo inicial: ${cashClose.OpeningCash}");
                 Console.WriteLine($"  + Ventas efectivo: ${totals.TotalCash}");
@@ -618,24 +654,21 @@ namespace CasaCejaRemake.Services
         }
 
         /// <summary>
-        /// Genera un folio único para el corte.
+        /// Genera un folio único para el corte usando FolioService.
         /// </summary>
         private async Task<string> GenerateFolioAsync(int branchId)
         {
             try
             {
-                var today = DateTime.Today;
-                var all = await _cashCloseRepository.GetAllAsync();
-                var todayCount = all
-                    .Where(c => c.BranchId == branchId)
-                    .Where(c => c.CreatedAt.Date == today)
-                    .Count();
-
-                // Formato: CC-YYYYMMDD-XXX (CC = Cash Close)
-                return $"CC-{today:yyyyMMdd}-{(todayCount + 1):D3}";
+                // Extraer cajaId del TerminalId configurado (ej: "CAJA-01" -> 1)
+                var terminalId = App.ConfigService?.PosTerminalConfig.TerminalId ?? "CAJA-01";
+                var cajaId = int.TryParse(terminalId.Replace("CAJA-", ""), out var caja) ? caja : 1;
+                return await App.FolioService!.GenerarFolioCorteAsync(branchId, cajaId);
             }
-            catch
+            catch (Exception ex)
             {
+                Console.WriteLine($"[CashCloseService] Error generando folio: {ex.Message}");
+                // Fallback en caso de error
                 return $"CC-{DateTime.Now:yyyyMMddHHmmss}";
             }
         }

@@ -6,6 +6,7 @@ using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using CasaCejaRemake.Data;
 using CasaCejaRemake.Data.Repositories;
+using CasaCejaRemake.Helpers;
 using CasaCejaRemake.Services;
 using CasaCejaRemake.ViewModels.Shared;
 using CasaCejaRemake.ViewModels.POS;
@@ -19,6 +20,11 @@ namespace CasaCejaRemake
         // Servicios estaticos
         public static DatabaseService? DatabaseService { get; private set; }
         public static AuthService? AuthService { get; private set; }
+        public static RoleService? RoleService { get; private set; }
+        public static ConfigService? ConfigService { get; private set; }
+        public static PrintService? PrintService { get; private set; }
+        public static ExportService? ExportService { get; private set; }
+        public static FolioService? FolioService { get; private set; }
         
         // Servicios del POS
         private CartService? _cartService;
@@ -27,10 +33,6 @@ namespace CasaCejaRemake
         private LayawayService? _layawayService;
         private CustomerService? _customerService;
         private CashCloseService? _cashCloseService;
-
-        // Sucursal actual (por defecto 1)
-        private int _currentBranchId = 1;
-        private string _currentBranchName = "Sucursal Principal";
 
         // Referencia a la ventana de login actual (para evitar duplicados)
         private LoginView? _currentLoginView;
@@ -65,13 +67,36 @@ namespace CasaCejaRemake
                 DatabaseService = new DatabaseService();
                 await DatabaseService.InitializeAsync();
 
-                // Inicializar datos por defecto
+                // Inicializar datos por defecto (incluye roles)
                 var initializer = new DatabaseInitializer(DatabaseService);
                 await initializer.InitializeDefaultDataAsync();
 
-                // Inicializar AuthService
+                // Inicializar RoleService (cargar roles desde la BD)
+                RoleService = new RoleService(DatabaseService);
+                await RoleService.LoadRolesAsync();
+
+                // Inicializar AuthService con RoleService
                 var userRepository = new BaseRepository<Models.User>(DatabaseService);
-                AuthService = new AuthService(userRepository);
+                AuthService = new AuthService(userRepository, RoleService);
+
+                // Inicializar ConfigService (configuración local JSON)
+                ConfigService = new ConfigService();
+                await ConfigService.LoadAsync();
+
+                // Suscribirse a cambios de configuración
+                ConfigService.AppConfigChanged += OnAppConfigChanged;
+
+                // Inicializar PrintService
+                PrintService = new PrintService(ConfigService);
+
+                // Inicializar ExportService
+                ExportService = new ExportService();
+
+                // Inicializar FolioService
+                FolioService = new FolioService(DatabaseService);
+
+                // Inicializar estructura de carpetas para documentos
+                FileHelper.EnsureDirectoriesExist();
 
                 // Inicializar servicios del POS
                 _cartService = new CartService();
@@ -154,20 +179,21 @@ namespace CasaCejaRemake
         }
 
         /// <summary>
-        /// Maneja el login exitoso segun el rol del usuario.
+        /// Maneja el login exitoso: siempre va al selector de módulos.
+        /// Sincroniza la sucursal con ConfigService si es Admin.
         /// </summary>
         private void HandleSuccessfulLogin()
         {
-            if (AuthService?.IsAdmin == true)
+            // Si es Admin, sincronizar sucursal desde ConfigService
+            if (AuthService != null && AuthService.IsAdmin && ConfigService != null)
             {
-                // Admin: Mostrar selector de modulos
-                ShowModuleSelector();
+                var configBranchId = ConfigService.AppConfig.BranchId;
+                AuthService.SetCurrentBranch(configBranchId);
+                Console.WriteLine($"[App] Admin logueado - Sucursal sincronizada: {configBranchId}");
             }
-            else
-            {
-                // Cajero: Ir directo al POS
-                ShowPOS();
-            }
+            
+            // Todos los usuarios van al selector de módulos
+            ShowModuleSelector();
         }
 
         /// <summary>
@@ -207,6 +233,12 @@ namespace CasaCejaRemake
                 Console.WriteLine("[App] Admin seleccionado");
                 selectorView.Tag = "module_selected";
                 ShowAdmin(selectorView);
+            };
+
+            selectorViewModel.ConfigSelected += async (s, e) =>
+            {
+                Console.WriteLine("[App] Configuración seleccionada");
+                await ShowAppConfigDialog(selectorView);
             };
 
             selectorViewModel.LogoutRequested += (s, e) =>
@@ -255,13 +287,19 @@ namespace CasaCejaRemake
 
             Console.WriteLine("[App] Creando SalesViewModel...");
             
+            // Obtener sucursal actual desde ConfigService
+            var currentBranchId = AuthService.CurrentBranchId;
+            var currentBranchName = ConfigService?.AppConfig.BranchName ?? "Sucursal";
+            
+            Console.WriteLine($"[App] Usando sucursal: {currentBranchName} (ID: {currentBranchId})");
+            
             // Crear ViewModel con servicios inyectados
             var salesViewModel = new SalesViewModel(
                 _cartService,
                 _salesService,
                 AuthService,
-                _currentBranchId,
-                _currentBranchName);
+                currentBranchId,
+                currentBranchName);
 
             Console.WriteLine("[App] Creando SalesView...");
             
@@ -281,13 +319,13 @@ namespace CasaCejaRemake
             windowToClose?.Close();
 
             // Verificar si hay caja abierta
-            var openCash = await _cashCloseService.GetOpenCashAsync(_currentBranchId);
+            var openCash = await _cashCloseService.GetOpenCashAsync(currentBranchId);
             if (openCash == null)
             {
                 Console.WriteLine("[App] No hay caja abierta, mostrando modal de apertura...");
                 
                 var openCashView = new OpenCashView();
-                var openCashViewModel = new OpenCashViewModel(_cashCloseService, AuthService, _currentBranchId);
+                var openCashViewModel = new OpenCashViewModel(_cashCloseService, AuthService, currentBranchId);
                 openCashView.DataContext = openCashViewModel;
 
                 await openCashView.ShowDialog(salesView);
@@ -295,6 +333,9 @@ namespace CasaCejaRemake
                 if (openCashView.Tag is Models.CashClose newCash)
                 {
                     Console.WriteLine($"[App] Caja abierta exitosamente: {newCash.Folio}");
+                    
+                    // Recargar folio en el ViewModel
+                    salesViewModel?.RefreshCashCloseFolio();
                 }
                 else
                 {
@@ -403,6 +444,31 @@ namespace CasaCejaRemake
         }
 
         /// <summary>
+        /// Muestra el diálogo de configuración general (solo Admin).
+        /// </summary>
+        private async Task ShowAppConfigDialog(Window? parentWindow)
+        {
+            if (ConfigService == null || AuthService == null || DatabaseService == null)
+            {
+                Console.WriteLine("[App] Servicios no disponibles para configuración");
+                return;
+            }
+
+            var viewModel = new ViewModels.Shared.AppConfigViewModel(
+                ConfigService,
+                AuthService,
+                DatabaseService);
+
+            var view = new Views.Shared.AppConfigView
+            {
+                DataContext = viewModel
+            };
+
+            await viewModel.InitializeAsync();
+            await view.ShowDialog(parentWindow);
+        }
+
+        /// <summary>
         /// Obtiene el servicio de ventas (usado por las vistas).
         /// </summary>
         public SalesService? GetSaleService()
@@ -448,6 +514,22 @@ namespace CasaCejaRemake
         public CashCloseService? GetCashCloseService()
         {
             return _cashCloseService;
+        }
+
+        /// <summary>
+        /// Maneja cambios en la configuración general (sucursal).
+        /// </summary>
+        private void OnAppConfigChanged(object? sender, EventArgs e)
+        {
+            if (ConfigService == null) return;
+            
+            var branchId = ConfigService.AppConfig.BranchId;
+            var branchName = ConfigService.AppConfig.BranchName;
+            
+            Console.WriteLine($"[App] Configuración cambiada - Nueva sucursal: {branchName} (ID: {branchId})");
+            
+            // Nota: El POS necesitará reiniciarse para aplicar cambios de sucursal
+            // ya que el ViewModel se inicializa con el BranchId al crearse
         }
     }
 }

@@ -27,8 +27,12 @@ namespace CasaCejaRemake.Models
         [MaxLength(255)]
         public string Password { get; set; } = string.Empty;
 
+        /// <summary>
+        /// ID del rol del usuario. Referencia a la tabla roles.
+        /// Se consulta dinámicamente a través de RoleService.
+        /// </summary>
         [Column("user_type")]
-        public int UserType { get; set; } // 1 = Admin, 2 = Cashier        
+        public int UserType { get; set; }
 
         [Column("branch_id")]
         public int? BranchId { get; set; }
@@ -49,7 +53,19 @@ namespace CasaCejaRemake.Models
         public DateTime? LastSync { get; set; }
 
         // Navigation properties (not mapped to DB)
+        /// <summary>
+        /// Nombre del rol (se establece dinámicamente desde RoleService).
+        /// </summary>
         [Ignore]
-        public string UserTypeText => UserType == 1 ? "Admin" : "Cashier";
+        public string RoleName { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Texto del tipo de usuario. Usa RoleName si está disponible,
+        /// de lo contrario fallback básico.
+        /// </summary>
+        [Ignore]
+        public string UserTypeText => !string.IsNullOrEmpty(RoleName)
+            ? RoleName
+            : $"Rol #{UserType}";
     }
 }

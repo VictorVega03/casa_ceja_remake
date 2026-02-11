@@ -167,6 +167,10 @@ namespace CasaCejaRemake.Data.Repositories
             }
             catch (Exception ex)
             {
+                Console.WriteLine($"[BaseRepository] Error en AddAsync para {typeof(T).Name}");
+                Console.WriteLine($"[BaseRepository] Mensaje: {ex.Message}");
+                Console.WriteLine($"[BaseRepository] InnerException: {ex.InnerException?.Message}");
+                Console.WriteLine($"[BaseRepository] StackTrace: {ex.StackTrace}");
                 throw new InvalidOperationException($"Error adding {typeof(T).Name}", ex);
             }
         }

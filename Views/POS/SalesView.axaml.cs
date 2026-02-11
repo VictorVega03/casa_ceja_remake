@@ -11,6 +11,8 @@ using Avalonia.Media;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 using CasaCejaRemake.ViewModels.POS;
+using CasaCejaRemake.ViewModels.Shared;
+using CasaCejaRemake.Views.Shared;
 using casa_ceja_remake.Helpers;
 using CasaCejaRemake.Services;
 using CasaCejaRemake.Models;
@@ -1000,6 +1002,11 @@ namespace CasaCejaRemake.Views.POS
                 Tag = "exit";
                 Close();
             }
+            else
+            {
+                // Si no se completó el corte, recargar folio (por si se abrió una nueva caja)
+                _viewModel?.RefreshCashCloseFolio();
+            }
 
             TxtBarcode.Focus();
         }
@@ -1057,6 +1064,45 @@ namespace CasaCejaRemake.Views.POS
         private void OnSalesHistoryClick(object? sender, RoutedEventArgs e)
         {
             ShowSalesHistoryDialogAsync();
+        }
+
+        private void OnPosConfigClick(object? sender, RoutedEventArgs e)
+        {
+            ShowPosConfigDialogAsync();
+        }
+
+        /// <summary>
+        /// Muestra el diálogo de configuración del terminal POS.
+        /// </summary>
+        private async void ShowPosConfigDialogAsync()
+        {
+            var app = (App)Application.Current!;
+            var configService = App.ConfigService;
+            var authService = app.GetAuthService();
+            var printService = App.PrintService;
+
+            if (configService == null || authService == null || printService == null)
+            {
+                ShowMessageDialog("Error", "Servicios no disponibles");
+                return;
+            }
+
+            var configView = new PosTerminalConfigView();
+            var configViewModel = new PosTerminalConfigViewModel(
+                configService,
+                authService,
+                printService);
+
+            configView.DataContext = configViewModel;
+            
+            // Inicializar antes de mostrar
+            await configViewModel.InitializeAsync();
+
+            _hasOpenDialog = true;
+            await configView.ShowDialog(this);
+            _hasOpenDialog = false;
+
+            TxtBarcode.Focus();
         }
 
         /// <summary>

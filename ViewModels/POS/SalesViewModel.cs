@@ -27,7 +27,7 @@ namespace CasaCejaRemake.ViewModels.POS
         private char _currentCollection = 'A';
 
         [ObservableProperty]
-        private string _folio = string.Empty;
+        private string _cashCloseFolio = string.Empty;
 
         [ObservableProperty]
         private string _fechaHora = string.Empty;
@@ -124,8 +124,8 @@ namespace CasaCejaRemake.ViewModels.POS
             // Actualizar reloj
             UpdateDateTime();
 
-            // Generar folio temporal
-            GenerateTemporaryFolio();
+            // Cargar folio del corte actual
+            LoadCashCloseFolio();
         }
 
         private void OnCartChanged(object? sender, EventArgs e)
@@ -163,10 +163,35 @@ namespace CasaCejaRemake.ViewModels.POS
             FechaHora = DateTime.Now.ToString("dd/MM/yyyy HH:mm:ss");
         }
 
-        private void GenerateTemporaryFolio()
+        private async void LoadCashCloseFolio()
         {
-            var now = DateTime.Now;
-            Folio = $"{now:MMddyyyy}{_branchId:D2}----";
+            try
+            {
+                var cashCloseService = new CashCloseService(App.DatabaseService!);
+                var openCash = await cashCloseService.GetOpenCashAsync(_branchId);
+                
+                if (openCash != null)
+                {
+                    CashCloseFolio = openCash.Folio;
+                }
+                else
+                {
+                    CashCloseFolio = "SIN CAJA";
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[SalesViewModel] Error cargando folio: {ex.Message}");
+                CashCloseFolio = "ERROR";
+            }
+        }
+
+        /// <summary>
+        /// Recarga el folio del corte actual. Usar después de abrir/cerrar caja.
+        /// </summary>
+        public void RefreshCashCloseFolio()
+        {
+            LoadCashCloseFolio();
         }
 
         /// <summary>
@@ -535,8 +560,8 @@ namespace CasaCejaRemake.ViewModels.POS
                     _cartService.ClearCart();
                     StatusMessage = $"Venta completada: {result.Sale?.Folio}";
                     
-                    // Generar nuevo folio temporal
-                    GenerateTemporaryFolio();
+                    // Recargar folio del corte (por si acaso)
+                    LoadCashCloseFolio();
                     
                     SaleCompleted?.Invoke(this, result);
                 }

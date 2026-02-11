@@ -132,6 +132,9 @@ namespace CasaCejaRemake.Data
             // Ejecutar en una transacción para que sea atómico
             await _database.RunInTransactionAsync((transaction) =>
             {
+                // Tablas de sistema
+                transaction.CreateTable<Role>();
+
                 // Tablas principales
                 transaction.CreateTable<User>();
                 transaction.CreateTable<Branch>();
@@ -175,6 +178,7 @@ namespace CasaCejaRemake.Data
                 throw new InvalidOperationException("Database not initialized");
 
             // Verificar y crear tablas que falten
+            await _database.CreateTableAsync<Role>();
             await _database.CreateTableAsync<User>();
             await _database.CreateTableAsync<Branch>();
             await _database.CreateTableAsync<Category>();

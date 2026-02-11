@@ -30,20 +30,7 @@ namespace CasaCejaRemake.Services
             _ticketService = new TicketService();
         }
 
-        public async Task<string> GenerateFolioAsync(int branchId)
-        {
-            var today = DateTime.Now;
-            var todayStart = today.Date;
-            var todayEnd = todayStart.AddDays(1);
-            
-            var credits = await _creditRepository.FindAsync(c => 
-                c.BranchId == branchId && 
-                c.CreditDate >= todayStart && 
-                c.CreditDate < todayEnd);
-            
-            var consecutive = credits.Count + 1;
-            return _ticketService.GenerateCreditFolio(branchId, consecutive);
-        }
+
 
         public async Task<(bool Success, Credit? Credit, string? Error)> CreateCreditAsync(
             List<CartItem> items,
@@ -77,8 +64,11 @@ namespace CasaCejaRemake.Services
 
             try
             {
-                // Generar folio
-                string folio = await GenerateFolioAsync(branchId);
+                // Generar folio usando FolioService
+                // Extraer cajaId del TerminalId configurado (ej: "CAJA-01" -> 1)
+                var terminalId = App.ConfigService?.PosTerminalConfig.TerminalId ?? "CAJA-01";
+                var cajaId = int.TryParse(terminalId.Replace("CAJA-", ""), out var caja) ? caja : 1;
+                string folio = await App.FolioService!.GenerarFolioCreditoAsync(branchId, cajaId);
                 var creditDate = DateTime.Now;
                 var dueDate = creditDate.AddMonths(monthsToPay);
 
@@ -161,11 +151,11 @@ namespace CasaCejaRemake.Services
                 await _creditRepository.UpdateAsync(updatedCredit);
 
                 return (true, updatedCredit, null);
-
-                return (true, credit, null);
             }
             catch (Exception ex)
             {
+                Console.WriteLine($"[CreditService] Error al crear crédito: {ex.Message}");
+                Console.WriteLine($"[CreditService] StackTrace: {ex.StackTrace}");
                 return (false, null, $"Error al crear el credito: {ex.Message}");
             }
         }
@@ -262,7 +252,10 @@ namespace CasaCejaRemake.Services
 
             try
             {
-                var paymentFolio = $"PAGO-{credit.Folio}-{DateTime.Now:HHmmss}";
+                // Los pagos/abonos generan su propio folio tipo P con secuencial diario
+                var terminalId = App.ConfigService?.PosTerminalConfig.TerminalId ?? "CAJA-01";
+                var cajaId = int.TryParse(terminalId.Replace("CAJA-", ""), out var caja) ? caja : 1;
+                var paymentFolio = await App.FolioService!.GenerarFolioPagoAsync(credit.BranchId, cajaId);
 
                 // Crear registro de pago con JSON guardado en PaymentMethod
                 var payment = new CreditPayment
@@ -303,7 +296,10 @@ namespace CasaCejaRemake.Services
         {
             try
             {
-                var paymentFolio = $"PAGO-{credit.Folio}-{DateTime.Now:HHmmss}";
+                // Los pagos/abonos generan su propio folio tipo P con secuencial diario
+                var terminalId = App.ConfigService?.PosTerminalConfig.TerminalId ?? "CAJA-01";
+                var cajaId = int.TryParse(terminalId.Replace("CAJA-", ""), out var caja) ? caja : 1;
+                var paymentFolio = await App.FolioService!.GenerarFolioPagoAsync(credit.BranchId, cajaId);
 
                 var payment = new CreditPayment
                 {

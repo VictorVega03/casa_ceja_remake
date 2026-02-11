@@ -56,6 +56,12 @@ namespace CasaCejaRemake.Models
         [Column("created_at")]
         public DateTime CreatedAt { get; set; } = DateTime.Now;
 
+        // ============ FOLIO DEL CORTE ============
+        [Column("cash_close_folio")]
+        [MaxLength(50)]
+        [Indexed(Name = "IX_Sale_CashCloseFolio")]
+        public string CashCloseFolio { get; set; } = string.Empty;
+
         // ============ SINCRONIZACIÓN ============
         [Column("sync_status")]
         public int SyncStatus { get; set; } = 1;

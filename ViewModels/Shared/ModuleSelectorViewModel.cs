@@ -39,6 +39,11 @@ namespace CasaCejaRemake.ViewModels.Shared
         public event EventHandler? AdminSelected;
 
         /// <summary>
+        /// Evento cuando se selecciona abrir Configuración General
+        /// </summary>
+        public event EventHandler? ConfigSelected;
+
+        /// <summary>
         /// Evento cuando se cierra sesión
         /// </summary>
         public event EventHandler? LogoutRequested;
@@ -85,6 +90,15 @@ namespace CasaCejaRemake.ViewModels.Shared
         private void OpenAdmin()
         {
             AdminSelected?.Invoke(this, EventArgs.Empty);
+        }
+
+        /// <summary>
+        /// Comando para abrir Configuración General
+        /// </summary>
+        [RelayCommand]
+        private void OpenConfig()
+        {
+            ConfigSelected?.Invoke(this, EventArgs.Empty);
         }
 
         /// <summary>

@@ -38,6 +38,7 @@ namespace CasaCejaRemake.Data
 
             Console.WriteLine("🔧 Inicializando BD con datos por defecto...");
 
+            await CreateDefaultRolesAsync();
             await CreateDefaultUserAsync();
             await CreateDefaultBranchAsync();
             await CreateDefaultUnitsAsync();
@@ -47,17 +48,64 @@ namespace CasaCejaRemake.Data
         }
 
         /// <summary>
+        /// Crea los roles por defecto (Admin y Cajero)
+        /// </summary>
+        private async Task CreateDefaultRolesAsync()
+        {
+            var roleCount = await _databaseService.Table<Role>().CountAsync();
+            if (roleCount > 0)
+            {
+                Console.WriteLine("✅ Roles ya existen, omitiendo");
+                return;
+            }
+
+            var roles = new[]
+            {
+                new Role
+                {
+                    Name = "Administrador",
+                    Key = "admin",
+                    AccessLevel = 1,
+                    Description = "Acceso total al sistema: configuración, reportes, inventario y POS",
+                    Active = true,
+                    CreatedAt = DateTime.Now,
+                    UpdatedAt = DateTime.Now
+                },
+                new Role
+                {
+                    Name = "Cajero",
+                    Key = "cashier",
+                    AccessLevel = 2,
+                    Description = "Acceso al módulo POS: ventas, cobros y cortes de caja",
+                    Active = true,
+                    CreatedAt = DateTime.Now,
+                    UpdatedAt = DateTime.Now
+                }
+            };
+
+            await _databaseService.InsertAllAsync(roles);
+            Console.WriteLine($"✅ {roles.Length} roles creados (Admin, Cajero)");
+        }
+
+        /// <summary>
         /// Crea el usuario administrador por defecto
         /// </summary>
         private async Task CreateDefaultUserAsync()
         {
+            // Obtener el ID del rol admin recién creado
+            var adminRole = await _databaseService.Table<Role>()
+                .Where(r => r.Key == "admin")
+                .FirstOrDefaultAsync();
+
+            var adminRoleId = adminRole?.Id ?? 1;
+
             var adminUser = new User
             {
                 Username = "admin",
                 Password = "admin", // ⚠️ En producción, usar hash
                 Name = "Administrador",
                 Email = "admin@casaceja.com",
-                UserType = 1, // Nivel 1 = Administrador               
+                UserType = adminRoleId, // Referencia al rol de admin
                 Active = true,
                 CreatedAt = DateTime.Now,
                 UpdatedAt = DateTime.Now

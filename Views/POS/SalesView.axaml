@@ -58,8 +58,8 @@
                 <!-- Info izquierda -->
                 <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="30">
                     <StackPanel>
-                        <TextBlock Text="FOLIO" FontSize="10" Foreground="#888"/>
-                        <TextBlock Text="{Binding Folio}" FontSize="16" Foreground="White" FontWeight="Bold"/>
+                        <TextBlock Text="FOLIO DE CORTE" FontSize="10" Foreground="#888"/>
+                        <TextBlock Text="{Binding CashCloseFolio}" FontSize="16" Foreground="White" FontWeight="Bold"/>
                     </StackPanel>
                     <StackPanel>
                         <TextBlock Text="COBRANZA" FontSize="10" Foreground="#888"/>
@@ -435,6 +435,8 @@
                     <Button.ContextMenu>
                         <ContextMenu>
                             <MenuItem Header="🚪 Salir (Alt+F4)" Command="{Binding ExitCommand}"/>
+                            <Separator/>
+                            <MenuItem Header="⚙ Configuración de Terminal" Click="OnPosConfigClick"/>
                             <Separator/>
                             <MenuItem Header="💰 Corte de Caja (F10)" Click="OnCashCloseClick"/>
                             <MenuItem Header="📊 Historial de Cortes (F9)" Click="OnCashCloseHistoryClick"/>

@@ -1,0 +1,177 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="using:CasaCejaRemake.ViewModels.Shared"
+        mc:Ignorable="d"
+        d:DesignWidth="550" d:DesignHeight="650"
+        x:Class="CasaCejaRemake.Views.Shared.PosTerminalConfigView"
+        x:DataType="vm:PosTerminalConfigViewModel"
+        Title="Configuración del Terminal POS"
+        Width="550" Height="650"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False"
+        Background="#2D2D30">
+
+    <Window.Styles>
+        <Style Selector="TextBlock.label">
+            <Setter Property="Foreground" Value="#CCCCCC" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="Margin" Value="0,8,0,4" />
+        </Style>
+        <Style Selector="TextBlock.section-title">
+            <Setter Property="Foreground" Value="#4FC3F7" />
+            <Setter Property="FontSize" Value="15" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Margin" Value="0,16,0,6" />
+        </Style>
+        <Style Selector="ComboBox">
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
+            <Setter Property="Height" Value="34" />
+        </Style>
+        <Style Selector="TextBox">
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
+            <Setter Property="Height" Value="34" />
+        </Style>
+    </Window.Styles>
+
+    <Grid RowDefinitions="Auto,*,Auto">
+
+        <!-- ===== HEADER ===== -->
+        <Border Grid.Row="0" Background="#1E1E1E" Padding="20,14">
+            <StackPanel Orientation="Horizontal" Spacing="10">
+                <TextBlock Text="⚙" FontSize="22" Foreground="#4FC3F7" VerticalAlignment="Center" />
+                <TextBlock Text="Configuración del Terminal POS"
+                           FontSize="20" FontWeight="Bold"
+                           Foreground="White" VerticalAlignment="Center" />
+            </StackPanel>
+        </Border>
+
+        <!-- ===== CONTENT ===== -->
+        <ScrollViewer Grid.Row="1" Padding="24,0">
+            <StackPanel Spacing="2">
+
+                <!-- ========== IDENTIFICACIÓN DEL TERMINAL ========== -->
+                <TextBlock Classes="section-title" Text="🖥️ Identificación del Terminal" />
+
+                <TextBlock Classes="label" Text="ID de Terminal:" />
+                <TextBox Text="{Binding TerminalId}"
+                         IsReadOnly="{Binding IsReadOnlyForCajero}"
+                         Watermark="Ej: CAJA-01" />
+
+                <TextBlock Classes="label" Text="Nombre de Terminal (opcional):" />
+                <TextBox Text="{Binding TerminalName}"
+                         Watermark="Ej: Caja Principal" />
+
+                <!-- ========== IMPRESORA ========== -->
+                <TextBlock Classes="section-title" Text="🖨️ Impresora" />
+
+                <Grid ColumnDefinitions="*,Auto">
+                    <TextBlock Classes="label" Text="Impresora:" Grid.Column="0" />
+                    <Button Grid.Column="1" Content="🔄 Actualizar"
+                            Command="{Binding RefreshPrintersCommand}"
+                            FontSize="11" Padding="8,2"
+                            VerticalAlignment="Bottom"
+                            Margin="0,0,0,4" />
+                </Grid>
+                <ComboBox ItemsSource="{Binding AvailablePrinters}"
+                          SelectedItem="{Binding SelectedPrinter}" />
+
+                <TextBlock Classes="label" Text="Formato de impresión:" />
+                <ComboBox ItemsSource="{Binding PrintFormatOptions}"
+                          SelectedItem="{Binding SelectedPrintFormat}">
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock>
+                                <TextBlock.Text>
+                                    <MultiBinding StringFormat="{}{0}">
+                                        <Binding />
+                                    </MultiBinding>
+                                </TextBlock.Text>
+                            </TextBlock>
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
+
+                <!-- ========== PARÁMETROS DEL TICKET ========== -->
+                <TextBlock Classes="section-title" Text="🎫 Parámetros del Ticket" />
+
+                <TextBlock Classes="label" Text="Pie de ticket:" />
+                <TextBox Text="{Binding TicketFooter}"
+                         Watermark="Mensaje al final del ticket" />
+
+                <Grid ColumnDefinitions="*,16,*">
+                    <StackPanel Grid.Column="0">
+                        <TextBlock Classes="label" Text="Tamaño de fuente:" />
+                        <ComboBox ItemsSource="{Binding FontSizeOptions}"
+                                  SelectedItem="{Binding SelectedFontSize}" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="2">
+                        <TextBlock Classes="label" Text="Ancho de línea (chars):" />
+                        <ComboBox ItemsSource="{Binding TicketLineWidthOptions}"
+                                  SelectedItem="{Binding SelectedTicketLineWidth}" />
+                    </StackPanel>
+                </Grid>
+
+                <TextBlock Classes="label" Text="Tipo de fuente:" />
+                <ComboBox ItemsSource="{Binding FontFamilyOptions}"
+                          SelectedItem="{Binding SelectedFontFamily}" />
+
+                <!-- ========== OPCIONES ========== -->
+                <!-- NOTA: Opciones comentadas - siempre debe imprimir automáticamente -->
+                <!-- <TextBlock Classes="section-title" Text="⚡ Opciones" /> -->
+
+                <!-- <CheckBox IsChecked="{Binding AutoPrint}"
+                          Content="Imprimir automáticamente al finalizar venta"
+                          Foreground="#CCCCCC"
+                          Margin="0,8,0,4" /> -->
+
+                <!-- <CheckBox IsChecked="{Binding OpenCashDrawer}"
+                          Content="Abrir cajón de dinero al imprimir"
+                          Foreground="#CCCCCC"
+                          Margin="0,4,0,0" /> -->
+
+                <!-- Espacio inferior -->
+                <Border Height="16" />
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- ===== FOOTER ===== -->
+        <Border Grid.Row="2" Background="#1E1E1E" Padding="20,12">
+            <Grid RowDefinitions="Auto,Auto" ColumnDefinitions="*">
+                <!-- Fila 1: Status Message (separado, arriba de botones) -->
+                <Border Grid.Row="0" 
+                        Background="#252525"
+                        Padding="12,8"
+                        CornerRadius="4"
+                        Margin="0,0,0,12"
+                        IsVisible="{Binding StatusMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                    <TextBlock Text="{Binding StatusMessage}"
+                               Foreground="#81C784"
+                               FontSize="12"
+                               TextWrapping="Wrap"
+                               HorizontalAlignment="Center" />
+                </Border>
+
+                <!-- Fila 2: Botones -->
+                <StackPanel Grid.Row="1" 
+                           Orientation="Horizontal" 
+                           HorizontalAlignment="Right"
+                           Spacing="10">
+                    <Button Content="Cancelar"
+                            Command="{Binding CloseCommand}"
+                            Width="100" Height="36"
+                            HorizontalContentAlignment="Center" />
+
+                    <Button Content="💾 Guardar"
+                            Command="{Binding SaveCommand}"
+                            Width="120" Height="36"
+                            Background="#2196F3"
+                            Foreground="White"
+                            FontWeight="SemiBold"
+                            HorizontalContentAlignment="Center" />
+                </StackPanel>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>

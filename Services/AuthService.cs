@@ -8,14 +8,28 @@ namespace CasaCejaRemake.Services
     public class AuthService
     {
         private readonly IRepository<User> _userRepository;
+        private readonly RoleService _roleService;
         private int _currentBranchId = 1;
 
         public User? CurrentUser { get; private set; }
         public bool IsAuthenticated => CurrentUser != null;
-        public bool IsAdmin => CurrentUser?.UserType == 1;
-        public bool IsCajero => CurrentUser?.UserType == 2;
+
+        /// <summary>Verifica si el usuario actual es Admin usando roles dinámicos de la BD.</summary>
+        public bool IsAdmin => CurrentUser != null && _roleService.IsAdminRole(CurrentUser.UserType);
+
+        /// <summary>Verifica si el usuario actual es Cajero usando roles dinámicos de la BD.</summary>
+        public bool IsCajero => CurrentUser != null && _roleService.IsCashierRole(CurrentUser.UserType);
+
         public string? CurrentUserName => CurrentUser?.Name;
 
+        /// <summary>Servicio de roles (expuesto para que otros servicios puedan consultarlo).</summary>
+        public RoleService RoleService => _roleService;
+
+        /// <summary>
+        /// Sucursal actual:
+        /// - Para Admin: usa _currentBranchId (que se sincroniza con ConfigService)
+        /// - Para Cajero: usa su BranchId asignado
+        /// </summary>
         public int CurrentBranchId 
         { 
             get => IsAdmin ? _currentBranchId : (CurrentUser?.BranchId ?? 1);
@@ -25,9 +39,10 @@ namespace CasaCejaRemake.Services
         public event EventHandler<User>? UserLoggedIn;
         public event EventHandler? UserLoggedOut;
 
-        public AuthService(IRepository<User> userRepository)
+        public AuthService(IRepository<User> userRepository, RoleService roleService)
         {
             _userRepository = userRepository ?? throw new ArgumentNullException(nameof(userRepository));
+            _roleService = roleService ?? throw new ArgumentNullException(nameof(roleService));
         }
 
         public async Task<bool> LoginAsync(string username, string password)
@@ -117,9 +132,17 @@ namespace CasaCejaRemake.Services
             if (!IsAuthenticated)
                 return false;
 
-            // Admin (nivel 1) tiene acceso a todo
-            // Cajero (nivel 2) solo a su nivel
-            return CurrentUser!.UserType <= requiredLevel;
+            // Usa el nivel de acceso del rol desde la BD
+            return _roleService.HasAccessLevel(CurrentUser!.UserType, requiredLevel);
+        }
+
+        /// <summary>
+        /// Obtiene el nombre del rol del usuario actual.
+        /// </summary>
+        public string GetCurrentRoleName()
+        {
+            if (!IsAuthenticated) return "Sin sesión";
+            return _roleService.GetRoleName(CurrentUser!.UserType);
         }
 
         public string? GetUserCashRegisterId()

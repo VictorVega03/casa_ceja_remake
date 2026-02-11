@@ -180,13 +180,13 @@ namespace CasaCejaRemake.Services
         public string GenerateCreditFolio(int branchId, int consecutivo)
         {
             var now = DateTime.Now;
-            return $"CRED-{now:MMddyyyy}-{consecutivo:D3}";
+            return $"CRED-S{branchId}-{now:yyyyMMdd}-{consecutivo:D3}";
         }
 
         public string GenerateLayawayFolio(int branchId, int consecutivo)
         {
             var now = DateTime.Now;
-            return $"APAR-{now:MMddyyyy}-{consecutivo:D3}";
+            return $"APAR-S{branchId}-{now:yyyyMMdd}-{consecutivo:D3}";
         }
 
         public string GetPaymentMethodName(PaymentMethod method)
