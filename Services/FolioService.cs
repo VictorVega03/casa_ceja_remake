@@ -175,17 +175,27 @@ namespace CasaCejaRemake.Services
                 
                 if (tipo == 'P')
                 {
-                    // Para pagos, buscar en ambas tablas usando BaseRepository
+                    // Para pagos, buscar en ambas tablas usando GetAllAsync y filtrar en memoria
                     var creditPaymentRepo = new BaseRepository<CreditPayment>(_databaseService);
                     var layawayPaymentRepo = new BaseRepository<LayawayPayment>(_databaseService);
                     
-                    var creditPayments = await creditPaymentRepo.FindAsync(p => 
-                        p.PaymentDate >= fechaInicio && p.PaymentDate < fechaFin && 
-                        p.Folio.StartsWith(prefijo) && p.Folio.Length == 17);
+                    var allCreditPayments = await creditPaymentRepo.GetAllAsync();
+                    var allLayawayPayments = await layawayPaymentRepo.GetAllAsync();
                     
-                    var layawayPayments = await layawayPaymentRepo.FindAsync(p => 
-                        p.PaymentDate >= fechaInicio && p.PaymentDate < fechaFin && 
-                        p.Folio.StartsWith(prefijo) && p.Folio.Length == 17);
+                    // Filtrar en memoria
+                    var creditPayments = allCreditPayments
+                        .Where(p => p.PaymentDate >= fechaInicio && 
+                                   p.PaymentDate < fechaFin && 
+                                   p.Folio.StartsWith(prefijo) && 
+                                   p.Folio.Length == 17)
+                        .ToList();
+                    
+                    var layawayPayments = allLayawayPayments
+                        .Where(p => p.PaymentDate >= fechaInicio && 
+                                   p.PaymentDate < fechaFin && 
+                                   p.Folio.StartsWith(prefijo) && 
+                                   p.Folio.Length == 17)
+                        .ToList();
                     
                     foliosEncontrados.AddRange(creditPayments.Select(p => p.Folio));
                     foliosEncontrados.AddRange(layawayPayments.Select(p => p.Folio));
@@ -196,25 +206,34 @@ namespace CasaCejaRemake.Services
                     if (tipo == 'V')
                     {
                         var repo = new BaseRepository<Sale>(_databaseService);
-                        var items = await repo.FindAsync(s => 
-                            s.SaleDate >= fechaInicio && s.SaleDate < fechaFin && 
-                            s.Folio.StartsWith(prefijo) && s.Folio.Length == 17);
+                        var all = await repo.GetAllAsync();
+                        var items = all.Where(s => 
+                            s.SaleDate >= fechaInicio && 
+                            s.SaleDate < fechaFin && 
+                            s.Folio.StartsWith(prefijo) && 
+                            s.Folio.Length == 17).ToList();
                         foliosEncontrados.AddRange(items.Select(s => s.Folio));
                     }
                     else if (tipo == 'A')
                     {
                         var repo = new BaseRepository<Layaway>(_databaseService);
-                        var items = await repo.FindAsync(l => 
-                            l.LayawayDate >= fechaInicio && l.LayawayDate < fechaFin && 
-                            l.Folio.StartsWith(prefijo) && l.Folio.Length == 17);
+                        var all = await repo.GetAllAsync();
+                        var items = all.Where(l => 
+                            l.LayawayDate >= fechaInicio && 
+                            l.LayawayDate < fechaFin && 
+                            l.Folio.StartsWith(prefijo) && 
+                            l.Folio.Length == 17).ToList();
                         foliosEncontrados.AddRange(items.Select(l => l.Folio));
                     }
                     else if (tipo == 'C')
                     {
                         var repo = new BaseRepository<Credit>(_databaseService);
-                        var items = await repo.FindAsync(c => 
-                            c.CreditDate >= fechaInicio && c.CreditDate < fechaFin && 
-                            c.Folio.StartsWith(prefijo) && c.Folio.Length == 17);
+                        var all = await repo.GetAllAsync();
+                        var items = all.Where(c => 
+                            c.CreditDate >= fechaInicio && 
+                            c.CreditDate < fechaFin && 
+                            c.Folio.StartsWith(prefijo) && 
+                            c.Folio.Length == 17).ToList();
                         foliosEncontrados.AddRange(items.Select(c => c.Folio));
                     }
                 }
