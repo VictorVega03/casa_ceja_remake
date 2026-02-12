@@ -301,13 +301,23 @@ namespace CasaCejaRemake.Services
                 var cajaId = int.TryParse(terminalId.Replace("CAJA-", ""), out var caja) ? caja : 1;
                 var paymentFolio = await App.FolioService!.GenerarFolioPagoAsync(credit.BranchId, cajaId);
 
+                // Convertir el enum a snake_case: TarjetaDebito -> tarjeta_debito
+                var methodName = method.ToString();
+                var snakeCaseMethod = System.Text.RegularExpressions.Regex.Replace(methodName, "([a-z])([A-Z])", "$1_$2").ToLower();
+
+                // Serializar el método de pago a JSON con la misma estructura que pagos mixtos
+                var paymentJson = System.Text.Json.JsonSerializer.Serialize(new Dictionary<string, decimal>
+                {
+                    { snakeCaseMethod, amount }
+                });
+
                 var payment = new CreditPayment
                 {
                     Folio = paymentFolio,
                     CreditId = credit.Id,
                     UserId = userId,
                     AmountPaid = amount,
-                    PaymentMethod = method.ToString(),
+                    PaymentMethod = paymentJson,
                     PaymentDate = DateTime.Now,
                     CashCloseFolio = string.Empty,
                     Notes = notes,
