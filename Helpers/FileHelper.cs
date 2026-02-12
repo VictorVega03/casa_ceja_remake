@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
 
@@ -86,25 +87,41 @@ namespace CasaCejaRemake.Helpers
             try
             {
                 var rootPath = GetRootPath();
+                Console.WriteLine($"[FileHelper] Verificando estructura de carpetas en: {rootPath}");
 
                 // Crear raíz si no existe
                 if (!Directory.Exists(rootPath))
+                {
+                    Console.WriteLine($"[FileHelper] Creando carpeta raíz: {rootPath}");
                     Directory.CreateDirectory(rootPath);
+                }
+                else
+                {
+                    Console.WriteLine($"[FileHelper] Carpeta raíz ya existe: {rootPath}");
+                }
 
                 // Crear subcarpetas
                 foreach (var subFolder in SUB_FOLDERS)
                 {
                     var subPath = Path.Combine(rootPath, subFolder);
                     if (!Directory.Exists(subPath))
+                    {
+                        Console.WriteLine($"[FileHelper] Creando subcarpeta: {subFolder}");
                         Directory.CreateDirectory(subPath);
+                    }
+                    else
+                    {
+                        Console.WriteLine($"[FileHelper] Subcarpeta ya existe: {subFolder}");
+                    }
                 }
 
-                Console.WriteLine($"[FileHelper] Directorios verificados en: {rootPath}");
+                Console.WriteLine($"[FileHelper] ✓ Estructura de directorios verificada correctamente");
                 return true;
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[FileHelper] Error creando directorios: {ex.Message}");
+                Console.WriteLine($"[FileHelper] ✗ Error creando directorios: {ex.Message}");
+                Console.WriteLine($"[FileHelper] Stack trace: {ex.StackTrace}");
                 return false;
             }
         }
@@ -129,6 +146,76 @@ namespace CasaCejaRemake.Helpers
             EnsureDirectoriesExist();
             var fileName = GenerateFileName(baseName, extension);
             return Path.Combine(GetModulePath(module), fileName);
+        }
+
+        /// <summary>
+        /// Abre la carpeta raíz de documentos en el explorador de archivos del sistema operativo.
+        /// Windows: Explorador de Archivos
+        /// macOS: Finder
+        /// Linux: Administrador de archivos predeterminado
+        /// </summary>
+        /// <returns>true si se abrió correctamente, false si hubo algún error</returns>
+        public static bool OpenFolderInExplorer()
+        {
+            try
+            {
+                var rootPath = GetRootPath();
+                
+                // Verificar que la carpeta exista
+                if (!Directory.Exists(rootPath))
+                {
+                    Console.WriteLine($"[FileHelper] La carpeta no existe: {rootPath}");
+                    Console.WriteLine($"[FileHelper] Intentando crear la carpeta...");
+                    
+                    if (!EnsureDirectoriesExist())
+                    {
+                        Console.WriteLine($"[FileHelper] No se pudo crear la carpeta");
+                        return false;
+                    }
+                }
+
+                Console.WriteLine($"[FileHelper] Abriendo carpeta: {rootPath}");
+
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                {
+                    // Windows: usar explorer
+                    Process.Start(new ProcessStartInfo
+                    {
+                        FileName = "explorer",
+                        Arguments = $"\"{rootPath}\"",
+                        UseShellExecute = true
+                    });
+                }
+                else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                {
+                    // macOS: usar open
+                    Process.Start(new ProcessStartInfo
+                    {
+                        FileName = "open",
+                        Arguments = $"\"{rootPath}\"",
+                        UseShellExecute = true
+                    });
+                }
+                else
+                {
+                    // Linux: usar xdg-open
+                    Process.Start(new ProcessStartInfo
+                    {
+                        FileName = "xdg-open",
+                        Arguments = $"\"{rootPath}\"",
+                        UseShellExecute = true
+                    });
+                }
+
+                Console.WriteLine($"[FileHelper] ✓ Carpeta abierta correctamente");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[FileHelper] ✗ Error al abrir carpeta: {ex.Message}");
+                Console.WriteLine($"[FileHelper] Stack trace: {ex.StackTrace}");
+                return false;
+            }
         }
     }
 }

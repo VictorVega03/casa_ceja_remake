@@ -59,6 +59,11 @@ namespace CasaCejaRemake.ViewModels.Shared
         /// </summary>
         public event EventHandler? ExitRequested;
 
+        /// <summary>
+        /// Evento cuando se solicita abrir la carpeta de documentos
+        /// </summary>
+        public event EventHandler<string>? FolderOpenError;
+
         // ====================
         // CONSTRUCTOR
         // ====================
@@ -143,6 +148,27 @@ namespace CasaCejaRemake.ViewModels.Shared
         {
             // Notificar evento
             ExitRequested?.Invoke(this, EventArgs.Empty);
+        }
+
+        /// <summary>
+        /// Comando para abrir la carpeta de documentos en el explorador de archivos
+        /// </summary>
+        [RelayCommand]
+        private void OpenDocumentsFolder()
+        {
+            try
+            {
+                var success = Helpers.FileHelper.OpenFolderInExplorer();
+                
+                if (!success)
+                {
+                    FolderOpenError?.Invoke(this, "No se pudo abrir la carpeta de documentos. Verifique que el sistema tenga permisos de acceso.");
+                }
+            }
+            catch (Exception ex)
+            {
+                FolderOpenError?.Invoke(this, $"Error al abrir la carpeta: {ex.Message}");
+            }
         }
     }
 }

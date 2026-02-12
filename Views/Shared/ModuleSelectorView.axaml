@@ -72,6 +72,29 @@
                 </StackPanel>
 
                 <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                    <!-- Botón de Abrir Carpeta de Documentos -->
+                    <Button Command="{Binding OpenDocumentsFolderCommand}"
+                            Width="36"
+                            Height="36"
+                            Background="#FFC107"
+                            Foreground="White"
+                            BorderThickness="0"
+                            CornerRadius="3"
+                            VerticalAlignment="Center"
+                            ToolTip.Tip="Abrir carpeta de documentos">
+                        <!-- Ícono de carpeta usando Path -->
+                        <Path Fill="White"
+                              Width="18"
+                              Height="18"
+                              Stretch="Uniform"
+                              Data="M10,4H4C2.89,4,2,4.89,2,6v12c0,1.1,0.89,2,2,2h16c1.1,0,2-0.9,2-2V8c0-1.1-0.9-2-2-2h-8L10,4z" />
+                        <Button.Styles>
+                            <Style Selector="Button:pointerover">
+                                <Setter Property="Background" Value="#FFB300" />
+                            </Style>
+                        </Button.Styles>
+                    </Button>
+
                     <!-- Botón de Cerrar Sesión - ROJO -->
                     <Button Content="Cerrar Sesión"
                             Command="{Binding LogoutCommand}"
