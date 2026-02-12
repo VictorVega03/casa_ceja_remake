@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
@@ -82,6 +83,7 @@ namespace CasaCejaRemake.ViewModels.POS
 
         public event EventHandler<CashCloseListItemWrapper>? ItemSelected;
         public event EventHandler? CloseRequested;
+        public event EventHandler? ExportRequested;
 
         public CashCloseHistoryViewModel(
             CashCloseService cashCloseService,
@@ -220,9 +222,35 @@ namespace CasaCejaRemake.ViewModels.POS
         }
 
         [RelayCommand]
+        private void ExportToExcel()
+        {
+            ExportRequested?.Invoke(this, EventArgs.Empty);
+        }
+
+        /// <summary>
+        /// Obtiene las columnas de exportación para el reporte de cortes.
+        /// </summary>
+        public List<ExportColumn<CashCloseListItemWrapper>> GetExportColumns()
+        {
+            return new List<ExportColumn<CashCloseListItemWrapper>>
+            {
+                new() { Header = "Folio", ValueSelector = i => i.Folio, Width = 20 },
+                new() { Header = "Usuario", ValueSelector = i => i.UserName, Width = 20 },
+                new() { Header = "Fecha Cierre", ValueSelector = i => i.CloseDate, Format = "dd/MM/yyyy HH:mm", Width = 20 },
+                new() { Header = "Fondo", ValueSelector = i => i.OpeningCash, Format = "$#,##0.00", Width = 15 },
+                new() { Header = "Total Corte", ValueSelector = i => i.TotalDelCorte, Format = "$#,##0.00", Width = 15 },
+                new() { Header = "Esperado", ValueSelector = i => i.ExpectedCash, Format = "$#,##0.00", Width = 15 },
+                new() { Header = "Diferencia", ValueSelector = i => i.Surplus, Format = "$#,##0.00", Width = 15 },
+                new() { Header = "Resultado", ValueSelector = i => i.SurplusStatus, Width = 15 }
+            };
+        }
+
+        [RelayCommand]
         private void Close()
         {
             CloseRequested?.Invoke(this, EventArgs.Empty);
         }
     }
 }
+
+

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
@@ -36,6 +37,7 @@ namespace CasaCejaRemake.Views.POS
                 _viewModel.CreateNewRequested += OnCreateNewRequested;
                 _viewModel.ViewCustomerCreditsLayaways += OnViewCustomerCreditsLayaways;
                 _viewModel.Cancelled += OnCancelled;
+                _viewModel.ExportRequested += OnExportRequested;
                 
                 // Cargar clientes iniciales
                 await _viewModel.InitializeAsync();
@@ -169,6 +171,13 @@ namespace CasaCejaRemake.Views.POS
                     return;
                 }
 
+                if (e.Key == Key.F8)
+                {
+                    vm.ExportToExcelCommand.Execute(null);
+                    e.Handled = true;
+                    return;
+                }
+
                 if (e.Key == Key.Escape)
                 {
                     vm.CancelCommand.Execute(null);
@@ -188,8 +197,22 @@ namespace CasaCejaRemake.Views.POS
                 _viewModel.CreateNewRequested -= OnCreateNewRequested;
                 _viewModel.ViewCustomerCreditsLayaways -= OnViewCustomerCreditsLayaways;
                 _viewModel.Cancelled -= OnCancelled;
+                _viewModel.ExportRequested -= OnExportRequested;
             }
             base.OnClosed(e);
+        }
+
+        private async void OnExportRequested(object? sender, EventArgs e)
+        {
+            if (_viewModel == null) return;
+
+            await ExportHelper.ExportSingleSheetAsync(
+                this,
+                _viewModel.Customers,
+                _viewModel.GetExportColumns(),
+                "Clientes",
+                "Lista de Clientes",
+                "Lista de Clientes");
         }
     }
 }

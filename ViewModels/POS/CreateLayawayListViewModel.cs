@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
@@ -7,6 +8,7 @@ using CommunityToolkit.Mvvm.Input;
 using CasaCejaRemake.Models;
 using CasaCejaRemake.Services;
 using CasaCejaRemake.Helpers;
+
 
 namespace CasaCejaRemake.ViewModels.POS
 {
@@ -100,6 +102,11 @@ namespace CasaCejaRemake.ViewModels.POS
 
         public event EventHandler<CreditLayawayListItemWrapper>? ItemSelected;
         public event EventHandler? CloseRequested;
+        public event EventHandler? ExportRequested;
+
+        public CreditService CreditServiceInstance => _creditService;
+        public LayawayService LayawayServiceInstance => _layawayService;
+        public CustomerService CustomerServiceInstance => _customerService;
 
         public string FilterDescription => $"{GetFilterTypeName(FilterType)} - {GetFilterStatusName(FilterStatus)}";
 
@@ -269,6 +276,85 @@ namespace CasaCejaRemake.ViewModels.POS
         private void Close()
         {
             CloseRequested?.Invoke(this, EventArgs.Empty);
+        }
+
+        [RelayCommand]
+        private void ExportToExcel()
+        {
+            ExportRequested?.Invoke(this, EventArgs.Empty);
+        }
+
+        /// <summary>
+        /// Prepara los datos de exportación multi-hoja para créditos y apartados.
+        /// Genera 4 hojas: Créditos, Apartados, Abonos Créditos, Abonos Apartados.
+        /// </summary>
+        public async Task<List<ExportSheetData>> PrepareMultiSheetExportAsync(ExportService exportService)
+        {
+            var sheets = new List<ExportSheetData>();
+
+            // ===== HOJA 1: CRÉDITOS =====
+            var creditItems = Items.Where(i => i.IsCredit).ToList();
+            var creditColumns = new List<ExportColumn<CreditLayawayListItemWrapper>>
+            {
+                new() { Header = "Folio", ValueSelector = i => i.Folio, Width = 20 },
+                new() { Header = "Cliente", ValueSelector = i => i.CustomerName, Width = 25 },
+                new() { Header = "Total", ValueSelector = i => i.Total, Format = "$#,##0.00", Width = 15 },
+                new() { Header = "Pagado", ValueSelector = i => i.TotalPaid, Format = "$#,##0.00", Width = 15 },
+                new() { Header = "Saldo", ValueSelector = i => i.RemainingBalance, Format = "$#,##0.00", Width = 15 },
+                new() { Header = "Fecha", ValueSelector = i => i.CreatedDate, Format = "dd/MM/yyyy", Width = 15 },
+                new() { Header = "Estado", ValueSelector = i => i.StatusName, Width = 15 }
+            };
+            sheets.Add(exportService.CreateSheetData(creditItems, creditColumns, "Creditos", "Reporte de Créditos"));
+
+            // ===== HOJA 2: APARTADOS =====
+            var layawayItems = Items.Where(i => !i.IsCredit).ToList();
+            sheets.Add(exportService.CreateSheetData(layawayItems, creditColumns, "Apartados", "Reporte de Apartados"));
+
+            // ===== HOJA 3: ABONOS A CRÉDITOS =====
+            var allCreditPayments = new List<(CreditPayment Payment, string CustomerName, string CreditFolio)>();
+            foreach (var item in creditItems)
+            {
+                var credit = (Credit)item.Item;
+                var payments = await _creditService.GetPaymentsAsync(credit.Id);
+                foreach (var p in payments)
+                {
+                    allCreditPayments.Add((p, item.CustomerName, credit.Folio));
+                }
+            }
+
+            var creditPaymentColumns = new List<ExportColumn<(CreditPayment Payment, string CustomerName, string CreditFolio)>>
+            {
+                new() { Header = "Folio Crédito", ValueSelector = i => i.CreditFolio, Width = 20 },
+                new() { Header = "Cliente", ValueSelector = i => i.CustomerName, Width = 25 },
+                new() { Header = "Monto", ValueSelector = i => i.Payment.AmountPaid, Format = "$#,##0.00", Width = 15 },
+                new() { Header = "Fecha", ValueSelector = i => i.Payment.PaymentDate, Format = "dd/MM/yyyy HH:mm", Width = 20 },
+                new() { Header = "Método Pago", ValueSelector = i => i.Payment.PaymentMethod, Width = 18 }
+            };
+            sheets.Add(exportService.CreateSheetData(allCreditPayments, creditPaymentColumns, "Abonos Creditos", "Abonos a Créditos"));
+
+            // ===== HOJA 4: ABONOS A APARTADOS =====
+            var allLayawayPayments = new List<(LayawayPayment Payment, string CustomerName, string LayawayFolio)>();
+            foreach (var item in layawayItems)
+            {
+                var layaway = (Layaway)item.Item;
+                var payments = await _layawayService.GetPaymentsAsync(layaway.Id);
+                foreach (var p in payments)
+                {
+                    allLayawayPayments.Add((p, item.CustomerName, layaway.Folio));
+                }
+            }
+
+            var layawayPaymentColumns = new List<ExportColumn<(LayawayPayment Payment, string CustomerName, string LayawayFolio)>>
+            {
+                new() { Header = "Folio Apartado", ValueSelector = i => i.LayawayFolio, Width = 20 },
+                new() { Header = "Cliente", ValueSelector = i => i.CustomerName, Width = 25 },
+                new() { Header = "Monto", ValueSelector = i => i.Payment.AmountPaid, Format = "$#,##0.00", Width = 15 },
+                new() { Header = "Fecha", ValueSelector = i => i.Payment.PaymentDate, Format = "dd/MM/yyyy HH:mm", Width = 20 },
+                new() { Header = "Método Pago", ValueSelector = i => i.Payment.PaymentMethod, Width = 18 }
+            };
+            sheets.Add(exportService.CreateSheetData(allLayawayPayments, layawayPaymentColumns, "Abonos Apartados", "Abonos a Apartados"));
+
+            return sheets;
         }
 
         public string GetFilterTypeName(ListFilterType type)

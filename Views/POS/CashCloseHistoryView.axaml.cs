@@ -33,6 +33,7 @@ namespace CasaCejaRemake.Views.POS
             {
                 _viewModel.CloseRequested += OnCloseRequested;
                 _viewModel.ItemSelected += OnItemSelected;
+                _viewModel.ExportRequested += OnExportRequested;
                 
                 // Seleccionar primer item automáticamente si hay items
                 if (_viewModel.Items.Count > 0)
@@ -106,7 +107,8 @@ namespace CasaCejaRemake.Views.POS
                         var searchTextBox = this.FindControl<TextBox>("SearchTextBox");
                         searchTextBox?.Focus();
                         searchTextBox?.SelectAll();
-                    }}
+                    }},
+                    { Key.F8, () => _viewModel.ExportToExcelCommand.Execute(null) }
                 };
 
                 if (KeyboardShortcutHelper.HandleShortcut(e, shortcuts))
@@ -124,8 +126,22 @@ namespace CasaCejaRemake.Views.POS
             {
                 _viewModel.CloseRequested -= OnCloseRequested;
                 _viewModel.ItemSelected -= OnItemSelected;
+                _viewModel.ExportRequested -= OnExportRequested;
             }
             base.OnClosed(e);
+        }
+
+        private async void OnExportRequested(object? sender, EventArgs e)
+        {
+            if (_viewModel == null) return;
+
+            await ExportHelper.ExportSingleSheetAsync(
+                this,
+                _viewModel.Items,
+                _viewModel.GetExportColumns(),
+                "Cortes de Caja",
+                "Reporte de Cortes de Caja",
+                "Reporte de Cortes");
         }
     }
 }

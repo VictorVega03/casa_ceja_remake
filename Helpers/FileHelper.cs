@@ -149,6 +149,60 @@ namespace CasaCejaRemake.Helpers
         }
 
         /// <summary>
+        /// Genera un nombre de archivo legible con fecha.
+        /// Ejemplo: "Reporte de Ventas 12_02_2026.xlsx"
+        /// </summary>
+        public static string GenerateReadableFileName(string baseName, string extension = ".xlsx")
+        {
+            var dateStr = DateTime.Now.ToString("dd_MM_yyyy");
+            var safeName = string.Join("_", baseName.Split(Path.GetInvalidFileNameChars()));
+            return $"{safeName} {dateStr}{extension}";
+        }
+
+        /// <summary>
+        /// Obtiene la ruta completa para un archivo con nombre legible.
+        /// Ejemplo: ~/Documents/CasaCejaDocs/POS/Reporte de Ventas 12_02_2026.xlsx
+        /// </summary>
+        public static string GetReadableFilePath(DocumentModule module, string baseName, string extension = ".xlsx")
+        {
+            EnsureDirectoriesExist();
+            var fileName = GenerateReadableFileName(baseName, extension);
+            return Path.Combine(GetModulePath(module), fileName);
+        }
+
+        /// <summary>
+        /// Busca archivos existentes que coincidan con el nombre base en la carpeta del módulo.
+        /// Retorna la ruta del archivo existente o null si no existe.
+        /// </summary>
+        public static string? FindExistingFile(DocumentModule module, string baseName, string extension = ".xlsx")
+        {
+            var filePath = GetReadableFilePath(module, baseName, extension);
+            return File.Exists(filePath) ? filePath : null;
+        }
+
+        /// <summary>
+        /// Genera la ruta para un archivo duplicado con sufijo numérico.
+        /// Ejemplo: "Reporte de Ventas 12_02_2026 (2).xlsx"
+        /// </summary>
+        public static string GetNextDuplicatePath(DocumentModule module, string baseName, string extension = ".xlsx")
+        {
+            EnsureDirectoriesExist();
+            var dateStr = DateTime.Now.ToString("dd_MM_yyyy");
+            var safeName = string.Join("_", baseName.Split(Path.GetInvalidFileNameChars()));
+            var modulePath = GetModulePath(module);
+
+            int counter = 2;
+            string filePath;
+            do
+            {
+                filePath = Path.Combine(modulePath, $"{safeName} {dateStr} ({counter}){extension}");
+                counter++;
+            } while (File.Exists(filePath));
+
+            return filePath;
+        }
+
+        /// <summary>
         /// Abre la carpeta raíz de documentos en el explorador de archivos del sistema operativo.
         /// Windows: Explorador de Archivos
         /// macOS: Finder

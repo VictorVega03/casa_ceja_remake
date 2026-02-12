@@ -27,6 +27,7 @@ namespace CasaCejaRemake.Views.POS
                 _viewModel.CloseRequested += OnCloseRequested;
                 _viewModel.ItemSelected += OnItemSelected;
                 _viewModel.ReprintRequested += OnReprintRequested;
+                _viewModel.ExportRequested += OnExportRequested;
             }
 
             // Configurar PreviewKeyDown en DataGrid para interceptar Enter ANTES del DataGrid
@@ -71,7 +72,8 @@ namespace CasaCejaRemake.Views.POS
                 { Key.Escape, () => Close() },
                 { Key.F5, () => _viewModel.ApplyFiltersCommand.Execute(null) },
                 { Key.F6, () => _viewModel.ClearFiltersCommand.Execute(null) },
-                { Key.F7, () => _viewModel.ExecuteSearchCommand.Execute(null) }
+                { Key.F7, () => _viewModel.ExecuteSearchCommand.Execute(null) },
+                { Key.F8, () => _viewModel.ExportToExcelCommand.Execute(null) }
             };
 
             if (KeyboardShortcutHelper.HandleShortcut(e, shortcuts))
@@ -137,9 +139,23 @@ namespace CasaCejaRemake.Views.POS
                 _viewModel.CloseRequested -= OnCloseRequested;
                 _viewModel.ItemSelected -= OnItemSelected;
                 _viewModel.ReprintRequested -= OnReprintRequested;
+                _viewModel.ExportRequested -= OnExportRequested;
             }
             
             base.OnClosed(e);
+        }
+
+        private async void OnExportRequested(object? sender, EventArgs e)
+        {
+            if (_viewModel == null) return;
+
+            await ExportHelper.ExportSingleSheetAsync(
+                this,
+                _viewModel.Items,
+                _viewModel.GetExportColumns(),
+                "Ventas",
+                "Reporte de Ventas",
+                "Reporte de Ventas");
         }
     }
 }

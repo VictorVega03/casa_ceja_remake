@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
@@ -79,6 +80,7 @@ namespace CasaCejaRemake.ViewModels.POS
         public event EventHandler<SaleListItemWrapper>? ItemSelected;
         public event EventHandler<(Sale Sale, string TicketText)>? ReprintRequested;
         public event EventHandler? CloseRequested;
+        public event EventHandler? ExportRequested;
 
         public SalesHistoryViewModel(
             SalesService salesService,
@@ -271,9 +273,32 @@ namespace CasaCejaRemake.ViewModels.POS
         }
 
         [RelayCommand]
+        private void ExportToExcel()
+        {
+            ExportRequested?.Invoke(this, EventArgs.Empty);
+        }
+
+        /// <summary>
+        /// Obtiene las columnas de exportación para el reporte de ventas.
+        /// </summary>
+        public List<ExportColumn<SaleListItemWrapper>> GetExportColumns()
+        {
+            return new List<ExportColumn<SaleListItemWrapper>>
+            {
+                new() { Header = "Folio", ValueSelector = i => i.Folio, Width = 22 },
+                new() { Header = "Fecha/Hora", ValueSelector = i => i.SaleDate, Format = "dd/MM/yyyy HH:mm", Width = 20 },
+                new() { Header = "Total", ValueSelector = i => i.Total, Format = "$#,##0.00", Width = 15 },
+                new() { Header = "Descuento", ValueSelector = i => i.Discount, Format = "$#,##0.00", Width = 15 },
+                new() { Header = "Usuario", ValueSelector = i => i.UserName, Width = 20 },
+                new() { Header = "Método de Pago", ValueSelector = i => i.PaymentSummary, Width = 25 }
+            };
+        }
+
+        [RelayCommand]
         private void Close()
         {
             CloseRequested?.Invoke(this, EventArgs.Empty);
         }
     }
 }
+

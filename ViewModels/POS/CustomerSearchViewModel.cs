@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -33,6 +34,7 @@ namespace CasaCejaRemake.ViewModels.POS
         public event EventHandler? CreateNewRequested;
         public event EventHandler<(Customer customer, bool isCreditsMode)>? ViewCustomerCreditsLayaways;
         public event EventHandler? Cancelled;
+        public event EventHandler? ExportRequested;
 
         public bool HasSelectedCustomer => SelectedCustomer != null;
 
@@ -140,6 +142,26 @@ namespace CasaCejaRemake.ViewModels.POS
         private void Cancel()
         {
             Cancelled?.Invoke(this, EventArgs.Empty);
+        }
+
+        [RelayCommand]
+        private void ExportToExcel()
+        {
+            ExportRequested?.Invoke(this, EventArgs.Empty);
+        }
+
+        /// <summary>
+        /// Obtiene las columnas de exportación para el reporte de clientes.
+        /// </summary>
+        public List<ExportColumn<Customer>> GetExportColumns()
+        {
+            return new List<ExportColumn<Customer>>
+            {
+                new() { Header = "Nombre", ValueSelector = c => c.Name, Width = 25 },
+                new() { Header = "Teléfono", ValueSelector = c => c.Phone, Width = 18 },
+                new() { Header = "Email", ValueSelector = c => c.Email, Width = 25 },
+                new() { Header = "Dirección", ValueSelector = c => c.FullAddress, Width = 35 }
+            };
         }
 
         public void HandleKeyPress(string key)

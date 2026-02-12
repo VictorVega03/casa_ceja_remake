@@ -196,4 +196,126 @@ public static class DialogHelper
 
         return dialog.Tag is bool result && result;
     }
+
+    /// <summary>
+    /// Acción a tomar cuando se detecta un archivo duplicado.
+    /// </summary>
+    public enum DuplicateFileAction
+    {
+        Replace,
+        Duplicate,
+        Cancel
+    }
+
+    /// <summary>
+    /// Muestra un diálogo de archivo duplicado con 3 opciones:
+    /// Reemplazar, Duplicar o Cancelar.
+    /// </summary>
+    public static async Task<DuplicateFileAction> ShowDuplicateFileDialog(
+        Window parentWindow, string fileName)
+    {
+        var dialog = new Window
+        {
+            Title = "Archivo existente",
+            Width = 420,
+            Height = 200,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner,
+            CanResize = false,
+            Background = new SolidColorBrush(Colors.DimGray)
+        };
+
+        var panel = new StackPanel
+        {
+            Margin = new Avalonia.Thickness(20),
+            Spacing = 15
+        };
+
+        panel.Children.Add(new TextBlock
+        {
+            Text = $"Ya existe un archivo con el nombre:\n\"{fileName}\"\n\n¿Qué desea hacer?",
+            TextWrapping = Avalonia.Media.TextWrapping.Wrap,
+            FontSize = 13,
+            Foreground = new SolidColorBrush(Colors.White)
+        });
+
+        var buttonsPanel = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            Spacing = 8
+        };
+
+        var replaceButton = new Button
+        {
+            Content = "Reemplazar (R)",
+            Padding = new Avalonia.Thickness(15, 5),
+            Background = new SolidColorBrush(Color.Parse("#FF9800")),
+            Foreground = new SolidColorBrush(Colors.White)
+        };
+        replaceButton.Click += (s, e) =>
+        {
+            dialog.Tag = DuplicateFileAction.Replace;
+            dialog.Close();
+        };
+
+        var duplicateButton = new Button
+        {
+            Content = "Duplicar (D)",
+            Padding = new Avalonia.Thickness(15, 5),
+            Background = new SolidColorBrush(Color.Parse("#4CAF50")),
+            Foreground = new SolidColorBrush(Colors.White)
+        };
+        duplicateButton.Click += (s, e) =>
+        {
+            dialog.Tag = DuplicateFileAction.Duplicate;
+            dialog.Close();
+        };
+
+        var cancelButton = new Button
+        {
+            Content = "Cancelar (Esc)",
+            Padding = new Avalonia.Thickness(15, 5),
+            Background = new SolidColorBrush(Color.Parse("#555555")),
+            Foreground = new SolidColorBrush(Colors.White)
+        };
+        cancelButton.Click += (s, e) =>
+        {
+            dialog.Tag = DuplicateFileAction.Cancel;
+            dialog.Close();
+        };
+
+        buttonsPanel.Children.Add(replaceButton);
+        buttonsPanel.Children.Add(duplicateButton);
+        buttonsPanel.Children.Add(cancelButton);
+        panel.Children.Add(buttonsPanel);
+
+        // Shortcuts: R=Reemplazar, D=Duplicar, Esc=Cancelar
+        dialog.KeyDown += (s, e) =>
+        {
+            if (e.Key == Avalonia.Input.Key.R)
+            {
+                dialog.Tag = DuplicateFileAction.Replace;
+                dialog.Close();
+                e.Handled = true;
+            }
+            else if (e.Key == Avalonia.Input.Key.D)
+            {
+                dialog.Tag = DuplicateFileAction.Duplicate;
+                dialog.Close();
+                e.Handled = true;
+            }
+            else if (e.Key == Avalonia.Input.Key.Escape)
+            {
+                dialog.Tag = DuplicateFileAction.Cancel;
+                dialog.Close();
+                e.Handled = true;
+            }
+        };
+
+        dialog.Content = panel;
+        dialog.Tag = DuplicateFileAction.Cancel; // Default
+        await dialog.ShowDialog(parentWindow);
+
+        return dialog.Tag is DuplicateFileAction action ? action : DuplicateFileAction.Cancel;
+    }
 }
