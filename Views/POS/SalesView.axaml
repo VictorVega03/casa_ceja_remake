@@ -434,7 +434,8 @@
                     </StackPanel>
                     <Button.ContextMenu>
                         <ContextMenu>
-                            <MenuItem Header="🚪 Salir (Alt+F4)" Command="{Binding ExitCommand}"/>
+                            <MenuItem Header="🚪 Salir" Command="{Binding ExitCommand}"/>
+                            <MenuItem Header="🔓 Cerrar Sesión" Command="{Binding LogoutCommand}"/>
                             <Separator/>
                             <MenuItem Header="⚙ Configuración de Terminal" Click="OnPosConfigClick"/>
                             <Separator/>

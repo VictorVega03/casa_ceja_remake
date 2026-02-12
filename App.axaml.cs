@@ -258,6 +258,14 @@ namespace CasaCejaRemake
                 ShowLogin(selectorView);
             };
 
+            selectorViewModel.ExitRequested += (s, e) =>
+            {
+                Console.WriteLine("[App] Salida solicitada - Cerrando aplicación");
+                selectorView.Tag = "exit";
+                // Cerrar la aplicación completa
+                desktop.Shutdown();
+            };
+
             selectorView.Closed += (sender, args) =>
             {
                 Console.WriteLine($"[App] ModuleSelector cerrado. Tag = {selectorView.Tag}");
@@ -363,16 +371,16 @@ namespace CasaCejaRemake
             salesView.Closed += (sender, args) =>
             {
                 Console.WriteLine($"[App] SalesView cerrada. Tag = {salesView.Tag}");
-                if (salesView.Tag is string result && result == "exit")
+                if (salesView.Tag is string result)
                 {
-                    if (AuthService.IsAdmin)
+                    if (result == "module_selector")
                     {
-                        // Admin regresa al selector
+                        // Volver al selector de módulos manteniendo la sesión
                         ShowModuleSelector();
                     }
-                    else
+                    else if (result == "logout")
                     {
-                        // Cajero regresa al login
+                        // Cerrar sesión y volver al login
                         AuthService.Logout();
                         ShowLogin();
                     }

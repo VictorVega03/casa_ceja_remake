@@ -19,6 +19,12 @@ namespace CasaCejaRemake.ViewModels.Shared
         [ObservableProperty]
         private string _welcomeMessage = string.Empty;
 
+        [ObservableProperty]
+        private bool _isAdmin = true;
+
+        [ObservableProperty]
+        private bool _isCashier = false;
+
         // ====================
         // EVENTOS
         // ====================
@@ -48,6 +54,11 @@ namespace CasaCejaRemake.ViewModels.Shared
         /// </summary>
         public event EventHandler? LogoutRequested;
 
+        /// <summary>
+        /// Evento cuando se solicita salir de la aplicación
+        /// </summary>
+        public event EventHandler? ExitRequested;
+
         // ====================
         // CONSTRUCTOR
         // ====================
@@ -59,6 +70,10 @@ namespace CasaCejaRemake.ViewModels.Shared
             // Configurar mensaje de bienvenida
             var userName = _authService.CurrentUserName ?? "Administrador";
             WelcomeMessage = $"Bienvenido, {userName}";
+            
+            // Configurar permisos
+            IsAdmin = _authService.IsAdmin;
+            IsCashier = _authService.IsCajero;
         }
 
         // ====================
@@ -80,6 +95,9 @@ namespace CasaCejaRemake.ViewModels.Shared
         [RelayCommand]
         private void OpenInventory()
         {
+            // Solo admins pueden acceder
+            if (!IsAdmin) return;
+            
             InventorySelected?.Invoke(this, EventArgs.Empty);
         }
 
@@ -89,6 +107,9 @@ namespace CasaCejaRemake.ViewModels.Shared
         [RelayCommand]
         private void OpenAdmin()
         {
+            // Solo admins pueden acceder
+            if (!IsAdmin) return;
+            
             AdminSelected?.Invoke(this, EventArgs.Empty);
         }
 
@@ -112,6 +133,16 @@ namespace CasaCejaRemake.ViewModels.Shared
 
             // Notificar evento
             LogoutRequested?.Invoke(this, EventArgs.Empty);
+        }
+
+        /// <summary>
+        /// Comando para salir de la aplicación
+        /// </summary>
+        [RelayCommand]
+        private void Exit()
+        {
+            // Notificar evento
+            ExitRequested?.Invoke(this, EventArgs.Empty);
         }
     }
 }

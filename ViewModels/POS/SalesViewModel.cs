@@ -91,9 +91,11 @@ namespace CasaCejaRemake.ViewModels.POS
         public event EventHandler? RequestShowCreditsLayaways;
         public event EventHandler<string>? ShowMessage;
         public event EventHandler? RequestExit;
+        public event EventHandler? RequestLogout;
         public event EventHandler<SaleResult>? SaleCompleted;
         public event EventHandler? RequestClearCartConfirmation;
         public event EventHandler? RequestExitConfirmation;
+        public event EventHandler? RequestLogoutConfirmation;
         public event EventHandler? CollectionIndicatorsChanged;
         public event EventHandler? ProductAddedToCart;
         
@@ -596,9 +598,26 @@ namespace CasaCejaRemake.ViewModels.POS
             RequestExitConfirmation?.Invoke(this, EventArgs.Empty);
         }
 
+        [RelayCommand]
+        private void Logout()
+        {
+            if (_cartService.HasPendingCollections())
+            {
+                ShowMessage?.Invoke(this, "Hay cobranzas pendientes. Vacia los carritos antes de cerrar sesión.");
+                return;
+            }
+
+            RequestLogoutConfirmation?.Invoke(this, EventArgs.Empty);
+        }
+
         public void ConfirmExit()
         {
             RequestExit?.Invoke(this, EventArgs.Empty);
+        }
+
+        public void ConfirmLogout()
+        {
+            RequestLogout?.Invoke(this, EventArgs.Empty);
         }
 
         public void UpdateClock()

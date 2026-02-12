@@ -70,9 +70,11 @@ namespace CasaCejaRemake.Views.POS
                 _viewModel.RequestShowCreditsLayaways += OnRequestShowCreditsLayaways;
                 _viewModel.ShowMessage += OnShowMessage;
                 _viewModel.RequestExit += OnRequestExit;
+                _viewModel.RequestLogout += OnRequestLogout;
                 _viewModel.SaleCompleted += OnSaleCompleted;
                 _viewModel.RequestClearCartConfirmation += OnRequestClearCartConfirmation;
                 _viewModel.RequestExitConfirmation += OnRequestExitConfirmation;
+                _viewModel.RequestLogoutConfirmation += OnRequestLogoutConfirmation;
                 _viewModel.CollectionIndicatorsChanged += OnCollectionIndicatorsChanged;
                 _viewModel.ProductAddedToCart += OnProductAddedToCart;
                 
@@ -403,9 +405,11 @@ namespace CasaCejaRemake.Views.POS
                 _viewModel.RequestShowCreditsLayaways -= OnRequestShowCreditsLayaways;
                 _viewModel.ShowMessage -= OnShowMessage;
                 _viewModel.RequestExit -= OnRequestExit;
+                _viewModel.RequestLogout -= OnRequestLogout;
                 _viewModel.SaleCompleted -= OnSaleCompleted;
                 _viewModel.RequestClearCartConfirmation -= OnRequestClearCartConfirmation;
                 _viewModel.RequestExitConfirmation -= OnRequestExitConfirmation;
+                _viewModel.RequestLogoutConfirmation -= OnRequestLogoutConfirmation;
                 _viewModel.CollectionIndicatorsChanged -= OnCollectionIndicatorsChanged;
                 _viewModel.ProductAddedToCart -= OnProductAddedToCart;
                 
@@ -825,7 +829,13 @@ namespace CasaCejaRemake.Views.POS
 
         private void OnRequestExit(object? sender, EventArgs e)
         {
-            Tag = "exit";
+            Tag = "module_selector";
+            Close();
+        }
+
+        private void OnRequestLogout(object? sender, EventArgs e)
+        {
+            Tag = "logout";
             Close();
         }
 
@@ -999,8 +1009,8 @@ namespace CasaCejaRemake.Views.POS
                 // Corte completado exitosamente
                 OnShowMessage(this, $"Corte de caja completado. Folio: {result.CashClose.Folio}");
                 
-                // Salir del POS (el usuario debe volver a abrir caja)
-                Tag = "exit";
+                // Volver al selector de módulos (manteniendo la sesión)
+                Tag = "module_selector";
                 Close();
             }
             else
@@ -1037,6 +1047,21 @@ namespace CasaCejaRemake.Views.POS
             if (confirmed && _viewModel != null)
             {
                 _viewModel.ConfirmExit();
+            }
+
+            TxtBarcode.Focus();
+        }
+
+        private async void OnRequestLogoutConfirmation(object? sender, EventArgs e)
+        {
+            var confirmed = await DialogHelper.ShowConfirmDialog(
+                this, 
+                "Cerrar Sesión", 
+                "¿Está seguro de cerrar la sesión?");
+
+            if (confirmed && _viewModel != null)
+            {
+                _viewModel.ConfirmLogout();
             }
 
             TxtBarcode.Focus();
