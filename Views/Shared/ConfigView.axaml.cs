@@ -1,6 +1,8 @@
 using Avalonia.Controls;
 using Avalonia.Input;
 using CasaCejaRemake.ViewModels.Shared;
+using casa_ceja_remake.Helpers;
+using System.Collections.Generic;
 
 namespace CasaCejaRemake.Views.Shared
 {
@@ -9,18 +11,22 @@ namespace CasaCejaRemake.Views.Shared
         public PosTerminalConfigView()
         {
             InitializeComponent();
-
-            // Shortcut: Esc para cerrar
-            KeyDown += OnKeyDown;
+            Activated += OnActivated;
         }
 
-        private void OnKeyDown(object? sender, KeyEventArgs e)
+        private void OnActivated(object? sender, System.EventArgs e)
         {
-            if (e.Key == Key.Escape)
+            Focus();
+        }
+
+        protected override void OnKeyDown(KeyEventArgs e)
+        {
+            KeyboardShortcutHelper.HandleShortcut(e, new Dictionary<Key, System.Action>
             {
-                Close();
-                e.Handled = true;
-            }
+                { Key.Escape, Close }
+            });
+
+            base.OnKeyDown(e);
         }
 
         protected override void OnDataContextChanged(System.EventArgs e)

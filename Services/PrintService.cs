@@ -139,7 +139,7 @@ namespace CasaCejaRemake.Services
                 return false;
             }
 
-            return config.PrintFormat == "thermal"
+            return config.PrintFormat == "Térmica" || config.PrintFormat == "thermal"
                 ? await PrintThermalAsync(content, config.PrinterName)
                 : await PrintLetterAsync(content, config.PrinterName, config);
         }

@@ -56,8 +56,8 @@ namespace CasaCejaRemake.ViewModels.Shared
         };
         public List<string> PrintFormatOptions { get; } = new()
         {
-            "thermal",  // Ticket Térmico
-            "letter"    // Hoja Carta
+            "Térmica",      // Ticket Térmico
+            "T. Carta"      // Hoja Carta
         };
         public List<int> TicketLineWidthOptions { get; } = new() { 32, 40, 48 };
 
@@ -100,7 +100,15 @@ namespace CasaCejaRemake.ViewModels.Shared
                 TicketFooter = config.TicketFooter;
                 SelectedFontSize = config.FontSize;
                 SelectedFontFamily = config.FontFamily;
-                SelectedPrintFormat = config.PrintFormat;
+                
+                // Mapear valores antiguos a nuevos (español)
+                SelectedPrintFormat = config.PrintFormat switch
+                {
+                    "thermal" => "Térmica",
+                    "letter" => "T. Carta",
+                    _ => config.PrintFormat // Si ya está en español, usar tal cual
+                };
+                
                 SelectedTicketLineWidth = config.TicketLineWidth;
                 AutoPrint = config.AutoPrint;
                 OpenCashDrawer = config.OpenCashDrawer;

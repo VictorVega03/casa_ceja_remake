@@ -4,172 +4,274 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:vm="using:CasaCejaRemake.ViewModels.Shared"
         mc:Ignorable="d"
-        d:DesignWidth="550" d:DesignHeight="650"
+        d:DesignWidth="650" d:DesignHeight="700"
         x:Class="CasaCejaRemake.Views.Shared.PosTerminalConfigView"
         x:DataType="vm:PosTerminalConfigViewModel"
         Title="Configuración del Terminal POS"
-        Width="550" Height="650"
+        Width="650" Height="700"
         WindowStartupLocation="CenterOwner"
         CanResize="False"
-        Background="#2D2D30">
+        Focusable="True"
+        Background="#1E1E1E">
 
     <Window.Styles>
         <Style Selector="TextBlock.label">
-            <Setter Property="Foreground" Value="#CCCCCC" />
-            <Setter Property="FontSize" Value="13" />
-            <Setter Property="Margin" Value="0,8,0,4" />
+            <Setter Property="Foreground" Value="#B0B0B0" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Margin" Value="0,10,0,5" />
+            <Setter Property="FontWeight" Value="Medium" />
         </Style>
         <Style Selector="TextBlock.section-title">
             <Setter Property="Foreground" Value="#4FC3F7" />
-            <Setter Property="FontSize" Value="15" />
-            <Setter Property="FontWeight" Value="SemiBold" />
-            <Setter Property="Margin" Value="0,16,0,6" />
+            <Setter Property="FontSize" Value="16" />
+            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="Margin" Value="0,24,0,12" />
         </Style>
         <Style Selector="ComboBox">
             <Setter Property="HorizontalAlignment" Value="Stretch" />
-            <Setter Property="Height" Value="34" />
+            <Setter Property="Height" Value="40" />
+            <Setter Property="Background" Value="#2D2D2D" />
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="BorderBrush" Value="#404040" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Padding" Value="12,8" />
+        </Style>
+        <Style Selector="ComboBox:pointerover">
+            <Setter Property="Background" Value="#353535" />
+            <Setter Property="BorderBrush" Value="#4FC3F7" />
         </Style>
         <Style Selector="TextBox">
             <Setter Property="HorizontalAlignment" Value="Stretch" />
-            <Setter Property="Height" Value="34" />
+            <Setter Property="Height" Value="40" />
+            <Setter Property="Background" Value="#2D2D2D" />
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="BorderBrush" Value="#404040" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Padding" Value="12,8" />
+        </Style>
+        <Style Selector="TextBox:pointerover">
+            <Setter Property="BorderBrush" Value="#4FC3F7" />
+        </Style>
+        <Style Selector="Button">
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="FontSize" Value="13" />
+        </Style>
+        <Style Selector="Button.refresh">
+            <Setter Property="Background" Value="#FF9800" />
+            <Setter Property="Foreground" Value="White" />
+        </Style>
+        <Style Selector="Button.refresh:pointerover">
+            <Setter Property="Background" Value="#FFA726" />
+        </Style>
+        <Style Selector="Button.cancel">
+            <Setter Property="Background" Value="#404040" />
+            <Setter Property="Foreground" Value="White" />
+        </Style>
+        <Style Selector="Button.cancel:pointerover">
+            <Setter Property="Background" Value="#505050" />
+        </Style>
+        <Style Selector="Button.save">
+            <Setter Property="Background" Value="#4CAF50" />
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="FontWeight" Value="Bold" />
+        </Style>
+        <Style Selector="Button.save:pointerover">
+            <Setter Property="Background" Value="#66BB6A" />
         </Style>
     </Window.Styles>
 
     <Grid RowDefinitions="Auto,*,Auto">
 
         <!-- ===== HEADER ===== -->
-        <Border Grid.Row="0" Background="#1E1E1E" Padding="20,14">
-            <StackPanel Orientation="Horizontal" Spacing="10">
-                <TextBlock Text="⚙" FontSize="22" Foreground="#4FC3F7" VerticalAlignment="Center" />
-                <TextBlock Text="Configuración del Terminal POS"
-                           FontSize="20" FontWeight="Bold"
-                           Foreground="White" VerticalAlignment="Center" />
-            </StackPanel>
+        <Border Grid.Row="0" Background="#252525" Padding="28,20">
+            <Grid ColumnDefinitions="Auto,*">
+                <Border Grid.Column="0"
+                        Width="50" Height="50"
+                        Background="#2196F3"
+                        CornerRadius="10"
+                        Margin="0,0,16,0">
+                    <TextBlock Text="🖥️" 
+                               FontSize="26" 
+                               HorizontalAlignment="Center" 
+                               VerticalAlignment="Center" />
+                </Border>
+                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                    <TextBlock Text="Configuración del Terminal POS"
+                               FontSize="24" 
+                               FontWeight="Bold"
+                               Foreground="White" />
+                    <TextBlock Text="Configurar impresora, tickets y parámetros de este terminal"
+                               FontSize="12"
+                               Foreground="#888888"
+                               Margin="0,4,0,0" />
+                </StackPanel>
+            </Grid>
         </Border>
 
         <!-- ===== CONTENT ===== -->
-        <ScrollViewer Grid.Row="1" Padding="24,0">
-            <StackPanel Spacing="2">
+        <ScrollViewer Grid.Row="1" Padding="28,20,28,40">
+            <StackPanel Spacing="4">
 
                 <!-- ========== IDENTIFICACIÓN DEL TERMINAL ========== -->
-                <TextBlock Classes="section-title" Text="🖥️ Identificación del Terminal" />
+                <Border Background="#252525" 
+                        CornerRadius="8" 
+                        Padding="20,18"
+                        BorderBrush="#404040"
+                        BorderThickness="1">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <TextBlock Text="🏷️" FontSize="18" VerticalAlignment="Center" />
+                            <TextBlock Classes="section-title" 
+                                       Text="Identificación del Terminal"
+                                       Margin="0" />
+                        </StackPanel>
 
-                <TextBlock Classes="label" Text="ID de Terminal:" />
-                <TextBox Text="{Binding TerminalId}"
-                         IsReadOnly="{Binding IsReadOnlyForCajero}"
-                         Watermark="Ej: CAJA-01" />
+                        <TextBlock Classes="label" Text="ID de Terminal:" />
+                        <TextBox Text="{Binding TerminalId}"
+                                 IsReadOnly="{Binding IsReadOnlyForCajero}"
+                                 Watermark="Ej: CAJA-01" />
 
-                <TextBlock Classes="label" Text="Nombre de Terminal (opcional):" />
-                <TextBox Text="{Binding TerminalName}"
-                         Watermark="Ej: Caja Principal" />
+                        <TextBlock Classes="label" Text="Nombre de Terminal (opcional):" />
+                        <TextBox Text="{Binding TerminalName}"
+                                 Watermark="Ej: Caja Principal" />
+                    </StackPanel>
+                </Border>
 
                 <!-- ========== IMPRESORA ========== -->
-                <TextBlock Classes="section-title" Text="🖨️ Impresora" />
+                <Border Background="#252525" 
+                        CornerRadius="8" 
+                        Padding="20,18"
+                        BorderBrush="#404040"
+                        BorderThickness="1"
+                        Margin="0,16,0,0">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <TextBlock Text="🖨️" FontSize="18" VerticalAlignment="Center" />
+                            <TextBlock Classes="section-title" 
+                                       Text="Configuración de Impresora"
+                                       Margin="0" />
+                        </StackPanel>
 
-                <Grid ColumnDefinitions="*,Auto">
-                    <TextBlock Classes="label" Text="Impresora:" Grid.Column="0" />
-                    <Button Grid.Column="1" Content="🔄 Actualizar"
-                            Command="{Binding RefreshPrintersCommand}"
-                            FontSize="11" Padding="8,2"
-                            VerticalAlignment="Bottom"
-                            Margin="0,0,0,4" />
-                </Grid>
-                <ComboBox ItemsSource="{Binding AvailablePrinters}"
-                          SelectedItem="{Binding SelectedPrinter}" />
+                        <Grid ColumnDefinitions="*,Auto">
+                            <TextBlock Classes="label" Text="Impresora:" Grid.Column="0" />
+                            <Button Grid.Column="1" 
+                                    Content="🔄  Actualizar Lista"
+                                    Command="{Binding RefreshPrintersCommand}"
+                                    Classes="refresh"
+                                    FontSize="11" 
+                                    Padding="10,6"
+                                    Height="28"
+                                    VerticalAlignment="Bottom"
+                                    Margin="0,0,0,5" />
+                        </Grid>
+                        <ComboBox ItemsSource="{Binding AvailablePrinters}"
+                                  SelectedItem="{Binding SelectedPrinter}" />
 
-                <TextBlock Classes="label" Text="Formato de impresión:" />
-                <ComboBox ItemsSource="{Binding PrintFormatOptions}"
-                          SelectedItem="{Binding SelectedPrintFormat}">
-                    <ComboBox.ItemTemplate>
-                        <DataTemplate>
-                            <TextBlock>
-                                <TextBlock.Text>
-                                    <MultiBinding StringFormat="{}{0}">
-                                        <Binding />
-                                    </MultiBinding>
-                                </TextBlock.Text>
-                            </TextBlock>
-                        </DataTemplate>
-                    </ComboBox.ItemTemplate>
-                </ComboBox>
+                        <TextBlock Classes="label" Text="Tipo de Impresión:" />
+                        <ComboBox ItemsSource="{Binding PrintFormatOptions}"
+                                  SelectedItem="{Binding SelectedPrintFormat}">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock>
+                                        <TextBlock.Text>
+                                            <MultiBinding StringFormat="{}{0}">
+                                                <Binding />
+                                            </MultiBinding>
+                                        </TextBlock.Text>
+                                    </TextBlock>
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
+                    </StackPanel>
+                </Border>
 
                 <!-- ========== PARÁMETROS DEL TICKET ========== -->
-                <TextBlock Classes="section-title" Text="🎫 Parámetros del Ticket" />
+                <Border Background="#252525" 
+                        CornerRadius="8" 
+                        Padding="20,18"
+                        BorderBrush="#404040"
+                        BorderThickness="1"
+                        Margin="0,16,0,0">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <TextBlock Text="🎫" FontSize="18" VerticalAlignment="Center" />
+                            <TextBlock Classes="section-title" 
+                                       Text="Parámetros del Ticket"
+                                       Margin="0" />
+                        </StackPanel>
 
-                <TextBlock Classes="label" Text="Pie de ticket:" />
-                <TextBox Text="{Binding TicketFooter}"
-                         Watermark="Mensaje al final del ticket" />
+                        <TextBlock Classes="label" Text="Mensaje al pie del ticket:" />
+                        <TextBox Text="{Binding TicketFooter}"
+                                 Watermark="Ej: ¡Gracias por su compra!" />
 
-                <Grid ColumnDefinitions="*,16,*">
-                    <StackPanel Grid.Column="0">
-                        <TextBlock Classes="label" Text="Tamaño de fuente:" />
-                        <ComboBox ItemsSource="{Binding FontSizeOptions}"
-                                  SelectedItem="{Binding SelectedFontSize}" />
+                        <Grid ColumnDefinitions="*,16,*" Margin="0,8,0,0">
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Classes="label" Text="Tamaño de fuente:" />
+                                <ComboBox ItemsSource="{Binding FontSizeOptions}"
+                                          SelectedItem="{Binding SelectedFontSize}" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Classes="label" Text="Ancho de línea (caracteres):" />
+                                <ComboBox ItemsSource="{Binding TicketLineWidthOptions}"
+                                          SelectedItem="{Binding SelectedTicketLineWidth}" />
+                            </StackPanel>
+                        </Grid>
+
+                        <TextBlock Classes="label" Text="Tipo de fuente:" />
+                        <ComboBox ItemsSource="{Binding FontFamilyOptions}"
+                                  SelectedItem="{Binding SelectedFontFamily}" />
                     </StackPanel>
-                    <StackPanel Grid.Column="2">
-                        <TextBlock Classes="label" Text="Ancho de línea (chars):" />
-                        <ComboBox ItemsSource="{Binding TicketLineWidthOptions}"
-                                  SelectedItem="{Binding SelectedTicketLineWidth}" />
-                    </StackPanel>
-                </Grid>
-
-                <TextBlock Classes="label" Text="Tipo de fuente:" />
-                <ComboBox ItemsSource="{Binding FontFamilyOptions}"
-                          SelectedItem="{Binding SelectedFontFamily}" />
-
-                <!-- ========== OPCIONES ========== -->
-                <!-- NOTA: Opciones comentadas - siempre debe imprimir automáticamente -->
-                <!-- <TextBlock Classes="section-title" Text="⚡ Opciones" /> -->
-
-                <!-- <CheckBox IsChecked="{Binding AutoPrint}"
-                          Content="Imprimir automáticamente al finalizar venta"
-                          Foreground="#CCCCCC"
-                          Margin="0,8,0,4" /> -->
-
-                <!-- <CheckBox IsChecked="{Binding OpenCashDrawer}"
-                          Content="Abrir cajón de dinero al imprimir"
-                          Foreground="#CCCCCC"
-                          Margin="0,4,0,0" /> -->
-
-                <!-- Espacio inferior -->
-                <Border Height="16" />
+                </Border>                
             </StackPanel>
         </ScrollViewer>
 
         <!-- ===== FOOTER ===== -->
-        <Border Grid.Row="2" Background="#1E1E1E" Padding="20,12">
+        <Border Grid.Row="2" Background="#252525" Padding="28,18">
             <Grid RowDefinitions="Auto,Auto" ColumnDefinitions="*">
-                <!-- Fila 1: Status Message (separado, arriba de botones) -->
+                <!-- Status Message -->
                 <Border Grid.Row="0" 
-                        Background="#252525"
-                        Padding="12,8"
-                        CornerRadius="4"
-                        Margin="0,0,0,12"
+                        Background="#1A3A1A"
+                        Padding="14,10"
+                        CornerRadius="6"
+                        Margin="0,0,0,14"
+                        BorderBrush="#4CAF50"
+                        BorderThickness="1"
                         IsVisible="{Binding StatusMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
-                    <TextBlock Text="{Binding StatusMessage}"
-                               Foreground="#81C784"
-                               FontSize="12"
-                               TextWrapping="Wrap"
-                               HorizontalAlignment="Center" />
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <TextBlock Text="✓" 
+                                   FontSize="16" 
+                                   Foreground="#4CAF50"
+                                   FontWeight="Bold"
+                                   VerticalAlignment="Center" />
+                        <TextBlock Text="{Binding StatusMessage}"
+                                   Foreground="#81C784"
+                                   FontSize="13"
+                                   FontWeight="Medium"
+                                   TextWrapping="Wrap"
+                                   VerticalAlignment="Center" />
+                    </StackPanel>
                 </Border>
 
-                <!-- Fila 2: Botones -->
+                <!-- Botones -->
                 <StackPanel Grid.Row="1" 
                            Orientation="Horizontal" 
                            HorizontalAlignment="Right"
-                           Spacing="10">
-                    <Button Content="Cancelar"
+                           Spacing="12">
+                    <Button Content="Cancelar (Esc)"
                             Command="{Binding CloseCommand}"
-                            Width="100" Height="36"
-                            HorizontalContentAlignment="Center" />
+                            Classes="cancel"
+                            Width="140" 
+                            Height="42"
+                            HorizontalContentAlignment="Center"
+                            VerticalContentAlignment="Center" />
 
-                    <Button Content="💾 Guardar"
+                    <Button Content="Guardar Cambios"
                             Command="{Binding SaveCommand}"
-                            Width="120" Height="36"
-                            Background="#2196F3"
-                            Foreground="White"
-                            FontWeight="SemiBold"
-                            HorizontalContentAlignment="Center" />
+                            Classes="save"
+                            Width="160" 
+                            Height="42"
+                            HorizontalContentAlignment="Center"
+                            VerticalContentAlignment="Center" />
                 </StackPanel>
             </Grid>
         </Border>
