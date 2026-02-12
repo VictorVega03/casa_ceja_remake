@@ -31,6 +31,9 @@ namespace CasaCejaRemake.ViewModels.Shared
 
         /// <summary>Evento para solicitar cierre de la vista</summary>
         public event EventHandler? CloseRequested;
+        
+        /// <summary>Evento cuando se guardó configuración exitosamente (con cambio de sucursal)</summary>
+        public event EventHandler? ConfigurationSaved;
 
         public AppConfigViewModel(
             ConfigService configService,
@@ -87,6 +90,7 @@ namespace CasaCejaRemake.ViewModels.Shared
 
                 var oldBranchId = _configService.AppConfig.BranchId;
                 var newBranchId = SelectedBranch.Id;
+                var branchChanged = oldBranchId != newBranchId;
 
                 await _configService.UpdateAppConfigAsync(config =>
                 {
@@ -94,26 +98,18 @@ namespace CasaCejaRemake.ViewModels.Shared
                     config.BranchName = SelectedBranch.Name;
                 });
 
-                // Actualizar también AuthService si está usando BranchId
-                if (_authService.IsAdmin)
-                {
-                    _authService.SetCurrentBranch(SelectedBranch.Id);
-                }
+                // Actualizar también AuthService
+                _authService.SetCurrentBranch(SelectedBranch.Id);
 
-                // Mensaje diferente si cambió la sucursal
-                if (oldBranchId != newBranchId)
+                StatusMessage = "✓ Configuración guardada";
+                
+                // Notificar si cambió la sucursal
+                if (branchChanged)
                 {
-                    StatusMessage = $"✓ Sucursal cambiada a '{SelectedBranch.Name}'. Cierre y vuelva a abrir el POS para aplicar cambios.";
-                }
-                else
-                {
-                    StatusMessage = "✓ Configuración guardada correctamente";
+                    ConfigurationSaved?.Invoke(this, EventArgs.Empty);
                 }
                 
-                // Esperar 3 segundos para que el usuario lea el mensaje
-                await Task.Delay(3000);
-                
-                // Cerrar automáticamente después de guardar exitosamente
+                // Cerrar inmediatamente
                 CloseRequested?.Invoke(this, EventArgs.Empty);
             }
             catch (Exception ex)

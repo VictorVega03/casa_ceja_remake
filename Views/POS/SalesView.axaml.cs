@@ -909,6 +909,7 @@ namespace CasaCejaRemake.Views.POS
             var historyViewModel = new CashCloseHistoryViewModel(
                 cashCloseService,
                 authService,
+                App.DatabaseService!,
                 _viewModel?.BranchId ?? 1);
 
             historyView.DataContext = historyViewModel;

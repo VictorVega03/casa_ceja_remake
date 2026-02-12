@@ -26,13 +26,12 @@ namespace CasaCejaRemake.Services
         public RoleService RoleService => _roleService;
 
         /// <summary>
-        /// Sucursal actual:
-        /// - Para Admin: usa _currentBranchId (que se sincroniza con ConfigService)
-        /// - Para Cajero: usa su BranchId asignado
+        /// Sucursal actual: Siempre usa _currentBranchId que se sincroniza con ConfigService.
+        /// La verificación de permisos para cambiar sucursal se hace en otro lugar.
         /// </summary>
         public int CurrentBranchId 
         { 
-            get => IsAdmin ? _currentBranchId : (CurrentUser?.BranchId ?? 1);
+            get => _currentBranchId;
             private set => _currentBranchId = value;
         }
 
@@ -70,8 +69,7 @@ namespace CasaCejaRemake.Services
                     // Autenticación exitosa
                     CurrentUser = user;
                     
-                    // Establecer sucursal inicial
-                    _currentBranchId = user.BranchId ?? 1;
+                    // NO establecer _currentBranchId aquí - se sincroniza desde ConfigService en HandleSuccessfulLogin
                     
                     // Registrar el último login (opcional)
                     user.UpdatedAt = DateTime.Now;
@@ -116,14 +114,8 @@ namespace CasaCejaRemake.Services
 
         public bool SetCurrentBranch(int branchId)
         {
-            if (!IsAdmin)
-            {
-                Console.WriteLine("Solo Admin puede cambiar de sucursal");
-                return false;
-            }
-
             _currentBranchId = branchId;
-            Console.WriteLine($"Sucursal cambiada a: {branchId}");
+            Console.WriteLine($"[AuthService] Sucursal cambiada a: {branchId}");
             return true;
         }
 

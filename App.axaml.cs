@@ -10,8 +10,7 @@ using CasaCejaRemake.Helpers;
 using CasaCejaRemake.Services;
 using CasaCejaRemake.ViewModels.Shared;
 using CasaCejaRemake.ViewModels.POS;
-using CasaCejaRemake.Views.Shared;
-using CasaCejaRemake.Views.POS;
+using CasaCejaRemake.Views.Shared;using casa_ceja_remake.Helpers;using CasaCejaRemake.Views.POS;
 
 namespace CasaCejaRemake
 {
@@ -82,6 +81,15 @@ namespace CasaCejaRemake
                 // Inicializar ConfigService (configuración local JSON)
                 ConfigService = new ConfigService();
                 await ConfigService.LoadAsync();
+
+                // Sincronizar la sucursal inicial en AuthService desde ConfigService
+                // Esto asegura que al hacer login, la sucursal configurada esté disponible
+                if (AuthService != null && ConfigService != null)
+                {
+                    var initialBranchId = ConfigService.AppConfig.BranchId;
+                    AuthService.SetCurrentBranch(initialBranchId);
+                    Console.WriteLine($"[App] Sucursal inicial sincronizada: {initialBranchId}");
+                }
 
                 // Suscribirse a cambios de configuración
                 ConfigService.AppConfigChanged += OnAppConfigChanged;
@@ -184,12 +192,12 @@ namespace CasaCejaRemake
         /// </summary>
         private void HandleSuccessfulLogin()
         {
-            // Si es Admin, sincronizar sucursal desde ConfigService
-            if (AuthService != null && AuthService.IsAdmin && ConfigService != null)
+            // Sincronizar sucursal desde ConfigService para TODOS los usuarios
+            if (AuthService != null && ConfigService != null)
             {
                 var configBranchId = ConfigService.AppConfig.BranchId;
                 AuthService.SetCurrentBranch(configBranchId);
-                Console.WriteLine($"[App] Admin logueado - Sucursal sincronizada: {configBranchId}");
+                Console.WriteLine($"[App] Sucursal sincronizada desde ConfigService: {configBranchId} (Usuario: {AuthService.CurrentUserName})");
             }
             
             // Todos los usuarios van al selector de módulos
@@ -446,6 +454,10 @@ namespace CasaCejaRemake
         /// <summary>
         /// Muestra el diálogo de configuración general (solo Admin).
         /// </summary>
+        /// <summary>
+        /// Muestra el diálogo de configuración general (sucursal).
+        /// Si se cambia la sucursal, cierra la aplicación automáticamente.
+        /// </summary>
         private async Task ShowAppConfigDialog(Window? parentWindow)
         {
             if (ConfigService == null || AuthService == null || DatabaseService == null)
@@ -458,6 +470,25 @@ namespace CasaCejaRemake
                 ConfigService,
                 AuthService,
                 DatabaseService);
+
+            // Suscribirse al evento de configuración guardada (cambio de sucursal)
+            viewModel.ConfigurationSaved += async (s, e) =>
+            {
+                Console.WriteLine("[App] Sucursal cambiada - La aplicación se cerrará automáticamente...");
+                
+                // Mostrar mensaje al usuario SIEMPRE
+                await DialogHelper.ShowMessageDialog(
+                    parentWindow!,
+                    "Reinicio Requerido",
+                    "La sucursal ha sido cambiada.\n\nLa aplicación se cerrará automáticamente para aplicar los cambios.");
+                
+                // Cerrar la aplicación COMPLETA
+                if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
+                {
+                    Console.WriteLine("[App] Cerrando aplicación por cambio de sucursal...");
+                    desktop.Shutdown();
+                }
+            };
 
             var view = new Views.Shared.AppConfigView
             {

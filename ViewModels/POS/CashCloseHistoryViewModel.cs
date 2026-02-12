@@ -6,6 +6,8 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CasaCejaRemake.Models;
 using CasaCejaRemake.Services;
+using CasaCejaRemake.Data;
+using CasaCejaRemake.Data.Repositories;
 
 namespace CasaCejaRemake.ViewModels.POS
 {
@@ -29,9 +31,9 @@ namespace CasaCejaRemake.ViewModels.POS
         
         public string SurplusStatus => CashClose.Surplus switch
         {
-            > 0 => "Sobrante",
-            < 0 => "Faltante",
-            _ => "Cuadrado"
+            > 0 => "SOBRANTE",
+            < 0 => "FALTANTE",
+            _ => "CUADRADO"
         };
 
         public string SurplusColor => CashClose.Surplus switch
@@ -49,6 +51,7 @@ namespace CasaCejaRemake.ViewModels.POS
     {
         private readonly CashCloseService _cashCloseService;
         private readonly AuthService _authService;
+        private readonly DatabaseService _databaseService;
         private readonly int _branchId;
         private ObservableCollection<CashCloseListItemWrapper> _allItems = new();
 
@@ -83,10 +86,12 @@ namespace CasaCejaRemake.ViewModels.POS
         public CashCloseHistoryViewModel(
             CashCloseService cashCloseService,
             AuthService authService,
+            DatabaseService databaseService,
             int branchId)
         {
             _cashCloseService = cashCloseService;
             _authService = authService;
+            _databaseService = databaseService;
             _branchId = branchId;
 
             // Filtros por defecto: último mes
@@ -120,18 +125,27 @@ namespace CasaCejaRemake.ViewModels.POS
                     cashCloses = cashCloses.Where(c => c.CloseDate.Date <= FilterDateTo.Value.Date).ToList();
                 }
 
+                // Cargar todos los usuarios y sucursales de una vez para eficiencia
+                var userRepository = new BaseRepository<User>(_databaseService);
+                var branchRepository = new BaseRepository<Branch>(_databaseService);
+                var allUsers = await userRepository.GetAllAsync();
+                var allBranches = await branchRepository.GetAllAsync();
+
                 foreach (var cashClose in cashCloses)
                 {
-                    // Obtener nombre del usuario (simplificado - en producción usar un servicio)
-                    var userName = _authService.CurrentUser?.Id == cashClose.UserId 
-                        ? _authService.CurrentUser?.Name ?? "Usuario"
-                        : $"Usuario #{cashClose.UserId}";
+                    // Obtener nombre del usuario desde la BD
+                    var user = allUsers.FirstOrDefault(u => u.Id == cashClose.UserId);
+                    var userName = user?.Name ?? $"Usuario #{cashClose.UserId}";
+
+                    // Obtener nombre de la sucursal desde la BD
+                    var branch = allBranches.FirstOrDefault(b => b.Id == cashClose.BranchId);
+                    var branchName = branch?.Name ?? $"Sucursal #{cashClose.BranchId}";
 
                     _allItems.Add(new CashCloseListItemWrapper
                     {
                         CashClose = cashClose,
                         UserName = userName,
-                        BranchName = $"Sucursal #{cashClose.BranchId}"
+                        BranchName = branchName
                     });
                 }
 

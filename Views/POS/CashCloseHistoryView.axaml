@@ -163,7 +163,7 @@
                 <DataGridTextColumn Header="TOTAL CORTE" Binding="{Binding TotalDelCorte, StringFormat='{}{0:C2}'}" Width="140"/>
                 <DataGridTextColumn Header="ESPERADO" Binding="{Binding ExpectedCash, StringFormat='{}{0:C2}'}" Width="130"/>
                 <DataGridTextColumn Header="DIFERENCIA" Binding="{Binding Surplus, StringFormat='{}{0:C2}'}" Width="130"/>
-                <DataGridTextColumn Header="ESTADO" Binding="{Binding SurplusStatus}" Width="*"/>
+                <DataGridTextColumn Header="RESULTADO" Binding="{Binding SurplusStatus}" Width="*"/>
             </DataGrid.Columns>
         </DataGrid>
 
