@@ -228,11 +228,16 @@ namespace CasaCejaRemake.ViewModels.POS
         }
 
         /// <summary>
-        /// Obtiene las columnas de exportación para el reporte de cortes.
+        /// Prepara un reporte de 2 hojas:
+        /// Hoja 1: Resumen de todos los cortes de caja
+        /// Hoja 2: Detalles completos de todos los cortes en UNA sola hoja (con separadores)
         /// </summary>
-        public List<ExportColumn<CashCloseListItemWrapper>> GetExportColumns()
+        public async Task<List<ExportSheetData>> PrepareMultiSheetExportAsync(ExportService exportService)
         {
-            return new List<ExportColumn<CashCloseListItemWrapper>>
+            var sheets = new List<ExportSheetData>();
+
+            // ==== HOJA 1: RESUMEN DE TODOS LOS CORTES ====
+            var summaryColumns = new List<ExportColumn<CashCloseListItemWrapper>>
             {
                 new() { Header = "Folio", ValueSelector = i => i.Folio, Width = 20 },
                 new() { Header = "Usuario", ValueSelector = i => i.UserName, Width = 20 },
@@ -243,6 +248,99 @@ namespace CasaCejaRemake.ViewModels.POS
                 new() { Header = "Diferencia", ValueSelector = i => i.Surplus, Format = "$#,##0.00", Width = 15 },
                 new() { Header = "Resultado", ValueSelector = i => i.SurplusStatus, Width = 15 }
             };
+
+            sheets.Add(exportService.CreateSheetData(
+                Items,
+                summaryColumns,
+                "Resumen",
+                "Resumen de Cortes de Caja"));
+
+            // ==== HOJA 2: DETALLES DE TODOS LOS CORTES EN UNA SOLA HOJA ====
+            var allDetails = new List<(string Label, object Value)>();
+
+            foreach (var item in Items)
+            {
+                var cashClose = item.CashClose;
+
+                // Título del corte
+                allDetails.Add(($"═══════════════════════════════════════════════════", ""));
+                allDetails.Add(($"CORTE: {cashClose.Folio}", ""));
+                allDetails.Add(($"═══════════════════════════════════════════════════", ""));
+                allDetails.Add(("", ""));
+
+                // Información general
+                allDetails.Add(("Usuario", item.UserName));
+                allDetails.Add(("Sucursal", item.BranchName));
+                allDetails.Add(("Fecha Apertura", $"{cashClose.OpeningDate:dd/MM/yyyy HH:mm}"));
+                allDetails.Add(("Fecha Cierre", $"{cashClose.CloseDate:dd/MM/yyyy HH:mm}"));
+                allDetails.Add(("Duración Turno (hrs)", $"{cashClose.ShiftDurationHours:0.00}"));
+                allDetails.Add(("", ""));
+
+                // Fondo y Efectivo
+                allDetails.Add(("--- FONDO Y EFECTIVO ---", ""));
+                allDetails.Add(("Fondo de Apertura", $"{cashClose.OpeningCash:C2}"));
+                allDetails.Add(("Efectivo Ventas", $"{cashClose.TotalCash:C2}"));
+                allDetails.Add(("Efectivo Abonos Apartados", $"{cashClose.LayawayCash:C2}"));
+                allDetails.Add(("Efectivo Abonos Créditos", $"{cashClose.CreditCash:C2}"));
+                allDetails.Add(("Efectivo Total", $"{cashClose.EfectivoTotal:C2}"));
+                allDetails.Add(("", ""));
+
+                // Métodos de Pago
+                allDetails.Add(("--- MÉTODOS DE PAGO ---", ""));
+                allDetails.Add(("Tarjeta Débito", $"{cashClose.TotalDebitCard:C2}"));
+                allDetails.Add(("Tarjeta Crédito", $"{cashClose.TotalCreditCard:C2}"));
+                allDetails.Add(("Cheques", $"{cashClose.TotalChecks:C2}"));
+                allDetails.Add(("Transferencias", $"{cashClose.TotalTransfers:C2}"));
+                allDetails.Add(("", ""));
+
+                // Créditos y Apartados
+                allDetails.Add(("--- CRÉDITOS Y APARTADOS CREADOS ---", ""));
+                allDetails.Add(("Total Créditos Creados", $"{cashClose.CreditTotalCreated:C2}"));
+                allDetails.Add(("Total Apartados Creados", $"{cashClose.LayawayTotalCreated:C2}"));
+                allDetails.Add(("", ""));
+
+                // Totales
+                allDetails.Add(("--- TOTALES ---", ""));
+                allDetails.Add(("Total del Corte", $"{cashClose.TotalDelCorte:C2}"));
+                allDetails.Add(("Total Ventas Directas", $"{cashClose.TotalSales:C2}"));
+                allDetails.Add(("Total Pagos", $"{cashClose.TotalPayments:C2}"));
+                allDetails.Add(("Total Electrónicos", $"{cashClose.TotalElectronicPayments:C2}"));
+                allDetails.Add(("", ""));
+
+                // Arqueo
+                allDetails.Add(("--- ARQUEO DE CAJA ---", ""));
+                allDetails.Add(("Efectivo Esperado", $"{cashClose.ExpectedCash:C2}"));
+                allDetails.Add(("Diferencia", $"{cashClose.Surplus:C2}"));
+                allDetails.Add(("Estado", item.SurplusStatus));
+                allDetails.Add(("", ""));
+
+                // Notas
+                if (!string.IsNullOrWhiteSpace(cashClose.Notes))
+                {
+                    allDetails.Add(("Observaciones", cashClose.Notes));
+                    allDetails.Add(("", ""));
+                }
+
+                // Separador entre cortes (espacio en blanco más amplio)
+                allDetails.Add(("", ""));
+                allDetails.Add(("", ""));
+                allDetails.Add(("", ""));
+                allDetails.Add(("", ""));
+            }
+
+            var detailColumns = new List<ExportColumn<(string Label, object Value)>>
+            {
+                new() { Header = "Campo", ValueSelector = d => d.Label, Width = 40 },
+                new() { Header = "Valor", ValueSelector = d => d.Value, Width = 25 }
+            };
+
+            sheets.Add(exportService.CreateSheetData(
+                allDetails,
+                detailColumns,
+                "Detalles",
+                "Detalles de Todos los Cortes"));
+
+            return await Task.FromResult(sheets);
         }
 
         [RelayCommand]

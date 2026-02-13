@@ -190,8 +190,8 @@ namespace CasaCejaRemake.ViewModels.POS
                 return;
             }
 
-            // Agregar pago a la lista
-            PaymentsList.Add(new PaymentEntry
+            // Agregar pago a la lista (al inicio para que aparezca arriba)
+            PaymentsList.Insert(0, new PaymentEntry
             {
                 Method = CurrentMethodName,
                 Amount = CurrentAmount

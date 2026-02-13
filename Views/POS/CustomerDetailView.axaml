@@ -67,32 +67,76 @@
         <!-- Content -->
         <ScrollViewer Grid.Row="1" Padding="6,0">
             <StackPanel>
-                <!-- Información de Contacto -->
+                <!-- Información de Contacto (Cards Individuales) -->
                 <Border Classes="section">
-                    <Grid ColumnDefinitions="*,*,*" RowDefinitions="Auto,Auto" RowSpacing="14" ColumnSpacing="20">
+                    <Grid ColumnDefinitions="*,*,*" RowDefinitions="Auto,Auto" RowSpacing="14" ColumnSpacing="14">
                         <!-- Row 0 -->
-                        <StackPanel Grid.Row="0" Grid.Column="0">
-                            <TextBlock Classes="field-label" Text="Teléfono"/>
-                            <TextBlock Classes="field-value" Text="{Binding CustomerPhone}"/>
-                        </StackPanel>
-                        <StackPanel Grid.Row="0" Grid.Column="1">
-                            <TextBlock Classes="field-label" Text="Email"/>
-                            <TextBlock Classes="field-value" Text="{Binding CustomerEmail}" TextTrimming="CharacterEllipsis"/>
-                        </StackPanel>
-                        <StackPanel Grid.Row="0" Grid.Column="2">
-                            <TextBlock Classes="field-label" Text="RFC"/>
-                            <TextBlock Classes="field-value" Text="{Binding CustomerRfc}"/>
-                        </StackPanel>
+                        <!-- Card 1: Teléfono -->
+                        <Border Grid.Row="0" Grid.Column="0" 
+                                Background="#353535" 
+                                CornerRadius="6" 
+                                Padding="14">
+                            <StackPanel>
+                                <TextBlock Classes="field-label" Text="Teléfono"/>
+                                <TextBlock Classes="field-value" Text="{Binding CustomerPhone}"/>
+                            </StackPanel>
+                        </Border>
+                        
+                        <!-- Card 2: Email -->
+                        <Border Grid.Row="0" Grid.Column="1" 
+                                Background="#353535" 
+                                CornerRadius="6" 
+                                Padding="14">
+                            <StackPanel>
+                                <TextBlock Classes="field-label" Text="Email"/>
+                                <TextBlock Classes="field-value" Text="{Binding CustomerEmail}" TextTrimming="CharacterEllipsis"/>
+                            </StackPanel>
+                        </Border>
+                        
+                        <!-- Card 3: RFC -->
+                        <Border Grid.Row="0" Grid.Column="2" 
+                                Background="#353535" 
+                                CornerRadius="6" 
+                                Padding="14">
+                            <StackPanel>
+                                <TextBlock Classes="field-label" Text="RFC"/>
+                                <TextBlock Classes="field-value" Text="{Binding CustomerRfc}"/>
+                            </StackPanel>
+                        </Border>
 
                         <!-- Row 1 -->
-                        <StackPanel Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2">
-                            <TextBlock Classes="field-label" Text="Dirección"/>
-                            <TextBlock Classes="field-value" Text="{Binding CustomerAddress}" TextWrapping="Wrap"/>
-                        </StackPanel>
-                        <StackPanel Grid.Row="1" Grid.Column="2">
-                            <TextBlock Classes="field-label" Text="Fecha de Registro"/>
-                            <TextBlock Classes="field-value" Text="{Binding CreatedAt, StringFormat='{}{0:dd/MM/yyyy HH:mm}'}"/>
-                        </StackPanel>
+                        <!-- Card 4: Dirección -->
+                        <Border Grid.Row="1" Grid.Column="0" 
+                                Background="#353535" 
+                                CornerRadius="6" 
+                                Padding="14">
+                            <StackPanel>
+                                <TextBlock Classes="field-label" Text="Dirección"/>
+                                <TextBlock Classes="field-value" Text="{Binding CustomerAddress}" TextWrapping="Wrap"/>
+                            </StackPanel>
+                        </Border>
+                        
+                        <!-- Card 5: Ciudad -->
+                        <Border Grid.Row="1" Grid.Column="1" 
+                                Background="#353535" 
+                                CornerRadius="6" 
+                                Padding="14">
+                            <StackPanel>
+                                <TextBlock Classes="field-label" Text="Ciudad"/>
+                                <TextBlock Classes="field-value" Text="{Binding CustomerCity}"/>
+                            </StackPanel>
+                        </Border>
+                        
+                        <!-- Card 6: Fecha de Registro -->
+                        <Border Grid.Row="1" Grid.Column="2" 
+                                Background="#353535" 
+                                CornerRadius="6" 
+                                Padding="14">
+                            <StackPanel>
+                                <TextBlock Classes="field-label" Text="Fecha de Registro"/>
+                                <TextBlock Classes="field-value" Text="{Binding CreatedAt, StringFormat='{}{0:dd/MM/yyyy HH:mm}'}"/>
+                            </StackPanel>
+                        </Border>
                     </Grid>
                 </Border>
 

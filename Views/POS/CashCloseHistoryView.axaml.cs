@@ -133,14 +133,13 @@ namespace CasaCejaRemake.Views.POS
 
         private async void OnExportRequested(object? sender, EventArgs e)
         {
-            if (_viewModel == null) return;
+            if (_viewModel == null || App.ExportService == null) return;
 
-            await ExportHelper.ExportSingleSheetAsync(
+            var sheets = await _viewModel.PrepareMultiSheetExportAsync(App.ExportService);
+            
+            await ExportHelper.ExportMultiSheetAsync(
                 this,
-                _viewModel.Items,
-                _viewModel.GetExportColumns(),
-                "Cortes de Caja",
-                "Reporte de Cortes de Caja",
+                sheets,
                 "Reporte de Cortes");
         }
     }

@@ -221,7 +221,10 @@ public static class DialogHelper
             Height = 200,
             WindowStartupLocation = WindowStartupLocation.CenterOwner,
             CanResize = false,
-            Background = new SolidColorBrush(Colors.DimGray)
+            Background = new SolidColorBrush(Colors.DimGray),
+            Topmost = true,
+            ShowInTaskbar = false,
+            Focusable = true
         };
 
         var panel = new StackPanel

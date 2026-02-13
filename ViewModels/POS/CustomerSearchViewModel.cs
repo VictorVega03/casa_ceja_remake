@@ -152,15 +152,19 @@ namespace CasaCejaRemake.ViewModels.POS
 
         /// <summary>
         /// Obtiene las columnas de exportación para el reporte de clientes.
+        /// Solo incluye los campos del formulario de alta.
         /// </summary>
         public List<ExportColumn<Customer>> GetExportColumns()
         {
             return new List<ExportColumn<Customer>>
             {
-                new() { Header = "Nombre", ValueSelector = c => c.Name, Width = 25 },
+                new() { Header = "ID", ValueSelector = c => c.Id, Width = 10 },
+                new() { Header = "Nombre", ValueSelector = c => c.Name, Width = 30 },
                 new() { Header = "Teléfono", ValueSelector = c => c.Phone, Width = 18 },
-                new() { Header = "Email", ValueSelector = c => c.Email, Width = 25 },
-                new() { Header = "Dirección", ValueSelector = c => c.FullAddress, Width = 35 }
+                new() { Header = "Email", ValueSelector = c => c.Email, Width = 30 },
+                new() { Header = "RFC", ValueSelector = c => c.Rfc, Width = 15 },
+                new() { Header = "Calle", ValueSelector = c => c.Street, Width = 30 },
+                new() { Header = "Ciudad", ValueSelector = c => c.City, Width = 20 }
             };
         }
 

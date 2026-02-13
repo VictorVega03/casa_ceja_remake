@@ -31,6 +31,9 @@ namespace CasaCejaRemake.ViewModels.POS
         private string _customerEmail = string.Empty;
 
         [ObservableProperty]
+        private string _customerCity = string.Empty;
+
+        [ObservableProperty]
         private string _customerNotes = string.Empty;
 
         [ObservableProperty]
@@ -95,9 +98,10 @@ namespace CasaCejaRemake.ViewModels.POS
                 // Cargar datos del cliente
                 CustomerName = _customer.Name;
                 CustomerPhone = _customer.Phone;
-                CustomerAddress = _customer.FullAddress;
+                CustomerAddress = string.IsNullOrWhiteSpace(_customer.FullAddress) ? "No especificado" : _customer.FullAddress;
                 CustomerRfc = string.IsNullOrWhiteSpace(_customer.Rfc) ? "No especificado" : _customer.Rfc;
                 CustomerEmail = string.IsNullOrWhiteSpace(_customer.Email) ? "No especificado" : _customer.Email;
+                CustomerCity = string.IsNullOrWhiteSpace(_customer.City) ? "No especificado" : _customer.City;
                 CustomerNotes = "Sin notas"; // Customer no tiene campo Notes
                 CreatedAt = _customer.CreatedAt;
 

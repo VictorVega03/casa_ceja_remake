@@ -279,11 +279,16 @@ namespace CasaCejaRemake.ViewModels.POS
         }
 
         /// <summary>
-        /// Obtiene las columnas de exportación para el reporte de ventas.
+        /// Prepara un reporte de 2 hojas:
+        /// Hoja 1: Resumen de todas las ventas
+        /// Hoja 2: Detalles de todas las ventas con productos en UNA sola hoja (con separadores)
         /// </summary>
-        public List<ExportColumn<SaleListItemWrapper>> GetExportColumns()
+        public async Task<List<ExportSheetData>> PrepareMultiSheetExportAsync(ExportService exportService)
         {
-            return new List<ExportColumn<SaleListItemWrapper>>
+            var sheets = new List<ExportSheetData>();
+
+            // ==== HOJA 1: RESUMEN DE TODAS LAS VENTAS ====
+            var summaryColumns = new List<ExportColumn<SaleListItemWrapper>>
             {
                 new() { Header = "Folio", ValueSelector = i => i.Folio, Width = 22 },
                 new() { Header = "Fecha/Hora", ValueSelector = i => i.SaleDate, Format = "dd/MM/yyyy HH:mm", Width = 20 },
@@ -292,6 +297,86 @@ namespace CasaCejaRemake.ViewModels.POS
                 new() { Header = "Usuario", ValueSelector = i => i.UserName, Width = 20 },
                 new() { Header = "Método de Pago", ValueSelector = i => i.PaymentSummary, Width = 25 }
             };
+
+            sheets.Add(exportService.CreateSheetData(
+                Items,
+                summaryColumns,
+                "Resumen",
+                "Resumen de Ventas"));
+
+            // ==== HOJA 2: DETALLES DE TODAS LAS VENTAS EN UNA SOLA HOJA ====
+            var allDetails = new List<(string Label, object Value)>();
+
+            foreach (var item in Items)
+            {
+                var sale = item.Sale;
+
+                // Título de la venta
+                allDetails.Add(($"═══════════════════════════════════════════════════", ""));
+                allDetails.Add(($"VENTA: {sale.Folio}", ""));
+                allDetails.Add(($"═══════════════════════════════════════════════════", ""));
+                allDetails.Add(("", ""));
+
+                // Información general
+                allDetails.Add(("Fecha", $"{sale.SaleDate:dd/MM/yyyy HH:mm}"));
+                allDetails.Add(("Usuario", item.UserName));
+                allDetails.Add(("Método de Pago", sale.PaymentSummary));
+                allDetails.Add(("", ""));
+
+                // Obtener productos de la venta
+                var products = await _salesService.GetSaleProductsAsync(sale.Id);
+
+                if (products.Any())
+                {
+                    allDetails.Add(("--- PRODUCTOS VENDIDOS ---", ""));
+                    foreach (var product in products)
+                    {
+                        allDetails.Add(($"  • {product.ProductName}", ""));
+                        allDetails.Add(($"    Cantidad", product.Quantity.ToString()));
+                        allDetails.Add(($"    Precio Unitario", $"{product.FinalUnitPrice:C2}"));
+                        if (product.TotalDiscountAmount > 0)
+                        {
+                            allDetails.Add(($"    Descuento", $"{product.TotalDiscountAmount:C2}"));
+                            if (!string.IsNullOrEmpty(product.DiscountInfo))
+                            {
+                                allDetails.Add(($"    Tipo Descuento", product.DiscountInfo));
+                            }
+                        }
+                        allDetails.Add(($"    Subtotal", $"{product.LineTotal:C2}"));
+                        allDetails.Add(("", "")); // Espacio entre productos
+                    }
+                }
+
+                // Totales
+                allDetails.Add(("--- TOTALES ---", ""));
+                allDetails.Add(("Subtotal", $"{sale.Subtotal:C2}"));
+                if (sale.Discount > 0)
+                {
+                    allDetails.Add(("Descuento", $"{sale.Discount:C2}"));
+                }
+                allDetails.Add(("Total", $"{sale.Total:C2}"));
+                allDetails.Add(("", ""));
+
+                // Separador entre ventas (espacio en blanco más amplio)
+                allDetails.Add(("", ""));
+                allDetails.Add(("", ""));
+                allDetails.Add(("", ""));
+                allDetails.Add(("", ""));
+            }
+
+            var detailColumns = new List<ExportColumn<(string Label, object Value)>>
+            {
+                new() { Header = "Campo", ValueSelector = d => d.Label, Width = 40 },
+                new() { Header = "Valor", ValueSelector = d => d.Value, Width = 25 }
+            };
+
+            sheets.Add(exportService.CreateSheetData(
+                allDetails,
+                detailColumns,
+                "Detalles",
+                "Detalles de Todas las Ventas"));
+
+            return await Task.FromResult(sheets);
         }
 
         [RelayCommand]

@@ -113,9 +113,9 @@
             </StackPanel>
 
             <!-- Panel de pagos realizados y entrada de monto -->
-            <StackPanel Grid.Column="1">
+            <Grid Grid.Column="1" RowDefinitions="Auto,*">
                 <!-- Input de monto actual -->
-                <Border Background="#252525" Padding="15" CornerRadius="4" Margin="0,0,0,10">
+                <Border Grid.Row="0" Background="#252525" Padding="15" CornerRadius="4" Margin="0,0,0,10">
                     <StackPanel>
                         <Grid ColumnDefinitions="*,Auto">
                             <TextBlock Text="{Binding CurrentMethodName, StringFormat='Agregar pago: {0}'}" 
@@ -151,44 +151,48 @@
                     </StackPanel>
                 </Border>
 
-                <!-- Lista de pagos agregados -->
-                <Border Background="#252525" Padding="10" CornerRadius="4" MinHeight="100">
-                    <StackPanel>
-                        <TextBlock Text="PAGOS REGISTRADOS" FontSize="12" Foreground="#888" FontWeight="Bold" Margin="0,0,0,10"/>
+                <!-- Lista de pagos agregados (dentro de Row=* para no desbordar) -->
+                <Border Grid.Row="1" Background="#252525" Padding="10" CornerRadius="4">
+                    <Grid RowDefinitions="Auto,*,Auto">
+                        <TextBlock Grid.Row="0" Text="PAGOS REGISTRADOS" FontSize="12" Foreground="#888" FontWeight="Bold" Margin="0,0,0,10"/>
                         
-                        <ItemsControl ItemsSource="{Binding PaymentsList}">
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate>
-                                    <Grid ColumnDefinitions="*,Auto,Auto" Margin="0,3">
-                                        <TextBlock Text="{Binding Method}" Foreground="White" VerticalAlignment="Center"/>
-                                        <TextBlock Grid.Column="1" Text="{Binding Amount, StringFormat='{}{0:C2}'}" 
-                                                   Foreground="#4CAF50" FontWeight="Bold" Margin="10,0" VerticalAlignment="Center"/>
-                                        <Button Grid.Column="2" Content="✕" 
-                                                Command="{Binding $parent[Window].((vm:PaymentViewModel)DataContext).RemovePaymentCommand}"
-                                                CommandParameter="{Binding}"
-                                                Background="#F44336" Foreground="White" Padding="8,4" FontSize="10"/>
-                                    </Grid>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
+                        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                            <ItemsControl ItemsSource="{Binding PaymentsList}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid ColumnDefinitions="*,Auto,Auto" Margin="0,3">
+                                            <TextBlock Text="{Binding Method}" Foreground="White" VerticalAlignment="Center"/>
+                                            <TextBlock Grid.Column="1" Text="{Binding Amount, StringFormat='{}{0:C2}'}" 
+                                                       Foreground="#4CAF50" FontWeight="Bold" Margin="10,0" VerticalAlignment="Center"/>
+                                            <Button Grid.Column="2" Content="✕" 
+                                                    Command="{Binding $parent[Window].((vm:PaymentViewModel)DataContext).RemovePaymentCommand}"
+                                                    CommandParameter="{Binding}"
+                                                    Background="#F44336" Foreground="White" Padding="8,4" FontSize="10"/>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
                         
-                        <TextBlock Text="No hay pagos registrados" 
-                                   Foreground="#666" FontStyle="Italic"
-                                   IsVisible="{Binding !HasPayments}"
-                                   HorizontalAlignment="Center" Margin="0,10"/>
-                        
-                        <!-- Cambio (solo si efectivo y sobra) -->
-                        <Border Background="#1A3D1A" Padding="10" CornerRadius="4" Margin="0,10,0,0"
-                                IsVisible="{Binding ShowChange}">
-                            <Grid ColumnDefinitions="*,Auto">
-                                <TextBlock Text="CAMBIO:" FontSize="14" Foreground="White" VerticalAlignment="Center"/>
-                                <TextBlock Grid.Column="1" Text="{Binding Change, StringFormat='{}{0:C2}'}" 
-                                           FontSize="20" FontWeight="Bold" Foreground="#4CAF50"/>
-                            </Grid>
-                        </Border>
-                    </StackPanel>
+                        <StackPanel Grid.Row="2">
+                            <TextBlock Text="No hay pagos registrados" 
+                                       Foreground="#666" FontStyle="Italic"
+                                       IsVisible="{Binding !HasPayments}"
+                                       HorizontalAlignment="Center" Margin="0,10"/>
+                            
+                            <!-- Cambio (solo si efectivo y sobra) -->
+                            <Border Background="#1A3D1A" Padding="10" CornerRadius="4" Margin="0,10,0,0"
+                                    IsVisible="{Binding ShowChange}">
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <TextBlock Text="CAMBIO:" FontSize="14" Foreground="White" VerticalAlignment="Center"/>
+                                    <TextBlock Grid.Column="1" Text="{Binding Change, StringFormat='{}{0:C2}'}" 
+                                               FontSize="20" FontWeight="Bold" Foreground="#4CAF50"/>
+                                </Grid>
+                            </Border>
+                        </StackPanel>
+                    </Grid>
                 </Border>
-            </StackPanel>
+            </Grid>
         </Grid>
 
         <!-- Error message -->
