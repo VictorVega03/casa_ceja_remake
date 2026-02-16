@@ -438,6 +438,7 @@
                             <MenuItem Header="🔓 Cerrar Sesión" Command="{Binding LogoutCommand}"/>
                             <Separator/>
                             <MenuItem Header="⚙ Configuración de Terminal" Click="OnPosConfigClick"/>
+                            <MenuItem Header="🧑‍💼 Cajeros" Click="OnCashiersClick"/>
                             <Separator/>
                             <MenuItem Header="💰 Corte de Caja (F10)" Click="OnCashCloseClick"/>
                             <MenuItem Header="📊 Historial de Cortes (F9)" Click="OnCashCloseHistoryClick"/>

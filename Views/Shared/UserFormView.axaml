@@ -1,0 +1,172 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="using:CasaCejaRemake.ViewModels.Shared"
+        xmlns:helpers="using:CasaCejaRemake.Helpers"
+        mc:Ignorable="d"
+        d:DesignWidth="400" d:DesignHeight="550"
+        x:Class="CasaCejaRemake.Views.Shared.UserFormView"
+        x:DataType="vm:UserFormViewModel"
+        Title="{Binding FormTitle}"
+        Width="400" Height="600"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False"
+        SystemDecorations="None"
+        Background="Transparent"
+        TransparencyLevelHint="AcrylicBlur">
+
+    <Window.Resources>
+        <helpers:BoolToColorConverter x:Key="BoolToColorConverter"/>
+    </Window.Resources>
+
+    <Window.Styles>
+        <Style Selector="TextBox">
+            <Setter Property="Height" Value="35"/>
+            <Setter Property="Background" Value="#2D2D2D"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderBrush" Value="#404040"/>
+            <Setter Property="CornerRadius" Value="4"/>
+            <Setter Property="Padding" Value="10,8"/>
+        </Style>
+        <Style Selector="TextBox:pointerover">
+            <Setter Property="BorderBrush" Value="#4FC3F7"/>
+        </Style>
+        <Style Selector="TextBox:focus">
+            <Setter Property="BorderBrush" Value="#2196F3"/>
+        </Style>
+        
+        <Style Selector="ComboBox">
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+            <Setter Property="Height" Value="35"/>
+            <Setter Property="Background" Value="#2D2D2D"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderBrush" Value="#404040"/>
+            <Setter Property="CornerRadius" Value="4"/>
+        </Style>
+        
+        <Style Selector="TextBlock.label">
+            <Setter Property="Foreground" Value="#B0B0B0"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Margin" Value="0,0,0,5"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+        </Style>
+    </Window.Styles>
+
+    <Border Background="#1E1E1E" CornerRadius="8" BorderBrush="#333" BorderThickness="1">
+        <Grid RowDefinitions="Auto,*,Auto">
+            
+            <!-- HEADER -->
+            <Border Grid.Row="0" Background="#252525" Padding="20" CornerRadius="8,8,0,0">
+                <StackPanel Orientation="Horizontal" Spacing="15">
+                    <TextBlock Text="{Binding FormIcon}" FontSize="24" VerticalAlignment="Center"/>
+                    <TextBlock Text="{Binding FormTitle}" FontSize="20" FontWeight="Bold" Foreground="White" VerticalAlignment="Center"/>
+                </StackPanel>
+            </Border>
+
+            <!-- FORM -->
+            <ScrollViewer Grid.Row="1" Padding="20">
+                <StackPanel Spacing="15" IsEnabled="{Binding !IsReadOnly}">
+                    
+                    <!-- Nombre Completo -->
+                    <StackPanel>
+                        <TextBlock Classes="label" Text="NOMBRE COMPLETO"/>
+                        <TextBox Text="{Binding Name}" Watermark="Ej. Juan Pérez"/>
+                    </StackPanel>
+
+                    <!-- Usuario -->
+                    <StackPanel>
+                        <TextBlock Classes="label" Text="NOMBRE DE USUARIO"/>
+                        <TextBox Text="{Binding Username}" Watermark="Ej. jperez"/>
+                    </StackPanel>
+
+                    <!-- Email (Obligatorio) -->
+                    <StackPanel>
+                        <TextBlock Classes="label" Text="CORREO ELECTRÓNICO"/>
+                        <TextBox Text="{Binding Email}" Watermark="Ej. juan@correo.com"/>
+                    </StackPanel>
+
+                    <!-- Teléfono (Obligatorio) -->
+                    <StackPanel>
+                        <TextBlock Classes="label" Text="TELÉFONO"/>
+                        <TextBox Text="{Binding Phone}" Watermark="Ej. 5512345678" MaxLength="20"/>
+                    </StackPanel>
+
+                    <!-- Rol (Solo Admin) -->
+                    <StackPanel IsVisible="{Binding ShowRoleSelector}">
+                        <TextBlock Classes="label" Text="ROL DE USUARIO"/>
+                        <ComboBox ItemsSource="{Binding AvailableRoles}" 
+                                  SelectedItem="{Binding SelectedRole}"
+                                  PlaceholderText="Selecciona un rol">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Name}"/>
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
+                    </StackPanel>
+
+                    <Separator Background="#333" Margin="0,5"/>
+
+                    <!-- Contraseña -->
+                    <StackPanel>
+                        <TextBlock Classes="label" Text="CONTRASEÑA"/>
+                        <TextBox Text="{Binding Password}" 
+                                 PasswordChar="•" 
+                                 Watermark="{Binding PasswordWatermark}"/>
+                    </StackPanel>
+
+                    <!-- Confirmar Contraseña -->
+                    <StackPanel>
+                        <TextBlock Classes="label" Text="CONFIRMAR CONTRASEÑA"/>
+                        <TextBox Text="{Binding ConfirmPassword}" 
+                                 PasswordChar="•" 
+                                 Watermark="Repite la contraseña"/>
+                    </StackPanel>
+
+                    <!-- Mensaje de Error/Estado -->
+                    <TextBlock Text="{Binding StatusMessage}" 
+                               Foreground="{Binding HasError, Converter={StaticResource BoolToColorConverter}, ConverterParameter='#D32F2F|#4CAF50'}"
+                               TextWrapping="Wrap"
+                               HorizontalAlignment="Center"
+                               Margin="0,10,0,0"/>
+                </StackPanel>
+            </ScrollViewer>
+
+            <!-- FOOTER -->
+            <Border Grid.Row="2" Padding="20" Background="#252525" CornerRadius="0,0,8,8">
+                <Grid ColumnDefinitions="*,*">
+                    <Button Grid.Column="0" 
+                            Command="{Binding CancelCommand}"
+                            Content="Cancelar"
+                            HorizontalAlignment="Stretch"
+                            HorizontalContentAlignment="Center"
+                            Margin="0,0,5,0"
+                            Background="#D32F2F"
+                            Foreground="White"/>
+                    
+                    <Button Grid.Column="1" 
+                            Command="{Binding SaveCommand}"
+                            Content="Guardar"
+                            HorizontalAlignment="Stretch"
+                            HorizontalContentAlignment="Center"
+                            Margin="5,0,0,0"
+                            Background="#2E7D32"
+                            Foreground="White"
+                            IsEnabled="{Binding !IsSaving}"
+                            IsVisible="{Binding !IsReadOnly}"/>
+                </Grid>
+            </Border>
+            
+            <!-- Loading Overlay -->
+            <Border Grid.RowSpan="3" 
+                    Background="#80000000" 
+                    CornerRadius="8"
+                    IsVisible="{Binding IsSaving}">
+                <ProgressBar IsIndeterminate="True" 
+                             HorizontalAlignment="Center" 
+                             VerticalAlignment="Center"/>
+            </Border>
+        </Grid>
+    </Border>
+</Window>

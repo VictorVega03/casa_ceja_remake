@@ -10,6 +10,7 @@ using CasaCejaRemake.Helpers;
 using CasaCejaRemake.Services;
 using CasaCejaRemake.ViewModels.Shared;
 using CasaCejaRemake.ViewModels.POS;
+using CasaCejaRemake.ViewModels.POS;
 using CasaCejaRemake.Views.Shared;using casa_ceja_remake.Helpers;using CasaCejaRemake.Views.POS;
 
 namespace CasaCejaRemake
@@ -24,6 +25,7 @@ namespace CasaCejaRemake
         public static PrintService? PrintService { get; private set; }
         public static ExportService? ExportService { get; private set; }
         public static FolioService? FolioService { get; private set; }
+        public static UserService? UserService { get; private set; }
         
         // Servicios del POS
         private CartService? _cartService;
@@ -77,6 +79,9 @@ namespace CasaCejaRemake
                 // Inicializar AuthService con RoleService
                 var userRepository = new BaseRepository<Models.User>(DatabaseService);
                 AuthService = new AuthService(userRepository, RoleService);
+
+                // Inicializar UserService shared
+                UserService = new UserService(userRepository, RoleService);
 
                 // Inicializar ConfigService (configuración local JSON)
                 ConfigService = new ConfigService();
@@ -521,6 +526,19 @@ namespace CasaCejaRemake
         public CreditService? GetCreditService()
         {
             return _creditService;
+        }
+
+        /// <summary>
+        /// Obtiene el servicio de crédito (usado por las vistas).
+        /// </summary>
+        public PrintService? GetPrintService()
+        {
+            return PrintService;
+        }
+
+        public UserService? GetUserService()
+        {
+            return UserService;
         }
 
         /// <summary>

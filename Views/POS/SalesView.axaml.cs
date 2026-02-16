@@ -1728,5 +1728,20 @@ namespace CasaCejaRemake.Views.POS
                 });
             }
         }
+        private async void OnCashiersClick(object? sender, RoutedEventArgs e)
+        {
+            var userService = App.Current is App app ? app.GetUserService() : null;
+            var authService = App.Current is App app2 ? app2.GetAuthService() : null;
+
+            if (userService == null || authService == null)
+            {
+                await DialogHelper.ShowMessageDialog(this, "Error", "Servicios no inicializados.");
+                return;
+            }
+
+            var vm = new UserManagementViewModel(userService, authService, isAdminMode: false);
+            var view = new UserManagementView { DataContext = vm };
+            await view.ShowDialog(this);
+        }
     }
 }

@@ -18,6 +18,10 @@ namespace CasaCejaRemake.Models
         [MaxLength(50)]
         public string Email { get; set; } = string.Empty;
 
+        [Column("phone")]
+        [MaxLength(20)]
+        public string Phone { get; set; } = string.Empty;
+
         [Column("username")]
         [MaxLength(50)]
         [Indexed(Name = "IX_User_Username", Unique = true)]
