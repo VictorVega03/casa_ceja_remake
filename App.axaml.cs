@@ -529,7 +529,15 @@ namespace CasaCejaRemake
         }
 
         /// <summary>
-        /// Obtiene el servicio de crédito (usado por las vistas).
+        /// Obtiene el servicio de configuración (usado por las vistas).
+        /// </summary>
+        public ConfigService? GetConfigService()
+        {
+            return ConfigService;
+        }
+
+        /// <summary>
+        /// Obtiene el servicio de impresión (usado por las vistas).
         /// </summary>
         public PrintService? GetPrintService()
         {

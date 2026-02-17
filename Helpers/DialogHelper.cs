@@ -1,7 +1,9 @@
 using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
+using System;
 using System.Threading.Tasks;
+using CasaCejaRemake.Services;
 
 namespace casa_ceja_remake.Helpers;
 
@@ -58,22 +60,68 @@ public static class DialogHelper
 
     public static async Task ShowTicketDialog(Window parentWindow, string folio, string ticketText)
     {
+        // Intentar imprimir automáticamente
+        try
+        {
+            var app = (CasaCejaRemake.App)Avalonia.Application.Current!;
+            var configService = app.GetConfigService();
+            var printService = app.GetPrintService();
+
+            if (configService != null && printService != null)
+            {
+                var config = configService.PosTerminalConfig;
+
+                // Imprimir automáticamente si está habilitado y hay impresora configurada
+                if (config.AutoPrint && !string.IsNullOrEmpty(config.PrinterName) && config.PrintFormat == "Térmica")
+                {
+                    Console.WriteLine($"[DialogHelper] Imprimiendo automáticamente en {config.PrinterName}...");
+                    var printSuccess = await printService.PrintAsync(ticketText);
+                    
+                    if (printSuccess)
+                    {
+                        Console.WriteLine("[DialogHelper] ✓ Ticket impreso automáticamente");
+                    }
+                    else
+                    {
+                        Console.WriteLine("[DialogHelper] ✗ Error al imprimir automáticamente");
+                    }
+                }
+                else
+                {
+                    Console.WriteLine($"[DialogHelper] Impresión automática desactivada o sin impresora configurada");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[DialogHelper] Error en impresión automática: {ex.Message}");
+        }
+
+        // Mostrar diálogo visual del ticket
         var dialog = new Window
         {
             Title = $"Ticket - Folio: {folio}",
-            Width = 400,
-            Height = 500,
+            Width = 450,
+            Height = 550,
             WindowStartupLocation = WindowStartupLocation.CenterOwner,
             CanResize = true,
-            Background = new SolidColorBrush(Colors.White),
+            Background = new SolidColorBrush(Color.Parse("#2D2D2D")),
             Topmost = true,
             ShowInTaskbar = false
         };
 
+        var mainPanel = new StackPanel
+        {
+            Margin = new Avalonia.Thickness(0)
+        };
+
+        // Panel de contenido del ticket
         var scrollViewer = new ScrollViewer
         {
             HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto,
-            VerticalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto
+            VerticalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto,
+            Background = new SolidColorBrush(Colors.White),
+            Margin = new Avalonia.Thickness(10, 10, 10, 0)
         };
 
         var textBlock = new TextBlock
@@ -82,11 +130,80 @@ public static class DialogHelper
             FontFamily = new FontFamily("Courier New"),
             FontSize = 12,
             Foreground = new SolidColorBrush(Colors.Black),
-            Margin = new Avalonia.Thickness(10)
+            Margin = new Avalonia.Thickness(10),
+            TextWrapping = Avalonia.Media.TextWrapping.NoWrap
         };
 
         scrollViewer.Content = textBlock;
-        dialog.Content = scrollViewer;
+        mainPanel.Children.Add(scrollViewer);
+
+        // Panel de botones
+        var buttonPanel = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            Margin = new Avalonia.Thickness(10),
+            Spacing = 10
+        };
+
+        // Botón Reimprimir
+        var printButton = new Button
+        {
+            Content = "🖨️ Reimprimir (Ctrl+P)",
+            Padding = new Avalonia.Thickness(20, 10),
+            Background = new SolidColorBrush(Color.Parse("#4CAF50")),
+            Foreground = new SolidColorBrush(Colors.White),
+            FontSize = 14,
+            FontWeight = FontWeight.Bold,
+            CornerRadius = new Avalonia.CornerRadius(6)
+        };
+
+        printButton.Click += async (s, e) =>
+        {
+            try
+            {
+                var app = (CasaCejaRemake.App)Avalonia.Application.Current!;
+                var printService = app.GetPrintService();
+                
+                if (printService != null)
+                {
+                    Console.WriteLine("[DialogHelper] Reimprimiendo ticket...");
+                    var success = await printService.PrintAsync(ticketText);
+                    
+                    if (success)
+                    {
+                        Console.WriteLine("[DialogHelper] ✓ Ticket reimpreso correctamente");
+                    }
+                    else
+                    {
+                        Console.WriteLine("[DialogHelper] ✗ Error al reimprimir");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[DialogHelper] Error al reimprimir: {ex.Message}");
+            }
+        };
+
+        // Botón Cerrar
+        var closeButton = new Button
+        {
+            Content = "Cerrar (Esc)",
+            Padding = new Avalonia.Thickness(20, 10),
+            Background = new SolidColorBrush(Color.Parse("#757575")),
+            Foreground = new SolidColorBrush(Colors.White),
+            FontSize = 14,
+            CornerRadius = new Avalonia.CornerRadius(6)
+        };
+
+        closeButton.Click += (s, e) => dialog.Close();
+
+        buttonPanel.Children.Add(printButton);
+        buttonPanel.Children.Add(closeButton);
+        mainPanel.Children.Add(buttonPanel);
+
+        dialog.Content = mainPanel;
 
         // Shortcut: Esc para cerrar  
         dialog.KeyDown += (s, e) =>

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using CasaCejaRemake.Models;
@@ -85,10 +86,42 @@ namespace CasaCejaRemake.Services
         /// <summary>macOS: usa lpstat (CUPS) para listar impresoras.</summary>
         private List<string> GetMacPrinters()
         {
-            var printers = new List<string>();
+            var printers = new HashSet<string>(); // Usar HashSet para evitar duplicados
             try
             {
-                var process = new Process
+                // Método 1: lpstat -a (impresoras que aceptan trabajos)
+                // Este es más confiable para detectar impresoras térmicas
+                var process1 = new Process
+                {
+                    StartInfo = new ProcessStartInfo
+                    {
+                        FileName = "lpstat",
+                        Arguments = "-a",
+                        RedirectStandardOutput = true,
+                        UseShellExecute = false,
+                        CreateNoWindow = true
+                    }
+                };
+                process1.Start();
+                var output1 = process1.StandardOutput.ReadToEnd();
+                process1.WaitForExit();
+
+                // Formato de lpstat -a: "NOMBRE_IMPRESORA acepta peticiones desde..."
+                foreach (var line in output1.Split('\n'))
+                {
+                    if (!string.IsNullOrWhiteSpace(line))
+                    {
+                        var parts = line.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                        if (parts.Length >= 1)
+                        {
+                            printers.Add(parts[0]);
+                        }
+                    }
+                }
+
+                // Método 2: lpstat -p (información de estado)
+                // Como respaldo adicional
+                var process2 = new Process
                 {
                     StartInfo = new ProcessStartInfo
                     {
@@ -99,26 +132,46 @@ namespace CasaCejaRemake.Services
                         CreateNoWindow = true
                     }
                 };
-                process.Start();
-                var output = process.StandardOutput.ReadToEnd();
-                process.WaitForExit();
+                process2.Start();
+                var output2 = process2.StandardOutput.ReadToEnd();
+                process2.WaitForExit();
 
-                foreach (var line in output.Split('\n'))
+                // Formato: "la impresora NOMBRE está..." o "printer NOMBRE is..."
+                foreach (var line in output2.Split('\n'))
                 {
-                    // Formato: "printer NOMBRE_IMPRESORA is idle..."
-                    if (line.StartsWith("printer "))
+                    if (!string.IsNullOrWhiteSpace(line))
                     {
-                        var parts = line.Split(' ');
-                        if (parts.Length >= 2)
-                            printers.Add(parts[1]);
+                        // Buscar después de "impresora " o "printer "
+                        if (line.Contains("impresora "))
+                        {
+                            var parts = line.Split(new[] { "impresora " }, StringSplitOptions.None);
+                            if (parts.Length >= 2)
+                            {
+                                var printerName = parts[1].Split(' ')[0];
+                                printers.Add(printerName);
+                            }
+                        }
+                        else if (line.StartsWith("printer "))
+                        {
+                            var parts = line.Split(' ');
+                            if (parts.Length >= 2)
+                            {
+                                printers.Add(parts[1]);
+                            }
+                        }
                     }
                 }
+
+                Console.WriteLine($"[PrintService] Detectadas {printers.Count} impresora(s) en macOS: {string.Join(", ", printers)}");
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"[PrintService] Error detectando impresoras macOS: {ex.Message}");
             }
-            return printers;
+            
+            return printers.Count > 0 
+                ? printers.ToList() 
+                : new List<string> { "(No se encontraron impresoras)" };
         }
 
         // ============================================================
@@ -286,17 +339,20 @@ namespace CasaCejaRemake.Services
 
         /// <summary>
         /// Envía un archivo a la impresora en macOS usando lp (CUPS).
+        /// Para impresoras térmicas con driver PCL, usa opciones específicas.
         /// </summary>
         private async Task<bool> PrintFileMac(string filePath, string printerName)
         {
             try
             {
+                // Para impresoras térmicas en macOS con driver PCL
+                // Usar opciones de texto: cpi=12 (caracteres por pulgada), lpi=8 (líneas por pulgada)
                 var process = new Process
                 {
                     StartInfo = new ProcessStartInfo
                     {
                         FileName = "lp",
-                        Arguments = $"-d \"{printerName}\" \"{filePath}\"",
+                        Arguments = $"-d \"{printerName}\" -o cpi=12 -o lpi=8 \"{filePath}\"",
                         RedirectStandardOutput = true,
                         RedirectStandardError = true,
                         UseShellExecute = false,
@@ -305,6 +361,7 @@ namespace CasaCejaRemake.Services
                 };
 
                 process.Start();
+                var output = await process.StandardOutput.ReadToEndAsync();
                 await process.WaitForExitAsync();
 
                 if (process.ExitCode != 0)
@@ -314,7 +371,7 @@ namespace CasaCejaRemake.Services
                     return false;
                 }
 
-                Console.WriteLine($"[PrintService] Impreso correctamente en {printerName} (macOS)");
+                Console.WriteLine($"[PrintService] Ticket enviado a impresora: {output.Trim()}");
                 return true;
             }
             catch (Exception ex)

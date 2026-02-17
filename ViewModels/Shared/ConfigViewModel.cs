@@ -20,6 +20,7 @@ namespace CasaCejaRemake.ViewModels.Shared
         private readonly ConfigService _configService;
         private readonly AuthService _authService;
         private readonly PrintService _printService;
+        private readonly ThermalPrinterSetupService _thermalSetupService;
 
         // ============ TERMINAL ============
         [ObservableProperty] private string _terminalId = "CAJA-01";
@@ -76,6 +77,7 @@ namespace CasaCejaRemake.ViewModels.Shared
             _configService = configService;
             _authService = authService;
             _printService = printService;
+            _thermalSetupService = new ThermalPrinterSetupService();
         }
 
         /// <summary>
@@ -139,7 +141,43 @@ namespace CasaCejaRemake.ViewModels.Shared
         private async Task SaveAsync()
         {
             try
-            {
+            {IsLoading = true;
+                StatusMessage = "Guardando configuración...";
+
+                // Si se seleccionó formato Térmica, intentar configuración automática
+                if (SelectedPrintFormat == "Térmica" && System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.OSX))
+                {
+                    StatusMessage = "Configurando impresora térmica automáticamente...";
+                    Console.WriteLine("[ConfigViewModel] Iniciando configuración automática de impresora térmica");
+
+                    var setupResult = await _thermalSetupService.AutoConfigureThermalPrinterMacAsync("Xprinter_USB_Printer_P");
+
+                    // Mostrar log en consola
+                    foreach (var logEntry in setupResult.Log)
+                    {
+                        Console.WriteLine($"[ThermalSetup] {logEntry}");
+                    }
+
+                    if (setupResult.Success)
+                    {
+                        // Actualizar la lista de impresoras y seleccionar la configurada
+                        await RefreshPrintersAsync();
+                        SelectedPrinter = setupResult.PrinterName;
+                        
+                        StatusMessage = $"✓ {setupResult.Message}";
+                        Console.WriteLine($"[ConfigViewModel] Configuración exitosa: {setupResult.Message}");
+                    }
+                    else
+                    {
+                        StatusMessage = $"⚠️ {setupResult.Message}";
+                        Console.WriteLine($"[ConfigViewModel] Error en configuración: {setupResult.Message}");
+                        
+                        // Permitir guardar de todas formas
+                        await System.Threading.Tasks.Task.Delay(3000);
+                    }
+                }
+
+                // Guardar configuración
                 await _configService.UpdatePosTerminalConfigAsync(config =>
                 {
                     // Solo Admin puede cambiar ID de terminal
@@ -160,7 +198,13 @@ namespace CasaCejaRemake.ViewModels.Shared
                     config.OpenCashDrawer = OpenCashDrawer;
                 });
 
-                StatusMessage = "✓ Configuración guardada correctamente";
+                if (!StatusMessage.Contains("⚠️"))
+                {
+                    StatusMessage = "✓ Configuración guardada correctamente";
+                }
+                
+                // Esperar un momento para que el usuario vea el mensaje
+                await System.Threading.Tasks.Task.Delay(1500);
                 
                 // Cerrar automáticamente después de guardar exitosamente
                 CloseRequested?.Invoke(this, EventArgs.Empty);
@@ -168,6 +212,11 @@ namespace CasaCejaRemake.ViewModels.Shared
             catch (Exception ex)
             {
                 StatusMessage = $"Error al guardar: {ex.Message}";
+                Console.WriteLine($"[ConfigViewModel] Error: {ex.Message}");
+            }
+            finally
+            {
+                IsLoading = false;
             }
         }
 
