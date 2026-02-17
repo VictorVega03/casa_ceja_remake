@@ -39,7 +39,7 @@ namespace CasaCejaRemake.ViewModels.Shared
             : "Dar de alta y modificar datos de cajeros";
 
         /// <summary>Icono emoji del título.</summary>
-        public string TitleIcon => IsAdminMode ? "👥" : "🧑‍💼";
+        public string TitleIcon => IsAdminMode ? "👥" : "👤";
 
         /// <summary>¿Se puede desactivar usuarios? Solo en modo Admin.</summary>
         public bool CanDeactivate => IsAdminMode;

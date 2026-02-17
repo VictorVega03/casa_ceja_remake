@@ -1,0 +1,141 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="using:CasaCejaRemake.ViewModels.Shared"
+        mc:Ignorable="d"
+        d:DesignWidth="550" d:DesignHeight="380"
+        x:Class="CasaCejaRemake.Views.Shared.UserDetailsView"
+        x:DataType="vm:UserFormViewModel"
+        Title="Información del Usuario"
+        Width="550" Height="380"
+        SizeToContent="Height"
+        MaxHeight="450"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False"
+        SystemDecorations="None"
+        Background="Transparent"
+        TransparencyLevelHint="AcrylicBlur"
+        Focusable="True">
+
+    <Window.Styles>
+        <Style Selector="TextBlock.field-label">
+            <Setter Property="Foreground" Value="#888888"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Margin" Value="0,0,0,4"/>
+        </Style>
+        
+        <Style Selector="TextBlock.field-value">
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+        </Style>
+    </Window.Styles>
+
+    <Border Background="#1E1E1E" CornerRadius="12" BorderBrush="#333" BorderThickness="1">
+        <Grid RowDefinitions="Auto,*,Auto">
+            
+            <!-- HEADER - Avatar + Nombre + Rol -->
+            <Border Grid.Row="0" 
+                    Padding="25,20" 
+                    CornerRadius="12,12,0,0"
+                    BorderBrush="#404040"
+                    BorderThickness="0,0,0,1">
+                <Border.Background>
+                    <LinearGradientBrush StartPoint="0%,0%" EndPoint="0%,100%">
+                        <GradientStop Color="#1E1E1E" Offset="0"/>
+                        <GradientStop Color="#2D2D2D" Offset="1"/>
+                    </LinearGradientBrush>
+                </Border.Background>
+                <Grid ColumnDefinitions="Auto,*">
+                    <!-- Avatar -->
+                    <Border Grid.Column="0" 
+                            Width="70" Height="70" 
+                            Background="#2196F3"
+                            CornerRadius="35"
+                            Margin="0,0,20,0">
+                        <TextBlock Text="👤" 
+                                   FontSize="34" 
+                                   HorizontalAlignment="Center" 
+                                   VerticalAlignment="Center"/>
+                    </Border>
+                    
+                    <!-- Nombre + Rol -->
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="8">
+                        <TextBlock Text="{Binding Name}" 
+                                   FontSize="22" 
+                                   FontWeight="Bold" 
+                                   Foreground="White"/>
+                        <Border Background="#2196F3" 
+                                CornerRadius="10" 
+                                Padding="10,4"
+                                HorizontalAlignment="Left">
+                            <TextBlock Text="{Binding SelectedRole.Name}" 
+                                       FontSize="12" 
+                                       FontWeight="SemiBold"
+                                       Foreground="White"/>
+                        </Border>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- CONTENT - 2 Columnas tipo identificación -->
+            <ScrollViewer Grid.Row="1" Padding="25,20">
+                <StackPanel Spacing="18">
+                    
+                    <!-- Fila 1: Usuario + Correo -->
+                    <Grid ColumnDefinitions="*,15,*">
+                        <Border Grid.Column="0" Background="#2D2D2D" CornerRadius="8" Padding="14" BorderBrush="#404040" BorderThickness="1">
+                            <StackPanel Spacing="4">
+                                <TextBlock Classes="field-label" Text="NOMBRE DE USUARIO"/>
+                                <TextBlock Classes="field-value" Text="{Binding Username}"/>
+                            </StackPanel>
+                        </Border>
+                        <Border Grid.Column="2" Background="#2D2D2D" CornerRadius="8" Padding="14" BorderBrush="#404040" BorderThickness="1">
+                            <StackPanel Spacing="4">
+                                <TextBlock Classes="field-label" Text="CORREO ELECTRÓNICO"/>
+                                <TextBlock Classes="field-value" Text="{Binding Email}"/>
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+
+                    <!-- Fila 2: Teléfono + Rol -->
+                    <Grid ColumnDefinitions="*,15,*">
+                        <Border Grid.Column="0" Background="#2D2D2D" CornerRadius="8" Padding="14" BorderBrush="#404040" BorderThickness="1">
+                            <StackPanel Spacing="4">
+                                <TextBlock Classes="field-label" Text="TELÉFONO"/>
+                                <TextBlock Classes="field-value" Text="{Binding Phone}"/>
+                            </StackPanel>
+                        </Border>
+                        <Border Grid.Column="2" Background="#2D2D2D" CornerRadius="8" Padding="14" BorderBrush="#404040" BorderThickness="1">
+                            <StackPanel Spacing="4">
+                                <TextBlock Classes="field-label" Text="ROL"/>
+                                <TextBlock Classes="field-value" Text="{Binding SelectedRole.Name}"/>
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+                </StackPanel>
+            </ScrollViewer>
+
+            <!-- FOOTER -->
+            <Border Grid.Row="2" 
+                    Padding="25,15" 
+                    Background="#252525" 
+                    CornerRadius="0,0,12,12"
+                    BorderBrush="#404040"
+                    BorderThickness="0,1,0,0">
+                <Button Content="Cerrar (Esc)"
+                        Command="{Binding CancelCommand}"
+                        HorizontalAlignment="Stretch"
+                        HorizontalContentAlignment="Center"
+                        Background="#404040"
+                        Foreground="White"
+                        Height="38"
+                        CornerRadius="6"
+                        FontSize="13"
+                        FontWeight="SemiBold"/>
+            </Border>
+        </Grid>
+    </Border>
+</Window>

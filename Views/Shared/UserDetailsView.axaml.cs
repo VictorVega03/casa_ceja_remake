@@ -1,7 +1,6 @@
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
-using Avalonia.Markup.Xaml;
 using casa_ceja_remake.Helpers;
 using CasaCejaRemake.ViewModels.Shared;
 using System;
@@ -9,11 +8,11 @@ using System.Collections.Generic;
 
 namespace CasaCejaRemake.Views.Shared
 {
-    public partial class UserFormView : Window
+    public partial class UserDetailsView : Window
     {
         private UserFormViewModel? _viewModel;
 
-        public UserFormView()
+        public UserDetailsView()
         {
             InitializeComponent();
             Loaded += OnLoaded;
@@ -41,23 +40,11 @@ namespace CasaCejaRemake.Views.Shared
 
         protected override void OnKeyDown(KeyEventArgs e)
         {
-            if (DataContext is UserFormViewModel vm)
+            if (e.Key == Key.Escape && DataContext is UserFormViewModel vm)
             {
-                // F5 para guardar
-                if (e.Key == Key.F5 && !vm.IsReadOnly && vm.SaveCommand.CanExecute(null))
-                {
-                    vm.SaveCommand.Execute(null);
-                    e.Handled = true;
-                    return;
-                }
-
-                // Esc para cancelar (solo cierra el dialog, no la vista padre)
-                if (e.Key == Key.Escape)
-                {
-                    vm.CancelCommand.Execute(null);
-                    e.Handled = true;
-                    return;
-                }
+                vm.CancelCommand.Execute(null);
+                e.Handled = true;
+                return;
             }
 
             base.OnKeyDown(e);

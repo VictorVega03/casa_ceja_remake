@@ -45,6 +45,9 @@ namespace CasaCejaRemake.ViewModels.Shared
         /// <summary>El selector de rol solo es visible en modo Admin.</summary>
         public bool ShowRoleSelector => _isAdminMode;
 
+        /// <summary>La sección de contraseña solo es visible en modo Admin.</summary>
+        public bool ShowPasswordSection => _isAdminMode;
+
         /// <summary>El campo de contraseña tiene texto informativo diferente en edición.</summary>
         public string PasswordWatermark => IsEditing
             ? "Dejar vacío para mantener actual"
@@ -58,7 +61,7 @@ namespace CasaCejaRemake.ViewModels.Shared
                 : (_isAdminMode ? "Nuevo Usuario" : "Nuevo Cajero"));
 
         /// <summary>Icono del formulario.</summary>
-        public string FormIcon => IsReadOnly ? "👁️" : (IsEditing ? "✏️" : "➕");
+        public string FormIcon => IsReadOnly ? "�" : (IsEditing ? "✏️" : "➕");
 
         // ============ EVENTOS ============
         public event EventHandler? CloseRequested;
@@ -225,34 +228,47 @@ namespace CasaCejaRemake.ViewModels.Shared
             if (string.IsNullOrWhiteSpace(Name))
                 return "El nombre es requerido.";
 
+            if (string.IsNullOrWhiteSpace(Username))
+                return "El nombre de usuario es requerido.";
+
             if (string.IsNullOrWhiteSpace(Email))
                 return "El correo electrónico es requerido.";
+
+            // Validación básica de formato de email
+            if (!Email.Contains('@') || !Email.Contains('.'))
+                return "El correo electrónico no tiene un formato válido.";
 
             if (string.IsNullOrWhiteSpace(Phone))
                 return "El teléfono es requerido.";
 
-            if (string.IsNullOrWhiteSpace(Username))
-                return "El nombre de usuario es requerido.";
+            // Validación básica de teléfono (mínimo 10 dígitos)
+            var phoneDigits = new string(Phone.Where(char.IsDigit).ToArray());
+            if (phoneDigits.Length < 10)
+                return "El teléfono debe tener al menos 10 dígitos.";
 
-            if (!IsEditing)
+            // Solo validar contraseña en modo admin o al crear nuevo usuario
+            if (ShowPasswordSection)
             {
-                // Contraseña obligatoria al crear
-                if (string.IsNullOrWhiteSpace(Password))
-                    return "La contraseña es requerida.";
+                if (!IsEditing)
+                {
+                    // Contraseña obligatoria al crear
+                    if (string.IsNullOrWhiteSpace(Password))
+                        return "La contraseña es requerida.";
 
-                if (Password.Length < 4)
-                    return "La contraseña debe tener al menos 4 caracteres.";
-            }
-            else
-            {
-                // Al editar, si se pone contraseña, validar longitud
-                if (!string.IsNullOrWhiteSpace(Password) && Password.Length < 4)
-                    return "La contraseña debe tener al menos 4 caracteres.";
-            }
+                    if (Password.Length < 4)
+                        return "La contraseña debe tener al menos 4 caracteres.";
+                }
+                else
+                {
+                    // Al editar, si se pone contraseña, validar longitud
+                    if (!string.IsNullOrWhiteSpace(Password) && Password.Length < 4)
+                        return "La contraseña debe tener al menos 4 caracteres.";
+                }
 
-            // Confirmar contraseña si se proporcionó
-            if (!string.IsNullOrWhiteSpace(Password) && Password != ConfirmPassword)
-                return "Las contraseñas no coinciden.";
+                // Confirmar contraseña si se proporcionó
+                if (!string.IsNullOrWhiteSpace(Password) && Password != ConfirmPassword)
+                    return "Las contraseñas no coinciden.";
+            }
 
             if (SelectedRole == null)
                 return "Debe seleccionar un rol.";

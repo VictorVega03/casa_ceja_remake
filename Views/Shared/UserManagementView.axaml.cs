@@ -13,6 +13,7 @@ namespace CasaCejaRemake.Views.Shared
     public partial class UserManagementView : Window
     {
         private UserManagementViewModel? _viewModel;
+        private bool _isDialogOpen;
 
         public UserManagementView()
         {
@@ -103,7 +104,9 @@ namespace CasaCejaRemake.Views.Shared
                 await _viewModel.RefreshAsync();
             };
 
+            _isDialogOpen = true;
             await formView.ShowDialog(this);
+            _isDialogOpen = false;
         }
 
         private async void OnEditUserRequested(object? sender, User? user)
@@ -126,7 +129,9 @@ namespace CasaCejaRemake.Views.Shared
                 await _viewModel.RefreshAsync();
             };
 
+            _isDialogOpen = true;
             await formView.ShowDialog(this);
+            _isDialogOpen = false;
         }
 
         private async void ShowUserDetails(User user)
@@ -136,21 +141,35 @@ namespace CasaCejaRemake.Views.Shared
             var appUserService = App.Current is App app ? app.GetUserService() : null;
             if (appUserService == null) return;
 
-            // Formulario en modo solo lectura
+            // Formulario en modo solo lectura con la nueva vista de detalles
             var formVm = new UserFormViewModel(appUserService, _viewModel.IsAdminMode, user, isReadOnly: true);
-            var formView = new UserFormView
+            var detailsView = new UserDetailsView
             {
                 DataContext = formVm
             };
             
-            await formView.ShowDialog(this);
+            _isDialogOpen = true;
+            await detailsView.ShowDialog(this);
+            _isDialogOpen = false;
         }
 
         protected override void OnKeyDown(KeyEventArgs e)
         {
+            // No procesar atajos si hay un dialog abierto
+            if (_isDialogOpen)
+            {
+                return;
+            }
+
             KeyboardShortcutHelper.HandleShortcut(e, new Dictionary<Key, Action>
             {
-                { Key.Escape, Close }
+                { Key.Escape, Close },
+                { Key.F2, () => {
+                    if (_viewModel?.SelectedUser != null)
+                    {
+                        OnEditUserRequested(this, _viewModel.SelectedUser);
+                    }
+                }}
             });
 
             base.OnKeyDown(e);

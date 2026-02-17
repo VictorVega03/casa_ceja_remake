@@ -56,6 +56,20 @@ namespace CasaCejaRemake.Models
         [Column("last_sync")]
         public DateTime? LastSync { get; set; }
 
+        /// <summary>
+        /// Texto formateado del último acceso. Muestra "Sin información" si no hay dato.
+        /// </summary>
+        [Ignore]
+        public string LastSyncText => LastSync.HasValue && LastSync.Value > DateTime.MinValue
+            ? LastSync.Value.ToString("dd/MM/yyyy HH:mm")
+            : "Sin información";
+
+        /// <summary>
+        /// Indica si hay información de último acceso.
+        /// </summary>
+        [Ignore]
+        public bool HasLastSync => LastSync.HasValue && LastSync.Value > DateTime.MinValue;
+
         // Navigation properties (not mapped to DB)
         /// <summary>
         /// Nombre del rol (se establece dinámicamente desde RoleService).

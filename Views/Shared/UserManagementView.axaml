@@ -101,6 +101,25 @@
                          Watermark="Buscar por nombre, usuario o rol..."
                          Text="{Binding SearchText, Mode=TwoWay}"/>
 
+                <!-- Info Helper -->
+                <StackPanel Grid.Column="1" 
+                            Orientation="Horizontal" 
+                            Spacing="8" 
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center">
+                    <Border Background="#2D2D2D" 
+                            CornerRadius="4" 
+                            Padding="10,5"
+                            BorderBrush="#404040"
+                            BorderThickness="1">
+                        <TextBlock Foreground="#B0B0B0" FontSize="11">
+                            <Run Text="Presiona" />
+                            <Run Text="Enter" FontWeight="Bold" Foreground="#4FC3F7" />
+                            <Run Text="para ver detalles" />
+                        </TextBlock>
+                    </Border>
+                </StackPanel>
+
                 <!-- Actions -->
                 <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="10">
                     <Button Classes="primary" 
@@ -117,6 +136,7 @@
 
         <!-- CONTENT -->
         <DataGrid Grid.Row="2" 
+                  x:Name="UsersGrid"
                   Margin="20,0,20,10"
                   ItemsSource="{Binding Users}"
                   SelectedItem="{Binding SelectedUser}"
@@ -153,7 +173,24 @@
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
-                <DataGridTextColumn Header="ÚLTIMO ACCESO" Binding="{Binding LastSync, StringFormat='{}{0:dd/MM/yyyy HH:mm}'}" Width="150"/>
+                <DataGridTemplateColumn Header="ÚLTIMO ACCESO" Width="150">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <Panel>
+                                <TextBlock Text="{Binding LastSyncText}" 
+                                           IsVisible="{Binding HasLastSync}"
+                                           VerticalAlignment="Center"
+                                           Padding="10,0"/>
+                                <TextBlock Text="Sin información" 
+                                           IsVisible="{Binding !HasLastSync}"
+                                           Foreground="#888"
+                                           FontStyle="Italic"
+                                           VerticalAlignment="Center"
+                                           Padding="10,0"/>
+                            </Panel>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
             </DataGrid.Columns>
         </DataGrid>
 
@@ -177,7 +214,7 @@
                     
                     <Button Command="{Binding EditUserCommand}"
                             IsEnabled="{Binding SelectedUser, Converter={x:Static ObjectConverters.IsNotNull}}"
-                            Content="Editar (Enter)"
+                            Content="Editar (F2)"
                             Padding="15,8"/>
 
                     <Button Command="{Binding CloseCommand}"

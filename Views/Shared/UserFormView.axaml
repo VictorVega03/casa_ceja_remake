@@ -5,16 +5,19 @@
         xmlns:vm="using:CasaCejaRemake.ViewModels.Shared"
         xmlns:helpers="using:CasaCejaRemake.Helpers"
         mc:Ignorable="d"
-        d:DesignWidth="400" d:DesignHeight="550"
+        d:DesignWidth="550" d:DesignHeight="420"
         x:Class="CasaCejaRemake.Views.Shared.UserFormView"
         x:DataType="vm:UserFormViewModel"
         Title="{Binding FormTitle}"
-        Width="400" Height="600"
+        Width="550" Height="420"
+        SizeToContent="Height"
+        MaxHeight="520"
         WindowStartupLocation="CenterOwner"
         CanResize="False"
         SystemDecorations="None"
         Background="Transparent"
-        TransparencyLevelHint="AcrylicBlur">
+        TransparencyLevelHint="AcrylicBlur"
+        Focusable="True">
 
     <Window.Resources>
         <helpers:BoolToColorConverter x:Key="BoolToColorConverter"/>
@@ -68,29 +71,41 @@
             <ScrollViewer Grid.Row="1" Padding="20">
                 <StackPanel Spacing="15" IsEnabled="{Binding !IsReadOnly}">
                     
-                    <!-- Nombre Completo -->
-                    <StackPanel>
-                        <TextBlock Classes="label" Text="NOMBRE COMPLETO"/>
-                        <TextBox Text="{Binding Name}" Watermark="Ej. Juan Pérez"/>
-                    </StackPanel>
+                    <!-- Fila 1: Nombre + Usuario -->
+                    <Grid ColumnDefinitions="*,15,*">
+                        <StackPanel Grid.Column="0">
+                            <TextBlock Classes="label">
+                                <Run Text="NOMBRE COMPLETO"/>
+                                <Run Text=" *" Foreground="#D32F2F"/>
+                            </TextBlock>
+                            <TextBox Text="{Binding Name}" Watermark="Ej. Juan Pérez"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="2">
+                            <TextBlock Classes="label">
+                                <Run Text="NOMBRE DE USUARIO"/>
+                                <Run Text=" *" Foreground="#D32F2F"/>
+                            </TextBlock>
+                            <TextBox Text="{Binding Username}" Watermark="Ej. jperez"/>
+                        </StackPanel>
+                    </Grid>
 
-                    <!-- Usuario -->
-                    <StackPanel>
-                        <TextBlock Classes="label" Text="NOMBRE DE USUARIO"/>
-                        <TextBox Text="{Binding Username}" Watermark="Ej. jperez"/>
-                    </StackPanel>
-
-                    <!-- Email (Obligatorio) -->
-                    <StackPanel>
-                        <TextBlock Classes="label" Text="CORREO ELECTRÓNICO"/>
-                        <TextBox Text="{Binding Email}" Watermark="Ej. juan@correo.com"/>
-                    </StackPanel>
-
-                    <!-- Teléfono (Obligatorio) -->
-                    <StackPanel>
-                        <TextBlock Classes="label" Text="TELÉFONO"/>
-                        <TextBox Text="{Binding Phone}" Watermark="Ej. 5512345678" MaxLength="20"/>
-                    </StackPanel>
+                    <!-- Fila 2: Email + Teléfono -->
+                    <Grid ColumnDefinitions="*,15,*">
+                        <StackPanel Grid.Column="0">
+                            <TextBlock Classes="label">
+                                <Run Text="CORREO ELECTRÓNICO"/>
+                                <Run Text=" *" Foreground="#D32F2F"/>
+                            </TextBlock>
+                            <TextBox Text="{Binding Email}" Watermark="Ej. juan@correo.com"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="2">
+                            <TextBlock Classes="label">
+                                <Run Text="TELÉFONO"/>
+                                <Run Text=" *" Foreground="#D32F2F"/>
+                            </TextBlock>
+                            <TextBox Text="{Binding Phone}" Watermark="Ej. 5512345678" MaxLength="20"/>
+                        </StackPanel>
+                    </Grid>
 
                     <!-- Rol (Solo Admin) -->
                     <StackPanel IsVisible="{Binding ShowRoleSelector}">
@@ -106,30 +121,43 @@
                         </ComboBox>
                     </StackPanel>
 
-                    <Separator Background="#333" Margin="0,5"/>
+                    <Separator Background="#333" Margin="0,5" IsVisible="{Binding ShowPasswordSection}"/>
 
-                    <!-- Contraseña -->
-                    <StackPanel>
-                        <TextBlock Classes="label" Text="CONTRASEÑA"/>
-                        <TextBox Text="{Binding Password}" 
-                                 PasswordChar="•" 
-                                 Watermark="{Binding PasswordWatermark}"/>
-                    </StackPanel>
-
-                    <!-- Confirmar Contraseña -->
-                    <StackPanel>
-                        <TextBlock Classes="label" Text="CONFIRMAR CONTRASEÑA"/>
-                        <TextBox Text="{Binding ConfirmPassword}" 
-                                 PasswordChar="•" 
-                                 Watermark="Repite la contraseña"/>
-                    </StackPanel>
+                    <!-- Fila 3: Contraseña + Confirmar (Solo Admin) -->
+                    <Grid ColumnDefinitions="*,15,*" IsVisible="{Binding ShowPasswordSection}">
+                        <StackPanel Grid.Column="0">
+                            <StackPanel Orientation="Horizontal" Spacing="0">
+                                <TextBlock Classes="label" Text="CONTRASEÑA"/>
+                                <TextBlock Classes="label" Text=" *" Foreground="#D32F2F" IsVisible="{Binding !IsEditing}"/>
+                            </StackPanel>
+                            <TextBox Text="{Binding Password}" 
+                                     PasswordChar="•" 
+                                     Watermark="{Binding PasswordWatermark}"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="2">
+                            <StackPanel Orientation="Horizontal" Spacing="0">
+                                <TextBlock Classes="label" Text="CONFIRMAR CONTRASEÑA"/>
+                                <TextBlock Classes="label" Text=" *" Foreground="#D32F2F" IsVisible="{Binding !IsEditing}"/>
+                            </StackPanel>
+                            <TextBox Text="{Binding ConfirmPassword}" 
+                                     PasswordChar="•" 
+                                     Watermark="Repite la contraseña"/>
+                        </StackPanel>
+                    </Grid>
 
                     <!-- Mensaje de Error/Estado -->
-                    <TextBlock Text="{Binding StatusMessage}" 
-                               Foreground="{Binding HasError, Converter={StaticResource BoolToColorConverter}, ConverterParameter='#D32F2F|#4CAF50'}"
-                               TextWrapping="Wrap"
-                               HorizontalAlignment="Center"
-                               Margin="0,10,0,0"/>
+                    <Border Background="{Binding HasError, Converter={StaticResource BoolToColorConverter}, ConverterParameter='#3D1F1F|#1F3D1F'}"
+                            BorderBrush="{Binding HasError, Converter={StaticResource BoolToColorConverter}, ConverterParameter='#D32F2F|#4CAF50'}"
+                            BorderThickness="1"
+                            CornerRadius="6"
+                            Padding="12,10"
+                            Margin="0,5,0,0"
+                            IsVisible="{Binding StatusMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                        <TextBlock Text="{Binding StatusMessage}" 
+                                   Foreground="{Binding HasError, Converter={StaticResource BoolToColorConverter}, ConverterParameter='#FF6B6B|#81C784'}"
+                                   TextWrapping="Wrap"
+                                   FontSize="13"/>
+                    </Border>
                 </StackPanel>
             </ScrollViewer>
 
@@ -138,7 +166,7 @@
                 <Grid ColumnDefinitions="*,*">
                     <Button Grid.Column="0" 
                             Command="{Binding CancelCommand}"
-                            Content="Cancelar"
+                            Content="Cancelar (Esc)"
                             HorizontalAlignment="Stretch"
                             HorizontalContentAlignment="Center"
                             Margin="0,0,5,0"
@@ -147,7 +175,7 @@
                     
                     <Button Grid.Column="1" 
                             Command="{Binding SaveCommand}"
-                            Content="Guardar"
+                            Content="Guardar (F5)"
                             HorizontalAlignment="Stretch"
                             HorizontalContentAlignment="Center"
                             Margin="5,0,0,0"
