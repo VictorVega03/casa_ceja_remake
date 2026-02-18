@@ -223,5 +223,33 @@ namespace CasaCejaRemake.Services
         {
             return _roleService.GetCashierRoleId();
         }
+
+        /// <summary>
+        /// Verifica si un usuario es administrador.
+        /// </summary>
+        public async Task<bool> IsAdminAsync(int userId)
+        {
+            var user = await _userRepository.GetByIdAsync(userId);
+            if (user == null) return false;
+            return user.UserType == _roleService.GetAdminRoleId();
+        }
+
+        /// <summary>
+        /// Autentica un usuario sin modificar la sesión actual.
+        /// Usado para verificación de credenciales de administrador.
+        /// </summary>
+        public async Task<(bool Success, User? User)> AuthenticateAsync(string username, string password)
+        {
+            var user = await _userRepository.FirstOrDefaultAsync(u =>
+                u.Username == username && u.Active);
+
+            if (user == null)
+                return (false, null);
+
+            if (user.Password != password)
+                return (false, null);
+
+            return (true, user);
+        }
     }
 }

@@ -82,6 +82,7 @@ namespace CasaCejaRemake.Views.POS
                 _viewModel.ShowDiscountApplied += OnShowDiscountApplied;
                 _viewModel.ShowDiscountBlocked += OnShowDiscountBlocked;
                 _viewModel.RequestShowGeneralDiscount += OnRequestShowGeneralDiscount;
+                _viewModel.RequestAdminVerification += OnRequestAdminVerification;
             }
 
             // Configurar botones de cobranza
@@ -1470,192 +1471,190 @@ namespace CasaCejaRemake.Views.POS
         {
             if (_viewModel == null) return;
 
+            bool isPercentMode = true;
+            decimal selectedValue = 0;
+
             var dialog = new Window
             {
-                Title = "Descuento General (Ctrl+F6)",
+                Title = "Descuento General",
                 Width = 380,
-                Height = 320,
+                SizeToContent = SizeToContent.Height,
                 WindowStartupLocation = WindowStartupLocation.CenterOwner,
                 CanResize = false,
-                Background = new SolidColorBrush(Color.Parse("#2D2D2D"))
+                Background = new SolidColorBrush(Color.Parse("#2D2D2D")),
+                Topmost = true
             };
 
-            var panel = new StackPanel
+            var root = new StackPanel
             {
-                Margin = new Thickness(20),
-                Spacing = 15
+                Margin = new Thickness(20, 15, 20, 15),
+                Spacing = 8,
+                Focusable = true
             };
 
-            // Subtotal actual
-            var subtotalLabel = new TextBlock
+            // --- Header ---
+            root.Children.Add(new TextBlock
+            {
+                Text = "💰 Descuento General",
+                Foreground = new SolidColorBrush(Color.Parse("#FFC107")),
+                FontSize = 16, FontWeight = FontWeight.Bold,
+                HorizontalAlignment = HorizontalAlignment.Center
+            });
+            root.Children.Add(new TextBlock
             {
                 Text = $"Subtotal: {_viewModel.Total:C2}",
                 Foreground = Brushes.White,
-                FontSize = 18,
-                FontWeight = FontWeight.Bold,
-                HorizontalAlignment = HorizontalAlignment.Center
-            };
-
-            // Tipo de descuento con botones estilizados (azul = seleccionado)
-            var typePanel = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 15, HorizontalAlignment = HorizontalAlignment.Center };
-            var btnPercent = new Button 
-            { 
-                Content = "Porcentaje %", 
-                Width = 140,
-                Padding = new Thickness(10, 8),
-                Background = new SolidColorBrush(Color.Parse("#0078D4")), // Azul = seleccionado
-                Foreground = Brushes.White
-            };
-            var btnFixed = new Button 
-            { 
-                Content = "Cantidad $", 
-                Width = 140,
-                Padding = new Thickness(10, 8),
-                Background = new SolidColorBrush(Color.Parse("#3A3A3A")), // Gris = no seleccionado
-                Foreground = Brushes.White
-            };
-            
-            bool isPercentMode = true;
-            
-            typePanel.Children.Add(btnPercent);
-            typePanel.Children.Add(btnFixed);
-
-            // Campo de valor (oculto por defecto en modo porcentaje)
-            var valueInput = new NumericUpDown
-            {
-                Value = 0,
-                Minimum = 0,
-                Maximum = 100,
-                Increment = 1,
-                FormatString = "N2",
-                Width = 180,
+                FontSize = 16, FontWeight = FontWeight.Bold,
                 HorizontalAlignment = HorizontalAlignment.Center,
-                IsVisible = false  // Oculto en modo porcentaje
-            };
+                Margin = new Thickness(0, 0, 0, 5)
+            });
 
-            // Botones de porcentaje rápido (solo visibles cuando es porcentaje)
-            var quickButtonsPanel = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, HorizontalAlignment = HorizontalAlignment.Center };
-            var btnQuick5 = new Button { Content = "5%", Width = 65, Tag = 5m, Padding = new Thickness(10, 8) };
-            var btnQuick10 = new Button { Content = "10%", Width = 65, Tag = 10m, Padding = new Thickness(10, 8) };
-            var btnQuick15 = new Button { Content = "15%", Width = 65, Tag = 15m, Padding = new Thickness(10, 8) };
-            var btnQuick20 = new Button { Content = "20%", Width = 65, Tag = 20m, Padding = new Thickness(10, 8) };
+            // --- Separador ---
+            root.Children.Add(new Border { Height = 1, Background = new SolidColorBrush(Color.Parse("#444")), Margin = new Thickness(0, 3) });
 
-            decimal selectedValue = 0;
+            // --- Tipo ---
+            root.Children.Add(new TextBlock { Text = "TIPO", Foreground = new SolidColorBrush(Color.Parse("#999")), FontSize = 10, FontWeight = FontWeight.Bold });
+            var rbPercent = new RadioButton { Content = "Porcentaje (%)", IsChecked = true, Foreground = Brushes.White, FontSize = 13, GroupName = "discType" };
+            var rbFixed = new RadioButton { Content = "Cantidad fija ($)", Foreground = Brushes.White, FontSize = 13, GroupName = "discType" };
+            root.Children.Add(rbPercent);
+            root.Children.Add(rbFixed);
 
-            quickButtonsPanel.Children.Add(btnQuick5);
-            quickButtonsPanel.Children.Add(btnQuick10);
-            quickButtonsPanel.Children.Add(btnQuick15);
-            quickButtonsPanel.Children.Add(btnQuick20);
+            // --- Separador ---
+            root.Children.Add(new Border { Height = 1, Background = new SolidColorBrush(Color.Parse("#444")), Margin = new Thickness(0, 3) });
 
-            // Preview
+            // --- Valor ---
+            root.Children.Add(new TextBlock { Text = "VALOR", Foreground = new SolidColorBrush(Color.Parse("#999")), FontSize = 10, FontWeight = FontWeight.Bold });
+
+            var quickPanel = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 10, HorizontalAlignment = HorizontalAlignment.Center };
+            var btnQ10 = new Button { Content = "10%", Width = 95, Height = 40, Tag = 10m, Background = new SolidColorBrush(Color.Parse("#4A4A4A")), Foreground = Brushes.White, FontSize = 15, FontWeight = FontWeight.Bold };
+            var btnQ20 = new Button { Content = "20%", Width = 95, Height = 40, Tag = 20m, Background = new SolidColorBrush(Color.Parse("#4A4A4A")), Foreground = Brushes.White, FontSize = 15, FontWeight = FontWeight.Bold };
+            var btnQ30 = new Button { Content = "30%", Width = 95, Height = 40, Tag = 30m, Background = new SolidColorBrush(Color.Parse("#4A4A4A")), Foreground = Brushes.White, FontSize = 15, FontWeight = FontWeight.Bold };
+            quickPanel.Children.Add(btnQ10);
+            quickPanel.Children.Add(btnQ20);
+            quickPanel.Children.Add(btnQ30);
+            root.Children.Add(quickPanel);
+
+            var valueInput = new NumericUpDown { Value = 0, Minimum = 0, Maximum = _viewModel.Total, Increment = 1, FormatString = "N2", Width = 200, Height = 35, IsVisible = false, HorizontalAlignment = HorizontalAlignment.Center };
+            root.Children.Add(valueInput);
+
+            // --- Separador ---
+            root.Children.Add(new Border { Height = 1, Background = new SolidColorBrush(Color.Parse("#444")), Margin = new Thickness(0, 3) });
+
+            // --- Preview ---
             var previewLabel = new TextBlock
             {
                 Text = $"Total: {_viewModel.Total:C2}",
                 Foreground = new SolidColorBrush(Color.Parse("#66BB6A")),
-                FontSize = 20,
-                FontWeight = FontWeight.Bold,
-                HorizontalAlignment = HorizontalAlignment.Center
+                FontSize = 20, FontWeight = FontWeight.Bold,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                Margin = new Thickness(0, 3)
             };
+            root.Children.Add(previewLabel);
 
-            // Actualizar preview (definida después de previewLabel)
+            // --- Atajos ---
+            root.Children.Add(new TextBlock
+            {
+                Text = "Enter = Aplicar  •  Esc = Cancelar",
+                Foreground = new SolidColorBrush(Color.Parse("#777")),
+                FontSize = 10,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                Margin = new Thickness(0, 2)
+            });
+
+            // --- Botones ---
+            var btnsPanel = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 10, HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 5, 0, 0) };
+            var btnCancel = new Button { Content = "Cancelar", Width = 100, Height = 38, FontSize = 13, Background = new SolidColorBrush(Color.Parse("#555")), Foreground = Brushes.White };
+
+            // Botón Limpiar (naranja) con ícono ↩✕
+            var clearContent = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 5, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
+            clearContent.Children.Add(new TextBlock { Text = "⌫", FontSize = 16, Foreground = Brushes.White, VerticalAlignment = VerticalAlignment.Center });
+            clearContent.Children.Add(new TextBlock { Text = "Limpiar", FontSize = 13, Foreground = Brushes.White, VerticalAlignment = VerticalAlignment.Center });
+            var btnClear = new Button { Content = clearContent, Width = 110, Height = 38, Background = new SolidColorBrush(Color.Parse("#E65100")), Foreground = Brushes.White };
+
+            var btnApply = new Button { Content = "Aplicar", Width = 100, Height = 38, FontSize = 13, FontWeight = FontWeight.Bold, Background = new SolidColorBrush(Color.Parse("#388E3C")), Foreground = Brushes.White };
+            btnsPanel.Children.Add(btnCancel);
+            btnsPanel.Children.Add(btnClear);
+            btnsPanel.Children.Add(btnApply);
+            root.Children.Add(btnsPanel);
+
+            dialog.Content = root;
+
+            // ===== Lógica =====
             void UpdatePreview()
             {
-                var value = isPercentMode ? selectedValue : (decimal)(valueInput.Value ?? 0);
-                var discount = isPercentMode ? _viewModel.Total * (value / 100m) : Math.Min(value, _viewModel.Total);
-                var finalTotal = _viewModel.Total - discount;
-                previewLabel.Text = $"Total: {finalTotal:C2}";
+                var v = isPercentMode ? selectedValue : (decimal)(valueInput.Value ?? 0);
+                var disc = isPercentMode ? _viewModel.Total * (v / 100m) : Math.Min(v, _viewModel.Total);
+                previewLabel.Text = $"Total: {(_viewModel.Total - disc):C2}";
             }
-            
-            // Configurar handlers de botones rápidos
-            void ApplyQuickPercent(object? s, RoutedEventArgs args)
+
+            void DoApply()
             {
-                if (s is Button btn && btn.Tag is decimal percent)
+                var v = isPercentMode ? selectedValue : (decimal)(valueInput.Value ?? 0);
+                if (v > 0)
                 {
-                    selectedValue = percent;
+                    _viewModel.ApplyGeneralDiscountValue(v, isPercentMode);
+                    dialog.Close();
+                }
+            }
+
+            void SelectQuick(Button btn, decimal pct)
+            {
+                selectedValue = pct;
+                btnQ10.Background = new SolidColorBrush(Color.Parse("#4A4A4A"));
+                btnQ20.Background = new SolidColorBrush(Color.Parse("#4A4A4A"));
+                btnQ30.Background = new SolidColorBrush(Color.Parse("#4A4A4A"));
+                btn.Background = new SolidColorBrush(Color.Parse("#0078D4"));
+                UpdatePreview();
+            }
+
+            btnQ10.Click += (_, _) => SelectQuick(btnQ10, 10);
+            btnQ20.Click += (_, _) => SelectQuick(btnQ20, 20);
+            btnQ30.Click += (_, _) => SelectQuick(btnQ30, 30);
+
+            valueInput.ValueChanged += (_, _) => UpdatePreview();
+
+            rbPercent.IsCheckedChanged += (_, _) =>
+            {
+                if (rbPercent.IsChecked == true)
+                {
+                    isPercentMode = true;
+                    quickPanel.IsVisible = true;
+                    valueInput.IsVisible = false;
+                    selectedValue = 0;
+                    btnQ10.Background = new SolidColorBrush(Color.Parse("#4A4A4A"));
+                    btnQ20.Background = new SolidColorBrush(Color.Parse("#4A4A4A"));
+                    btnQ30.Background = new SolidColorBrush(Color.Parse("#4A4A4A"));
                     UpdatePreview();
                 }
-            }
-            btnQuick5.Click += ApplyQuickPercent;
-            btnQuick10.Click += ApplyQuickPercent;
-            btnQuick15.Click += ApplyQuickPercent;
-            btnQuick20.Click += ApplyQuickPercent;
-
-            valueInput.ValueChanged += (s, args) => UpdatePreview();
-            
-            // Cambio de modo porcentaje
-            btnPercent.Click += (s, args) =>
-            {
-                isPercentMode = true;
-                btnPercent.Background = new SolidColorBrush(Color.Parse("#0078D4")); // Azul = seleccionado
-                btnFixed.Background = new SolidColorBrush(Color.Parse("#3A3A3A")); // Gris = no seleccionado
-                valueInput.IsVisible = false; // Ocultar campo numérico
-                quickButtonsPanel.IsVisible = true; // Mostrar botones %
-                UpdatePreview();
             };
 
-            // Cambio de modo cantidad fija
-            btnFixed.Click += (s, args) =>
+            rbFixed.IsCheckedChanged += (_, _) =>
             {
-                isPercentMode = false;
-                btnFixed.Background = new SolidColorBrush(Color.Parse("#0078D4")); // Azul = seleccionado
-                btnPercent.Background = new SolidColorBrush(Color.Parse("#3A3A3A")); // Gris = no seleccionado
-                valueInput.Maximum = _viewModel.Total;
-                valueInput.IsVisible = true; // Mostrar campo numérico
-                quickButtonsPanel.IsVisible = false; // Ocultar botones %
-                UpdatePreview();
-            };
-
-            // Botones de acción
-            var buttonsPanel = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 10, HorizontalAlignment = HorizontalAlignment.Center };
-            var btnApply = new Button
-            {
-                Content = "Aplicar",
-                Padding = new Thickness(20, 8),
-                Background = new SolidColorBrush(Color.Parse("#388E3C")),
-                Foreground = Brushes.White
-            };
-            var btnClear = new Button
-            {
-                Content = "Quitar",
-                Padding = new Thickness(20, 8),
-                Background = new SolidColorBrush(Color.Parse("#FF9800")),
-                Foreground = Brushes.White
-            };
-            var btnCancel = new Button
-            {
-                Content = "Cancelar",
-                Padding = new Thickness(20, 8)
-            };
-
-            btnApply.Click += (s, args) =>
-            {
-                var value = isPercentMode ? selectedValue : (decimal)(valueInput.Value ?? 0);
-                if (value > 0)
+                if (rbFixed.IsChecked == true)
                 {
-                    _viewModel.ApplyGeneralDiscountValue(value, isPercentMode);
+                    isPercentMode = false;
+                    quickPanel.IsVisible = false;
+                    valueInput.IsVisible = true;
+                    valueInput.Maximum = _viewModel.Total;
+                    UpdatePreview();
+                    valueInput.Focus();
                 }
-                dialog.Close();
             };
 
-            btnClear.Click += (s, args) =>
+            btnApply.Click += (_, _) => DoApply();
+            btnClear.Click += (_, _) =>
             {
                 _viewModel.ClearGeneralDiscount();
                 dialog.Close();
             };
+            btnCancel.Click += (_, _) => dialog.Close();
 
-            btnCancel.Click += (s, args) => dialog.Close();
-
-            // Keyboard shortcuts
-            dialog.KeyDown += (s, args) =>
+            // KeyDown en el DIALOG directamente - captura teclas aunque el focus esté en un hijo
+            dialog.AddHandler(Avalonia.Input.InputElement.KeyDownEvent, (s, args) =>
             {
                 if (args.Key == Key.Enter)
                 {
-                    var value = isPercentMode ? selectedValue : (decimal)(valueInput.Value ?? 0);
-                    if (value > 0)
-                    {
-                        _viewModel.ApplyGeneralDiscountValue(value, isPercentMode);
-                    }
-                    dialog.Close();
+                    DoApply();
                     args.Handled = true;
                 }
                 else if (args.Key == Key.Escape)
@@ -1663,25 +1662,14 @@ namespace CasaCejaRemake.Views.POS
                     dialog.Close();
                     args.Handled = true;
                 }
-            };
+            }, Avalonia.Interactivity.RoutingStrategies.Tunnel);
 
-            buttonsPanel.Children.Add(btnClear);
-            buttonsPanel.Children.Add(btnCancel);
-            buttonsPanel.Children.Add(btnApply);
-
-            panel.Children.Add(subtotalLabel);
-            panel.Children.Add(typePanel);
-            panel.Children.Add(valueInput);
-            panel.Children.Add(quickButtonsPanel);
-            panel.Children.Add(previewLabel);
-            panel.Children.Add(buttonsPanel);
-
-            dialog.Content = panel;
+            dialog.Opened += (_, _) => root.Focus();
 
             _hasOpenDialog = true;
             await dialog.ShowDialog(this);
             _hasOpenDialog = false;
-            TxtBarcode.Focus();
+            TxtBarcode?.Focus();
         }
 
         // ========== COLOREADO DINÁMICO DE FILAS DEL DATAGRID ==========
@@ -1742,6 +1730,31 @@ namespace CasaCejaRemake.Views.POS
             var vm = new UserManagementViewModel(userService, authService, isAdminMode: false);
             var view = new UserManagementView { DataContext = vm };
             await view.ShowDialog(this);
+        }
+
+        /// <summary>
+        /// Solicita verificación de administrador antes de mostrar diálogo de descuento general.
+        /// </summary>
+        private async void OnRequestAdminVerification(object? sender, EventArgs e)
+        {
+            if (_viewModel == null) return;
+
+            var userService = App.Current is App app ? app.GetUserService() : null;
+            
+            if (userService == null)
+            {
+                await DialogHelper.ShowMessageDialog(this, "Error", "Servicio de usuarios no inicializado.");
+                return;
+            }
+
+            // Mostrar diálogo de verificación
+            var verified = await AdminVerificationHelper.VerifyAdminAsync(this, userService);
+
+            if (verified)
+            {
+                // Si se verificó correctamente, mostrar el diálogo de descuento
+                OnRequestShowGeneralDiscount(this, EventArgs.Empty);
+            }
         }
     }
 }

@@ -173,24 +173,6 @@
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
-                <DataGridTemplateColumn Header="ÚLTIMO ACCESO" Width="150">
-                    <DataGridTemplateColumn.CellTemplate>
-                        <DataTemplate>
-                            <Panel>
-                                <TextBlock Text="{Binding LastSyncText}" 
-                                           IsVisible="{Binding HasLastSync}"
-                                           VerticalAlignment="Center"
-                                           Padding="10,0"/>
-                                <TextBlock Text="Sin información" 
-                                           IsVisible="{Binding !HasLastSync}"
-                                           Foreground="#888"
-                                           FontStyle="Italic"
-                                           VerticalAlignment="Center"
-                                           Padding="10,0"/>
-                            </Panel>
-                        </DataTemplate>
-                    </DataGridTemplateColumn.CellTemplate>
-                </DataGridTemplateColumn>
             </DataGrid.Columns>
         </DataGrid>
 

@@ -6,12 +6,14 @@ using casa_ceja_remake.Helpers;
 using CasaCejaRemake.ViewModels.Shared;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace CasaCejaRemake.Views.Shared
 {
     public partial class UserFormView : Window
     {
         private UserFormViewModel? _viewModel;
+        private TextBox? _phoneTextBox;
 
         public UserFormView()
         {
@@ -32,11 +34,42 @@ namespace CasaCejaRemake.Views.Shared
                 _viewModel = vm;
                 _viewModel.CloseRequested += OnCloseRequested;
             }
+
+            // Encontrar el TextBox de teléfono y agregar validación
+            _phoneTextBox = this.FindControl<TextBox>("PhoneTextBox");
+            if (_phoneTextBox != null)
+            {
+                _phoneTextBox.TextChanging += OnPhoneTextChanging;
+            }
         }
 
         private void OnCloseRequested(object? sender, EventArgs e)
         {
             Close();
+        }
+
+        private void OnPhoneTextChanging(object? sender, TextChangingEventArgs e)
+        {
+            if (sender is not TextBox textBox)
+                return;
+
+            var newText = textBox.Text ?? string.Empty;
+            
+            // Verificar si el nuevo texto contiene solo números
+            if (!string.IsNullOrEmpty(newText) && !newText.All(char.IsDigit))
+            {
+                // Filtrar solo los números
+                var filtered = new string(newText.Where(char.IsDigit).ToArray());
+                
+                // Guardar la posición del cursor
+                var cursorPosition = textBox.CaretIndex;
+                
+                // Actualizar el texto
+                textBox.Text = filtered;
+                
+                // Restaurar la posición del cursor (ajustada si es necesario)
+                textBox.CaretIndex = Math.Min(cursorPosition, filtered.Length);
+            }
         }
 
         protected override void OnKeyDown(KeyEventArgs e)

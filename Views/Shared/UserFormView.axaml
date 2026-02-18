@@ -9,9 +9,8 @@
         x:Class="CasaCejaRemake.Views.Shared.UserFormView"
         x:DataType="vm:UserFormViewModel"
         Title="{Binding FormTitle}"
-        Width="550" Height="420"
-        SizeToContent="Height"
-        MaxHeight="520"
+        Width="550" Height="520"
+        MinHeight="520"
         WindowStartupLocation="CenterOwner"
         CanResize="False"
         SystemDecorations="None"
@@ -68,7 +67,9 @@
             </Border>
 
             <!-- FORM -->
-            <ScrollViewer Grid.Row="1" Padding="20">
+            <ScrollViewer Grid.Row="1" Padding="20"
+                          VerticalScrollBarVisibility="Auto"
+                          HorizontalScrollBarVisibility="Disabled">
                 <StackPanel Spacing="15" IsEnabled="{Binding !IsReadOnly}">
                     
                     <!-- Fila 1: Nombre + Usuario -->
@@ -103,7 +104,7 @@
                                 <Run Text="TELÉFONO"/>
                                 <Run Text=" *" Foreground="#D32F2F"/>
                             </TextBlock>
-                            <TextBox Text="{Binding Phone}" Watermark="Ej. 5512345678" MaxLength="20"/>
+                            <TextBox Name="PhoneTextBox" Text="{Binding Phone}" Watermark="Ej. 5512345678" MaxLength="20"/>
                         </StackPanel>
                     </Grid>
 

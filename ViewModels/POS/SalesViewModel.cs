@@ -103,6 +103,7 @@ namespace CasaCejaRemake.ViewModels.POS
         public event EventHandler<string>? ShowDiscountApplied;     // Muestra diálogo de confirmación de descuento
         public event EventHandler<string>? ShowDiscountBlocked;     // Muestra diálogo de bloqueo de descuento
         public event EventHandler? RequestShowGeneralDiscount;       // Muestra diálogo de descuento general (F6)
+        public event EventHandler? RequestAdminVerification;         // Solicita verificación de administrador
 
         public SalesViewModel(
             CartService cartService,
@@ -740,6 +741,17 @@ namespace CasaCejaRemake.ViewModels.POS
             if (_cartService.IsEmpty)
             {
                 ShowMessage?.Invoke(this, "No hay productos en el carrito.");
+                return;
+            }
+
+            // Verificar si el usuario actual es administrador
+            var currentUserId = _authService.CurrentUser?.Id ?? 0;
+            var isAdmin = currentUserId > 0 && _authService.CurrentUser?.UserType == 1; // 1 = Admin
+
+            // Si no es admin, solicitar verificación
+            if (!isAdmin)
+            {
+                RequestAdminVerification?.Invoke(this, EventArgs.Empty);
                 return;
             }
             

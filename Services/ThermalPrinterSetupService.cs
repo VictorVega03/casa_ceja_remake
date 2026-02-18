@@ -329,7 +329,7 @@ namespace CasaCejaRemake.Services
        CASA CEJA - PRUEBA
 ========================================
 
-Impresora configurada correctamente
+Impresora configurada correctamente :D
 
 Fecha: " + DateTime.Now.ToString("dd/MM/yyyy HH:mm") + @"
 
