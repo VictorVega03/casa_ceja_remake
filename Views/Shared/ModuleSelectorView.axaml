@@ -34,8 +34,7 @@
 
     <!-- HOTKEYS -->
     <Window.KeyBindings>
-        <!-- ESC para cerrar sesión -->
-        <KeyBinding Gesture="Escape" Command="{Binding LogoutCommand}" />
+        <!-- ESC no hace logout: el usuario debe usar el botón Cerrar Sesión explícitamente -->
     </Window.KeyBindings>
 
     <!-- LAYOUT PRINCIPAL -->

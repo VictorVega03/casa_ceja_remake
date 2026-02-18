@@ -8,7 +8,9 @@
         x:Class="CasaCejaRemake.Views.Shared.PosTerminalConfigView"
         x:DataType="vm:PosTerminalConfigViewModel"
         Title="Configuración del Terminal POS"
-        Width="650" Height="700"
+        Width="650"
+        SizeToContent="Height"
+        MaxHeight="800"
         WindowStartupLocation="CenterOwner"
         CanResize="False"
         Focusable="True"
@@ -80,10 +82,10 @@
         </Style>
     </Window.Styles>
 
-    <Grid RowDefinitions="Auto,*,Auto">
+    <StackPanel>
 
         <!-- ===== HEADER ===== -->
-        <Border Grid.Row="0" Background="#252525" Padding="28,20">
+        <Border Background="#252525" Padding="28,20">
             <Grid ColumnDefinitions="Auto,*">
                 <Border Grid.Column="0"
                         Width="50" Height="50"
@@ -100,7 +102,7 @@
                                FontSize="24" 
                                FontWeight="Bold"
                                Foreground="White" />
-                    <TextBlock Text="Configurar impresora, tickets y parámetros de este terminal"
+                    <TextBlock Text="Configurar tickets y parámetros de este terminal"
                                FontSize="12"
                                Foreground="#888888"
                                Margin="0,4,0,0" />
@@ -109,8 +111,7 @@
         </Border>
 
         <!-- ===== CONTENT ===== -->
-        <ScrollViewer Grid.Row="1" Padding="28,20,28,40">
-            <StackPanel Spacing="4">
+        <StackPanel Margin="28,20,28,0" Spacing="16">
 
                 <!-- ========== IDENTIFICACIÓN DEL TERMINAL ========== -->
                 <Border Background="#252525" 
@@ -134,54 +135,6 @@
                         <TextBlock Classes="label" Text="Nombre de Terminal (opcional):" />
                         <TextBox Text="{Binding TerminalName}"
                                  Watermark="Ej: Caja Principal" />
-                    </StackPanel>
-                </Border>
-
-                <!-- ========== IMPRESORA ========== -->
-                <Border Background="#252525" 
-                        CornerRadius="8" 
-                        Padding="20,18"
-                        BorderBrush="#404040"
-                        BorderThickness="1"
-                        Margin="0,16,0,0">
-                    <StackPanel>
-                        <StackPanel Orientation="Horizontal" Spacing="10">
-                            <TextBlock Text="🖨️" FontSize="18" VerticalAlignment="Center" />
-                            <TextBlock Classes="section-title" 
-                                       Text="Configuración de Impresora"
-                                       Margin="0" />
-                        </StackPanel>
-
-                        <Grid ColumnDefinitions="*,Auto">
-                            <TextBlock Classes="label" Text="Impresora:" Grid.Column="0" />
-                            <Button Grid.Column="1" 
-                                    Content="🔄  Actualizar Lista"
-                                    Command="{Binding RefreshPrintersCommand}"
-                                    Classes="refresh"
-                                    FontSize="11" 
-                                    Padding="10,6"
-                                    Height="28"
-                                    VerticalAlignment="Bottom"
-                                    Margin="0,0,0,5" />
-                        </Grid>
-                        <ComboBox ItemsSource="{Binding AvailablePrinters}"
-                                  SelectedItem="{Binding SelectedPrinter}" />
-
-                        <TextBlock Classes="label" Text="Tipo de Impresión:" />
-                        <ComboBox ItemsSource="{Binding PrintFormatOptions}"
-                                  SelectedItem="{Binding SelectedPrintFormat}">
-                            <ComboBox.ItemTemplate>
-                                <DataTemplate>
-                                    <TextBlock>
-                                        <TextBlock.Text>
-                                            <MultiBinding StringFormat="{}{0}">
-                                                <Binding />
-                                            </MultiBinding>
-                                        </TextBlock.Text>
-                                    </TextBlock>
-                                </DataTemplate>
-                            </ComboBox.ItemTemplate>
-                        </ComboBox>
                     </StackPanel>
                 </Border>
 
@@ -221,12 +174,12 @@
                         <ComboBox ItemsSource="{Binding FontFamilyOptions}"
                                   SelectedItem="{Binding SelectedFontFamily}" />
                     </StackPanel>
-                </Border>                
-            </StackPanel>
-        </ScrollViewer>
+                </Border>
+
+        </StackPanel>
 
         <!-- ===== FOOTER ===== -->
-        <Border Grid.Row="2" Background="#252525" Padding="28,18">
+        <Border Background="#252525" Padding="28,18" Margin="0,20,0,0">
             <Grid RowDefinitions="Auto,Auto" ColumnDefinitions="*">
                 <!-- Status Message -->
                 <Border Grid.Row="0" 
@@ -275,5 +228,5 @@
                 </StackPanel>
             </Grid>
         </Border>
-    </Grid>
+    </StackPanel>
 </Window>

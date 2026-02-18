@@ -4,25 +4,28 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:vm="using:CasaCejaRemake.ViewModels.Shared"
         mc:Ignorable="d"
-        d:DesignWidth="600" d:DesignHeight="480"
+        d:DesignWidth="600" d:DesignHeight="560"
         x:Class="CasaCejaRemake.Views.Shared.AppConfigView"
         x:DataType="vm:AppConfigViewModel"
-        Title="Configurar Sucursal"
-        Width="600" Height="480"
+        Title="Configuración General"
+        Width="600"
+        SizeToContent="Height"
+        MaxHeight="800"
         WindowStartupLocation="CenterOwner"
         CanResize="False"
+        Focusable="True"
         Background="#1E1E1E">
 
     <Window.Styles>
         <Style Selector="TextBlock.label">
             <Setter Property="Foreground" Value="#B0B0B0" />
-            <Setter Property="FontSize" Value="13" />
-            <Setter Property="Margin" Value="0,10,0,6" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Margin" Value="0,10,0,5" />
             <Setter Property="FontWeight" Value="Medium" />
         </Style>
         <Style Selector="ComboBox">
             <Setter Property="HorizontalAlignment" Value="Stretch" />
-            <Setter Property="Height" Value="42" />
+            <Setter Property="Height" Value="40" />
             <Setter Property="Background" Value="#2D2D2D" />
             <Setter Property="Foreground" Value="White" />
             <Setter Property="BorderBrush" Value="#404040" />
@@ -36,6 +39,13 @@
         <Style Selector="Button">
             <Setter Property="CornerRadius" Value="6" />
             <Setter Property="FontSize" Value="13" />
+        </Style>
+        <Style Selector="Button.refresh">
+            <Setter Property="Background" Value="#FF9800" />
+            <Setter Property="Foreground" Value="White" />
+        </Style>
+        <Style Selector="Button.refresh:pointerover">
+            <Setter Property="Background" Value="#FFA726" />
         </Style>
         <Style Selector="Button.cancel">
             <Setter Property="Background" Value="#404040" />
@@ -54,14 +64,14 @@
         </Style>
     </Window.Styles>
 
-    <Grid RowDefinitions="Auto,*,Auto">
+    <StackPanel>
 
         <!-- ===== HEADER ===== -->
-        <Border Grid.Row="0" Background="#252525" Padding="28,20">
+        <Border Background="#252525" Padding="28,20">
             <Grid ColumnDefinitions="Auto,*">
                 <Border Grid.Column="0"
                         Width="50" Height="50"
-                        Background="#4CAF50"
+                        Background="#2196F3"
                         CornerRadius="10"
                         Margin="0,0,16,0">
                     <TextBlock Text="⚙️" 
@@ -70,11 +80,11 @@
                                VerticalAlignment="Center" />
                 </Border>
                 <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                    <TextBlock Text="Configurar Sucursal"
+                    <TextBlock Text="Configuración General"
                                FontSize="24" 
                                FontWeight="Bold"
                                Foreground="White" />
-                    <TextBlock Text="Configurar sucursal del sistema"
+                    <TextBlock Text="Sucursal e impresora de este equipo"
                                FontSize="12"
                                Foreground="#888888"
                                Margin="0,4,0,0" />
@@ -83,81 +93,117 @@
         </Border>
 
         <!-- ===== CONTENT ===== -->
-        <Grid Grid.Row="1">
-            <StackPanel Spacing="6" VerticalAlignment="Center" Margin="32,20">
+        <StackPanel Margin="28,16,28,0" Spacing="4">
+            <StackPanel Spacing="4">
 
-                <!-- Sección Principal -->
+                <!-- ========== SUCURSAL ========== -->
                 <Border Background="#252525" 
                         CornerRadius="8" 
-                        Padding="24,20"
+                        Padding="20,18"
                         BorderBrush="#404040"
                         BorderThickness="1">
                     <StackPanel>
-                        <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,0,0,16">
-                            <TextBlock Text="🏪" FontSize="20" VerticalAlignment="Center" />
+                        <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,0,0,8">
                             <TextBlock Text="Sucursal Activa"
-                                       FontSize="18" 
+                                       FontSize="16" 
                                        FontWeight="Bold"
                                        Foreground="#4CAF50"
-                                       VerticalAlignment="Center" />
+                                       VerticalAlignment="Center"
+                                       Margin="0" />
                         </StackPanel>
 
-                        <TextBlock Text="Seleccione la sucursal en la que operará este equipo. Esta configuración afecta todas las operaciones realizadas desde esta computadora."
-                                   FontSize="13"
+                        <TextBlock Text="Al cambiar de sucursal se requiere autorización de administrador y la app se reiniciará."
+                                   FontSize="11"
                                    Foreground="#999999"
                                    TextWrapping="Wrap"
-                                   LineHeight="20"
-                                   Margin="0,0,0,20" />
+                                   Margin="0,0,0,12" />
 
                         <TextBlock Classes="label" Text="Sucursal:" />
-                        <ComboBox ItemsSource="{Binding Branches}"
-                                  SelectedItem="{Binding SelectedBranch}">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <ComboBox Grid.Column="0"
+                                      ItemsSource="{Binding Branches}"
+                                      SelectedItem="{Binding SelectedBranch}"
+                                      IsEnabled="{Binding BranchChangeUnlocked}">
+                                <ComboBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Orientation="Horizontal" Spacing="8">
+                                            <TextBlock Text="📍" FontSize="14" VerticalAlignment="Center" />
+                                            <TextBlock Text="{Binding Name}" 
+                                                       FontSize="14" 
+                                                       VerticalAlignment="Center" />
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ComboBox.ItemTemplate>
+                            </ComboBox>
+                            <Button Grid.Column="1"
+                                    Content="{Binding BranchLockButtonText}"
+                                    Command="{Binding ToggleBranchLockCommand}"
+                                    Margin="8,0,0,0"
+                                    Padding="12,8"
+                                    Height="40"
+                                    FontSize="12"
+                                    Background="#FF9800"
+                                    Foreground="White" />
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <!-- ========== IMPRESORA ========== -->
+                <Border Background="#252525" 
+                        CornerRadius="8" 
+                        Padding="20,18"
+                        BorderBrush="#404040"
+                        BorderThickness="1"
+                        Margin="0,12,0,0">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <TextBlock Text="🖨️" FontSize="18" VerticalAlignment="Center" />
+                            <TextBlock Text="Configuración de Impresora"
+                                       FontSize="16" 
+                                       FontWeight="Bold"
+                                       Foreground="#4FC3F7"
+                                       VerticalAlignment="Center"
+                                       Margin="0" />
+                        </StackPanel>
+
+                        <Grid ColumnDefinitions="*,Auto" Margin="0,10,0,0">
+                            <TextBlock Classes="label" Text="Impresora:" Grid.Column="0" />
+                            <Button Grid.Column="1" 
+                                    Content="Actualizar"
+                                    Command="{Binding RefreshPrintersCommand}"
+                                    Classes="refresh"
+                                    FontSize="11" 
+                                    Padding="10,6"
+                                    Height="28"
+                                    VerticalAlignment="Bottom"
+                                    Margin="0,0,0,5" />
+                        </Grid>
+                        <ComboBox ItemsSource="{Binding AvailablePrinters}"
+                                  SelectedItem="{Binding SelectedPrinter}" />
+
+                        <TextBlock Classes="label" Text="Tipo de Impresión:" />
+                        <ComboBox ItemsSource="{Binding PrintFormatOptions}"
+                                  SelectedItem="{Binding SelectedPrintFormat}">
                             <ComboBox.ItemTemplate>
                                 <DataTemplate>
-                                    <StackPanel Orientation="Horizontal" Spacing="8">
-                                        <TextBlock Text="📍" FontSize="14" VerticalAlignment="Center" />
-                                        <TextBlock Text="{Binding Name}" 
-                                                   FontSize="14" 
-                                                   VerticalAlignment="Center" />
-                                    </StackPanel>
+                                    <TextBlock>
+                                        <TextBlock.Text>
+                                            <MultiBinding StringFormat="{}{0}">
+                                                <Binding />
+                                            </MultiBinding>
+                                        </TextBlock.Text>
+                                    </TextBlock>
                                 </DataTemplate>
                             </ComboBox.ItemTemplate>
                         </ComboBox>
                     </StackPanel>
                 </Border>
 
-                <!-- Nota de advertencia -->
-                <Border Background="#3A2A1A" 
-                        CornerRadius="8" 
-                        Padding="16,14"
-                        BorderBrush="#FF9800"
-                        BorderThickness="1"
-                        Margin="0,16,0,0">
-                    <StackPanel Orientation="Horizontal" Spacing="12">
-                        <TextBlock Text="⚠️" 
-                                   FontSize="24" 
-                                   VerticalAlignment="Top"
-                                   Margin="0,2,0,0" />
-                        <StackPanel>
-                            <TextBlock Text="Importante"
-                                       FontSize="14"
-                                       FontWeight="Bold"
-                                       Foreground="#FFA726"
-                                       Margin="0,0,0,4" />
-                            <TextBlock Text="Al cambiar de sucursal, la aplicación se cerrará automáticamente para aplicar los cambios correctamente."
-                                       FontSize="12"
-                                       Foreground="#FFB74D"
-                                       TextWrapping="Wrap"
-                                       LineHeight="18" />
-                        </StackPanel>
-                    </StackPanel>
-                </Border>
-
             </StackPanel>
-        </Grid>
+        </StackPanel>
 
         <!-- ===== FOOTER ===== -->
-        <Border Grid.Row="2" Background="#252525" Padding="28,18" BorderBrush="#404040" BorderThickness="0,1,0,0">
+        <Border Background="#252525" Padding="28,18" Margin="0,16,0,0" BorderBrush="#404040" BorderThickness="0,1,0,0">
             <Grid RowDefinitions="Auto,Auto" ColumnDefinitions="*">
                 <!-- Status Message -->
                 <Border Grid.Row="0" 
@@ -206,5 +252,5 @@
                 </StackPanel>
             </Grid>
         </Border>
-    </Grid>
+    </StackPanel>
 </Window>

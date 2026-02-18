@@ -473,7 +473,7 @@ namespace CasaCejaRemake
         /// </summary>
         private async Task ShowAppConfigDialog(Window? parentWindow)
         {
-            if (ConfigService == null || AuthService == null || DatabaseService == null)
+            if (ConfigService == null || AuthService == null || DatabaseService == null || PrintService == null || UserService == null)
             {
                 Console.WriteLine("[App] Servicios no disponibles para configuración");
                 return;
@@ -482,7 +482,9 @@ namespace CasaCejaRemake
             var viewModel = new ViewModels.Shared.AppConfigViewModel(
                 ConfigService,
                 AuthService,
-                DatabaseService);
+                DatabaseService,
+                PrintService,
+                UserService);
 
             // Suscribirse al evento de configuración guardada (cambio de sucursal)
             viewModel.ConfigurationSaved += async (s, e) =>
@@ -495,6 +497,10 @@ namespace CasaCejaRemake
                     "Reinicio Requerido",
                     "La sucursal ha sido cambiada.\n\nLa aplicación se cerrará automáticamente para aplicar los cambios.");
                 
+                // Marcar el parent para evitar que su evento Closed abra el login
+                if (parentWindow != null)
+                    parentWindow.Tag = "branch_changed";
+
                 // Cerrar la aplicación COMPLETA
                 if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
                 {

@@ -1,11 +1,8 @@
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Linq;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using CasaCejaRemake.Models;
 using CasaCejaRemake.Services;
 
 namespace CasaCejaRemake.ViewModels.Shared
@@ -13,31 +10,22 @@ namespace CasaCejaRemake.ViewModels.Shared
     /// <summary>
     /// ViewModel para configuración del terminal POS.
     /// Accesible desde dentro del módulo POS para cajeros y admin.
-    /// Maneja: Impresora, formato de tickets, ID de terminal, etc.
+    /// Maneja: ID de terminal, parámetros del ticket (fuente, ancho, pie de página).
+    /// La configuración de impresora (selección e tipo) se maneja en AppConfigViewModel.
     /// </summary>
     public partial class PosTerminalConfigViewModel : ViewModelBase
     {
         private readonly ConfigService _configService;
         private readonly AuthService _authService;
-        private readonly PrintService _printService;
-        private readonly ThermalPrinterSetupService _thermalSetupService;
 
         // ============ TERMINAL ============
         [ObservableProperty] private string _terminalId = "CAJA-01";
         [ObservableProperty] private string _terminalName = "Terminal Principal";
 
-        // ============ IMPRESORA ============
-        [ObservableProperty] private ObservableCollection<string> _availablePrinters = new();
-        [ObservableProperty] private string? _selectedPrinter;
-
-        // ============ CAJA ============
-        [ObservableProperty] private string _cashRegisterId = "CAJA-01";
-
         // ============ TICKET ============
         [ObservableProperty] private string _ticketFooter = "Gracias por su compra";
         [ObservableProperty] private int _selectedFontSize = 9;
         [ObservableProperty] private string _selectedFontFamily = "Courier New";
-        [ObservableProperty] private string _selectedPrintFormat = "thermal";
         [ObservableProperty] private int _selectedTicketLineWidth = 40;
 
         // ============ OPCIONES ============
@@ -45,7 +33,7 @@ namespace CasaCejaRemake.ViewModels.Shared
         [ObservableProperty] private bool _openCashDrawer = false;
 
         // ============ PERMISOS ============
-        /// <summary>Solo Admin puede editar Sucursal e ID de Caja</summary>
+        /// <summary>Solo Admin puede editar ID de Terminal</summary>
         public bool CanEditAdminFields => _authService.IsAdmin;
         public bool IsReadOnlyForCajero => !_authService.IsAdmin;
 
@@ -54,11 +42,6 @@ namespace CasaCejaRemake.ViewModels.Shared
         public List<string> FontFamilyOptions { get; } = new()
         {
             "Courier New", "Consolas", "Lucida Console", "Menlo", "Monaco"
-        };
-        public List<string> PrintFormatOptions { get; } = new()
-        {
-            "Térmica",      // Ticket Térmico
-            "T. Carta"      // Hoja Carta
         };
         public List<int> TicketLineWidthOptions { get; } = new() { 32, 40, 48 };
 
@@ -76,46 +59,28 @@ namespace CasaCejaRemake.ViewModels.Shared
         {
             _configService = configService;
             _authService = authService;
-            _printService = printService;
-            _thermalSetupService = new ThermalPrinterSetupService();
         }
 
         /// <summary>
-        /// Inicializa la vista: carga config e impresoras.
+        /// Inicializa la vista: carga configuración del terminal.
         /// </summary>
         public async Task InitializeAsync()
         {
             IsLoading = true;
             try
             {
-                // 1. Cargar impresoras del sistema
-                var printers = _printService.GetAvailablePrinters();
-                AvailablePrinters = new ObservableCollection<string>(printers);
-
-                // 2. Aplicar configuración guardada a los controles
                 var config = _configService.PosTerminalConfig;
                 TerminalId = config.TerminalId;
                 TerminalName = config.TerminalName;
-                SelectedPrinter = AvailablePrinters.Contains(config.PrinterName)
-                    ? config.PrinterName
-                    : AvailablePrinters.FirstOrDefault();
                 TicketFooter = config.TicketFooter;
                 SelectedFontSize = config.FontSize;
                 SelectedFontFamily = config.FontFamily;
-                
-                // Mapear valores antiguos a nuevos (español)
-                SelectedPrintFormat = config.PrintFormat switch
-                {
-                    "thermal" => "Térmica",
-                    "letter" => "T. Carta",
-                    _ => config.PrintFormat // Si ya está en español, usar tal cual
-                };
-                
                 SelectedTicketLineWidth = config.TicketLineWidth;
                 AutoPrint = config.AutoPrint;
                 OpenCashDrawer = config.OpenCashDrawer;
 
                 StatusMessage = "Configuración cargada";
+                await Task.CompletedTask;
             }
             catch (Exception ex)
             {
@@ -129,55 +94,13 @@ namespace CasaCejaRemake.ViewModels.Shared
         }
 
         [RelayCommand]
-        private Task RefreshPrintersAsync()
-        {
-            var printers = _printService.GetAvailablePrinters();
-            AvailablePrinters = new ObservableCollection<string>(printers);
-            StatusMessage = $"Se encontraron {printers.Count} impresora(s)";
-            return Task.CompletedTask;
-        }
-
-        [RelayCommand]
         private async Task SaveAsync()
         {
             try
-            {IsLoading = true;
+            {
+                IsLoading = true;
                 StatusMessage = "Guardando configuración...";
 
-                // Si se seleccionó formato Térmica, intentar configuración automática
-                if (SelectedPrintFormat == "Térmica" && System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.OSX))
-                {
-                    StatusMessage = "Configurando impresora térmica automáticamente...";
-                    Console.WriteLine("[ConfigViewModel] Iniciando configuración automática de impresora térmica");
-
-                    var setupResult = await _thermalSetupService.AutoConfigureThermalPrinterMacAsync("Xprinter_USB_Printer_P");
-
-                    // Mostrar log en consola
-                    foreach (var logEntry in setupResult.Log)
-                    {
-                        Console.WriteLine($"[ThermalSetup] {logEntry}");
-                    }
-
-                    if (setupResult.Success)
-                    {
-                        // Actualizar la lista de impresoras y seleccionar la configurada
-                        await RefreshPrintersAsync();
-                        SelectedPrinter = setupResult.PrinterName;
-                        
-                        StatusMessage = $"✓ {setupResult.Message}";
-                        Console.WriteLine($"[ConfigViewModel] Configuración exitosa: {setupResult.Message}");
-                    }
-                    else
-                    {
-                        StatusMessage = $"⚠️ {setupResult.Message}";
-                        Console.WriteLine($"[ConfigViewModel] Error en configuración: {setupResult.Message}");
-                        
-                        // Permitir guardar de todas formas
-                        await System.Threading.Tasks.Task.Delay(3000);
-                    }
-                }
-
-                // Guardar configuración
                 await _configService.UpdatePosTerminalConfigAsync(config =>
                 {
                     // Solo Admin puede cambiar ID de terminal
@@ -187,9 +110,7 @@ namespace CasaCejaRemake.ViewModels.Shared
                         config.TerminalName = TerminalName;
                     }
 
-                    // Todos pueden cambiar estos campos
-                    config.PrinterName = SelectedPrinter ?? string.Empty;
-                    config.PrintFormat = SelectedPrintFormat;
+                    // Todos pueden cambiar parámetros de ticket
                     config.TicketFooter = TicketFooter;
                     config.FontSize = SelectedFontSize;
                     config.FontFamily = SelectedFontFamily;
@@ -198,14 +119,11 @@ namespace CasaCejaRemake.ViewModels.Shared
                     config.OpenCashDrawer = OpenCashDrawer;
                 });
 
-                if (!StatusMessage.Contains("⚠️"))
-                {
-                    StatusMessage = "✓ Configuración guardada correctamente";
-                }
-                
+                StatusMessage = "✓ Configuración guardada correctamente";
+
                 // Esperar un momento para que el usuario vea el mensaje
-                await System.Threading.Tasks.Task.Delay(1500);
-                
+                await Task.Delay(1500);
+
                 // Cerrar automáticamente después de guardar exitosamente
                 CloseRequested?.Invoke(this, EventArgs.Empty);
             }

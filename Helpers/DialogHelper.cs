@@ -110,34 +110,13 @@ public static class DialogHelper
             ShowInTaskbar = false
         };
 
-        var mainPanel = new StackPanel
+        // Usar DockPanel para que los botones queden siempre al fondo
+        var mainPanel = new DockPanel
         {
-            Margin = new Avalonia.Thickness(0)
+            LastChildFill = true
         };
 
-        // Panel de contenido del ticket
-        var scrollViewer = new ScrollViewer
-        {
-            HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto,
-            VerticalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto,
-            Background = new SolidColorBrush(Colors.White),
-            Margin = new Avalonia.Thickness(10, 10, 10, 0)
-        };
-
-        var textBlock = new TextBlock
-        {
-            Text = ticketText,
-            FontFamily = new FontFamily("Courier New"),
-            FontSize = 12,
-            Foreground = new SolidColorBrush(Colors.Black),
-            Margin = new Avalonia.Thickness(10),
-            TextWrapping = Avalonia.Media.TextWrapping.NoWrap
-        };
-
-        scrollViewer.Content = textBlock;
-        mainPanel.Children.Add(scrollViewer);
-
-        // Panel de botones
+        // Panel de botones — anclado al fondo con DockPanel
         var buttonPanel = new StackPanel
         {
             Orientation = Orientation.Horizontal,
@@ -145,6 +124,7 @@ public static class DialogHelper
             Margin = new Avalonia.Thickness(10),
             Spacing = 10
         };
+        DockPanel.SetDock(buttonPanel, Dock.Bottom);
 
         // Botón Reimprimir
         var printButton = new Button
@@ -201,7 +181,31 @@ public static class DialogHelper
 
         buttonPanel.Children.Add(printButton);
         buttonPanel.Children.Add(closeButton);
+
+        // DockPanel: primero los botones (Bottom), luego el scrollviewer (Fill)
         mainPanel.Children.Add(buttonPanel);
+
+        // Panel de contenido del ticket — llena el espacio restante
+        var scrollViewer = new ScrollViewer
+        {
+            HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto,
+            VerticalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto,
+            Background = new SolidColorBrush(Colors.White),
+            Margin = new Avalonia.Thickness(10, 10, 10, 10)
+        };
+
+        var textBlock = new TextBlock
+        {
+            Text = ticketText,
+            FontFamily = new FontFamily("Courier New"),
+            FontSize = 12,
+            Foreground = new SolidColorBrush(Colors.Black),
+            Margin = new Avalonia.Thickness(10),
+            TextWrapping = Avalonia.Media.TextWrapping.NoWrap
+        };
+
+        scrollViewer.Content = textBlock;
+        mainPanel.Children.Add(scrollViewer);
 
         dialog.Content = mainPanel;
 
