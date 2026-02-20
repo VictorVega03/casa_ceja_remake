@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Text.RegularExpressions;
 using CasaCejaRemake.Helpers;
 using CasaCejaRemake.Models;
 
@@ -46,6 +47,21 @@ namespace CasaCejaRemake.Services
         // Metadata
         [JsonPropertyName("m")]
         public TicketMetadata Meta { get; set; } = new();
+
+        // Datos del cliente (para créditos/apartados)
+        [JsonPropertyName("cn")]
+        public string CustomerName { get; set; } = string.Empty;
+
+        [JsonPropertyName("cp")]
+        public string CustomerPhone { get; set; } = string.Empty;
+
+        // Fecha de vencimiento (para créditos/apartados)
+        [JsonPropertyName("dd")]
+        public DateTime? DueDate { get; set; }
+
+        // Etiqueta de tipo de ticket ("TICKET DE CREDITO", "TICKET DE APARTADO")
+        [JsonPropertyName("ttl")]
+        public string TicketTypeLabel { get; set; } = string.Empty;
     }
 
     public class TicketBranch
@@ -109,6 +125,19 @@ namespace CasaCejaRemake.Services
 
         [JsonPropertyName("di")]
         public string DiscountInfo { get; set; } = string.Empty;
+
+        // Indicadores de descuento para el ticket (sección 13 del doc de formatos)
+        [JsonPropertyName("isp")]
+        public bool IsSpecialPrice { get; set; }
+
+        [JsonPropertyName("hcd")]
+        public bool HasCategoryDiscount { get; set; }
+
+        [JsonPropertyName("cdp")]
+        public decimal CategoryDiscountPercent { get; set; }
+
+        [JsonPropertyName("cda")]
+        public decimal CategoryDiscountAmount { get; set; }
     }
 
     public class TicketTotals
@@ -167,6 +196,26 @@ namespace CasaCejaRemake.Services
 
         [JsonPropertyName("app")]
         public string AppVersion { get; set; } = "1.0.0";
+    }
+
+    /// <summary>
+    /// DTO para tickets de abono a crédito/apartado (sección 8 del doc de formatos)
+    /// </summary>
+    public class PaymentTicketData
+    {
+        public string Folio { get; set; } = string.Empty;
+        public string BranchName { get; set; } = string.Empty;
+        public string BranchAddress { get; set; } = string.Empty;
+        public DateTime PaymentDate { get; set; }
+        public string UserName { get; set; } = string.Empty;
+        /// <summary>Folio del crédito/apartado al que se abona</summary>
+        public string OperationFolio { get; set; } = string.Empty;
+        /// <summary>0=crédito, 1=apartado</summary>
+        public int OperationType { get; set; }
+        /// <summary>JSON con desglose de pagos mixtos</summary>
+        public string PaymentDetails { get; set; } = string.Empty;
+        public decimal TotalPaid { get; set; }
+        public decimal RemainingBalance { get; set; }
     }
 
     public class TicketService
@@ -237,7 +286,11 @@ namespace CasaCejaRemake.Services
                     LineTotal = item.LineTotal,
                     Discount = item.TotalDiscount * item.Quantity,
                     PriceType = item.PriceType,
-                    DiscountInfo = item.DiscountInfo
+                    DiscountInfo = item.DiscountInfo,
+                    IsSpecialPrice = item.PriceType == "special",
+                    HasCategoryDiscount = item.PriceType == "category" || ExtractCategoryDiscount(item.DiscountInfo).HasValue,
+                    CategoryDiscountPercent = ExtractCategoryDiscount(item.DiscountInfo) ?? 0,
+                    CategoryDiscountAmount = ExtractCategoryDiscountAmount(item)
                 });
 
                 subtotal += item.LineTotal;
@@ -328,7 +381,11 @@ namespace CasaCejaRemake.Services
                     LineTotal = item.LineTotal,
                     Discount = item.TotalDiscount * item.Quantity,
                     PriceType = item.PriceType,
-                    DiscountInfo = item.DiscountInfo
+                    DiscountInfo = item.DiscountInfo,
+                    IsSpecialPrice = item.PriceType == "special",
+                    HasCategoryDiscount = item.PriceType == "category" || ExtractCategoryDiscount(item.DiscountInfo).HasValue,
+                    CategoryDiscountPercent = ExtractCategoryDiscount(item.DiscountInfo) ?? 0,
+                    CategoryDiscountAmount = ExtractCategoryDiscountAmount(item)
                 });
 
                 subtotal += item.LineTotal;
@@ -440,16 +497,30 @@ namespace CasaCejaRemake.Services
                     DateTime = now,
                     UserName = userName
                 },
+                CustomerName = customerName,
+                CustomerPhone = customerPhone,
+                DueDate = dueDate,
+                TicketTypeLabel = "TICKET DE CREDITO",
                 Products = items.Select(i => new TicketProduct
                 {
                     Barcode = i.Barcode,
                     Name = i.ProductName,
                     Quantity = i.Quantity,
+                    ListPrice = i.ListPrice,
                     UnitPrice = i.FinalUnitPrice,
-                    LineTotal = i.LineTotal
+                    LineTotal = i.LineTotal,
+                    Discount = i.TotalDiscount * i.Quantity,
+                    PriceType = i.PriceType,
+                    DiscountInfo = i.DiscountInfo,
+                    IsSpecialPrice = i.PriceType == "special",
+                    HasCategoryDiscount = i.PriceType == "category" || ExtractCategoryDiscount(i.DiscountInfo).HasValue,
+                    CategoryDiscountPercent = ExtractCategoryDiscount(i.DiscountInfo) ?? 0,
+                    CategoryDiscountAmount = ExtractCategoryDiscountAmount(i)
                 }).ToList(),
                 Totals = new TicketTotals
                 {
+                    Subtotal = items.Sum(i => i.ListPrice * i.Quantity),
+                    TotalDiscount = items.Sum(i => i.TotalDiscount * i.Quantity),
                     GrandTotal = total,
                     ItemCount = items.Sum(i => i.Quantity)
                 },
@@ -500,16 +571,30 @@ namespace CasaCejaRemake.Services
                     DateTime = now,
                     UserName = userName
                 },
+                CustomerName = customerName,
+                CustomerPhone = customerPhone,
+                DueDate = pickupDate,
+                TicketTypeLabel = "TICKET DE APARTADO",
                 Products = items.Select(i => new TicketProduct
                 {
                     Barcode = i.Barcode,
                     Name = i.ProductName,
                     Quantity = i.Quantity,
+                    ListPrice = i.ListPrice,
                     UnitPrice = i.FinalUnitPrice,
-                    LineTotal = i.LineTotal
+                    LineTotal = i.LineTotal,
+                    Discount = i.TotalDiscount * i.Quantity,
+                    PriceType = i.PriceType,
+                    DiscountInfo = i.DiscountInfo,
+                    IsSpecialPrice = i.PriceType == "special",
+                    HasCategoryDiscount = i.PriceType == "category" || ExtractCategoryDiscount(i.DiscountInfo).HasValue,
+                    CategoryDiscountPercent = ExtractCategoryDiscount(i.DiscountInfo) ?? 0,
+                    CategoryDiscountAmount = ExtractCategoryDiscountAmount(i)
                 }).ToList(),
                 Totals = new TicketTotals
                 {
+                    Subtotal = items.Sum(i => i.ListPrice * i.Quantity),
+                    TotalDiscount = items.Sum(i => i.TotalDiscount * i.Quantity),
                     GrandTotal = total,
                     ItemCount = items.Sum(i => i.Quantity)
                 },
@@ -550,187 +635,56 @@ namespace CasaCejaRemake.Services
             }
         }
 
-        public string GenerateTicketText(TicketData ticket, int lineWidth = 40)
+        // =====================================================================
+        // GENERACIÓN DE TEXTO — Delega a ThermalTicketTemplates
+        // =====================================================================
+
+        public string GenerateTicketText(TicketData ticket, int lineWidth = 32)
         {
             return GenerateTicketText(ticket, TicketType.Sale, lineWidth);
         }
 
-        public string GenerateTicketText(TicketData ticket, TicketType type, int lineWidth = 40)
+        public string GenerateTicketText(TicketData ticket, TicketType type, int lineWidth = 32)
         {
-            var lines = new List<string>();
-            var separator = new string('-', lineWidth);
-
-            lines.AddRange(FormatHeader(ticket, lineWidth));
-            lines.Add(separator);
-
-            switch (type)
-            {
-                case TicketType.Credit:
-                    lines.AddRange(FormatCreditBody(ticket, lineWidth));
-                    break;
-                case TicketType.Layaway:
-                    lines.AddRange(FormatLayawayBody(ticket, lineWidth));
-                    break;
-                default:
-                    lines.AddRange(FormatSaleBody(ticket, lineWidth));
-                    break;
-            }
-
-            lines.Add(separator);
-            lines.AddRange(FormatFooter(ticket, type, lineWidth));
-
-            return string.Join(Environment.NewLine, lines);
+            return GenerateTicketText(ticket, type, "", "", lineWidth);
         }
 
-        private List<string> FormatHeader(TicketData ticket, int lineWidth)
+        public string GenerateTicketText(TicketData ticket, TicketType type, string rfc, string ticketFooter, int lineWidth = 32)
         {
-            var lines = new List<string>
+            return type switch
             {
-                CenterText(ticket.Branch.Name, lineWidth)
+                TicketType.Credit => ThermalTicketTemplates.FormatCreditTicket(ticket, rfc, ticketFooter, lineWidth),
+                TicketType.Layaway => ThermalTicketTemplates.FormatLayawayTicket(ticket, rfc, ticketFooter, lineWidth),
+                _ => ThermalTicketTemplates.FormatSaleTicket(ticket, rfc, ticketFooter, lineWidth)
             };
-
-            if (!string.IsNullOrEmpty(ticket.Branch.Address))
-                lines.Add(CenterText(ticket.Branch.Address, lineWidth));
-            if (!string.IsNullOrEmpty(ticket.Branch.Phone))
-                lines.Add(CenterText($"Tel: {ticket.Branch.Phone}", lineWidth));
-
-            return lines;
-        }
-
-        private List<string> FormatSaleBody(TicketData ticket, int lineWidth)
-        {
-            var lines = new List<string>
-            {
-                $"Folio: {ticket.Sale.Folio}",
-                $"Fecha: {ticket.Sale.DateTime:dd/MM/yyyy HH:mm}",
-                $"Atendio: {ticket.Sale.UserName}",
-                new string('-', lineWidth)
-            };
-
-            foreach (var product in ticket.Products)
-            {
-                // Línea del producto
-                lines.Add($"{product.Quantity} x {product.Name}");
-                lines.Add($"  ${product.UnitPrice:N2} c/u = ${product.LineTotal:N2}");
-
-                // Mostrar información de descuento si existe
-                if (!string.IsNullOrEmpty(product.DiscountInfo))
-                {
-                    lines.Add($"  ({product.DiscountInfo})");
-                }
-                
-                // Mostrar ahorro si hay descuento
-                if (product.Discount > 0)
-                {
-                    lines.Add($"  Ahorro: -${product.Discount:N2}");
-                }
-            }
-
-            lines.Add(new string('-', lineWidth));
-
-            // Mostrar desglose de descuentos solo si existen
-            if (ticket.Totals.TotalDiscount > 0 || ticket.Totals.GeneralDiscount > 0)
-            {
-                lines.Add($"Subtotal: ${ticket.Totals.Subtotal:N2}");
-                
-                if (ticket.Totals.TotalDiscount > 0)
-                {
-                    lines.Add($"Desc. Items: -${ticket.Totals.TotalDiscount:N2}");
-                }
-                
-                if (ticket.Totals.GeneralDiscount > 0)
-                {
-                    string discountLabel = ticket.Totals.IsGeneralDiscountPercentage
-                        ? $"Desc. Gral ({ticket.Totals.GeneralDiscountPercent}%)"
-                        : "Desc. Gral";
-                    lines.Add($"{discountLabel}: -${ticket.Totals.GeneralDiscount:N2}");
-                }
-            }
-
-            lines.Add($"TOTAL: ${ticket.Totals.GrandTotal:N2}");
-            lines.Add($"Articulos: {ticket.Totals.ItemCount}");
-            lines.Add(new string('-', lineWidth));
-            lines.Add($"Pago: {ticket.Payment.MethodName}");
-            lines.Add($"Recibido: ${ticket.Payment.Amount:N2}");
-
-            if (ticket.Payment.Change > 0)
-                lines.Add($"Cambio: ${ticket.Payment.Change:N2}");
-
-            return lines;
-        }
-
-        private List<string> FormatCreditBody(TicketData ticket, int lineWidth)
-        {
-            var lines = new List<string>
-            {
-                CenterText("*** CREDITO ***", lineWidth),
-                new string('-', lineWidth),
-                $"Folio: {ticket.Sale.Folio}",
-                $"Fecha: {ticket.Sale.DateTime:dd/MM/yyyy HH:mm}",
-                $"Atendio: {ticket.Sale.UserName}"
-            };
-
-            lines.Add(new string('-', lineWidth));
-
-            foreach (var product in ticket.Products)
-            {
-                lines.Add($"{product.Quantity} x {product.Name}");
-                lines.Add($"  ${product.UnitPrice:N2} = ${product.LineTotal:N2}");
-            }
-
-            lines.Add(new string('-', lineWidth));
-            lines.Add($"TOTAL:          ${ticket.Totals.GrandTotal:N2}");
-            lines.Add($"ABONO INICIAL:  ${ticket.Payment.Amount:N2}");
-
-            return lines;
-        }
-
-        private List<string> FormatLayawayBody(TicketData ticket, int lineWidth)
-        {
-            var lines = new List<string>
-            {
-                CenterText("*** APARTADO ***", lineWidth),
-                new string('-', lineWidth),
-                $"Folio: {ticket.Sale.Folio}",
-                $"Fecha: {ticket.Sale.DateTime:dd/MM/yyyy HH:mm}",
-                $"Atendio: {ticket.Sale.UserName}"
-            };
-
-            lines.Add(new string('-', lineWidth));
-            lines.Add("PRODUCTOS APARTADOS:");
-
-            foreach (var product in ticket.Products)
-            {
-                lines.Add($"{product.Quantity} x {product.Name}");
-                lines.Add($"  ${product.UnitPrice:N2} = ${product.LineTotal:N2}");
-            }
-
-            lines.Add(new string('-', lineWidth));
-            lines.Add($"TOTAL:          ${ticket.Totals.GrandTotal:N2}");
-            lines.Add($"ABONO INICIAL:  ${ticket.Payment.Amount:N2}");
-
-            return lines;
-        }
-
-        private List<string> FormatFooter(TicketData ticket, TicketType type, int lineWidth)
-        {
-            var lines = new List<string>();
-
-            if (type == TicketType.Layaway)
-            {
-                lines.Add(new string('-', lineWidth));
-                lines.Add(CenterText("*** CONSERVE ESTE TICKET ***", lineWidth));
-                lines.Add(CenterText("*** PARA RECOGER SU MERCANCIA ***", lineWidth));
-            }
-
-            lines.Add(new string('-', lineWidth));
-            lines.Add(CenterText("Gracias por su compra", lineWidth));
-
-            return lines;
         }
 
         /// <summary>
-        /// Genera el texto del ticket para corte de caja
+        /// Genera texto de ticket de abono
+        /// </summary>
+        public string GeneratePaymentTicketText(PaymentTicketData data, string rfc = "", int lineWidth = 32)
+        {
+            return ThermalTicketTemplates.FormatPaymentTicket(data, rfc, lineWidth);
+        }
+
+        /// <summary>
+        /// Genera texto de reimpresión con historial de pagos (crédito o apartado)
+        /// </summary>
+        public string GenerateReprintWithHistoryText(
+            TicketData ticket,
+            TicketType type,
+            List<string>? paymentDetailsJsonList,
+            decimal totalPaid,
+            string rfc = "",
+            int lineWidth = 32)
+        {
+            string typeLabel = type == TicketType.Credit ? "TICKET DE CREDITO" : "TICKET DE APARTADO";
+            return ThermalTicketTemplates.FormatReprintWithHistory(ticket, typeLabel, paymentDetailsJsonList, totalPaid, rfc, lineWidth);
+        }
+
+        /// <summary>
+        /// Genera el texto del ticket para corte de caja.
+        /// Mantiene la firma existente para compatibilidad con CashCloseView.
         /// </summary>
         public string GenerateCashCloseTicketText(
             string branchName,
@@ -756,118 +710,50 @@ namespace CasaCejaRemake.Services
             int salesCount,
             List<(string Concept, decimal Amount)>? expenses = null,
             List<(string Concept, decimal Amount)>? incomes = null,
-            int lineWidth = 40)
+            int lineWidth = 32)
         {
-            var lines = new List<string>();
-            var separator = new string('-', lineWidth);
-            var doubleSeparator = new string('=', lineWidth);
-
-            // Header
-            lines.Add(CenterText(branchName, lineWidth));
-            if (!string.IsNullOrEmpty(branchAddress))
-                lines.Add(CenterText(branchAddress, lineWidth));
-            if (!string.IsNullOrEmpty(branchPhone))
-                lines.Add(CenterText($"Tel: {branchPhone}", lineWidth));
-            lines.Add(separator);
-            lines.Add(CenterText("*** CORTE DE CAJA ***", lineWidth));
-            lines.Add(separator);
-
-            // Info del corte
-            lines.Add($"Folio: {folio}");
-            lines.Add($"Cajero: {userName}");
-            lines.Add($"Apertura: {openingDate:dd/MM/yyyy HH:mm}");
-            lines.Add($"Cierre:   {closeDate:dd/MM/yyyy HH:mm}");
-            lines.Add($"Ventas realizadas: {salesCount}");
-            lines.Add(separator);
-
-            // Fondo de apertura
-            lines.Add("FONDO DE APERTURA");
-            lines.Add(FormatAmountLine("Fondo inicial:", openingCash, lineWidth));
-            lines.Add(separator);
-
-            // Ventas por método de pago
-            lines.Add("VENTAS POR METODO DE PAGO");
-            lines.Add(FormatAmountLine("Efectivo:", totalCash, lineWidth));
-            lines.Add(FormatAmountLine("Tarjeta Debito:", totalDebit, lineWidth));
-            lines.Add(FormatAmountLine("Tarjeta Credito:", totalCredit, lineWidth));
-            lines.Add(FormatAmountLine("Transferencia:", totalTransfer, lineWidth));
-            lines.Add(FormatAmountLine("Cheques:", totalChecks, lineWidth));
-            decimal totalSales = totalCash + totalDebit + totalCredit + totalTransfer + totalChecks;
-            lines.Add(FormatAmountLine("TOTAL VENTAS:", totalSales, lineWidth));
-            lines.Add(separator);
-
-            // Abonos en efectivo
-            lines.Add("ABONOS EN EFECTIVO");
-            lines.Add(FormatAmountLine("Apartados:", layawayCash, lineWidth));
-            lines.Add(FormatAmountLine("Creditos:", creditCash, lineWidth));
-            lines.Add(separator);
-
-            // Gastos
-            lines.Add("GASTOS (RETIROS)");
-            if (expenses != null && expenses.Count > 0)
-            {
-                foreach (var expense in expenses)
-                {
-                    lines.Add(FormatAmountLine($"  {expense.Concept}:", expense.Amount, lineWidth));
-                }
-            }
-            lines.Add(FormatAmountLine("TOTAL GASTOS:", totalExpenses, lineWidth, "-"));
-            lines.Add(separator);
-
-            // Ingresos
-            lines.Add("INGRESOS (DEPOSITOS)");
-            if (incomes != null && incomes.Count > 0)
-            {
-                foreach (var income in incomes)
-                {
-                    lines.Add(FormatAmountLine($"  {income.Concept}:", income.Amount, lineWidth));
-                }
-            }
-            lines.Add(FormatAmountLine("TOTAL INGRESOS:", totalIncome, lineWidth, "+"));
-            lines.Add(separator);
-
-            // Resumen de efectivo
-            lines.Add(doubleSeparator);
-            lines.Add(CenterText("RESUMEN DE EFECTIVO", lineWidth));
-            lines.Add(doubleSeparator);
-            lines.Add(FormatAmountLine("Fondo:", openingCash, lineWidth));
-            lines.Add(FormatAmountLine("+ Ventas efectivo:", totalCash, lineWidth));
-            lines.Add(FormatAmountLine("+ Abonos apartados:", layawayCash, lineWidth));
-            lines.Add(FormatAmountLine("+ Abonos creditos:", creditCash, lineWidth));
-            lines.Add(FormatAmountLine("+ Ingresos:", totalIncome, lineWidth));
-            lines.Add(FormatAmountLine("- Gastos:", totalExpenses, lineWidth));
-            lines.Add(separator);
-            lines.Add(FormatAmountLine("ESPERADO EN CAJA:", expectedCash, lineWidth));
-            lines.Add(FormatAmountLine("DECLARADO:", declaredAmount, lineWidth));
-            lines.Add(doubleSeparator);
-
-            // Diferencia
-            string diffText = difference > 0 ? "SOBRANTE:" : difference < 0 ? "FALTANTE:" : "DIFERENCIA:";
-            string diffPrefix = difference > 0 ? "+" : difference < 0 ? "-" : "";
-            lines.Add(FormatAmountLine(diffText, Math.Abs(difference), lineWidth, diffPrefix));
-            lines.Add(doubleSeparator);
-
-            // Footer
-            lines.Add("");
-            lines.Add(CenterText($"Generado: {DateTime.Now:dd/MM/yyyy HH:mm:ss}", lineWidth));
-            lines.Add(CenterText("Casa Ceja POS v1.0", lineWidth));
-
-            return string.Join(Environment.NewLine, lines);
+            return ThermalTicketTemplates.FormatCashCloseTicket(
+                branchName, folio, userName,
+                openingDate, closeDate,
+                openingCash, totalCash, totalDebit, totalCredit,
+                totalTransfer, totalChecks, layawayCash, creditCash,
+                totalExpenses, totalIncome, difference,
+                expenses, incomes, lineWidth);
         }
 
-        private string FormatAmountLine(string label, decimal amount, int lineWidth, string prefix = "")
+        // =====================================================================
+        // HELPERS
+        // =====================================================================
+
+        /// <summary>
+        /// Extrae el porcentaje de descuento de categoría del string DiscountInfo.
+        /// Busca patrones como "10% desc." o "Cat 15%".
+        /// </summary>
+        private static decimal? ExtractCategoryDiscount(string discountInfo)
         {
-            string amountStr = $"{prefix}${amount:N2}";
-            int spaces = lineWidth - label.Length - amountStr.Length;
-            if (spaces < 1) spaces = 1;
-            return $"{label}{new string(' ', spaces)}{amountStr}";
+            if (string.IsNullOrEmpty(discountInfo)) return null;
+            // Buscar "X% desc." en el DiscountInfo
+            var match = Regex.Match(discountInfo, @"(\d+(?:\.\d+)?)%\s*desc\.");
+            if (match.Success && decimal.TryParse(match.Groups[1].Value, out decimal percent))
+                return percent;
+            return null;
         }
 
-        private string CenterText(string text, int width)
+        /// <summary>
+        /// Calcula el monto de descuento por categoría por unidad a partir del CartItem.
+        /// Si el PriceType es "category" o el DiscountInfo contiene un porcentaje,
+        /// calcula: ListPrice * (percent / 100).
+        /// </summary>
+        private static decimal ExtractCategoryDiscountAmount(CartItem item)
         {
-            if (text.Length >= width) return text;
-            int padding = (width - text.Length) / 2;
-            return text.PadLeft(text.Length + padding).PadRight(width);
+            if (string.IsNullOrEmpty(item.DiscountInfo)) return 0;
+            var percent = ExtractCategoryDiscount(item.DiscountInfo);
+            if (percent.HasValue && percent.Value > 0)
+            {
+                // El descuento de categoría se calcula sobre el precio base
+                return item.ListPrice * (percent.Value / 100m);
+            }
+            return 0;
         }
     }
 }

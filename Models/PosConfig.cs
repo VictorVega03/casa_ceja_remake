@@ -52,8 +52,11 @@ namespace CasaCejaRemake.Models
         /// <summary>Familia de fuente: "Courier New", "Consolas", "Lucida Console"</summary>
         public string FontFamily { get; set; } = "Courier New";
 
+        /// <summary>RFC del negocio (se muestra en tickets si tiene valor)</summary>
+        public string Rfc { get; set; } = string.Empty;
+
         /// <summary>Ancho de línea en caracteres para ticket térmico (32, 40, 48)</summary>
-        public int TicketLineWidth { get; set; } = 40;
+        public int TicketLineWidth { get; set; } = 32;
 
         // ============ OPCIONES ============
         /// <summary>Imprimir automáticamente al finalizar venta</summary>
