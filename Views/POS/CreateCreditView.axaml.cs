@@ -30,8 +30,30 @@ namespace CasaCejaRemake.Views.POS
             }
         }
 
-        private void OnCreditCreated(object? sender, Credit e)
+        private async void OnCreditCreated(object? sender, Credit e)
         {
+            // Generar y mostrar ticket de crédito recién creado
+            try
+            {
+                var app = Avalonia.Application.Current as CasaCejaRemake.App;
+                var creditService = app?.GetCreditService();
+                if (creditService != null)
+                {
+                    var ticketData = await creditService.RecoverTicketAsync(e.Id);
+                    if (ticketData != null)
+                    {
+                        var ticketService = new CasaCejaRemake.Services.TicketService();
+                        var rfc = app?.GetConfigService()?.PosTerminalConfig.Rfc ?? string.Empty;
+                        var ticketText = ticketService.GenerateTicketText(ticketData, CasaCejaRemake.Services.TicketType.Credit);
+                        await DialogHelper.ShowTicketDialog(this, e.Folio, ticketText);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[CreateCreditView] Error mostrando ticket: {ex.Message}");
+            }
+
             Tag = e;
             Close();
         }

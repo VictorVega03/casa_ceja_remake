@@ -50,10 +50,55 @@ namespace CasaCejaRemake.Views.POS
             Close();
         }
 
-        private void OnPrintRequested(object? sender, EventArgs e)
+        private async void OnPrintRequested(object? sender, EventArgs e)
         {
-            // TODO: Implement print
-            Tag = ("Print", _viewModel);
+            if (_viewModel == null) return;
+
+            try
+            {
+                var app = Avalonia.Application.Current as CasaCejaRemake.App;
+
+                // Recuperar ticketData del crédito/apartado
+                CasaCejaRemake.Services.TicketData? ticketData = null;
+
+                if (_viewModel.IsCredit)
+                {
+                    var credit = _viewModel.GetCredit();
+                    if (credit != null)
+                    {
+                        var creditService = app?.GetCreditService();
+                        ticketData = creditService != null ? await creditService.RecoverTicketAsync(credit.Id) : null;
+                    }
+                }
+                else
+                {
+                    var layaway = _viewModel.GetLayaway();
+                    if (layaway != null)
+                    {
+                        var layawayService = app?.GetLayawayService();
+                        ticketData = layawayService != null ? await layawayService.RecoverTicketAsync(layaway.Id) : null;
+                    }
+                }
+
+                if (ticketData == null)
+                {
+                    Console.WriteLine("[CreditLayawayDetailView] No se pudo recuperar el ticket");
+                    return;
+                }
+
+                var ticketService = new CasaCejaRemake.Services.TicketService();
+                var type = _viewModel.IsCredit
+                    ? CasaCejaRemake.Services.TicketType.Credit
+                    : CasaCejaRemake.Services.TicketType.Layaway;
+                var ticketText = ticketService.GenerateTicketText(ticketData, type);
+
+                // Mostrar vista previa con opción de reimprimir
+                await DialogHelper.ShowTicketDialog(this, _viewModel.Folio, ticketText);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[CreditLayawayDetailView] Error al imprimir: {ex.Message}");
+            }
         }
 
         private void OnCloseRequested(object? sender, EventArgs e)

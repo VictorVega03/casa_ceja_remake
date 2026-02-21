@@ -280,36 +280,26 @@
 
         <!-- Footer Actions -->
         <Border Grid.Row="2" Background="#2D2D2D" Padding="20" BorderThickness="0,1,0,0" BorderBrush="#3D3D3D">
-            <Grid ColumnDefinitions="Auto,*,Auto">
-                <!-- Left: Info -->
-                <TextBlock Grid.Column="0" 
-                           Text="F5: Abonar | F6: Entregar | F7: Imprimir | ESC: Cerrar"
-                           Foreground="#999999"
-                           VerticalAlignment="Center"
-                           FontSize="12"/>
-
-                <!-- Right: Action Buttons -->
-                <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right">
-                    <Button Content="Imprimir (F7)"
-                            Classes="action"
-                            Command="{Binding PrintCommand}"/>
-                    
-                    <Button Content="Entregar (F6)"
-                            Classes="action"
-                            Command="{Binding DeliverCommand}"
-                            IsVisible="{Binding !IsCredit}"
-                            IsEnabled="{Binding CanDeliver}"/>
-                    
-                    <Button Content="Abonar (F5)"
-                            Classes="action primary"
-                            Command="{Binding AddPaymentCommand}"
-                            IsEnabled="{Binding CanAddPayment}"/>
-                    
-                    <Button Content="Cerrar (ESC)"
-                            Classes="action"
-                            Command="{Binding CloseCommand}"/>
-                </StackPanel>
-            </Grid>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button Content="Imprimir (F7)"
+                        Classes="action"
+                        Command="{Binding PrintCommand}"/>
+                
+                <Button Content="Entregar (F6)"
+                        Classes="action"
+                        Command="{Binding DeliverCommand}"
+                        IsVisible="{Binding !IsCredit}"
+                        IsEnabled="{Binding CanDeliver}"/>
+                
+                <Button Content="Abonar (F5)"
+                        Classes="action primary"
+                        Command="{Binding AddPaymentCommand}"
+                        IsEnabled="{Binding CanAddPayment}"/>
+                
+                <Button Content="Cerrar (ESC)"
+                        Classes="action"
+                        Command="{Binding CloseCommand}"/>
+            </StackPanel>
         </Border>
 
         <!-- Loading Overlay -->

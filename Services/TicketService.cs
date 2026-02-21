@@ -77,6 +77,9 @@ namespace CasaCejaRemake.Services
 
         [JsonPropertyName("ph")]
         public string Phone { get; set; } = string.Empty;
+
+        [JsonPropertyName("rs")]
+        public string RazonSocial { get; set; } = string.Empty;
     }
 
     public class TicketSale
@@ -206,8 +209,10 @@ namespace CasaCejaRemake.Services
         public string Folio { get; set; } = string.Empty;
         public string BranchName { get; set; } = string.Empty;
         public string BranchAddress { get; set; } = string.Empty;
+        public string BranchRazonSocial { get; set; } = string.Empty;
         public DateTime PaymentDate { get; set; }
         public string UserName { get; set; } = string.Empty;
+        public string CustomerName { get; set; } = string.Empty;
         /// <summary>Folio del crédito/apartado al que se abona</summary>
         public string OperationFolio { get; set; } = string.Empty;
         /// <summary>0=crédito, 1=apartado</summary>
@@ -256,6 +261,7 @@ namespace CasaCejaRemake.Services
             string branchName,
             string branchAddress,
             string branchPhone,
+            string branchRazonSocial,
             int userId,
             string userName,
             List<CartItem> items,
@@ -305,7 +311,8 @@ namespace CasaCejaRemake.Services
                     Id = branchId,
                     Name = branchName,
                     Address = branchAddress,
-                    Phone = branchPhone
+                    Phone = branchPhone,
+                    RazonSocial = branchRazonSocial
                 },
                 Sale = new TicketSale
                 {
@@ -351,6 +358,7 @@ namespace CasaCejaRemake.Services
             string branchName,
             string branchAddress,
             string branchPhone,
+            string branchRazonSocial,
             int userId,
             string userName,
             List<CartItem> items,
@@ -427,7 +435,8 @@ namespace CasaCejaRemake.Services
                     Id = branchId,
                     Name = branchName,
                     Address = branchAddress,
-                    Phone = branchPhone
+                    Phone = branchPhone,
+                    RazonSocial = branchRazonSocial
                 },
                 Sale = new TicketSale
                 {
@@ -470,6 +479,7 @@ namespace CasaCejaRemake.Services
             string branchName,
             string branchAddress,
             string branchPhone,
+            string branchRazonSocial,
             string userName,
             string customerName,
             string customerPhone,
@@ -489,7 +499,8 @@ namespace CasaCejaRemake.Services
                 {
                     Name = branchName,
                     Address = branchAddress,
-                    Phone = branchPhone
+                    Phone = branchPhone,
+                    RazonSocial = branchRazonSocial
                 },
                 Sale = new TicketSale
                 {
@@ -544,6 +555,7 @@ namespace CasaCejaRemake.Services
             string branchName,
             string branchAddress,
             string branchPhone,
+            string branchRazonSocial,
             string userName,
             string customerName,
             string customerPhone,
@@ -563,7 +575,8 @@ namespace CasaCejaRemake.Services
                 {
                     Name = branchName,
                     Address = branchAddress,
-                    Phone = branchPhone
+                    Phone = branchPhone,
+                    RazonSocial = branchRazonSocial
                 },
                 Sale = new TicketSale
                 {
@@ -646,7 +659,25 @@ namespace CasaCejaRemake.Services
 
         public string GenerateTicketText(TicketData ticket, TicketType type, int lineWidth = 32)
         {
-            return GenerateTicketText(ticket, type, "", "", lineWidth);
+            // Auto-load rfc, ticketFooter and lineWidth from config
+            string rfc = ticket.Branch?.RazonSocial ?? string.Empty;
+            string ticketFooter = string.Empty;
+            try
+            {
+                var app = Avalonia.Application.Current as App;
+                var config = app?.GetConfigService()?.PosTerminalConfig;
+                if (config != null)
+                {
+                    if (!string.IsNullOrWhiteSpace(config.Rfc))
+                        rfc = config.Rfc;
+                    ticketFooter = config.TicketFooter ?? string.Empty;
+                    if (lineWidth == 32 && config.TicketLineWidth > 0)
+                        lineWidth = config.TicketLineWidth;
+                }
+            }
+            catch { /* ignore */ }
+
+            return GenerateTicketText(ticket, type, rfc, ticketFooter, lineWidth);
         }
 
         public string GenerateTicketText(TicketData ticket, TicketType type, string rfc, string ticketFooter, int lineWidth = 32)
@@ -664,7 +695,29 @@ namespace CasaCejaRemake.Services
         /// </summary>
         public string GeneratePaymentTicketText(PaymentTicketData data, string rfc = "", int lineWidth = 32)
         {
-            return ThermalTicketTemplates.FormatPaymentTicket(data, rfc, lineWidth);
+            // Auto-load rfc, ticketFooter and lineWidth from config (same as other ticket types)
+            string effectiveRfc = rfc;
+            string ticketFooter = string.Empty;
+            try
+            {
+                var app = Avalonia.Application.Current as App;
+                var config = app?.GetConfigService()?.PosTerminalConfig;
+                if (config != null)
+                {
+                    ticketFooter = config.TicketFooter ?? string.Empty;
+                    if (string.IsNullOrWhiteSpace(effectiveRfc) && !string.IsNullOrWhiteSpace(config.Rfc))
+                        effectiveRfc = config.Rfc;
+                    if (lineWidth == 32 && config.TicketLineWidth > 0)
+                        lineWidth = config.TicketLineWidth;
+                }
+            }
+            catch { /* ignore */ }
+
+            // Fallback to BranchRazonSocial if rfc still empty
+            if (string.IsNullOrWhiteSpace(effectiveRfc))
+                effectiveRfc = data.BranchRazonSocial ?? string.Empty;
+
+            return ThermalTicketTemplates.FormatPaymentTicket(data, effectiveRfc, ticketFooter, lineWidth);
         }
 
         /// <summary>

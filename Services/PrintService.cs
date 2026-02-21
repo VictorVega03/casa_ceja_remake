@@ -345,14 +345,25 @@ namespace CasaCejaRemake.Services
         {
             try
             {
-                // Para impresoras térmicas en macOS con driver PCL
-                // Usar opciones de texto: cpi=12 (caracteres por pulgada), lpi=8 (líneas por pulgada)
+                // Derivar CPI del FontSize configurado (menor fontSize = mayor cpi = letra más chica)
+                var config = _configService.PosTerminalConfig;
+                int cpi = config.FontSize switch
+                {
+                    8 => 17,
+                    9 => 15,
+                    10 => 13,
+                    11 => 12,
+                    12 => 10,
+                    _ => 15  // default
+                };
+                int lpi = config.FontSize <= 9 ? 9 : 8;
+
                 var process = new Process
                 {
                     StartInfo = new ProcessStartInfo
                     {
                         FileName = "lp",
-                        Arguments = $"-d \"{printerName}\" -o cpi=12 -o lpi=8 \"{filePath}\"",
+                        Arguments = $"-d \"{printerName}\" -o cpi={cpi} -o lpi={lpi} \"{filePath}\"",
                         RedirectStandardOutput = true,
                         RedirectStandardError = true,
                         UseShellExecute = false,
@@ -371,7 +382,7 @@ namespace CasaCejaRemake.Services
                     return false;
                 }
 
-                Console.WriteLine($"[PrintService] Ticket enviado a impresora: {output.Trim()}");
+                Console.WriteLine($"[PrintService] Ticket enviado a impresora (cpi={cpi}, lpi={lpi}): {output.Trim()}");
                 return true;
             }
             catch (Exception ex)

@@ -20,24 +20,17 @@ namespace CasaCejaRemake.Helpers
         // =====================================================================
         // COLUMNAS DINÁMICAS
         // =====================================================================
-        /// <summary>
-        /// Calcula anchos de columna según el ancho de línea.
-        /// Retorna (nameWidth, qtyWidth, priceWidth, totalWidth)
-        /// </summary>
         private static (int nameW, int qtyW, int priceW, int totalW) GetColumnWidths(int lineWidth)
         {
-            int qtyW = 3;    // "  1" a "999"
-            int priceW = 8;  // " 1295.00"
-            int totalW = 8;  // " 1165.50"
-            int spaces = 3;  // 3 espacios separadores
+            int qtyW = 3;
+            int priceW = 8;
+            int totalW = 8;
+            int spaces = 3;
             int nameW = lineWidth - qtyW - priceW - totalW - spaces;
             if (nameW < 6) nameW = 6;
             return (nameW, qtyW, priceW, totalW);
         }
 
-        /// <summary>
-        /// Genera el encabezado de columnas dinámicamente
-        /// </summary>
         private static string BuildColumnHeader(int lineWidth)
         {
             var (nameW, qtyW, priceW, totalW) = GetColumnWidths(lineWidth);
@@ -67,11 +60,17 @@ namespace CasaCejaRemake.Helpers
             lines.Add(sep);
 
             foreach (var p in ticket.Products)
+            {
                 lines.Add(FormatProductLine(p, lineWidth));
+                // Descuentos por producto entre paréntesis
+                var discountLines = FormatProductDiscounts(p, lineWidth);
+                if (discountLines.Count > 0)
+                    lines.AddRange(discountLines);
+            }
 
             lines.Add(sep);
 
-            // ── Subtotal y descuentos (sin flecha) ──
+            // ── Subtotal y descuentos ──
             lines.Add(FormatAmountLine("SUBTOTAL $", ticket.Totals.Subtotal, lineWidth));
 
             decimal descCategoria = ticket.Products
@@ -95,7 +94,6 @@ namespace CasaCejaRemake.Helpers
                 lines.Add(FormatAmountLine(label, -ticket.Totals.GeneralDiscount, lineWidth));
             }
 
-            // Solo TOTAL A PAGAR lleva flecha
             lines.Add(FormatArrowLine("TOTAL A PAGAR $", ticket.Totals.GrandTotal, lineWidth));
             lines.Add(sep);
 
@@ -110,7 +108,20 @@ namespace CasaCejaRemake.Helpers
             lines.Add("GRACIAS POR SU COMPRA");
             lines.Add("");
 
-            lines.AddRange(BuildFooter(rfc, ticketFooter, lineWidth));
+            // Pie personalizado (antes del RFC)
+            if (!string.IsNullOrWhiteSpace(ticketFooter))
+            {
+                lines.Add(ticketFooter);
+                lines.Add("");
+            }
+
+            // RFC y facturación
+            if (!string.IsNullOrWhiteSpace(rfc))
+                lines.Add($"RFC: {rfc}");
+
+            lines.Add("");
+            lines.Add("SI DESEA FACTURAR INGRESE A:");
+            lines.Add(URL_FACTURACION);
 
             return string.Join(Environment.NewLine, lines);
         }
@@ -120,7 +131,7 @@ namespace CasaCejaRemake.Helpers
         // =====================================================================
         public static string FormatCreditTicket(TicketData ticket, string rfc = "", string ticketFooter = "", int lineWidth = 32)
         {
-            return FormatCreditLayawayTicket(ticket, "TICKET DE CREDITO", rfc, ticketFooter, lineWidth);
+            return FormatCreditLayawayTicket(ticket, "TICKET DE CREDITO", "FECHA DE VENCIMIENTO", rfc, ticketFooter, lineWidth);
         }
 
         // =====================================================================
@@ -128,10 +139,10 @@ namespace CasaCejaRemake.Helpers
         // =====================================================================
         public static string FormatLayawayTicket(TicketData ticket, string rfc = "", string ticketFooter = "", int lineWidth = 32)
         {
-            return FormatCreditLayawayTicket(ticket, "TICKET DE APARTADO", rfc, ticketFooter, lineWidth);
+            return FormatCreditLayawayTicket(ticket, "TICKET DE APARTADO", "FECHA DE ENTREGA", rfc, ticketFooter, lineWidth);
         }
 
-        private static string FormatCreditLayawayTicket(TicketData ticket, string typeLabel, string rfc, string ticketFooter, int lineWidth)
+        private static string FormatCreditLayawayTicket(TicketData ticket, string typeLabel, string dueDateLabel, string rfc, string ticketFooter, int lineWidth)
         {
             var lines = new List<string>();
             var sep = new string('-', lineWidth);
@@ -147,11 +158,16 @@ namespace CasaCejaRemake.Helpers
             lines.Add(sep);
 
             foreach (var p in ticket.Products)
+            {
                 lines.Add(FormatProductLine(p, lineWidth));
+                var discountLines = FormatProductDiscounts(p, lineWidth);
+                if (discountLines.Count > 0)
+                    lines.AddRange(discountLines);
+            }
 
             lines.Add(sep);
 
-            // ── Subtotal y descuentos (sin flecha) ──
+            // ── Subtotal y descuentos ──
             lines.Add(FormatAmountLine("SUBTOTAL $", ticket.Totals.Subtotal, lineWidth));
 
             decimal descCategoria = ticket.Products
@@ -166,7 +182,6 @@ namespace CasaCejaRemake.Helpers
             if (descEspecial > 0)
                 lines.Add(FormatAmountLine("DESC. P.ESP", -descEspecial, lineWidth));
 
-            // Solo TOTAL lleva flecha
             lines.Add(FormatArrowLine("TOTAL $", ticket.Totals.GrandTotal, lineWidth));
             lines.Add(sep);
 
@@ -186,19 +201,21 @@ namespace CasaCejaRemake.Helpers
 
             if (ticket.DueDate.HasValue)
             {
-                lines.Add("FECHA DE VENCIMIENTO:");
+                lines.Add($"{dueDateLabel}:");
                 lines.Add(ticket.DueDate.Value.ToString("dd/MM/yyyy"));
             }
 
             if (!string.IsNullOrEmpty(ticket.CustomerName))
             {
                 lines.Add("");
-                lines.Add(ticket.CustomerName);
+                lines.Add($"CLIENTE: {ticket.CustomerName}");
             }
 
             if (!string.IsNullOrEmpty(ticket.CustomerPhone))
                 lines.Add($"TEL: {ticket.CustomerPhone}");
 
+            lines.Add("");
+            lines.Add("GRACIAS POR SU PREFERENCIA");
             lines.Add("");
             lines.AddRange(BuildFooter(rfc, ticketFooter, lineWidth));
 
@@ -208,21 +225,27 @@ namespace CasaCejaRemake.Helpers
         // =====================================================================
         // TICKET DE ABONO — Sección 8
         // =====================================================================
-        public static string FormatPaymentTicket(PaymentTicketData data, string rfc = "", int lineWidth = 32)
+        public static string FormatPaymentTicket(PaymentTicketData data, string rfc = "", string ticketFooter = "", int lineWidth = 32)
         {
             var lines = new List<string>();
             var sep = new string('-', lineWidth);
 
             lines.AddRange(BuildHeader(data.BranchName, data.BranchAddress,
                 data.PaymentDate, data.Folio, lineWidth));
+            lines.Add("");
             lines.Add(CenterText("TICKET DE ABONO", lineWidth));
             lines.Add("");
 
-            lines.Add("CONCEPTO:");
-            string concepto = data.OperationType == 0
-                ? $"  CREDITO: {data.OperationFolio}"
-                : $"  APARTADO: {data.OperationFolio}";
-            lines.Add(concepto);
+            // ── Concepto: tipo y folio del crédito/apartado ──
+            string tipoOperacion = data.OperationType == 0 ? "CREDITO" : "APARTADO";
+            lines.Add($"ABONO A {tipoOperacion}");
+            lines.Add($"FOLIO: {data.OperationFolio}");
+            lines.Add("");
+
+            // ── Cliente ──
+            if (!string.IsNullOrEmpty(data.CustomerName))
+                lines.Add($"CLIENTE: {data.CustomerName}");
+
             lines.Add("");
 
             lines.Add(sep);
@@ -237,8 +260,20 @@ namespace CasaCejaRemake.Helpers
             lines.Add("GRACIAS POR SU PREFERENCIA");
             lines.Add("");
 
+            // Pie personalizado
+            if (!string.IsNullOrWhiteSpace(ticketFooter))
+            {
+                lines.Add(ticketFooter);
+                lines.Add("");
+            }
+
+            // RFC
             if (!string.IsNullOrWhiteSpace(rfc))
                 lines.Add($"RFC: {rfc}");
+
+            lines.Add("");
+            lines.Add("SI DESEA FACTURAR INGRESE A:");
+            lines.Add(URL_FACTURACION);
 
             return string.Join(Environment.NewLine, lines);
         }
@@ -272,7 +307,7 @@ namespace CasaCejaRemake.Helpers
 
             lines.Add(CenterText(EMPRESA, lineWidth));
             lines.Add("");
-            lines.Add($"SUCURSAL: {branchName.ToUpper()}");
+            lines.Add(branchName.ToUpper());
             lines.Add("");
             lines.Add($"CZ FOLIO: {folio}");
             lines.Add("");
@@ -362,7 +397,12 @@ namespace CasaCejaRemake.Helpers
             lines.Add(sep);
 
             foreach (var p in ticket.Products)
+            {
                 lines.Add(FormatProductLine(p, lineWidth));
+                var discountLines = FormatProductDiscounts(p, lineWidth);
+                if (discountLines.Count > 0)
+                    lines.AddRange(discountLines);
+            }
 
             lines.Add(sep);
             lines.Add(FormatArrowLine("TOTAL", ticket.Totals.GrandTotal, lineWidth));
@@ -386,10 +426,26 @@ namespace CasaCejaRemake.Helpers
 
             lines.Add($"LE ATENDIO: {ticket.Sale.UserName}");
             lines.Add($"NO DE ARTICULOS: {ticket.Totals.ItemCount:D5}");
+
+            if (!string.IsNullOrEmpty(ticket.CustomerName))
+            {
+                lines.Add("");
+                lines.Add($"CLIENTE: {ticket.CustomerName}");
+            }
+
+            if (!string.IsNullOrEmpty(ticket.CustomerPhone))
+                lines.Add($"TEL: {ticket.CustomerPhone}");
+
+            lines.Add("");
+            lines.Add("GRACIAS POR SU PREFERENCIA");
             lines.Add("");
 
             if (!string.IsNullOrWhiteSpace(rfc))
                 lines.Add($"RFC: {rfc}");
+
+            lines.Add("");
+            lines.Add("SI DESEA FACTURAR INGRESE A:");
+            lines.Add(URL_FACTURACION);
 
             return string.Join(Environment.NewLine, lines);
         }
@@ -408,13 +464,12 @@ namespace CasaCejaRemake.Helpers
 
         private static List<string> BuildHeader(string branchName, string address, DateTime date, string folio, int lineWidth)
         {
-            // Título grande: espaciar letras para que resalte
             string bigTitle = string.Join(" ", EMPRESA.ToCharArray());
             var lines = new List<string>
             {
                 CenterText(bigTitle, lineWidth),
-                "",   // línea en blanco para que resalte el título
-                $"SUCURSAL: {branchName.ToUpper()}"
+                "",
+                branchName.ToUpper()
             };
 
             if (!string.IsNullOrWhiteSpace(address))
@@ -422,6 +477,16 @@ namespace CasaCejaRemake.Helpers
 
             lines.Add(date.ToString("dd/MM/yyyy hh:mm tt"));
             lines.Add($"FOLIO: {folio}");
+
+            // Agregar CAJA desde la configuración local
+            try
+            {
+                var app = Avalonia.Application.Current as CasaCejaRemake.App;
+                var terminalId = app?.GetConfigService()?.PosTerminalConfig.TerminalId;
+                if (!string.IsNullOrWhiteSpace(terminalId))
+                    lines.Add($"CAJA: {terminalId}");
+            }
+            catch { /* ignore */ }
 
             return lines;
         }
@@ -491,9 +556,14 @@ namespace CasaCejaRemake.Helpers
         {
             var lines = new List<string>();
 
+            // Pie personalizado antes del RFC
             if (!string.IsNullOrWhiteSpace(ticketFooter))
+            {
                 lines.Add(ticketFooter);
+                lines.Add("");
+            }
 
+            // RFC / Razón Social
             if (!string.IsNullOrWhiteSpace(rfc))
                 lines.Add($"RFC: {rfc}");
 
@@ -506,17 +576,11 @@ namespace CasaCejaRemake.Helpers
 
         /// <summary>
         /// Línea de producto en columnas dinámicas:
-        /// {Nombre+indicadores} {Cant} {P.Unit} {P.Total}
+        /// {Nombre} {Cant} {P.Unit} {P.Total}
         /// </summary>
         private static string FormatProductLine(TicketProduct product, int lineWidth)
         {
-            string indicators = "";
-            if (product.IsSpecialPrice)
-                indicators += "*ESP";
-            if (product.HasCategoryDiscount)
-                indicators += $"*CAT{product.CategoryDiscountPercent:0}%";
-
-            string name = product.Name + indicators;
+            string name = product.Name;
 
             var (nameW, qtyW, priceW, totalW) = GetColumnWidths(lineWidth);
 
@@ -530,8 +594,45 @@ namespace CasaCejaRemake.Helpers
         }
 
         /// <summary>
+        /// Muestra los descuentos aplicados a un producto, cada uno en su propia línea entre paréntesis.
+        /// Solo se muestran si el producto tiene descuentos.
+        /// </summary>
+        private static List<string> FormatProductDiscounts(TicketProduct product, int lineWidth)
+        {
+            var lines = new List<string>();
+
+            // Descuento de categoría
+            if (product.HasCategoryDiscount && product.CategoryDiscountPercent > 0)
+            {
+                lines.Add($"  (DESC. CATEG {product.CategoryDiscountPercent:0}%)");
+            }
+
+            // Otros descuentos basados en DiscountInfo
+            if (!string.IsNullOrEmpty(product.DiscountInfo))
+            {
+                // DiscountInfo puede ser: "Mayoreo (3+ pzas)", "Precio Especial", "Precio Vendedor",
+                // o combinado: "Mayoreo (3+ pzas) + 10% desc. Papelería"
+                var parts = product.DiscountInfo.Split(" + ");
+                foreach (var part in parts)
+                {
+                    var trimmed = part.Trim();
+                    // Ignorar partes de categoría (ya se mostraron arriba)
+                    if (trimmed.Contains("% desc.")) continue;
+
+                    if (trimmed.StartsWith("Mayoreo", StringComparison.OrdinalIgnoreCase))
+                        lines.Add($"  (MAYOREO)");
+                    else if (trimmed.Equals("Precio Especial", StringComparison.OrdinalIgnoreCase))
+                        lines.Add($"  (DESC. ESPECIAL)");
+                    else if (trimmed.Equals("Precio Vendedor", StringComparison.OrdinalIgnoreCase))
+                        lines.Add($"  (DESC. VENDEDOR)");
+                }
+            }
+
+            return lines;
+        }
+
+        /// <summary>
         /// Formato flecha: {LABEL} ------>{espacios}{monto}
-        /// Si no cabe la flecha, usa formato simple sin flecha.
         /// </summary>
         private static string FormatArrowLine(string label, decimal amount, int lineWidth)
         {
@@ -541,7 +642,6 @@ namespace CasaCejaRemake.Helpers
             string withArrow = $"{label} {arrow}";
             int totalNeeded = withArrow.Length + 1 + amountStr.Length;
 
-            // Si cabe con flecha, usar formato flecha
             if (totalNeeded <= lineWidth)
             {
                 int spaces = lineWidth - withArrow.Length - amountStr.Length;
@@ -549,14 +649,13 @@ namespace CasaCejaRemake.Helpers
                 return $"{withArrow}{new string(' ', spaces)}{amountStr}";
             }
 
-            // Si no cabe, formato simple: label + espacios + monto
             int simpleSpaces = lineWidth - label.Length - amountStr.Length;
             if (simpleSpaces < 1) simpleSpaces = 1;
             return $"{label}{new string(' ', simpleSpaces)}{amountStr}";
         }
 
         /// <summary>
-        /// Label izquierda, $monto derecha (para corte de caja)
+        /// Label izquierda, $monto derecha
         /// </summary>
         private static string FormatAmountLine(string label, decimal amount, int lineWidth)
         {

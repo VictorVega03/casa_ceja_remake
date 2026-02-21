@@ -58,7 +58,28 @@ namespace CasaCejaRemake.Views.POS
 
         private async void OnReprintRequested(object? sender, string ticketText)
         {
-            await DialogHelper.ShowTicketDialog(this, _viewModel?.Folio ?? "N/A", ticketText);
+            // Imprimir directamente sin mostrar vista previa (ya se ve en la vista de detalle)
+            try
+            {
+                var app = Avalonia.Application.Current as CasaCejaRemake.App;
+                var printService = app?.GetPrintService();
+                if (printService != null)
+                {
+                    Console.WriteLine("[SaleDetailView] Reimprimiendo ticket directamente...");
+                    var success = await printService.PrintAsync(ticketText);
+                    Console.WriteLine(success
+                        ? "[SaleDetailView] ✓ Ticket impreso correctamente"
+                        : "[SaleDetailView] ✗ Error al imprimir ticket");
+                }
+                else
+                {
+                    Console.WriteLine("[SaleDetailView] PrintService no disponible");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[SaleDetailView] Error al reimprimir: {ex.Message}");
+            }
         }
 
         protected override void OnClosed(EventArgs e)

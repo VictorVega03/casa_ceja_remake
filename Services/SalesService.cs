@@ -153,7 +153,7 @@ namespace CasaCejaRemake.Services
             var branch = await _branchRepository.GetByIdAsync(branchId);
             string branchName = branch?.Name ?? "Sucursal";
             string branchAddress = branch?.Address ?? "";
-            string branchPhone = branch?.Email ?? ""; // Branch no tiene Phone, usando Email
+            string branchRazonSocial = branch?.RazonSocial ?? "";
 
             // Generar folio usando FolioService
             // Extraer cajaId del TerminalId configurado (ej: "CAJA-01" -> 1)
@@ -167,7 +167,8 @@ namespace CasaCejaRemake.Services
                 branchId,
                 branchName,
                 branchAddress,
-                branchPhone,
+                string.Empty,
+                branchRazonSocial,
                 userId,
                 userName,
                 items,
@@ -307,7 +308,7 @@ namespace CasaCejaRemake.Services
             var branch = await _branchRepository.GetByIdAsync(branchId);
             string branchName = branch?.Name ?? "Sucursal";
             string branchAddress = branch?.Address ?? "";
-            string branchPhone = branch?.Email ?? "";
+            string branchRazonSocial = branch?.RazonSocial ?? "";
 
             // Generar folio usando FolioService
             // Extraer cajaId del TerminalId configurado (ej: "CAJA-01" -> 1)
@@ -321,7 +322,8 @@ namespace CasaCejaRemake.Services
                 branchId,
                 branchName,
                 branchAddress,
-                branchPhone,
+                string.Empty,
+                branchRazonSocial,
                 userId,
                 userName,
                 items,

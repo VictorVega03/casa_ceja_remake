@@ -129,12 +129,14 @@ namespace CasaCejaRemake.Services
                     updatedCredit.Status = 2;
                 }
 
+                var currentUser = (Avalonia.Application.Current as App)?.GetAuthService()?.CurrentUser;
                 var ticketData = _ticketService.GenerateCreditTicket(
                     folio,
                     branch?.Name ?? "Sucursal",
                     branch?.Address ?? "",
-                    branch?.Email ?? "",
-                    "", 
+                    string.Empty,
+                    branch?.RazonSocial ?? "",
+                    currentUser?.Name ?? "", 
                     customer.Name,
                     customer.Phone,
                     items,

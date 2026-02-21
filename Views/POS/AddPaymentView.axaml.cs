@@ -3,6 +3,7 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using CasaCejaRemake.ViewModels.POS;
+using casa_ceja_remake.Helpers;
 
 namespace CasaCejaRemake.Views.POS
 {
@@ -42,8 +43,64 @@ namespace CasaCejaRemake.Views.POS
             }
         }
 
-        private void OnPaymentCompleted(object? sender, PaymentResult e)
+        private async void OnPaymentCompleted(object? sender, PaymentResult e)
         {
+            // Generar y mostrar ticket de abono
+            try
+            {
+                if (_viewModel != null && e.Success)
+                {
+                    var app = Avalonia.Application.Current as CasaCejaRemake.App;
+                    var configService = app?.GetConfigService();
+                    var rfc = configService?.PosTerminalConfig.Rfc ?? string.Empty;
+
+                    // Load branch from DB to get RazonSocial and address
+                    var branch = app != null ? await app.GetCurrentBranchAsync() : null;
+                    var branchName = branch?.Name ?? configService?.AppConfig.BranchName ?? string.Empty;
+                    var branchAddress = branch?.Address ?? string.Empty;
+                    var branchRazonSocial = branch?.RazonSocial ?? string.Empty;
+
+                    // Construir JSON de pagos desde la lista de la sesión
+                    var paymentDict = new System.Collections.Generic.Dictionary<string, decimal>();
+                    foreach (var p in _viewModel.PaymentsList)
+                    {
+                        string key = p.Method.ToLower()
+                            .Replace("á", "a").Replace("é", "e").Replace("í", "i")
+                            .Replace("ó", "o").Replace("ú", "u")
+                            .Replace(" ", "_");
+                        if (paymentDict.ContainsKey(key))
+                            paymentDict[key] += p.Amount;
+                        else
+                            paymentDict[key] = p.Amount;
+                    }
+                    string paymentJson = System.Text.Json.JsonSerializer.Serialize(paymentDict);
+
+                    var paymentTicketData = new CasaCejaRemake.Services.PaymentTicketData
+                    {
+                        Folio = e.Folio,
+                        OperationFolio = _viewModel.Folio,
+                        OperationType = e.IsCredit ? 0 : 1,
+                        BranchName = branchName,
+                        BranchAddress = branchAddress,
+                        BranchRazonSocial = branchRazonSocial,
+                        CustomerName = _viewModel.CustomerName,
+                        PaymentDate = DateTime.Now,
+                        PaymentDetails = paymentJson,
+                        TotalPaid = e.AmountPaid,
+                        RemainingBalance = _viewModel.CurrentRemaining < 0 ? 0 : _viewModel.CurrentRemaining,
+                        UserName = app?.GetAuthService()?.CurrentUser?.Name ?? string.Empty
+                    };
+
+                    var ticketService = new CasaCejaRemake.Services.TicketService();
+                    var ticketText = ticketService.GeneratePaymentTicketText(paymentTicketData, rfc);
+                    await DialogHelper.ShowTicketDialog(this, e.Folio, ticketText);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[AddPaymentView] Error mostrando ticket de abono: {ex.Message}");
+            }
+
             Tag = e;
             Close();
         }

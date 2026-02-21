@@ -30,8 +30,29 @@ namespace CasaCejaRemake.Views.POS
             }
         }
 
-        private void OnLayawayCreated(object? sender, Layaway e)
+        private async void OnLayawayCreated(object? sender, Layaway e)
         {
+            // Generar y mostrar ticket de apartado recién creado
+            try
+            {
+                var app = Avalonia.Application.Current as CasaCejaRemake.App;
+                var layawayService = app?.GetLayawayService();
+                if (layawayService != null)
+                {
+                    var ticketData = await layawayService.RecoverTicketAsync(e.Id);
+                    if (ticketData != null)
+                    {
+                        var ticketService = new CasaCejaRemake.Services.TicketService();
+                        var ticketText = ticketService.GenerateTicketText(ticketData, CasaCejaRemake.Services.TicketType.Layaway);
+                        await DialogHelper.ShowTicketDialog(this, e.Folio, ticketText);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[CreateLayawayView] Error mostrando ticket: {ex.Message}");
+            }
+
             Tag = e;
             Close();
         }

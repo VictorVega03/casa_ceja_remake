@@ -588,6 +588,17 @@ namespace CasaCejaRemake
         }
 
         /// <summary>
+        /// Obtiene la sucursal actual desde la base de datos.
+        /// </summary>
+        public async System.Threading.Tasks.Task<Models.Branch?> GetCurrentBranchAsync()
+        {
+            if (DatabaseService == null || ConfigService == null) return null;
+            var branchId = ConfigService.AppConfig.BranchId;
+            var repo = new Data.Repositories.BaseRepository<Models.Branch>(DatabaseService);
+            return await repo.GetByIdAsync(branchId);
+        }
+
+        /// <summary>
         /// Maneja cambios en la configuración general (sucursal).
         /// </summary>
         private void OnAppConfigChanged(object? sender, EventArgs e)
