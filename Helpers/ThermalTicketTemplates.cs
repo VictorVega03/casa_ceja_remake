@@ -76,15 +76,24 @@ namespace CasaCejaRemake.Helpers
             decimal descCategoria = ticket.Products
                 .Where(p => p.HasCategoryDiscount)
                 .Sum(p => p.CategoryDiscountAmount * p.Quantity);
+            decimal descMayoreo = ticket.Products
+                .Where(p => !string.IsNullOrEmpty(p.DiscountInfo) && p.DiscountInfo.Contains("Mayoreo", StringComparison.OrdinalIgnoreCase))
+                .Sum(p => p.Discount - (p.HasCategoryDiscount ? p.CategoryDiscountAmount * p.Quantity : 0));
             decimal descEspecial = ticket.Products
-                .Where(p => p.IsSpecialPrice)
+                .Where(p => !string.IsNullOrEmpty(p.DiscountInfo) && p.DiscountInfo.Contains("Especial", StringComparison.OrdinalIgnoreCase))
+                .Sum(p => p.Discount - (p.HasCategoryDiscount ? p.CategoryDiscountAmount * p.Quantity : 0));
+            decimal descVendedor = ticket.Products
+                .Where(p => !string.IsNullOrEmpty(p.DiscountInfo) && p.DiscountInfo.Contains("Vendedor", StringComparison.OrdinalIgnoreCase))
                 .Sum(p => p.Discount - (p.HasCategoryDiscount ? p.CategoryDiscountAmount * p.Quantity : 0));
 
             if (descCategoria > 0)
                 lines.Add(FormatAmountLine("DESC. CATEG", -descCategoria, lineWidth));
-
+            if (descMayoreo > 0)
+                lines.Add(FormatAmountLine("DESC. MAYOREO", -descMayoreo, lineWidth));
             if (descEspecial > 0)
                 lines.Add(FormatAmountLine("DESC. P.ESP", -descEspecial, lineWidth));
+            if (descVendedor > 0)
+                lines.Add(FormatAmountLine("DESC. VENDEDOR", -descVendedor, lineWidth));
 
             if (ticket.Totals.GeneralDiscount > 0)
             {
@@ -173,14 +182,24 @@ namespace CasaCejaRemake.Helpers
             decimal descCategoria = ticket.Products
                 .Where(p => p.HasCategoryDiscount)
                 .Sum(p => p.CategoryDiscountAmount * p.Quantity);
+            decimal descMayoreo = ticket.Products
+                .Where(p => !string.IsNullOrEmpty(p.DiscountInfo) && p.DiscountInfo.Contains("Mayoreo", StringComparison.OrdinalIgnoreCase))
+                .Sum(p => p.Discount - (p.HasCategoryDiscount ? p.CategoryDiscountAmount * p.Quantity : 0));
             decimal descEspecial = ticket.Products
-                .Where(p => p.IsSpecialPrice)
+                .Where(p => !string.IsNullOrEmpty(p.DiscountInfo) && p.DiscountInfo.Contains("Especial", StringComparison.OrdinalIgnoreCase))
+                .Sum(p => p.Discount - (p.HasCategoryDiscount ? p.CategoryDiscountAmount * p.Quantity : 0));
+            decimal descVendedor = ticket.Products
+                .Where(p => !string.IsNullOrEmpty(p.DiscountInfo) && p.DiscountInfo.Contains("Vendedor", StringComparison.OrdinalIgnoreCase))
                 .Sum(p => p.Discount - (p.HasCategoryDiscount ? p.CategoryDiscountAmount * p.Quantity : 0));
 
             if (descCategoria > 0)
                 lines.Add(FormatAmountLine("DESC. CATEG", -descCategoria, lineWidth));
+            if (descMayoreo > 0)
+                lines.Add(FormatAmountLine("DESC. MAYOREO", -descMayoreo, lineWidth));
             if (descEspecial > 0)
                 lines.Add(FormatAmountLine("DESC. P.ESP", -descEspecial, lineWidth));
+            if (descVendedor > 0)
+                lines.Add(FormatAmountLine("DESC. VENDEDOR", -descVendedor, lineWidth));
 
             lines.Add(FormatArrowLine("TOTAL $", ticket.Totals.GrandTotal, lineWidth));
             lines.Add(sep);

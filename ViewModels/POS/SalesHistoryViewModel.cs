@@ -29,6 +29,26 @@ namespace CasaCejaRemake.ViewModels.POS
     }
 
     /// <summary>
+    /// DTO para exportar resumen de ventas con desglose de descuentos a Excel.
+    /// </summary>
+    public class SaleExportSummary
+    {
+        public string Folio { get; set; } = string.Empty;
+        public DateTime SaleDate { get; set; }
+        public string UserName { get; set; } = string.Empty;
+        public string PaymentSummary { get; set; } = string.Empty;
+        public decimal Total { get; set; }
+        
+        // Descuentos desglosados
+        public decimal WholesaleDiscount { get; set; }
+        public decimal CategoryDiscount { get; set; }
+        public decimal SpecialDiscount { get; set; }
+        public decimal DealerDiscount { get; set; }
+        public decimal GeneralDiscount { get; set; }
+        public decimal TotalDiscount { get; set; }
+    }
+
+    /// <summary>
     /// ViewModel para la vista de historial de ventas.
     /// </summary>
     public partial class SalesHistoryViewModel : ViewModelBase
@@ -287,30 +307,68 @@ namespace CasaCejaRemake.ViewModels.POS
         {
             var sheets = new List<ExportSheetData>();
 
-            // ==== HOJA 1: RESUMEN DE TODAS LAS VENTAS ====
-            var summaryColumns = new List<ExportColumn<SaleListItemWrapper>>
-            {
-                new() { Header = "Folio", ValueSelector = i => i.Folio, Width = 22 },
-                new() { Header = "Fecha/Hora", ValueSelector = i => i.SaleDate, Format = "dd/MM/yyyy HH:mm", Width = 20 },
-                new() { Header = "Total", ValueSelector = i => i.Total, Format = "$#,##0.00", Width = 15 },
-                new() { Header = "Descuento", ValueSelector = i => i.Discount, Format = "$#,##0.00", Width = 15 },
-                new() { Header = "Usuario", ValueSelector = i => i.UserName, Width = 20 },
-                new() { Header = "Método de Pago", ValueSelector = i => i.PaymentSummary, Width = 25 }
-            };
-
-            sheets.Add(exportService.CreateSheetData(
-                Items,
-                summaryColumns,
-                "Resumen",
-                "Resumen de Ventas"));
-
-            // ==== HOJA 2: DETALLES DE TODAS LAS VENTAS EN UNA SOLA HOJA ====
+            var summaryData = new List<SaleExportSummary>();
             var allDetails = new List<(string Label, object Value)>();
 
             foreach (var item in Items)
             {
                 var sale = item.Sale;
 
+                // ===== CALCULAR DESCUENTOS PARA EL RESUMEN =====
+                var products = await _salesService.GetSaleProductsAsync(sale.Id);
+
+                decimal descMayoreo = 0;
+                decimal descCategoria = 0;
+                decimal descEspecial = 0;
+                decimal descVendedor = 0;
+
+                foreach (var product in products)
+                {
+                    decimal discountLine = product.TotalDiscountAmount;
+                    if (discountLine > 0)
+                    {
+                        var info = product.DiscountInfo ?? "";
+                        decimal categoryDesc = 0;
+
+                        // Extraer descuento de categoría si existe
+                        var match = System.Text.RegularExpressions.Regex.Match(info, @"(\d+(?:\.\d+)?)%\s*desc\.");
+                        if (match.Success && decimal.TryParse(match.Groups[1].Value, out decimal percent))
+                        {
+                            categoryDesc = product.ListPrice * (percent / 100m) * product.Quantity;
+                            descCategoria += categoryDesc;
+                        }
+
+                        decimal remainingDesc = discountLine - categoryDesc;
+                        if (remainingDesc < 0) remainingDesc = 0;
+
+                        if (info.Contains("Mayoreo", StringComparison.OrdinalIgnoreCase))
+                            descMayoreo += remainingDesc;
+                        else if (info.Contains("Especial", StringComparison.OrdinalIgnoreCase))
+                            descEspecial += remainingDesc;
+                        else if (info.Contains("Vendedor", StringComparison.OrdinalIgnoreCase))
+                            descVendedor += remainingDesc;
+                    }
+                }
+
+                decimal descGeneral = sale.Discount - (descMayoreo + descCategoria + descEspecial + descVendedor);
+                if (descGeneral < 0) descGeneral = 0;
+
+                summaryData.Add(new SaleExportSummary
+                {
+                    Folio = sale.Folio,
+                    SaleDate = sale.SaleDate,
+                    Total = sale.Total,
+                    TotalDiscount = sale.Discount,
+                    UserName = item.UserName,
+                    PaymentSummary = sale.PaymentSummary,
+                    WholesaleDiscount = Math.Round(descMayoreo, 2),
+                    CategoryDiscount = Math.Round(descCategoria, 2),
+                    SpecialDiscount = Math.Round(descEspecial, 2),
+                    DealerDiscount = Math.Round(descVendedor, 2),
+                    GeneralDiscount = Math.Round(descGeneral, 2)
+                });
+
+                // ==== HOJA 2: DETALLES DE TODAS LAS VENTAS ====
                 // Título de la venta
                 allDetails.Add(($"═══════════════════════════════════════════════════", ""));
                 allDetails.Add(($"VENTA: {sale.Folio}", ""));
@@ -322,9 +380,6 @@ namespace CasaCejaRemake.ViewModels.POS
                 allDetails.Add(("Usuario", item.UserName));
                 allDetails.Add(("Método de Pago", sale.PaymentSummary));
                 allDetails.Add(("", ""));
-
-                // Obtener productos de la venta
-                var products = await _salesService.GetSaleProductsAsync(sale.Id);
 
                 if (products.Any())
                 {
@@ -369,6 +424,28 @@ namespace CasaCejaRemake.ViewModels.POS
                 new() { Header = "Campo", ValueSelector = d => d.Label, Width = 40 },
                 new() { Header = "Valor", ValueSelector = d => d.Value, Width = 25 }
             };
+
+            // Crear hoja 1 usando la nueva data sumaria
+            var summaryColumns = new List<ExportColumn<SaleExportSummary>>
+            {
+                new() { Header = "Folio", ValueSelector = i => i.Folio, Width = 22 },
+                new() { Header = "Fecha/Hora", ValueSelector = i => i.SaleDate, Format = "dd/MM/yyyy HH:mm", Width = 20 },
+                new() { Header = "Usuario", ValueSelector = i => i.UserName, Width = 20 },
+                new() { Header = "Método de Pago", ValueSelector = i => i.PaymentSummary, Width = 20 },
+                new() { Header = "Total", ValueSelector = i => i.Total, Format = "$#,##0.00", Width = 15 },
+                new() { Header = "Desc. Mayoreo", ValueSelector = i => i.WholesaleDiscount, Format = "$#,##0.00", Width = 15 },
+                new() { Header = "Desc. Categoría", ValueSelector = i => i.CategoryDiscount, Format = "$#,##0.00", Width = 15 },
+                new() { Header = "Desc. Especial", ValueSelector = i => i.SpecialDiscount, Format = "$#,##0.00", Width = 15 },
+                new() { Header = "Desc. Vendedor", ValueSelector = i => i.DealerDiscount, Format = "$#,##0.00", Width = 15 },
+                new() { Header = "Desc. General", ValueSelector = i => i.GeneralDiscount, Format = "$#,##0.00", Width = 15 },
+                new() { Header = "Total Descuento", ValueSelector = i => i.TotalDiscount, Format = "$#,##0.00", Width = 15 }
+            };
+
+            sheets.Insert(0, exportService.CreateSheetData(
+                summaryData,
+                summaryColumns,
+                "Resumen",
+                "Resumen de Ventas"));
 
             sheets.Add(exportService.CreateSheetData(
                 allDetails,

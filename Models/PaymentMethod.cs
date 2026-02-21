@@ -9,7 +9,8 @@ namespace CasaCejaRemake.Models
         TarjetaDebito = 2,
         TarjetaCredito = 3,
         Transferencia = 4,
-        Mixto = 5
+        Mixto = 5,
+        Cheque = 6
     }
 
     /// <summary>
@@ -26,6 +27,7 @@ namespace CasaCejaRemake.Models
                 PaymentMethod.TarjetaCredito => "Tarjeta Credito",
                 PaymentMethod.Transferencia => "Transferencia",
                 PaymentMethod.Mixto => "Mixto",
+                PaymentMethod.Cheque => "Cheque",
                 _ => method.ToString()
             };
         }
@@ -39,6 +41,7 @@ namespace CasaCejaRemake.Models
                 PaymentMethod.TarjetaCredito => "TC",
                 PaymentMethod.Transferencia => "TR",
                 PaymentMethod.Mixto => "MX",
+                PaymentMethod.Cheque => "CH",
                 _ => "??"
             };
         }

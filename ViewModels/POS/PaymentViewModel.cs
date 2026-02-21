@@ -56,6 +56,9 @@ namespace CasaCejaRemake.ViewModels.POS
         private bool _isTransferenciaSelected;
 
         [ObservableProperty]
+        private bool _isChequesSelected;
+
+        [ObservableProperty]
         private string _errorMessage = string.Empty;
 
         [ObservableProperty]
@@ -128,6 +131,7 @@ namespace CasaCejaRemake.ViewModels.POS
                 "Debito" => "Tarjeta Débito",
                 "Credito" => "Tarjeta Crédito",
                 "Transferencia" => "Transferencia",
+                "Cheque" => "Cheque",
                 _ => "Efectivo"
             };
 
@@ -137,6 +141,7 @@ namespace CasaCejaRemake.ViewModels.POS
                 "Debito" => PaymentMethod.TarjetaDebito,
                 "Credito" => PaymentMethod.TarjetaCredito,
                 "Transferencia" => PaymentMethod.Transferencia,
+                "Cheque" => PaymentMethod.Cheque,
                 _ => PaymentMethod.Efectivo
             };
 
@@ -145,6 +150,7 @@ namespace CasaCejaRemake.ViewModels.POS
             IsDebitoSelected = method == "Debito";
             IsCreditoSelected = method == "Credito";
             IsTransferenciaSelected = method == "Transferencia";
+            IsChequesSelected = method == "Cheque";
 
             // Si no es efectivo, sugerir el restante exacto
             if (CurrentMethod != PaymentMethod.Efectivo)
