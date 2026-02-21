@@ -2,13 +2,50 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using CasaCejaRemake.Models;
+using CasaCejaRemake.Services.Platform;
 
 namespace CasaCejaRemake.Services
 {
+    /// <summary>
+    /// Resultado de una operación de impresión.
+    /// Permite distinguir por qué falló sin depender solo de bool.
+    /// </summary>
+    public class PrintResult
+    {
+        public bool Success { get; private set; }
+        public string? ErrorMessage { get; private set; }
+        public PrintFailReason FailReason { get; private set; }
+
+        public static PrintResult Ok() =>
+            new() { Success = true };
+
+        public static PrintResult Fail(PrintFailReason reason, string message) =>
+            new() { Success = false, FailReason = reason, ErrorMessage = message };
+    }
+
+    /// <summary>
+    /// Categoría del fallo para que la UI decida qué mensaje mostrar.
+    /// </summary>
+    public enum PrintFailReason
+    {
+        None = 0,
+        /// <summary>No hay impresora guardada en la configuración del terminal.</summary>
+        NoPrinterConfigured,
+        /// <summary>La impresión automática está desactivada por el usuario.</summary>
+        AutoPrintDisabled,
+        /// <summary>El formato configurado no es térmico (carta u otro).</summary>
+        FormatNotThermal,
+        /// <summary>Error al comunicarse con el driver/spooler.</summary>
+        DriverError,
+        /// <summary>Error de I/O (archivo temporal, permisos, etc.).</summary>
+        IoError,
+        /// <summary>Sistema operativo no soportado.</summary>
+        UnsupportedOs
+    }
+
     /// <summary>
     /// Servicio de impresión multiplataforma.
     /// Soporta impresoras térmicas (ticket) y convencionales (carta).
@@ -54,13 +91,16 @@ namespace CasaCejaRemake.Services
             var printers = new List<string>();
             try
             {
+                // PowerShell Get-Printer: funciona en Windows 10/11.
+                // wmic está deprecado en Windows 11.
                 var process = new Process
                 {
                     StartInfo = new ProcessStartInfo
                     {
-                        FileName = "wmic",
-                        Arguments = "printer get name",
+                        FileName = "powershell.exe",
+                        Arguments = "-NoProfile -Command \"Get-Printer | Select-Object -ExpandProperty Name\"",
                         RedirectStandardOutput = true,
+                        RedirectStandardError = true,
                         UseShellExecute = false,
                         CreateNoWindow = true
                     }
@@ -72,106 +112,25 @@ namespace CasaCejaRemake.Services
                 foreach (var line in output.Split('\n'))
                 {
                     var trimmed = line.Trim();
-                    if (!string.IsNullOrEmpty(trimmed) && trimmed != "Name")
+                    if (!string.IsNullOrEmpty(trimmed))
                         printers.Add(trimmed);
                 }
+
+                Console.WriteLine($"[PrintService] Detectadas {printers.Count} impresora(s) en Windows: {string.Join(", ", printers)}");
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"[PrintService] Error detectando impresoras Windows: {ex.Message}");
             }
-            return printers;
+            return printers.Count > 0
+                ? printers
+                : new List<string> { "(No se encontraron impresoras)" };
         }
 
-        /// <summary>macOS: usa lpstat (CUPS) para listar impresoras.</summary>
+        /// <summary>macOS: delega a MacCupsPrinter que usa lpstat (CUPS).</summary>
         private List<string> GetMacPrinters()
         {
-            var printers = new HashSet<string>(); // Usar HashSet para evitar duplicados
-            try
-            {
-                // Método 1: lpstat -a (impresoras que aceptan trabajos)
-                // Este es más confiable para detectar impresoras térmicas
-                var process1 = new Process
-                {
-                    StartInfo = new ProcessStartInfo
-                    {
-                        FileName = "lpstat",
-                        Arguments = "-a",
-                        RedirectStandardOutput = true,
-                        UseShellExecute = false,
-                        CreateNoWindow = true
-                    }
-                };
-                process1.Start();
-                var output1 = process1.StandardOutput.ReadToEnd();
-                process1.WaitForExit();
-
-                // Formato de lpstat -a: "NOMBRE_IMPRESORA acepta peticiones desde..."
-                foreach (var line in output1.Split('\n'))
-                {
-                    if (!string.IsNullOrWhiteSpace(line))
-                    {
-                        var parts = line.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-                        if (parts.Length >= 1)
-                        {
-                            printers.Add(parts[0]);
-                        }
-                    }
-                }
-
-                // Método 2: lpstat -p (información de estado)
-                // Como respaldo adicional
-                var process2 = new Process
-                {
-                    StartInfo = new ProcessStartInfo
-                    {
-                        FileName = "lpstat",
-                        Arguments = "-p",
-                        RedirectStandardOutput = true,
-                        UseShellExecute = false,
-                        CreateNoWindow = true
-                    }
-                };
-                process2.Start();
-                var output2 = process2.StandardOutput.ReadToEnd();
-                process2.WaitForExit();
-
-                // Formato: "la impresora NOMBRE está..." o "printer NOMBRE is..."
-                foreach (var line in output2.Split('\n'))
-                {
-                    if (!string.IsNullOrWhiteSpace(line))
-                    {
-                        // Buscar después de "impresora " o "printer "
-                        if (line.Contains("impresora "))
-                        {
-                            var parts = line.Split(new[] { "impresora " }, StringSplitOptions.None);
-                            if (parts.Length >= 2)
-                            {
-                                var printerName = parts[1].Split(' ')[0];
-                                printers.Add(printerName);
-                            }
-                        }
-                        else if (line.StartsWith("printer "))
-                        {
-                            var parts = line.Split(' ');
-                            if (parts.Length >= 2)
-                            {
-                                printers.Add(parts[1]);
-                            }
-                        }
-                    }
-                }
-
-                Console.WriteLine($"[PrintService] Detectadas {printers.Count} impresora(s) en macOS: {string.Join(", ", printers)}");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"[PrintService] Error detectando impresoras macOS: {ex.Message}");
-            }
-            
-            return printers.Count > 0 
-                ? printers.ToList() 
-                : new List<string> { "(No se encontraron impresoras)" };
+            return MacCupsPrinter.GetAvailablePrinters();
         }
 
         // ============================================================
@@ -181,20 +140,33 @@ namespace CasaCejaRemake.Services
         /// <summary>
         /// Imprime texto usando la configuración actual (impresora y formato).
         /// Punto de entrada principal para todos los módulos.
+        /// Retorna un PrintResult con la razón exacta si algo falla.
         /// </summary>
-        public async Task<bool> PrintAsync(string content)
+        public async Task<PrintResult> PrintAsync(string content)
         {
             var config = _configService.PosTerminalConfig;
 
             if (string.IsNullOrEmpty(config.PrinterName))
             {
                 Console.WriteLine("[PrintService] No hay impresora configurada");
-                return false;
+                return PrintResult.Fail(
+                    PrintFailReason.NoPrinterConfigured,
+                    "No hay impresora configurada en esta terminal. " +
+                    "Ve a Configuración → Impresora para seleccionar una.");
             }
 
-            return config.PrintFormat == "Térmica" || config.PrintFormat == "thermal"
+            bool isThermal = config.PrintFormat == "Térmica" || config.PrintFormat == "thermal";
+
+            bool ok = isThermal
                 ? await PrintThermalAsync(content, config.PrinterName)
                 : await PrintLetterAsync(content, config.PrinterName, config);
+
+            return ok
+                ? PrintResult.Ok()
+                : PrintResult.Fail(
+                    PrintFailReason.DriverError,
+                    $"Error al enviar el ticket a '{config.PrinterName}'. " +
+                    "Verifique que la impresora esté encendida y conectada.");
         }
 
         /// <summary>
@@ -280,7 +252,7 @@ namespace CasaCejaRemake.Services
         /// <summary>
         /// Imprime un ticket de venta usando TicketService + configuración.
         /// </summary>
-        public async Task<bool> PrintSaleTicketAsync(string ticketText)
+        public async Task<PrintResult> PrintSaleTicketAsync(string ticketText)
         {
             return await PrintAsync(ticketText);
         }
@@ -288,7 +260,7 @@ namespace CasaCejaRemake.Services
         /// <summary>
         /// Imprime un ticket de corte de caja.
         /// </summary>
-        public async Task<bool> PrintCashCloseTicketAsync(string cashCloseText)
+        public async Task<PrintResult> PrintCashCloseTicketAsync(string cashCloseText)
         {
             return await PrintAsync(cashCloseText);
         }
@@ -298,98 +270,41 @@ namespace CasaCejaRemake.Services
         // ============================================================
 
         /// <summary>
-        /// Envía un archivo a la impresora en Windows.
+        /// Envía el texto del ticket directamente al driver de la impresora en Windows
+        /// usando winspool.drv (P/Invoke RAW). Mismo principio que lp en macOS:
+        /// el driver recibe el contenido sin transformación del spooler.
+        /// Compatible con Xprinter y cualquier impresora con driver instalado.
         /// </summary>
         private async Task<bool> PrintFileWindows(string filePath, string printerName)
         {
-            try
+            // Task.Run porque WindowsRawPrinter es síncrono (P/Invoke)
+            return await Task.Run(() =>
             {
-                var process = new Process
+                try
                 {
-                    StartInfo = new ProcessStartInfo
-                    {
-                        FileName = "cmd.exe",
-                        Arguments = $"/c print /d:\"{printerName}\" \"{filePath}\"",
-                        RedirectStandardOutput = true,
-                        RedirectStandardError = true,
-                        UseShellExecute = false,
-                        CreateNoWindow = true
-                    }
-                };
-
-                process.Start();
-                await process.WaitForExitAsync();
-
-                if (process.ExitCode != 0)
+                    var text = File.ReadAllText(filePath);
+                    Console.WriteLine($"[PrintService] Enviando {text.Length} chars a '{printerName}' via WindowsRawPrinter...");
+                    var success = WindowsRawPrinter.SendText(printerName, text);
+                    if (success)
+                        Console.WriteLine($"[PrintService] Ticket enviado correctamente a '{printerName}'");
+                    return success;
+                }
+                catch (Exception ex)
                 {
-                    var error = await process.StandardError.ReadToEndAsync();
-                    Console.WriteLine($"[PrintService] Error Windows: {error}");
+                    Console.WriteLine($"[PrintService] Error imprimiendo en Windows: {ex.Message}");
                     return false;
                 }
-
-                Console.WriteLine($"[PrintService] Impreso correctamente en {printerName}");
-                return true;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"[PrintService] Error imprimiendo en Windows: {ex.Message}");
-                return false;
-            }
+            });
         }
 
         /// <summary>
-        /// Envía un archivo a la impresora en macOS usando lp (CUPS).
-        /// Para impresoras térmicas con driver PCL, usa opciones específicas.
+        /// Envía un archivo a la impresora en macOS.
+        /// Delega a MacCupsPrinter que gestiona lp (CUPS) con los parámetros correctos.
         /// </summary>
         private async Task<bool> PrintFileMac(string filePath, string printerName)
         {
-            try
-            {
-                // Derivar CPI del FontSize configurado (menor fontSize = mayor cpi = letra más chica)
-                var config = _configService.PosTerminalConfig;
-                int cpi = config.FontSize switch
-                {
-                    8 => 17,
-                    9 => 15,
-                    10 => 13,
-                    11 => 12,
-                    12 => 10,
-                    _ => 15  // default
-                };
-                int lpi = config.FontSize <= 9 ? 9 : 8;
-
-                var process = new Process
-                {
-                    StartInfo = new ProcessStartInfo
-                    {
-                        FileName = "lp",
-                        Arguments = $"-d \"{printerName}\" -o cpi={cpi} -o lpi={lpi} \"{filePath}\"",
-                        RedirectStandardOutput = true,
-                        RedirectStandardError = true,
-                        UseShellExecute = false,
-                        CreateNoWindow = true
-                    }
-                };
-
-                process.Start();
-                var output = await process.StandardOutput.ReadToEndAsync();
-                await process.WaitForExitAsync();
-
-                if (process.ExitCode != 0)
-                {
-                    var error = await process.StandardError.ReadToEndAsync();
-                    Console.WriteLine($"[PrintService] Error macOS: {error}");
-                    return false;
-                }
-
-                Console.WriteLine($"[PrintService] Ticket enviado a impresora (cpi={cpi}, lpi={lpi}): {output.Trim()}");
-                return true;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"[PrintService] Error imprimiendo en macOS: {ex.Message}");
-                return false;
-            }
+            var fontSize = _configService.PosTerminalConfig.FontSize;
+            return await MacCupsPrinter.PrintFileAsync(filePath, printerName, fontSize);
         }
 
         /// <summary>

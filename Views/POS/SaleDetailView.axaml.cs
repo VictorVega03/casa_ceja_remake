@@ -66,10 +66,10 @@ namespace CasaCejaRemake.Views.POS
                 if (printService != null)
                 {
                     Console.WriteLine("[SaleDetailView] Reimprimiendo ticket directamente...");
-                    var success = await printService.PrintAsync(ticketText);
-                    Console.WriteLine(success
+                    var result = await printService.PrintAsync(ticketText);
+                    Console.WriteLine(result.Success
                         ? "[SaleDetailView] ✓ Ticket impreso correctamente"
-                        : "[SaleDetailView] ✗ Error al imprimir ticket");
+                        : $"[SaleDetailView] ✗ {result.ErrorMessage}");
                 }
                 else
                 {

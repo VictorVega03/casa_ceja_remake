@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
+using CasaCejaRemake.Services.Platform;
 
 namespace CasaCejaRemake.Services
 {
@@ -372,6 +373,155 @@ funciona correctamente.
                 Console.WriteLine($"[ThermalSetup] Error imprimiendo prueba: {ex.Message}");
                 return false;
             }
+        }
+
+        // ============================================================
+        // WINDOWS
+        // ============================================================
+
+        /// <summary>
+        /// Verifica y configura una impresora térmica en Windows.
+        /// A diferencia de macOS, en Windows el driver ya está instalado
+        /// por el usuario (Xprinter o similar), así que solo necesitamos:
+        ///   1. Confirmar que el nombre de impresora existe en el sistema.
+        ///   2. Enviar un ticket de prueba directamente vía WindowsRawPrinter.
+        /// No se usa lpadmin/CUPS — Windows gestiona su propio spooler.
+        /// </summary>
+        /// <param name="printerName">Nombre de la impresora tal como aparece en Windows.</param>
+        public async Task<SetupResult> AutoConfigureThermalPrinterWindowsAsync(string printerName)
+        {
+            var result = new SetupResult();
+
+            try
+            {
+                result.Log.Add("Verificando impresora térmica en Windows...");
+
+                if (string.IsNullOrWhiteSpace(printerName))
+                {
+                    result.Success = false;
+                    result.Message = "No hay impresora seleccionada. Elige una de la lista.";
+                    result.Log.Add("ERROR: Nombre de impresora vacío");
+                    return result;
+                }
+
+                // 1. Verificar que la impresora exista usando PowerShell Get-Printer
+                result.Log.Add($"Buscando '{printerName}' en las impresoras instaladas...");
+                var installedPrinters = await GetWindowsPrintersAsync();
+
+                // Buscar coincidencia exacta o que contenga el nombre
+                bool printerFound = installedPrinters.Any(p =>
+                    p.Equals(printerName, StringComparison.OrdinalIgnoreCase) ||
+                    p.Contains(printerName, StringComparison.OrdinalIgnoreCase));
+
+                if (!printerFound)
+                {
+                    result.Success = false;
+                    result.Message = $"No se encontró la impresora '{printerName}'. " +
+                        $"Impresoras disponibles: {string.Join(", ", installedPrinters)}";
+                    result.Log.Add($"ERROR: Impresora no encontrada. Disponibles: {string.Join(", ", installedPrinters)}");
+                    return result;
+                }
+
+                result.Log.Add($"Impresora '{printerName}' encontrada correctamente");
+
+                // 2. Enviar ticket de prueba vía WindowsRawPrinter
+                result.Log.Add("Enviando ticket de prueba...");
+                var testSuccess = await PrintTestTicketWindowsAsync(printerName);
+
+                result.Success = true;
+                result.PrinterName = printerName;
+                result.Message = testSuccess
+                    ? $"\u2713 Impresora '{printerName}' verificada correctamente. Ticket de prueba enviado."
+                    : $"\u26a0\ufe0f Impresora '{printerName}' encontrada pero el ticket de prueba falló. " +
+                      $"Verifique que esté encendida y con papel.";
+
+                result.Log.Add(testSuccess ? "Ticket de prueba enviado exitosamente" : "ERROR: Ticket de prueba falló");
+                return result;
+            }
+            catch (Exception ex)
+            {
+                result.Success = false;
+                result.Message = $"Error inesperado: {ex.Message}";
+                result.Log.Add($"ERROR CRÍTICO: {ex.Message}");
+                return result;
+            }
+        }
+
+        /// <summary>
+        /// Obtiene la lista de impresoras instaladas en Windows vía PowerShell.
+        /// </summary>
+        private async Task<List<string>> GetWindowsPrintersAsync()
+        {
+            var printers = new List<string>();
+            try
+            {
+                var process = new Process
+                {
+                    StartInfo = new ProcessStartInfo
+                    {
+                        FileName = "powershell.exe",
+                        Arguments = "-NoProfile -Command \"Get-Printer | Select-Object -ExpandProperty Name\"",
+                        RedirectStandardOutput = true,
+                        RedirectStandardError = true,
+                        UseShellExecute = false,
+                        CreateNoWindow = true
+                    }
+                };
+                process.Start();
+                var output = await process.StandardOutput.ReadToEndAsync();
+                await process.WaitForExitAsync();
+
+                foreach (var line in output.Split('\n'))
+                {
+                    var trimmed = line.Trim();
+                    if (!string.IsNullOrEmpty(trimmed))
+                        printers.Add(trimmed);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[ThermalSetup] Error obteniendo impresoras Windows: {ex.Message}");
+            }
+            return printers;
+        }
+
+        /// <summary>
+        /// Envía un ticket de prueba a la impresora en Windows usando WindowsRawPrinter.
+        /// </summary>
+        private async Task<bool> PrintTestTicketWindowsAsync(string printerName)
+        {
+            return await System.Threading.Tasks.Task.Run(() =>
+            {
+                try
+                {
+                    var testTicket =
+                        "\n" +
+                        "================================\n" +
+                        "       CASA CEJA - PRUEBA       \n" +
+                        "================================\n" +
+                        "\n" +
+                        "Impresora verificada OK\n" +
+                        "\n" +
+                        $"Fecha: {DateTime.Now:dd/MM/yyyy HH:mm}\n" +
+                        "\n" +
+                        "Este es un ticket de prueba\n" +
+                        "para verificar que la impresora\n" +
+                        "funciona correctamente.\n" +
+                        "\n" +
+                        "================================\n" +
+                        "     Sistema POS Casa Ceja      \n" +
+                        "================================\n" +
+                        "\n\n\n";
+
+                    Console.WriteLine($"[ThermalSetup] Enviando ticket de prueba a '{printerName}' via WindowsRawPrinter...");
+                    return Platform.WindowsRawPrinter.SendText(printerName, testTicket);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[ThermalSetup] Error enviando ticket de prueba: {ex.Message}");
+                    return false;
+                }
+            });
         }
     }
 }

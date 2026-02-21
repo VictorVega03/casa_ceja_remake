@@ -202,29 +202,57 @@ namespace CasaCejaRemake.ViewModels.Shared
                     }
                 }
 
-                // === Configuración automática de impresora térmica en macOS ===
-                if (SelectedPrintFormat == "Térmica" && System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.OSX))
+                // === Configuración y prueba de impresora térmica (por SO) ===
+                if (SelectedPrintFormat == "Térmica")
                 {
-                    StatusMessage = "Configurando impresora térmica automáticamente...";
-                    Console.WriteLine("[AppConfigViewModel] Iniciando configuración automática de impresora térmica");
+                    var runtimeOS = System.Runtime.InteropServices.RuntimeInformation.OSDescription;
 
-                    var setupResult = await _thermalSetupService.AutoConfigureThermalPrinterMacAsync("Xprinter_USB_Printer_P");
-
-                    foreach (var logEntry in setupResult.Log)
+                    if (System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.OSX))
                     {
-                        Console.WriteLine($"[ThermalSetup] {logEntry}");
+                        // macOS: configuración automática completa con lpadmin/CUPS
+                        StatusMessage = "Configurando impresora térmica automáticamente...";
+                        Console.WriteLine("[AppConfigViewModel] Iniciando configuración automática de impresora térmica (macOS)");
+
+                        var setupResult = await _thermalSetupService.AutoConfigureThermalPrinterMacAsync("Xprinter_USB_Printer_P");
+
+                        foreach (var logEntry in setupResult.Log)
+                            Console.WriteLine($"[ThermalSetup] {logEntry}");
+
+                        if (setupResult.Success)
+                        {
+                            await RefreshPrintersAsync();
+                            SelectedPrinter = setupResult.PrinterName;
+                            StatusMessage = $"✓ {setupResult.Message}";
+                        }
+                        else
+                        {
+                            StatusMessage = $"⚠️ {setupResult.Message}";
+                            await Task.Delay(3000);
+                        }
                     }
+                    else if (System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows))
+                    {
+                        // Windows: verificar que la impresora existe y enviar ticket de prueba
+                        if (!string.IsNullOrEmpty(SelectedPrinter))
+                        {
+                            StatusMessage = "Verificando impresora térmica...";
+                            Console.WriteLine($"[AppConfigViewModel] Verificando impresora '{SelectedPrinter}' en Windows");
 
-                    if (setupResult.Success)
-                    {
-                        await RefreshPrintersAsync();
-                        SelectedPrinter = setupResult.PrinterName;
-                        StatusMessage = $"✓ {setupResult.Message}";
-                    }
-                    else
-                    {
-                        StatusMessage = $"⚠️ {setupResult.Message}";
-                        await Task.Delay(3000);
+                            var setupResult = await _thermalSetupService.AutoConfigureThermalPrinterWindowsAsync(SelectedPrinter);
+
+                            foreach (var logEntry in setupResult.Log)
+                                Console.WriteLine($"[ThermalSetup] {logEntry}");
+
+                            if (setupResult.Success)
+                            {
+                                StatusMessage = $"✓ {setupResult.Message}";
+                            }
+                            else
+                            {
+                                StatusMessage = $"⚠️ {setupResult.Message}";
+                                await Task.Delay(3000);
+                            }
+                        }
                     }
                 }
 

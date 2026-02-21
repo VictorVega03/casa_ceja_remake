@@ -60,49 +60,12 @@ public static class DialogHelper
 
     public static async Task ShowTicketDialog(Window parentWindow, string folio, string ticketText)
     {
-        // Intentar imprimir automáticamente
-        try
-        {
-            var app = (CasaCejaRemake.App)Avalonia.Application.Current!;
-            var configService = app.GetConfigService();
-            var printService = app.GetPrintService();
-
-            if (configService != null && printService != null)
-            {
-                var config = configService.PosTerminalConfig;
-
-                // Imprimir automáticamente si está habilitado y hay impresora configurada
-                if (config.AutoPrint && !string.IsNullOrEmpty(config.PrinterName) && config.PrintFormat == "Térmica")
-                {
-                    Console.WriteLine($"[DialogHelper] Imprimiendo automáticamente en {config.PrinterName}...");
-                    var printSuccess = await printService.PrintAsync(ticketText);
-                    
-                    if (printSuccess)
-                    {
-                        Console.WriteLine("[DialogHelper] ✓ Ticket impreso automáticamente");
-                    }
-                    else
-                    {
-                        Console.WriteLine("[DialogHelper] ✗ Error al imprimir automáticamente");
-                    }
-                }
-                else
-                {
-                    Console.WriteLine($"[DialogHelper] Impresión automática desactivada o sin impresora configurada");
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"[DialogHelper] Error en impresión automática: {ex.Message}");
-        }
-
-        // Mostrar diálogo visual del ticket
+        // ── Construir el diálogo ──────────────────────────────────────────────
         var dialog = new Window
         {
             Title = $"Ticket - Folio: {folio}",
             Width = 450,
-            Height = 550,
+            Height = 580,
             WindowStartupLocation = WindowStartupLocation.CenterOwner,
             CanResize = true,
             Background = new SolidColorBrush(Color.Parse("#2D2D2D")),
@@ -110,23 +73,38 @@ public static class DialogHelper
             ShowInTaskbar = false
         };
 
-        // Usar DockPanel para que los botones queden siempre al fondo
-        var mainPanel = new DockPanel
-        {
-            LastChildFill = true
-        };
+        var mainPanel = new DockPanel { LastChildFill = true };
 
-        // Panel de botones — anclado al fondo con DockPanel
+        // ── Banner de estado de impresión (anclado arriba) ───────────────────
+        // Muestra el resultado de impresión automática y del botón Reimprimir.
+        var printStatusBar = new Border
+        {
+            Height = 36,
+            Background = new SolidColorBrush(Color.Parse("#1565C0")), // azul neutro inicial
+            Padding = new Avalonia.Thickness(12, 0)
+        };
+        var printStatusText = new TextBlock
+        {
+            Text = "⏳ Enviando a impresora...",
+            Foreground = new SolidColorBrush(Colors.White),
+            FontSize = 12,
+            FontWeight = FontWeight.SemiBold,
+            VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center
+        };
+        printStatusBar.Child = printStatusText;
+        DockPanel.SetDock(printStatusBar, Dock.Top);
+        mainPanel.Children.Add(printStatusBar);
+
+        // ── Panel de botones (anclado abajo) ─────────────────────────────────
         var buttonPanel = new StackPanel
         {
             Orientation = Orientation.Horizontal,
-            HorizontalAlignment = HorizontalAlignment.Center,
+            HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
             Margin = new Avalonia.Thickness(10),
             Spacing = 10
         };
         DockPanel.SetDock(buttonPanel, Dock.Bottom);
 
-        // Botón Reimprimir
         var printButton = new Button
         {
             Content = "🖨️ Reimprimir (Ctrl+P)",
@@ -135,38 +113,10 @@ public static class DialogHelper
             Foreground = new SolidColorBrush(Colors.White),
             FontSize = 14,
             FontWeight = FontWeight.Bold,
-            CornerRadius = new Avalonia.CornerRadius(6)
+            CornerRadius = new Avalonia.CornerRadius(6),
+            Focusable = false
         };
 
-        printButton.Click += async (s, e) =>
-        {
-            try
-            {
-                var app = (CasaCejaRemake.App)Avalonia.Application.Current!;
-                var printService = app.GetPrintService();
-                
-                if (printService != null)
-                {
-                    Console.WriteLine("[DialogHelper] Reimprimiendo ticket...");
-                    var success = await printService.PrintAsync(ticketText);
-                    
-                    if (success)
-                    {
-                        Console.WriteLine("[DialogHelper] ✓ Ticket reimpreso correctamente");
-                    }
-                    else
-                    {
-                        Console.WriteLine("[DialogHelper] ✗ Error al reimprimir");
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"[DialogHelper] Error al reimprimir: {ex.Message}");
-            }
-        };
-
-        // Botón Cerrar
         var closeButton = new Button
         {
             Content = "Cerrar (Esc)",
@@ -174,27 +124,24 @@ public static class DialogHelper
             Background = new SolidColorBrush(Color.Parse("#757575")),
             Foreground = new SolidColorBrush(Colors.White),
             FontSize = 14,
-            CornerRadius = new Avalonia.CornerRadius(6)
+            CornerRadius = new Avalonia.CornerRadius(6),
+            Focusable = false
         };
 
         closeButton.Click += (s, e) => dialog.Close();
-
         buttonPanel.Children.Add(printButton);
         buttonPanel.Children.Add(closeButton);
-
-        // DockPanel: primero los botones (Bottom), luego el scrollviewer (Fill)
         mainPanel.Children.Add(buttonPanel);
 
-        // Panel de contenido del ticket — llena el espacio restante
+        // ── Contenido del ticket (área central) ──────────────────────────────
         var scrollViewer = new ScrollViewer
         {
             HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto,
-            VerticalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto,
+            VerticalScrollBarVisibility   = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto,
             Background = new SolidColorBrush(Colors.White),
-            Margin = new Avalonia.Thickness(10, 10, 10, 10)
+            Margin = new Avalonia.Thickness(10, 6, 10, 6)
         };
-
-        var textBlock = new TextBlock
+        scrollViewer.Content = new TextBlock
         {
             Text = ticketText,
             FontFamily = new FontFamily("Courier New"),
@@ -203,13 +150,75 @@ public static class DialogHelper
             Margin = new Avalonia.Thickness(10),
             TextWrapping = Avalonia.Media.TextWrapping.NoWrap
         };
-
-        scrollViewer.Content = textBlock;
         mainPanel.Children.Add(scrollViewer);
 
         dialog.Content = mainPanel;
 
-        // Shortcut: Esc para cerrar  
+        // ── Helper: actualizar el banner según PrintResult ────────────────────
+        void UpdateStatusBar(CasaCejaRemake.Services.PrintResult result, bool isAuto)
+        {
+            if (result.Success)
+            {
+                printStatusBar.Background = new SolidColorBrush(Color.Parse("#2E7D32")); // verde
+                printStatusText.Text = isAuto
+                    ? "✓ Ticket enviado a la impresora automáticamente"
+                    : "✓ Ticket enviado a la impresora";
+            }
+            else
+            {
+                var (bg, icon) = result.FailReason switch
+                {
+                    CasaCejaRemake.Services.PrintFailReason.NoPrinterConfigured =>
+                        ("#B71C1C", " Sin impresora configurada — ve a Configuración → Impresora"),
+                    CasaCejaRemake.Services.PrintFailReason.AutoPrintDisabled =>
+                        ("#455A64", "ℹImpresión automática desactivada — usa Reimprimir si necesitas"),
+                    CasaCejaRemake.Services.PrintFailReason.DriverError =>
+                        ("#E65100", "✗ Error de impresora — verifica que esté encendida y conectada"),
+                    _ =>
+                        ("#B71C1C", $"✗ {result.ErrorMessage ?? "Error desconocido"}")
+                };
+                printStatusBar.Background = new SolidColorBrush(Color.Parse(bg));
+                printStatusText.Text = icon;
+            }
+        }
+
+        // ── Botón Reimprimir ─────────────────────────────────────────────────
+        printButton.Click += async (s, e) =>
+        {
+            printButton.IsEnabled = false;
+            printStatusBar.Background = new SolidColorBrush(Color.Parse("#1565C0"));
+            printStatusText.Text = "⏳ Enviando a impresora...";
+
+            try
+            {
+                var app = (CasaCejaRemake.App)Avalonia.Application.Current!;
+                var printService = app.GetPrintService();
+
+                if (printService == null)
+                {
+                    printStatusBar.Background = new SolidColorBrush(Color.Parse("#B71C1C"));
+                    printStatusText.Text = "✗ Servicio de impresión no disponible";
+                }
+                else
+                {
+                    var result = await printService.PrintAsync(ticketText);
+                    UpdateStatusBar(result, isAuto: false);
+                    Console.WriteLine($"[DialogHelper] Reimprimir: {(result.Success ? "OK" : result.ErrorMessage)}");
+                }
+            }
+            catch (Exception ex)
+            {
+                printStatusBar.Background = new SolidColorBrush(Color.Parse("#B71C1C"));
+                printStatusText.Text = $"✗ Error inesperado: {ex.Message}";
+                Console.WriteLine($"[DialogHelper] Excepción al reimprimir: {ex.Message}");
+            }
+            finally
+            {
+                printButton.IsEnabled = true;
+            }
+        };
+
+        // ── Shortcut Esc ─────────────────────────────────────────────────────
         dialog.KeyDown += (s, e) =>
         {
             if (e.Key == Avalonia.Input.Key.Escape)
@@ -219,18 +228,47 @@ public static class DialogHelper
             }
         };
 
-        // TaskCompletionSource para esperar que se cierre la ventana
+        // ── Mostrar el diálogo ────────────────────────────────────────────────
         var tcs = new System.Threading.Tasks.TaskCompletionSource<bool>();
         dialog.Closed += (s, e) => tcs.TrySetResult(true);
-
-        // Usar Show() en lugar de ShowDialog() para permitir Topmost real
         dialog.Show(parentWindow);
-        
-        // Forzar activación y traer al frente
         dialog.Activate();
-        dialog.Topmost = true; // Forzar de nuevo después de Show
-        
-        // Esperar a que se cierre la ventana
+        dialog.Topmost = true;
+
+        // ── Impresión automática (después de mostrar el diálogo) ─────────────
+        try
+        {
+            var app = (CasaCejaRemake.App)Avalonia.Application.Current!;
+            var configService = app.GetConfigService();
+            var printService  = app.GetPrintService();
+
+            if (configService == null || printService == null)
+            {
+                printStatusBar.Background = new SolidColorBrush(Color.Parse("#B71C1C"));
+                printStatusText.Text = "✗ Servicio de impresión no disponible";
+            }
+            else if (!configService.PosTerminalConfig.AutoPrint)
+            {
+                // AutoPrint desactivado — el usuario puede usar Reimprimir si quiere
+                printStatusBar.Background = new SolidColorBrush(Color.Parse("#455A64"));
+                printStatusText.Text = "Impresión automática desactivada";
+                Console.WriteLine("[DialogHelper] AutoPrint desactivado");
+            }
+            else
+            {
+                Console.WriteLine("[DialogHelper] Imprimiendo automáticamente...");
+                var result = await printService.PrintAsync(ticketText);
+                UpdateStatusBar(result, isAuto: true);
+                Console.WriteLine($"[DialogHelper] Auto-print: {(result.Success ? "OK" : result.ErrorMessage)}");
+            }
+        }
+        catch (Exception ex)
+        {
+            printStatusBar.Background = new SolidColorBrush(Color.Parse("#B71C1C"));
+            printStatusText.Text = $"✗ Error inesperado: {ex.Message}";
+            Console.WriteLine($"[DialogHelper] Excepción en impresión automática: {ex.Message}");
+        }
+
         await tcs.Task;
     }
 
