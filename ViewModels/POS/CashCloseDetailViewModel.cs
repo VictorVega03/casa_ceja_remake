@@ -116,6 +116,7 @@ namespace CasaCejaRemake.ViewModels.POS
         public bool HasMovements => Movements.Count > 0;
 
         public event EventHandler? CloseRequested;
+        public event EventHandler<(string Folio, string TicketText)>? PrintRequested;
 
         public CashCloseDetailViewModel(CashCloseService cashCloseService)
         {
@@ -215,6 +216,58 @@ namespace CasaCejaRemake.ViewModels.POS
         private void Close()
         {
             CloseRequested?.Invoke(this, EventArgs.Empty);
+        }
+
+        [RelayCommand]
+        private void Print()
+        {
+            if (CashClose == null) return;
+            try
+            {
+                var ticketService = new TicketService();
+                var expenseList = new List<(string Concept, decimal Amount)>();
+                var incomeList = new List<(string Concept, decimal Amount)>();
+                foreach (var m in Movements)
+                {
+                    if (m.Type == "Gasto")
+                        expenseList.Add((m.Concept, m.Amount));
+                    else
+                        incomeList.Add((m.Concept, m.Amount));
+                }
+
+                var ticketText = ticketService.GenerateCashCloseTicketText(
+                    branchName: BranchName,
+                    branchAddress: string.Empty,
+                    branchPhone: string.Empty,
+                    folio: CashClose.Folio,
+                    userName: UserName,
+                    openingDate: CashClose.OpeningDate,
+                    closeDate: CashClose.CloseDate,
+                    openingCash: CashClose.OpeningCash,
+                    totalCash: CashClose.TotalCash,
+                    totalDebit: CashClose.TotalDebitCard,
+                    totalCredit: CashClose.TotalCreditCard,
+                    totalTransfer: CashClose.TotalTransfers,
+                    totalChecks: CashClose.TotalChecks,
+                    layawayCash: CashClose.LayawayCash,
+                    creditCash: CashClose.CreditCash,
+                    creditTotalCreated: CashClose.CreditTotalCreated,
+                    layawayTotalCreated: CashClose.LayawayTotalCreated,
+                    totalExpenses: TotalExpenses,
+                    totalIncome: TotalIncome,
+                    expectedCash: CashClose.ExpectedCash,
+                    declaredAmount: CashClose.ExpectedCash,
+                    difference: CashClose.Surplus,
+                    salesCount: 0,
+                    expenses: expenseList,
+                    incomes: incomeList);
+
+                PrintRequested?.Invoke(this, (CashClose.Folio, ticketText));
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[CashCloseDetailViewModel] Error generando ticket: {ex.Message}");
+            }
         }
     }
 }

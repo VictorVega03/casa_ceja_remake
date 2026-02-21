@@ -755,6 +755,8 @@ namespace CasaCejaRemake.Services
             decimal totalChecks,
             decimal layawayCash,
             decimal creditCash,
+            decimal creditTotalCreated,
+            decimal layawayTotalCreated,
             decimal totalExpenses,
             decimal totalIncome,
             decimal expectedCash,
@@ -765,13 +767,24 @@ namespace CasaCejaRemake.Services
             List<(string Concept, decimal Amount)>? incomes = null,
             int lineWidth = 32)
         {
+            // Auto-load lineWidth from config
+            try
+            {
+                var app = Avalonia.Application.Current as App;
+                var config = app?.GetConfigService()?.PosTerminalConfig;
+                if (config != null && lineWidth == 32 && config.TicketLineWidth > 0)
+                    lineWidth = config.TicketLineWidth;
+            }
+            catch { /* ignore */ }
+
             return ThermalTicketTemplates.FormatCashCloseTicket(
-                branchName, folio, userName,
+                branchName, branchAddress, folio, userName,
                 openingDate, closeDate,
                 openingCash, totalCash, totalDebit, totalCredit,
                 totalTransfer, totalChecks, layawayCash, creditCash,
-                totalExpenses, totalIncome, difference,
-                expenses, incomes, lineWidth);
+                creditTotalCreated, layawayTotalCreated,
+                totalExpenses, totalIncome, expectedCash, declaredAmount, difference,
+                salesCount, expenses, incomes, lineWidth);
         }
 
         // =====================================================================

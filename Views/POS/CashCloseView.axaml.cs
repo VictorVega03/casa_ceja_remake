@@ -134,10 +134,12 @@ namespace CasaCejaRemake.Views.POS
                     totalChecks: cashClose.TotalChecks,
                     layawayCash: cashClose.LayawayCash,
                     creditCash: cashClose.CreditCash,
+                    creditTotalCreated: cashClose.CreditTotalCreated,
+                    layawayTotalCreated: cashClose.LayawayTotalCreated,
                     totalExpenses: totalExpenses,
                     totalIncome: totalIncome,
                     expectedCash: cashClose.ExpectedCash,
-                    declaredAmount: cashClose.ExpectedCash + cashClose.Surplus, // Declarado = Esperado + Diferencia
+                    declaredAmount: cashClose.ExpectedCash + cashClose.Surplus,
                     difference: cashClose.Surplus,
                     salesCount: _viewModel?.SalesCount ?? 0,
                     expenses: expenses,

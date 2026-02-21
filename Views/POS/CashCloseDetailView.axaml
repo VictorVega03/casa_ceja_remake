@@ -414,8 +414,15 @@
 
         <!-- Buttons -->
         <Border Grid.Row="2" Background="#2D2D2D" Padding="15">
-            <Grid ColumnDefinitions="*,Auto,*">
+            <Grid ColumnDefinitions="*,Auto,Auto,*">
                 <Button Grid.Column="1"
+                        Content="Reimprimir (F7)"
+                        Command="{Binding PrintCommand}"
+                        Background="#3D3D3D"
+                        Foreground="White"
+                        Padding="30,10"
+                        Margin="0,0,10,0"/>
+                <Button Grid.Column="2"
                         Content="Cerrar (Esc)"
                         Command="{Binding CloseCommand}"
                         Background="#555555"

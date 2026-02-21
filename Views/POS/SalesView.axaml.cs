@@ -1001,15 +1001,13 @@ namespace CasaCejaRemake.Views.POS
 
             if (closeView.Tag is CashCloseResult result && result.CashClose != null)
             {
-                // Mostrar ticket de corte si se generó
+                // Mostrar ticket de corte si se generó — AWAIT antes de cerrar la ventana
                 if (!string.IsNullOrEmpty(result.TicketText))
                 {
-                    ShowTicketDialog(result.CashClose.Folio, result.TicketText);
+                    await DialogHelper.ShowTicketDialog(this, result.CashClose.Folio, result.TicketText);
                 }
                 
                 // Corte completado exitosamente
-                OnShowMessage(this, $"Corte de caja completado. Folio: {result.CashClose.Folio}");
-                
                 // Volver al selector de módulos (manteniendo la sesión)
                 Tag = "module_selector";
                 Close();

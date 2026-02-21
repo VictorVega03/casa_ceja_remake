@@ -32,12 +32,19 @@ namespace CasaCejaRemake.Views.POS
             if (_viewModel != null)
             {
                 _viewModel.CloseRequested += OnCloseRequested;
+                _viewModel.PrintRequested += OnPrintRequested;
             }
         }
 
         private void OnCloseRequested(object? sender, EventArgs e)
         {
             Close();
+        }
+
+        private async void OnPrintRequested(object? sender, (string Folio, string TicketText) args)
+        {
+            // ShowTicketDialog auto-prints internally — just show the dialog
+            await DialogHelper.ShowTicketDialog(this, args.Folio, args.TicketText);
         }
 
         protected override void OnKeyDown(KeyEventArgs e)
@@ -47,7 +54,8 @@ namespace CasaCejaRemake.Views.POS
                 var shortcuts = new Dictionary<Key, Action>
                 {
                     { Key.Escape, () => _viewModel.CloseCommand.Execute(null) },
-                    { Key.Enter, () => _viewModel.CloseCommand.Execute(null) }
+                    { Key.Enter, () => _viewModel.CloseCommand.Execute(null) },
+                    { Key.F7, () => _viewModel.PrintCommand.Execute(null) }
                 };
 
                 if (KeyboardShortcutHelper.HandleShortcut(e, shortcuts))
@@ -64,6 +72,7 @@ namespace CasaCejaRemake.Views.POS
             if (_viewModel != null)
             {
                 _viewModel.CloseRequested -= OnCloseRequested;
+                _viewModel.PrintRequested -= OnPrintRequested;
             }
             base.OnClosed(e);
         }

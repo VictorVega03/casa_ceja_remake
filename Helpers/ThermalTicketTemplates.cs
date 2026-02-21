@@ -283,6 +283,7 @@ namespace CasaCejaRemake.Helpers
         // =====================================================================
         public static string FormatCashCloseTicket(
             string branchName,
+            string branchAddress,
             string folio,
             string userName,
             DateTime openingDate,
@@ -295,9 +296,14 @@ namespace CasaCejaRemake.Helpers
             decimal totalChecks,
             decimal layawayCash,
             decimal creditCash,
+            decimal creditTotalCreated,
+            decimal layawayTotalCreated,
             decimal totalExpenses,
             decimal totalIncome,
-            decimal surplus,
+            decimal expectedCash,
+            decimal declaredAmount,
+            decimal difference,
+            int salesCount,
             List<(string Concept, decimal Amount)>? expenses = null,
             List<(string Concept, decimal Amount)>? incomes = null,
             int lineWidth = 32)
@@ -305,49 +311,57 @@ namespace CasaCejaRemake.Helpers
             var lines = new List<string>();
             var sep = new string('-', lineWidth);
 
-            lines.Add(CenterText(EMPRESA, lineWidth));
+            // ── Header consistente ─────────────────────────────────────────────
+            lines.AddRange(BuildHeader(branchName, branchAddress, closeDate, folio, lineWidth));
             lines.Add("");
-            lines.Add(branchName.ToUpper());
+            lines.Add(CenterText("CORTE DE CAJA", lineWidth));
             lines.Add("");
-            lines.Add($"CZ FOLIO: {folio}");
-            lines.Add("");
+
+            // ── Sección 1: Fechas ──────────────────────────────────────────────
             lines.Add(sep);
-            lines.Add(FormatLabelValue("APERTURA:", openingDate.ToString("dd/MM/yy HH:mm"), lineWidth));
-            lines.Add(FormatLabelValue("CORTE:", closeDate.ToString("dd/MM/yy HH:mm"), lineWidth));
+            lines.Add(FormatLabelValue("FECHA DE APERTURA:", openingDate.ToString("yyyy-MM-dd"), lineWidth));
+            lines.Add(FormatLabelValue("FECHA DE CORTE:", closeDate.ToString("yyyy-MM-dd"), lineWidth));
             lines.Add(sep);
             lines.Add("");
 
-            decimal totalCZ = totalCash + totalDebit + totalCredit + totalChecks + totalTransfer + surplus;
-            decimal efectivoDirecto = totalCash - totalExpenses;
-
-            lines.Add(FormatAmountLine("FONDO APERTURA:", openingCash, lineWidth));
+            // ── Sección 2: Fondo + Total del Corte ────────────────────────────
+            lines.Add(FormatAmountLine("FONDO DE APERTURA:", openingCash, lineWidth));
             lines.Add("");
-            lines.Add(FormatAmountLine("TOTAL CZ:", totalCZ, lineWidth));
+            // Total del corte = ventas directas + créditos creados + apartados creados (igual que la vista)
+            decimal totalDelCorte = totalCash + totalDebit + totalCredit + totalChecks + totalTransfer
+                                    + creditTotalCreated + layawayTotalCreated;
+            lines.Add(FormatAmountLine("TOTAL CORTE DE CAJA:", totalDelCorte, lineWidth));
             lines.Add(sep);
 
-            lines.Add(FormatAmountLine("EFECT. CREDITOS:", creditCash, lineWidth));
-            lines.Add(FormatAmountLine("EFECT. APARTADOS:", layawayCash, lineWidth));
-            lines.Add(FormatAmountLine("EFECT. DIRECTO:", efectivoDirecto, lineWidth));
-            lines.Add(sep);
-            lines.Add("");
-
-            lines.Add(sep);
-            lines.Add(FormatAmountLine("T. DEBITO:", totalDebit, lineWidth));
-            lines.Add(FormatAmountLine("T. CREDITO:", totalCredit, lineWidth));
-            lines.Add(FormatAmountLine("CHEQUES:", totalChecks, lineWidth));
-            lines.Add(FormatAmountLine("TRANSFERENCIAS:", totalTransfer, lineWidth));
+            // ── Sección 3: Desglose efectivo ──────────────────────────────────
+            decimal efectivoDirecto = totalCash - creditCash - layawayCash;
+            lines.Add(FormatAmountLine("EFECTIVO DE CREDITOS:", creditCash, lineWidth));
+            lines.Add(FormatAmountLine("EFECTIVO DE APARTADOS", layawayCash, lineWidth));
+            lines.Add(FormatAmountLine("EFECTIVO DIRECTO:", efectivoDirecto, lineWidth));
             lines.Add(sep);
             lines.Add("");
 
+            // ── Sección 4: Otras formas de pago ──────────────────────────────
             lines.Add(sep);
-            lines.Add(FormatAmountLine("SOBRANTE:", surplus, lineWidth));
+            lines.Add(FormatAmountLine("TOTAL T. DEBITO", totalDebit, lineWidth));
+            lines.Add(FormatAmountLine("TOTAL T. CREDITO", totalCredit, lineWidth));
+            lines.Add(FormatAmountLine("TOTAL CHEQUES", totalChecks, lineWidth));
+            lines.Add(FormatAmountLine("TOTAL TRANSFERENCIAS", totalTransfer, lineWidth));
+            lines.Add(sep);
+            lines.Add("");
+
+            // ── Sección 5: Gastos / Ingresos / Efectivo total ─────────────────
+            lines.Add(sep);
+            lines.Add(FormatAmountLine("SOBRANTE:", difference >= 0 ? difference : 0, lineWidth));
             lines.Add(FormatAmountLine("GASTOS:", totalExpenses, lineWidth));
             lines.Add(FormatAmountLine("INGRESOS:", totalIncome, lineWidth));
 
+            // Efectivo total = fondo + ventas efectivo + abonos créditos + abonos apartados + ingresos - gastos
             decimal efectivoTotal = openingCash + totalCash + layawayCash + creditCash + totalIncome - totalExpenses;
-            lines.Add(FormatAmountLine("EFECT. TOTAL:", efectivoTotal, lineWidth));
+            lines.Add(FormatAmountLine("EFECTIVO TOTAL:", efectivoTotal, lineWidth));
             lines.Add(sep);
 
+            // Detalle de gastos (si hay)
             if (expenses != null && expenses.Count > 0)
             {
                 lines.Add("");
@@ -356,6 +370,7 @@ namespace CasaCejaRemake.Helpers
                     lines.Add(FormatAmountLine($"  {e.Concept}:", e.Amount, lineWidth));
             }
 
+            // Detalle de ingresos (si hay)
             if (incomes != null && incomes.Count > 0)
             {
                 lines.Add("");
@@ -364,11 +379,16 @@ namespace CasaCejaRemake.Helpers
                     lines.Add(FormatAmountLine($"  {i.Concept}:", i.Amount, lineWidth));
             }
 
-            lines.Add("");
-            lines.Add("");
+            // ── Pie: Cajero + espacio firma ───────────────────────────────────
             lines.Add("");
             lines.Add(sep);
-            lines.Add($"CAJERO: {userName}");
+            lines.Add($"CAJERO: {userName.ToUpper()}");
+            lines.Add("");
+            lines.Add("");
+            lines.Add("");
+            lines.Add("");
+            lines.Add("");
+            lines.Add("FIRMA: ____________________________");
 
             return string.Join(Environment.NewLine, lines);
         }
