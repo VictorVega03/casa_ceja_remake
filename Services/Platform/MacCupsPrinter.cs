@@ -97,34 +97,45 @@ namespace CasaCejaRemake.Services.Platform
             try
             {
                 // Método 1: lpstat -a — impresoras que aceptan trabajos (más confiable para térmicas)
+                // Formato válido: "NombreImpresora accepting/rejecting requests since ..."
+                // Solo procesamos líneas con esas palabras clave para evitar que mensajes
+                // de error de CUPS (ej. "no destinations added.") se tomen como nombres.
                 var out1 = RunCommand("lpstat", "-a");
                 foreach (var line in out1.Split('\n'))
                 {
                     if (string.IsNullOrWhiteSpace(line)) continue;
+                    if (!line.Contains("accepting") && !line.Contains("rejecting")) continue;
                     var parts = line.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
                     if (parts.Length >= 1)
                         printers.Add(parts[0]);
                 }
 
-                // Método 2: lpstat -p — estado de impresoras (respaldo)
-                var out2 = RunCommand("lpstat", "-p");
-                foreach (var line in out2.Split('\n'))
+                // Método 2: lpstat -p — estado de impresoras (respaldo solo si Método 1 no encontró nada)
+                if (printers.Count == 0)
                 {
-                    if (string.IsNullOrWhiteSpace(line)) continue;
+                    var out2 = RunCommand("lpstat", "-p");
+                    foreach (var line in out2.Split('\n'))
+                    {
+                        if (string.IsNullOrWhiteSpace(line)) continue;
 
-                    if (line.Contains("impresora "))
-                    {
-                        var parts = line.Split(new[] { "impresora " }, StringSplitOptions.None);
-                        if (parts.Length >= 2)
-                            printers.Add(parts[1].Split(' ')[0]);
-                    }
-                    else if (line.StartsWith("printer ", StringComparison.OrdinalIgnoreCase))
-                    {
-                        var parts = line.Split(' ');
-                        if (parts.Length >= 2)
-                            printers.Add(parts[1]);
+                        if (line.Contains("impresora "))
+                        {
+                            var parts = line.Split(new[] { "impresora " }, StringSplitOptions.None);
+                            if (parts.Length >= 2)
+                                printers.Add(parts[1].Split(' ')[0]);
+                        }
+                        else if (line.StartsWith("printer ", StringComparison.OrdinalIgnoreCase))
+                        {
+                            var parts = line.Split(' ');
+                            if (parts.Length >= 2)
+                                printers.Add(parts[1]);
+                        }
                     }
                 }
+
+                // Filtrar entradas que claramente no son nombres de impresora
+                // (falsos positivos de mensajes de CUPS como "no destinations added.")
+                printers.RemoveWhere(p => p.Length <= 2);
 
                 Console.WriteLine($"[MacCupsPrinter] Detectadas {printers.Count} impresora(s): " +
                                   $"{string.Join(", ", printers)}");

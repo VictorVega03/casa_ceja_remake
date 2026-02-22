@@ -210,43 +210,14 @@ namespace CasaCejaRemake.Services
         }
 
         /// <summary>
-        /// Impresión en hoja carta: genera formato con márgenes y tipografía.
-        /// Para impresoras láser/inyección convencionales.
+        /// Impresión en hoja carta: delega a LetterPrinter según el SO.
+        /// macOS: CUPS lp con media=Letter (cpi=10, lpi=6).
+        /// Windows: notepad.exe /PT con renderizado GDI y Courier New.
+        /// Imprime automáticamente sin diálogo, igual que la impresión térmica.
         /// </summary>
         public async Task<bool> PrintLetterAsync(string text, string printerName, PosTerminalConfig config)
         {
-            try
-            {
-                // Para formato carta, agregar encabezado con formato
-                var formattedText = FormatForLetter(text, config);
-                var tempFile = Path.Combine(Path.GetTempPath(), $"letter_{Guid.NewGuid()}.txt");
-                await File.WriteAllTextAsync(tempFile, formattedText);
-
-                bool result;
-
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                {
-                    result = await PrintFileWindows(tempFile, printerName);
-                }
-                else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-                {
-                    result = await PrintFileMac(tempFile, printerName);
-                }
-                else
-                {
-                    result = false;
-                }
-
-                // Limpiar archivo temporal
-                try { File.Delete(tempFile); } catch { /* ignorar */ }
-
-                return result;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"[PrintService] Error en impresión carta: {ex.Message}");
-                return false;
-            }
+            return await LetterPrinter.PrintAsync(text, printerName, config);
         }
 
         /// <summary>
@@ -307,29 +278,5 @@ namespace CasaCejaRemake.Services
             return await MacCupsPrinter.PrintFileAsync(filePath, printerName, fontSize);
         }
 
-        /// <summary>
-        /// Formatea el texto para impresión en hoja carta (agrega márgenes, etc.)
-        /// </summary>
-        private string FormatForLetter(string text, PosTerminalConfig config)
-        {
-            var lines = new List<string>
-            {
-                "", // Margen superior
-                ""
-            };
-
-            // Agregar el contenido con indentación para simular margen izquierdo
-            foreach (var line in text.Split(Environment.NewLine))
-            {
-                lines.Add($"    {line}"); // 4 espacios de margen
-            }
-
-            lines.Add("");
-            lines.Add($"    {config.TicketFooter}");
-            lines.Add("");
-            lines.Add($"    Impreso: {DateTime.Now:dd/MM/yyyy HH:mm:ss}");
-
-            return string.Join(Environment.NewLine, lines);
-        }
     }
 }
