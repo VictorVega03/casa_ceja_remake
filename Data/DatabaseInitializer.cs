@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Threading.Tasks;
 using CasaCejaRemake.Models;
 
@@ -9,6 +10,15 @@ namespace CasaCejaRemake.Data
     /// </summary>
     public class DatabaseInitializer
     {
+        // =====================================================
+        // 🚩 FLAG DE DESARROLLO — cambiar a false para producción
+        //
+        //   true  → ejecuta ScriptInicial.sql automáticamente al arrancar
+        //           (solo si la BD está vacía: sin roles, users ni categorías)
+        //   false → comportamiento normal, no toca la BD
+        // =====================================================
+        private const bool AUTO_RUN_SEED_SCRIPT = true;
+
         private readonly DatabaseService _databaseService;
 
         public DatabaseInitializer(DatabaseService databaseService)
@@ -17,159 +27,172 @@ namespace CasaCejaRemake.Data
         }
 
         /// <summary>
-        /// Inicializa la BD con datos por defecto si es una BD nueva
+        /// Verifica que la BD tenga los datos mínimos esperados del script inicial.
+        /// No crea datos de catálogo — esos vienen del ScriptInicial.sql.
+        /// Solo loguea advertencias si faltan tablas críticas.
         /// </summary>
         public async Task InitializeDefaultDataAsync()
         {
-            // Si ya hay productos (BD precargada), no hacer nada
+            // Si ya hay productos (BD precargada con el script), no hacer nada
             if (_databaseService.IsCatalogPreloaded)
             {
-                Console.WriteLine("✅ BD precargada detectada, omitiendo datos iniciales");
+                Console.WriteLine("✅ BD precargada detectada");
                 return;
             }
 
-            // Verificar si ya hay usuarios (para no duplicar datos)
-            var userCount = await _databaseService.Table<User>().CountAsync();
-            if (userCount > 0)
+            Console.WriteLine("🔧 Verificando datos de la BD...");
+
+            var roleCount     = await _databaseService.Table<Role>().CountAsync();
+            var unitCount     = await _databaseService.Table<Unit>().CountAsync();
+            var categoryCount = await _databaseService.Table<Category>().CountAsync();
+            var branchCount   = await _databaseService.Table<Branch>().CountAsync();
+            var userCount     = await _databaseService.Table<User>().CountAsync();
+
+            Console.WriteLine($"   Roles: {roleCount} | Unidades: {unitCount} | Categorías: {categoryCount} | Sucursales: {branchCount} | Usuarios: {userCount}");
+
+            bool bdVacia = roleCount == 0 && unitCount == 0 && categoryCount == 0 && userCount == 0;
+
+            // ── Ejecución automática del script inicial (solo con flag activo) ──
+            if (AUTO_RUN_SEED_SCRIPT && bdVacia)
             {
-                Console.WriteLine("✅ BD ya tiene datos, omitiendo inicialización");
+                await RunSeedScriptAsync();
                 return;
             }
 
-            Console.WriteLine("🔧 Inicializando BD con datos por defecto...");
+            if (roleCount == 0)
+                Console.WriteLine("⚠️  Sin roles — ejecuta ScriptInicial.sql en la BD");
+            if (unitCount == 0)
+                Console.WriteLine("⚠️  Sin unidades de medida — ejecuta ScriptInicial.sql en la BD");
+            if (categoryCount == 0)
+                Console.WriteLine("⚠️  Sin categorías — ejecuta ScriptInicial.sql en la BD");
+            if (branchCount == 0)
+                Console.WriteLine("⚠️  Sin sucursales — ejecuta ScriptInicial.sql en la BD");
+            if (userCount == 0)
+                Console.WriteLine("⚠️  Sin usuarios — ejecuta ScriptInicial.sql en la BD");
 
-            await CreateDefaultRolesAsync();
-            await CreateDefaultUserAsync();
-            await CreateDefaultBranchAsync();
-            await CreateDefaultUnitsAsync();
-            await CreateDefaultCategoriesAsync();
-
-            Console.WriteLine("✅ Datos por defecto creados correctamente");
+            if (roleCount > 0 && unitCount > 0 && categoryCount > 0 && branchCount > 0 && userCount > 0)
+                Console.WriteLine("✅ BD verificada correctamente");
         }
 
         /// <summary>
-        /// Crea los roles por defecto (Admin y Cajero)
+        /// Localiza ScriptInicial.sql y lo ejecuta contra la BD activa.
+        /// Funciona en macOS y Windows buscando el archivo relativo al ejecutable.
         /// </summary>
-        private async Task CreateDefaultRolesAsync()
+        private async Task RunSeedScriptAsync()
         {
-            var roleCount = await _databaseService.Table<Role>().CountAsync();
-            if (roleCount > 0)
+            Console.WriteLine("🌱 AUTO_RUN_SEED_SCRIPT = true — ejecutando ScriptInicial.sql...");
+
+            // Buscar el script en varias ubicaciones posibles
+            var scriptPath = FindSeedScript(out var searchedPaths);
+            if (scriptPath == null)
             {
-                Console.WriteLine("✅ Roles ya existen, omitiendo");
+                Console.WriteLine("❌ ScriptInicial.sql no encontrado. Rutas buscadas:");
+                foreach (var p in searchedPaths)
+                    Console.WriteLine($"   - {p}");
                 return;
             }
 
-            var roles = new[]
+            Console.WriteLine($"📄 Script encontrado: {scriptPath}");
+
+            try
             {
-                new Role
+                var sql = await File.ReadAllTextAsync(scriptPath);
+
+                // Dividir en sentencias individuales (ignorar comentarios y líneas vacías)
+                var statements = SplitSqlStatements(sql);
+                int executed = 0;
+                int errors   = 0;
+
+                foreach (var stmt in statements)
                 {
-                    Name = "Administrador",
-                    Key = "admin",
-                    AccessLevel = 1,
-                    Description = "Acceso total al sistema: configuración, reportes, inventario y POS",
-                    Active = true,
-                    CreatedAt = DateTime.Now,
-                    UpdatedAt = DateTime.Now
-                },
-                new Role
-                {
-                    Name = "Cajero",
-                    Key = "cashier",
-                    AccessLevel = 2,
-                    Description = "Acceso al módulo POS: ventas, cobros y cortes de caja",
-                    Active = true,
-                    CreatedAt = DateTime.Now,
-                    UpdatedAt = DateTime.Now
+                    try
+                    {
+                        await _databaseService.ExecuteAsync(stmt);
+                        executed++;
+                    }
+                    catch (Exception ex)
+                    {
+                        errors++;
+                        Console.WriteLine($"⚠️  Error en sentencia: {ex.Message}");
+                        Console.WriteLine($"   SQL: {stmt[..Math.Min(80, stmt.Length)]}...");
+                    }
                 }
-            };
 
-            await _databaseService.InsertAllAsync(roles);
-            Console.WriteLine($"✅ {roles.Length} roles creados (Admin, Cajero)");
+                Console.WriteLine($"✅ Script ejecutado: {executed} sentencias OK, {errors} errores");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Error leyendo/ejecutando el script: {ex.Message}");
+            }
         }
 
         /// <summary>
-        /// Crea el usuario administrador por defecto
+        /// Busca ScriptInicial.sql relativo al ejecutable.
+        /// En desarrollo (dotnet run) el ejecutable está en bin/Debug/net8.0/,
+        /// por lo que sube 3 niveles para llegar a la raíz del proyecto.
+        /// En producción el script debe copiarse junto a los binarios en Data/Database/.
         /// </summary>
-        private async Task CreateDefaultUserAsync()
+        private static string? FindSeedScript(out string[] searchedPaths)
         {
-            // Obtener el ID del rol admin recién creado
-            var adminRole = await _databaseService.Table<Role>()
-                .Where(r => r.Key == "admin")
-                .FirstOrDefaultAsync();
+            const string relativePath = "Data/Database/ScriptInicial.sql";
 
-            var adminRoleId = adminRole?.Id ?? 1;
+            var basePath = AppDomain.CurrentDomain.BaseDirectory;
 
-            var adminUser = new User
+            // Candidatos en orden de preferencia (siempre con Path.Combine — no importa el SO)
+            var candidates = new[]
             {
-                Username = "admin",
-                Password = "admin", // ⚠️ En producción, usar hash
-                Name = "Administrador",
-                Email = "admin@casaceja.com",
-                UserType = adminRoleId, // Referencia al rol de admin
-                Active = true,
-                CreatedAt = DateTime.Now,
-                UpdatedAt = DateTime.Now
+                // 1. Junto al ejecutable en Data/Database/ (producción / publish)
+                Path.GetFullPath(Path.Combine(basePath, relativePath)),
+                // 2. Subiendo 3 niveles desde bin/Debug/net8.0/ o bin/Release/net8.0/ (dev)
+                Path.GetFullPath(Path.Combine(basePath, "..", "..", "..", relativePath)),
+                // 3. Subiendo 4 niveles (por si publish está en una subcarpeta extra)
+                Path.GetFullPath(Path.Combine(basePath, "..", "..", "..", "..", relativePath)),
+                // 4. Directorio de trabajo actual (por si se ejecuta desde la raíz del proyecto)
+                Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), relativePath)),
             };
 
-            await _databaseService.InsertAsync(adminUser);
-            Console.WriteLine("✅ Usuario admin creado");
+            searchedPaths = candidates;
+
+            foreach (var candidate in candidates)
+            {
+                if (File.Exists(candidate))
+                    return candidate;
+            }
+
+            return null;
         }
 
         /// <summary>
-        /// Crea la sucursal principal por defecto
+        /// Divide el contenido SQL en sentencias individuales,
+        /// ignorando líneas de comentarios (--) y bloques vacíos.
         /// </summary>
-        private async Task CreateDefaultBranchAsync()
+        private static string[] SplitSqlStatements(string sql)
         {
-            var mainBranch = new Branch
+            var results = new System.Collections.Generic.List<string>();
+            var lines   = sql.Split('\n');
+            var current = new System.Text.StringBuilder();
+
+            foreach (var rawLine in lines)
             {
-                Name = "Casa Ceja - Sucursal Principal",
-                Address = "Dirección por configurar",
-                Email = "sucursal@casaceja.com",
-                RazonSocial = "Casa Ceja S.A de C.V",
-                Active = true,
-                CreatedAt = DateTime.Now,
-                UpdatedAt = DateTime.Now
-            };
+                var line = rawLine.TrimEnd();
 
-            await _databaseService.InsertAsync(mainBranch);
-            Console.WriteLine("Sucursal principal creada");
-        }
+                // Ignorar líneas de puro comentario
+                if (line.TrimStart().StartsWith("--"))
+                    continue;
 
-        /// <summary>
-        /// Crea unidades de medida por defecto
-        /// </summary>
-        private async Task CreateDefaultUnitsAsync()
-        {
-            var units = new[]
-            {
-                new Unit { Name = "Pieza", Active = true, CreatedAt = DateTime.Now, UpdatedAt = DateTime.Now },
-                new Unit { Name = "Caja", Active = true, CreatedAt = DateTime.Now, UpdatedAt = DateTime.Now },
-                new Unit { Name = "Paquete", Active = true, CreatedAt = DateTime.Now, UpdatedAt = DateTime.Now },
-                new Unit { Name = "Metro", Active = true, CreatedAt = DateTime.Now, UpdatedAt = DateTime.Now },
-                new Unit { Name = "Kilogramo", Active = true, CreatedAt = DateTime.Now, UpdatedAt = DateTime.Now },
-                new Unit { Name = "Litro", Active = true, CreatedAt = DateTime.Now, UpdatedAt = DateTime.Now }
-            };
+                current.AppendLine(line);
 
-            await _databaseService.InsertAllAsync(units);
-            Console.WriteLine($" {units.Length} unidades de medida creadas");
-        }
+                // Una sentencia termina cuando hay un ; al final de la línea
+                if (line.TrimEnd().EndsWith(';'))
+                {
+                    var stmt = current.ToString().Trim();
+                    if (!string.IsNullOrWhiteSpace(stmt))
+                        results.Add(stmt);
+                    current.Clear();
+                }
+            }
 
-        /// <summary>
-        /// Crea categorías por defecto
-        /// </summary>
-        private async Task CreateDefaultCategoriesAsync()
-        {
-            var categories = new[]
-            {
-                new Category { Name = "Papelería", Active = true, HasDiscount = false, Discount = 0, CreatedAt = DateTime.Now, UpdatedAt = DateTime.Now },
-                new Category { Name = "Oficina", Active = true, HasDiscount = false, Discount = 0, CreatedAt = DateTime.Now, UpdatedAt = DateTime.Now },
-                new Category { Name = "Escolar", Active = true, HasDiscount = false, Discount = 0, CreatedAt = DateTime.Now, UpdatedAt = DateTime.Now },
-                new Category { Name = "Arte", Active = true, HasDiscount = false, Discount = 0, CreatedAt = DateTime.Now, UpdatedAt = DateTime.Now },
-                new Category { Name = "Tecnología", Active = true, HasDiscount = false, Discount = 0, CreatedAt = DateTime.Now, UpdatedAt = DateTime.Now }
-            };
-
-            await _databaseService.InsertAllAsync(categories);
-            Console.WriteLine($" {categories.Length} categorías creadas");
+            return results.ToArray();
         }
     }
 }
