@@ -43,16 +43,15 @@ namespace CasaCejaRemake.Views.POS
 
         private void OnWindowLoaded(object? sender, RoutedEventArgs e)
         {
-            // Wire up the menu button to open context menu on click
-            var btnExitMenu = this.FindControl<Button>("BtnExitMenu");
-            if (btnExitMenu != null)
+            // Wire up the new toggle sidebar button
+            var btnToggleSidebar = this.FindControl<Button>("BtnToggleSidebar");
+            var mainSplitView = this.FindControl<SplitView>("MainSplitView");
+
+            if (btnToggleSidebar != null && mainSplitView != null)
             {
-                btnExitMenu.Click += (s, args) =>
+                btnToggleSidebar.Click += (s, args) =>
                 {
-                    if (btnExitMenu.ContextMenu != null)
-                    {
-                        btnExitMenu.ContextMenu.Open(btnExitMenu);
-                    }
+                    mainSplitView.IsPaneOpen = !mainSplitView.IsPaneOpen;
                 };
             }
         }
@@ -468,8 +467,8 @@ namespace CasaCejaRemake.Views.POS
                     { Key.F1, () => _viewModel.FocusBarcodeCommand.Execute(null) },
                     { Key.F2, () => _viewModel.ModifyQuantityCommand.Execute(null) },
                     { Key.F3, () => _viewModel.SearchProductCommand.Execute(null) },
-                    { Key.F4, () => _viewModel.ChangeCollectionCommand.Execute(null) },
-                    { Key.F5, () => _viewModel.ChangeCollectionPreviousCommand.Execute(null) },
+                    { Key.F4, () => _viewModel.ChangeCollectionPreviousCommand.Execute(null) },
+                    { Key.F5, () => _viewModel.ChangeCollectionCommand.Execute(null) },
                     { Key.F6, () => ShowCashMovementDialogAsync(true) },   // Gasto
                     { Key.F7, () => ShowCashMovementDialogAsync(false) },  // Ingreso
                     { Key.F8, () => ShowCustomersDialogAsync() },          // Clientes
@@ -488,7 +487,17 @@ namespace CasaCejaRemake.Views.POS
                 // Enter con lógica condicional
                 if (e.Key == Key.Enter && TxtBarcode.IsFocused)
                 {
-                    _ = _viewModel.SearchByCodeCommand.ExecuteAsync(null);
+                    if (string.IsNullOrWhiteSpace(TxtBarcode.Text))
+                    {
+                        // Si el campo está vacío y presionan Enter, abre el catálogo de productos (F3)
+                        _viewModel.SearchProductCommand.Execute(null);
+                    }
+                    else
+                    {
+                        // Si tiene texto, busca el producto por código
+                        _ = _viewModel.SearchByCodeCommand.ExecuteAsync(null);
+                    }
+                    
                     e.Handled = true;
                     return;
                 }
