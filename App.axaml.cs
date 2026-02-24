@@ -310,8 +310,26 @@ namespace CasaCejaRemake
             
             // Obtener sucursal actual desde ConfigService
             var currentBranchId = AuthService.CurrentBranchId;
-            var currentBranchName = ConfigService?.AppConfig.BranchName ?? "Sucursal";
-            
+
+            // Obtener el nombre real desde la BD (nunca usar valor hardcodeado del config)
+            var currentBranchName = "Sucursal";
+            try
+            {
+                var branchRepo = new Data.Repositories.BaseRepository<Models.Branch>(DatabaseService);
+                var branch = await branchRepo.GetByIdAsync(currentBranchId);
+                currentBranchName = branch?.Name ?? $"Sucursal #{currentBranchId}";
+
+                // Sincronizar el nombre en el config para que quede actualizado
+                if (ConfigService != null && branch != null && ConfigService.AppConfig.BranchName != branch.Name)
+                {
+                    await ConfigService.UpdateAppConfigAsync(c => c.BranchName = branch.Name);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[App] Advertencia al obtener nombre de sucursal: {ex.Message}");
+            }
+
             Console.WriteLine($"[App] Usando sucursal: {currentBranchName} (ID: {currentBranchId})");
             
             // Crear ViewModel con servicios inyectados

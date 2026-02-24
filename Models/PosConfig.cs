@@ -13,8 +13,8 @@ namespace CasaCejaRemake.Models
         /// <summary>ID de la sucursal seleccionada (solo Admin puede cambiar)</summary>
         public int BranchId { get; set; } = 1;
 
-        /// <summary>Nombre de la sucursal (se actualiza desde la BD)</summary>
-        public string BranchName { get; set; } = "Sucursal Principal";
+        /// <summary>Nombre de la sucursal (se obtiene desde la BD, no hardcodeado)</summary>
+        public string BranchName { get; set; } = string.Empty;
 
         // ============ METADATA ============
         /// <summary>Fecha de última modificación</summary>

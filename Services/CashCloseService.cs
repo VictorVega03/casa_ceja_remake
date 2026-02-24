@@ -634,6 +634,7 @@ namespace CasaCejaRemake.Services
 
         /// <summary>
         /// Obtiene el historial de cortes de una sucursal.
+        /// Solo incluye cortes ya cerrados (excluye el corte actualmente abierto).
         /// </summary>
         public async Task<List<CashClose>> GetHistoryAsync(int branchId, int limit = 30)
         {
@@ -642,6 +643,7 @@ namespace CasaCejaRemake.Services
                 var all = await _cashCloseRepository.GetAllAsync();
                 return all
                     .Where(c => c.BranchId == branchId)
+                    .Where(c => c.CloseDate > c.OpeningDate.AddSeconds(1)) // Excluir cortes abiertos
                     .OrderByDescending(c => c.CloseDate)
                     .Take(limit)
                     .ToList();

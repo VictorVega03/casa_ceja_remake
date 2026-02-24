@@ -205,11 +205,9 @@ namespace CasaCejaRemake.Services.Platform
                 lines.Add($"    {line}"); // 4 espacios de margen
             }
 
-            lines.Add("");
-            if (!string.IsNullOrWhiteSpace(config.TicketFooter))
-                lines.Add($"    {config.TicketFooter}");
-            lines.Add("");
-            lines.Add($"    Impreso: {DateTime.Now:dd/MM/yyyy HH:mm:ss}");
+            // No se agrega footer ni timestamp extra para evitar que se genere
+            // una segunda hoja de papel solo para mostrar esa información.
+            // La fecha ya viene incluida en el texto del ticket generado por TicketService.
 
             return string.Join(Environment.NewLine, lines);
         }
