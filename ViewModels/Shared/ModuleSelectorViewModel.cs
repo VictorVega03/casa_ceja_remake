@@ -154,7 +154,7 @@ namespace CasaCejaRemake.ViewModels.Shared
         /// Comando para abrir la carpeta de documentos en el explorador de archivos
         /// </summary>
         [RelayCommand]
-        private void OpenDocumentsFolder()
+        public void OpenDocumentsFolder()
         {
             try
             {
@@ -168,6 +168,27 @@ namespace CasaCejaRemake.ViewModels.Shared
             catch (Exception ex)
             {
                 FolderOpenError?.Invoke(this, $"Error al abrir la carpeta: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Comando para abrir la carpeta de la base de datos en el explorador de archivos
+        /// </summary>
+        [RelayCommand]
+        private void OpenDbFolder()
+        {
+            try
+            {
+                var success = Helpers.FileHelper.OpenDatabaseFolderInExplorer();
+                
+                if (!success)
+                {
+                    FolderOpenError?.Invoke(this, "No se pudo abrir la carpeta de la base de datos.");
+                }
+            }
+            catch (Exception ex)
+            {
+                FolderOpenError?.Invoke(this, $"Error al abrir la carpeta DB: {ex.Message}");
             }
         }
     }

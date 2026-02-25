@@ -65,6 +65,15 @@ namespace CasaCejaRemake.ViewModels.POS
                 return;
             }
 
+            if (!string.IsNullOrWhiteSpace(Email))
+            {
+                if (!Email.Contains('@') || !Email.Contains('.'))
+                {
+                    ShowError("El formato del correo electronico es invalido.");
+                    return;
+                }
+            }
+
             // Validar formato de telefono (al menos 10 digitos)
             var cleanPhone = Phone.Replace(" ", "").Replace("-", "").Replace("(", "").Replace(")", "");
             if (cleanPhone.Length < 10)

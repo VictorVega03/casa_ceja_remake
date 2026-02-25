@@ -153,6 +153,15 @@
                         <StackPanel Spacing="10">
                             <!-- Opciones agrupadas -->
                             <TextBlock Text="SISTEMA" FontSize="12" Foreground="#888" FontWeight="Bold" Margin="10,10,0,5"/>
+                            <Button x:Name="BtnCashClose" Classes="action-button" Background="#2196F3" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Click="OnCashCloseClick">
+                                <StackPanel Orientation="Horizontal" Spacing="10">
+                                    <!-- Cash Register / Savings Icon -->
+                                    <Path Fill="White" Width="16" Height="16" Stretch="Uniform" 
+                                          Data="M19,14V6c0-1.1-0.9-2-2-2H3C1.9,4,1,4.9,1,6v8c0,1.1,0.9,2,2,2h14C18.1,16,19,15.1,19,14z M17,14H3V6h14V14z M9,7h2v2h-2V7z M13,7h2v2h-2V7z M5,7h2v2H5V7z M9,11h2v2h-2V11z M5,11h2v2H5V11z M13,11h2v2h-2V11z M2,18v2h16v-2H2z" />
+                                    <TextBlock Text="Corte de Caja (F10)"/>
+                                </StackPanel>
+                            </Button>
+
                             <Button x:Name="BtnPosConfig" Classes="action-button" Background="#333" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Click="OnPosConfigClick">
                                 <StackPanel Orientation="Horizontal" Spacing="10">
                                     <Path Fill="White" Width="16" Height="16" Stretch="Uniform" 
@@ -186,15 +195,6 @@
                                     <!-- Remove/Minus Icon -->
                                     <Path Fill="White" Width="16" Height="16" Stretch="Uniform" Data="M19,13H5v-2h14V13z"/>
                                     <TextBlock Text="Gasto (F6)"/>
-                                </StackPanel>
-                            </Button>
-                            
-                            <Button x:Name="BtnCashClose" Classes="action-button" Background="#2196F3" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Click="OnCashCloseClick">
-                                <StackPanel Orientation="Horizontal" Spacing="10">
-                                    <!-- Cash Register / Savings Icon -->
-                                    <Path Fill="White" Width="16" Height="16" Stretch="Uniform" 
-                                          Data="M19,14V6c0-1.1-0.9-2-2-2H3C1.9,4,1,4.9,1,6v8c0,1.1,0.9,2,2,2h14C18.1,16,19,15.1,19,14z M17,14H3V6h14V14z M9,7h2v2h-2V7z M13,7h2v2h-2V7z M5,7h2v2H5V7z M9,11h2v2h-2V11z M5,11h2v2H5V11z M13,11h2v2h-2V11z M2,18v2h16v-2H2z" />
-                                    <TextBlock Text="Corte de Caja (F10)"/>
                                 </StackPanel>
                             </Button>
                             

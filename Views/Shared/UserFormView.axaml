@@ -133,7 +133,8 @@
                             </StackPanel>
                             <TextBox Text="{Binding Password}" 
                                      PasswordChar="•" 
-                                     Watermark="{Binding PasswordWatermark}"/>
+                                     Watermark="{Binding PasswordWatermark}"
+                                     IsEnabled="{Binding IsPasswordEditable}"/>
                         </StackPanel>
                         <StackPanel Grid.Column="2">
                             <StackPanel Orientation="Horizontal" Spacing="0">
@@ -142,7 +143,8 @@
                             </StackPanel>
                             <TextBox Text="{Binding ConfirmPassword}" 
                                      PasswordChar="•" 
-                                     Watermark="Repite la contraseña"/>
+                                     Watermark="Repite la contraseña"
+                                     IsEnabled="{Binding IsPasswordEditable}"/>
                         </StackPanel>
                     </Grid>
 

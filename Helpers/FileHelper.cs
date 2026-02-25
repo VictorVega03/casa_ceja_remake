@@ -271,5 +271,62 @@ namespace CasaCejaRemake.Helpers
                 return false;
             }
         }
+
+        /// <summary>
+        /// Abre la carpeta donde reside la base de datos (ApplicationData/CasaCeja) en el explorador de archivos.
+        /// Exclusivo para desarrollo.
+        /// </summary>
+        public static bool OpenDatabaseFolderInExplorer()
+        {
+            try
+            {
+                var appDataPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+                var dbFolderPath = Path.Combine(appDataPath, "CasaCeja");
+
+                // Verificar si existe la carpeta
+                if (!Directory.Exists(dbFolderPath))
+                {
+                    Console.WriteLine($"[FileHelper] La carpeta de DB no existe: {dbFolderPath}");
+                    return false;
+                }
+
+                Console.WriteLine($"[FileHelper] Abriendo carpeta de DB: {dbFolderPath}");
+
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                {
+                    Process.Start(new ProcessStartInfo
+                    {
+                        FileName = "explorer",
+                        Arguments = $"\"{dbFolderPath}\"",
+                        UseShellExecute = true
+                    });
+                }
+                else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                {
+                    Process.Start(new ProcessStartInfo
+                    {
+                        FileName = "open",
+                        Arguments = $"\"{dbFolderPath}\"",
+                        UseShellExecute = true
+                    });
+                }
+                else
+                {
+                    Process.Start(new ProcessStartInfo
+                    {
+                        FileName = "xdg-open",
+                        Arguments = $"\"{dbFolderPath}\"",
+                        UseShellExecute = true
+                    });
+                }
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[FileHelper] Error al abrir carpeta DB: {ex.Message}");
+                return false;
+            }
+        }
     }
 }

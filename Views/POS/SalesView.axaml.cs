@@ -1734,6 +1734,13 @@ namespace CasaCejaRemake.Views.POS
                 return;
             }
 
+            // Requiere verificación de administrador para ver el módulo de Cajeros
+            var verified = await AdminVerificationHelper.VerifyAdminAsync(this, userService);
+            if (!verified)
+            {
+                return; // Acción cancelada si no verifica admin
+            }
+
             var vm = new UserManagementViewModel(userService, authService, isAdminMode: false);
             var view = new UserManagementView { DataContext = vm };
             await view.ShowDialog(this);
