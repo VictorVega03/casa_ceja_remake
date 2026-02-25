@@ -1502,7 +1502,7 @@ namespace CasaCejaRemake.Views.POS
             // --- Header ---
             root.Children.Add(new TextBlock
             {
-                Text = "💰 Descuento General",
+                Text = "$ Descuento General",
                 Foreground = new SolidColorBrush(Color.Parse("#FFC107")),
                 FontSize = 16, FontWeight = FontWeight.Bold,
                 HorizontalAlignment = HorizontalAlignment.Center

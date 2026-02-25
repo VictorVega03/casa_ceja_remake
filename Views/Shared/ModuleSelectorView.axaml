@@ -380,19 +380,7 @@
                                TextAlignment="Center" />
                 </StackPanel>
             </Button>
-        </Grid>
-
-        <!-- FOOTER -->
-        <Border Grid.Row="2"
-                Background="White"
-                BorderBrush="#DDDDDD"
-                BorderThickness="0,1,0,0"
-                Padding="20,10">
-            <TextBlock Text="Presione Esc para cerrar sesión"
-                       FontSize="11"
-                       Foreground="#999999"
-                       HorizontalAlignment="Center" />
-        </Border>
+        </Grid>       
     </Grid>
 </Window>
 

@@ -744,18 +744,9 @@ namespace CasaCejaRemake.ViewModels.POS
                 return;
             }
 
-            // Verificar si el usuario actual es administrador
-            var currentUserId = _authService.CurrentUser?.Id ?? 0;
-            var isAdmin = currentUserId > 0 && _authService.CurrentUser?.UserType == 1; // 1 = Admin
-
-            // Si no es admin, solicitar verificación
-            if (!isAdmin)
-            {
-                RequestAdminVerification?.Invoke(this, EventArgs.Empty);
-                return;
-            }
-            
-            RequestShowGeneralDiscount?.Invoke(this, EventArgs.Empty);
+            // La solicitud de Descuento General siempre exige autorización del Administrador en Pantalla, 
+            // incluso si el usuario actual ya posee el rol (por motivos de auditoria y seguridad).
+            RequestAdminVerification?.Invoke(this, EventArgs.Empty);
         }
 
         /// <summary>
