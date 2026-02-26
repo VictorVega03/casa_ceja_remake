@@ -164,17 +164,11 @@ namespace CasaCejaRemake.Views.POS
             // F7 para limpiar
             if (e.Key == Key.F7) { _viewModel.ClearCurrentCommand.Execute(null); e.Handled = true; return; }
 
-            // Enter para agregar pago si el textbox está enfocado
-            // Eliminar lógica que confirmaba con enter para que sólo sea posible con f8
+            // Enter para agregar pago
             if (e.Key == Key.Enter)
             {
-                var txtAmount = this.FindControl<TextBox>("TxtCurrentAmount");
-                if (txtAmount != null && txtAmount.IsFocused)
-                {
-                    _viewModel.AddPaymentCommand.Execute(null);
-                    e.Handled = true;
-                    return;
-                }
+                _viewModel.AddPaymentCommand.Execute(null);
+                e.Handled = true;
                 return;
             }
 

@@ -167,6 +167,12 @@ namespace CasaCejaRemake.ViewModels.POS
         [ObservableProperty]
         private bool _hasPayments;
 
+        [ObservableProperty]
+        private decimal _change;
+
+        [ObservableProperty]
+        private bool _showChange;
+
         // Datos internos
         private int _creditId;
         private int _layawayId;
@@ -257,6 +263,17 @@ namespace CasaCejaRemake.ViewModels.POS
             else
                 CurrentRemainingColor = "#FF9800"; // Naranja - sin abonar
 
+            // Calcular cambio (solo si hay efectivo y se pagó de más)
+            Change = TotalCurrentlyPaid > RemainingBalance ? TotalCurrentlyPaid - RemainingBalance : 0;
+            
+            // Mostrar cambio solo si hay pagos en efectivo y hay exceso
+            bool hasCash = false;
+            foreach (var p in PaymentsList)
+            {
+                if (p.Method == "Efectivo") { hasCash = true; break; }
+            }
+            ShowChange = hasCash && Change > 0;
+
             // Puede confirmar si se abonó algo (no necesariamente todo)
             HasPayments = PaymentsList.Count > 0;
             CanConfirm = HasPayments;
@@ -289,11 +306,9 @@ namespace CasaCejaRemake.ViewModels.POS
             IsCreditoSelected = method == "Credito";
             IsTransferenciaSelected = method == "Transferencia";
 
-            // Si no es efectivo, sugerir el restante
-            if (CurrentMethod != PaymentMethod.Efectivo && CurrentRemaining > 0)
-            {
-                CurrentAmount = CurrentRemaining;
-            }
+            // Si no es efectivo, ya no se sugiere el restante automáticamente.
+            // Se asegura que la vista refleje el valor actual de CurrentAmount (probablemente 0).
+            OnPropertyChanged(nameof(CurrentAmountText));
         }
 
         [RelayCommand]
@@ -327,9 +342,10 @@ namespace CasaCejaRemake.ViewModels.POS
                 return;
             }
 
-            if (CurrentAmount > CurrentRemaining)
+            // Validación: métodos que NO son efectivo no pueden exceder el restante
+            if (CurrentMethod != PaymentMethod.Efectivo && CurrentAmount > CurrentRemaining)
             {
-                ShowError("El monto no puede ser mayor al saldo pendiente");
+                ShowError($"Con {CurrentMethodName} no puede pagar más del restante (${CurrentRemaining:N2})");
                 return;
             }
 
@@ -344,7 +360,7 @@ namespace CasaCejaRemake.ViewModels.POS
             UpdateState();
 
             // Preparar para siguiente pago
-            CurrentAmount = CurrentRemaining > 0 ? CurrentRemaining : 0;
+            CurrentAmount = 0;
             OnPropertyChanged(nameof(CurrentAmountText));
         }
 
@@ -355,7 +371,7 @@ namespace CasaCejaRemake.ViewModels.POS
             {
                 PaymentsList.Remove(payment);
                 UpdateState();
-                CurrentAmount = CurrentRemaining > 0 ? CurrentRemaining : 0;
+                CurrentAmount = 0;
                 OnPropertyChanged(nameof(CurrentAmountText));
             }
         }
@@ -390,6 +406,7 @@ namespace CasaCejaRemake.ViewModels.POS
                 }
 
                 string paymentJson = JsonSerializer.Serialize(paymentDict);
+                decimal amountToSave = Math.Min(TotalCurrentlyPaid, RemainingBalance);
 
                 bool success;
 
@@ -397,7 +414,7 @@ namespace CasaCejaRemake.ViewModels.POS
                 {
                     success = await _creditService.AddPaymentWithMixedAsync(
                         _creditId,
-                        TotalCurrentlyPaid,
+                        amountToSave,
                         paymentJson,
                         _authService.CurrentUser?.Id ?? 0,
                         string.IsNullOrWhiteSpace(Notes) ? null : Notes);
@@ -406,7 +423,7 @@ namespace CasaCejaRemake.ViewModels.POS
                 {
                     success = await _layawayService.AddPaymentWithMixedAsync(
                         _layawayId,
-                        TotalCurrentlyPaid,
+                        amountToSave,
                         paymentJson,
                         _authService.CurrentUser?.Id ?? 0,
                         string.IsNullOrWhiteSpace(Notes) ? null : Notes);
@@ -414,7 +431,7 @@ namespace CasaCejaRemake.ViewModels.POS
 
                 if (success)
                 {
-                    PaymentCompleted?.Invoke(this, PaymentResult.Ok(TotalCurrentlyPaid, Folio, _isCredit));
+                    PaymentCompleted?.Invoke(this, PaymentResult.Ok(amountToSave, Folio, _isCredit));
                 }
                 else
                 {

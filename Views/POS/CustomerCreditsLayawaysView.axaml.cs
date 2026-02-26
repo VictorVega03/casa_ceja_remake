@@ -393,6 +393,15 @@ namespace CasaCejaRemake.Views.POS
                 var updatedLayaway = await layawayService.GetByIdAsync(layaway.Id);
                 if (updatedLayaway != null && updatedLayaway.RemainingBalance <= 0 && balanceBefore > 0)
                 {
+                    // Imprimir ticket de liquidación automáticamente
+                    var layawayTicket = await layawayService.RecoverTicketAsync(layaway.Id);
+                    if (layawayTicket != null)
+                    {
+                        var ticketService = new Services.TicketService();
+                        var ticketText = ticketService.GenerateTicketText(layawayTicket, Services.TicketType.Layaway);
+                        await DialogHelper.ShowTicketDialog(this, layaway.Folio, ticketText);
+                    }
+
                     // Apartado completado, preguntar si desea entregar
                     var shouldDeliver = await ShowConfirmDeliverDialog();
                     if (shouldDeliver)

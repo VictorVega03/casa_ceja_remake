@@ -151,12 +151,6 @@ namespace CasaCejaRemake.ViewModels.POS
             IsCreditoSelected = method == "Credito";
             IsTransferenciaSelected = method == "Transferencia";
             IsChequesSelected = method == "Cheque";
-
-            // Si no es efectivo, sugerir el restante exacto
-            if (CurrentMethod != PaymentMethod.Efectivo)
-            {
-                CurrentAmount = RemainingAmount > 0 ? RemainingAmount : 0;
-            }
         }
 
         [RelayCommand]
@@ -207,7 +201,7 @@ namespace CasaCejaRemake.ViewModels.POS
             UpdateState();
 
             // Preparar para siguiente pago
-            CurrentAmount = RemainingAmount > 0 ? RemainingAmount : 0;
+            CurrentAmount = 0;
         }
 
         [RelayCommand]
@@ -217,7 +211,7 @@ namespace CasaCejaRemake.ViewModels.POS
             {
                 PaymentsList.Remove(payment);
                 UpdateState();
-                CurrentAmount = RemainingAmount > 0 ? RemainingAmount : 0;
+                CurrentAmount = 0;
             }
         }
 
