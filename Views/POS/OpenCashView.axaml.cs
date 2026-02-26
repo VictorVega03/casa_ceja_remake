@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.Threading;
 using CasaCejaRemake.Models;
 using CasaCejaRemake.ViewModels.POS;
 using casa_ceja_remake.Helpers;
@@ -35,6 +36,18 @@ namespace CasaCejaRemake.Views.POS
             // Enfocar el campo de monto
             TxtOpeningAmount.Focus();
             TxtOpeningAmount.SelectAll();
+
+            TxtOpeningAmount.GotFocus += (s, focusArgs) => 
+            {
+                if (TxtOpeningAmount.Text == "0.00")
+                {
+                    Dispatcher.UIThread.Post(() => TxtOpeningAmount.Text = "");
+                }
+                else
+                {
+                    Dispatcher.UIThread.Post(() => TxtOpeningAmount.SelectAll());
+                }
+            };
         }
 
         private void OnAmountTextInput(object? sender, TextInputEventArgs e)

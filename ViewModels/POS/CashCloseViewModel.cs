@@ -126,6 +126,21 @@ namespace CasaCejaRemake.ViewModels.POS
         private decimal _declaredAmount;
 
         [ObservableProperty]
+        private string _declaredAmountString = string.Empty;
+
+        partial void OnDeclaredAmountStringChanged(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                DeclaredAmount = 0;
+            }
+            else if (decimal.TryParse(value, out var parsedValue))
+            {
+                DeclaredAmount = parsedValue;
+            }
+        }
+
+        [ObservableProperty]
         private int _salesCount;
 
         [ObservableProperty]
@@ -233,6 +248,7 @@ namespace CasaCejaRemake.ViewModels.POS
                 
                 // Por defecto, el monto declarado es el esperado
                 DeclaredAmount = ExpectedAmount;
+                DeclaredAmountString = ExpectedAmount.ToString("0.00");
 
                 // Cargar movimientos para mostrar en la UI
                 var movements = await _cashCloseService.GetMovementsAsync(_currentCashClose.Id);

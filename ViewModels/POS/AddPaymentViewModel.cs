@@ -78,6 +78,49 @@ namespace CasaCejaRemake.ViewModels.POS
         [ObservableProperty]
         private decimal _currentAmount;
 
+        // Custom string wrapper property to avoid InvalidCastException empty string binding errors in Avalonia UI
+        private string _currentAmountText = "0.00";
+        private bool _isUpdatingFromUI;
+
+        public string CurrentAmountText
+        {
+            get => _currentAmountText;
+            set
+            {
+                if (_currentAmountText != value)
+                {
+                    _currentAmountText = value;
+                    OnPropertyChanged(nameof(CurrentAmountText));
+                    
+                    _isUpdatingFromUI = true;
+                    try
+                    {
+                        if (string.IsNullOrWhiteSpace(value))
+                        {
+                            CurrentAmount = 0;
+                        }
+                        else if (decimal.TryParse(value, out decimal result))
+                        {
+                            CurrentAmount = result;
+                        }
+                    }
+                    finally
+                    {
+                        _isUpdatingFromUI = false;
+                    }
+                }
+            }
+        }
+
+        partial void OnCurrentAmountChanged(decimal value)
+        {
+            if (!_isUpdatingFromUI)
+            {
+                _currentAmountText = value > 0 ? value.ToString("F2") : "0.00";
+                OnPropertyChanged(nameof(CurrentAmountText));
+            }
+        }
+
         [ObservableProperty]
         private string _currentMethodName = "Efectivo";
 
@@ -167,7 +210,7 @@ namespace CasaCejaRemake.ViewModels.POS
                 TotalPaid = credit.TotalPaid;
                 RemainingBalance = credit.RemainingBalance;
                 DueDate = credit.DueDate;
-                CurrentAmount = RemainingBalance; // Sugerir pagar todo
+                CurrentAmount = 0; // Iniciar en 0
                 CurrentRemaining = RemainingBalance;
             }
         }
@@ -188,7 +231,7 @@ namespace CasaCejaRemake.ViewModels.POS
                 TotalPaid = layaway.TotalPaid;
                 RemainingBalance = layaway.RemainingBalance;
                 DueDate = layaway.PickupDate;
-                CurrentAmount = RemainingBalance; // Sugerir pagar todo
+                CurrentAmount = 0; // Iniciar en 0
                 CurrentRemaining = RemainingBalance;
             }
         }
@@ -266,6 +309,7 @@ namespace CasaCejaRemake.ViewModels.POS
         private void ClearCurrent()
         {
             CurrentAmount = 0;
+            OnPropertyChanged(nameof(CurrentAmountText));
         }
 
         [RelayCommand]
@@ -301,6 +345,7 @@ namespace CasaCejaRemake.ViewModels.POS
 
             // Preparar para siguiente pago
             CurrentAmount = CurrentRemaining > 0 ? CurrentRemaining : 0;
+            OnPropertyChanged(nameof(CurrentAmountText));
         }
 
         [RelayCommand]
@@ -311,6 +356,7 @@ namespace CasaCejaRemake.ViewModels.POS
                 PaymentsList.Remove(payment);
                 UpdateState();
                 CurrentAmount = CurrentRemaining > 0 ? CurrentRemaining : 0;
+                OnPropertyChanged(nameof(CurrentAmountText));
             }
         }
 
@@ -407,6 +453,7 @@ namespace CasaCejaRemake.ViewModels.POS
         public void AdjustAmount(int delta)
         {
             CurrentAmount = Math.Max(0, CurrentAmount + delta);
+            OnPropertyChanged(nameof(CurrentAmountText));
         }
 
         public void HandleKeyPress(string key)

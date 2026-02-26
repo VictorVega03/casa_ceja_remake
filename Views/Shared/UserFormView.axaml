@@ -134,7 +134,8 @@
                             <TextBox Text="{Binding Password}" 
                                      PasswordChar="•" 
                                      Watermark="{Binding PasswordWatermark}"
-                                     IsEnabled="{Binding IsPasswordEditable}"/>
+                                     IsTabStop="{Binding IsPasswordEnabled}"
+                                     IsEnabled="{Binding IsPasswordEnabled}"/>
                         </StackPanel>
                         <StackPanel Grid.Column="2">
                             <StackPanel Orientation="Horizontal" Spacing="0">
@@ -143,8 +144,9 @@
                             </StackPanel>
                             <TextBox Text="{Binding ConfirmPassword}" 
                                      PasswordChar="•" 
-                                     Watermark="Repite la contraseña"
-                                     IsEnabled="{Binding IsPasswordEditable}"/>
+                                     Watermark="{Binding PasswordWatermark}"
+                                     IsTabStop="{Binding IsPasswordEnabled}"
+                                     IsEnabled="{Binding IsPasswordEnabled}"/>
                         </StackPanel>
                     </Grid>
 

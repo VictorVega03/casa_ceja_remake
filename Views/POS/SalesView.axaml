@@ -360,9 +360,16 @@
                             <DataGridTextColumn Header="CÓDIGO" 
                                                 Binding="{Binding Barcode}" 
                                                 Width="120"/>
-                            <DataGridTextColumn Header="ARTICULO" 
-                                                Binding="{Binding ProductName}" 
-                                                Width="*"/>
+                            <DataGridTemplateColumn Header="ARTICULO" Width="*">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <WrapPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="10,0">
+                                            <TextBlock Text="{Binding ProductName}" VerticalAlignment="Center" TextWrapping="Wrap" />
+                                            <TextBlock Text="{Binding DiscountDisplayInfo}" FontSize="11" Foreground="#A0A0A0" VerticalAlignment="Center" IsVisible="{Binding HasDiscount}" Margin="5,0,0,0" TextWrapping="Wrap" />
+                                        </WrapPanel>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
                             <DataGridTextColumn Header="CANTIDAD" 
                                                 Binding="{Binding Quantity}" 
                                                 Width="100"/>

@@ -40,7 +40,14 @@ namespace CasaCejaRemake.Views.POS
             {
                 var shortcuts = new Dictionary<Key, Action>
                 {
-                    { Key.Escape, () => _viewModel.CancelCommand.Execute(null) }
+                    { Key.Escape, () => _viewModel.CancelCommand.Execute(null) },
+                    { Key.F1, () => _viewModel.PayRemainingCommand.Execute(null) },
+                    { Key.F2, () => _viewModel.AddToCurrentCommand.Execute("20") },
+                    { Key.F3, () => _viewModel.AddToCurrentCommand.Execute("50") },
+                    { Key.F4, () => _viewModel.AddToCurrentCommand.Execute("100") },
+                    { Key.F5, () => _viewModel.AddToCurrentCommand.Execute("200") },
+                    { Key.F6, () => _viewModel.AddToCurrentCommand.Execute("500") },
+                    { Key.F7, () => _viewModel.ClearCurrentCommand.Execute(null) }
                 };
 
                 if (KeyboardShortcutHelper.HandleShortcut(e, shortcuts))

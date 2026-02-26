@@ -48,12 +48,12 @@ namespace CasaCejaRemake.ViewModels.Shared
         /// <summary>La sección de contraseña ahora siempre es visible.</summary>
         public bool ShowPasswordSection => true;
 
-        /// <summary>El campo solo es editable al crear usuario.</summary>
-        public bool IsPasswordEditable => !IsEditing;
+        /// <summary>El campo se puede editar, pero es opcional al actualizar.</summary>
+        public bool IsPasswordEnabled => !IsEditing;
 
         /// <summary>El campo de contraseña tiene texto informativo diferente en edición.</summary>
         public string PasswordWatermark => IsEditing
-            ? "Contraseña bloqueada"
+            ? "Bloqueado, solo disponible en modulo Administrador"
             : "Mínimo 4 caracteres";
 
         /// <summary>Título dinámico del formulario.</summary>
@@ -83,8 +83,6 @@ namespace CasaCejaRemake.ViewModels.Shared
             if (_existingUser != null)
             {
                 PopulateFromUser(_existingUser);
-                Password = "***";
-                ConfirmPassword = "***";
             }
         }
 
@@ -123,7 +121,14 @@ namespace CasaCejaRemake.ViewModels.Shared
             Email = user.Email;
             Phone = user.Phone;
             Username = user.Username;
-            // No poblar la contraseña por seguridad
+
+            // Al editar, dejamos las contraseñas cargadas con un texto falso ("********")
+            // De esa manera el textbox con PasswordChar="•" muestra puntos y se ve como si hubiera algo.
+            if (_isEditing)
+            {
+                Password = "        "; // 8 espacios para que renderice 8 asteriscos
+                ConfirmPassword = "        ";
+            }
         }
 
         // ============ COMANDOS ============
@@ -200,8 +205,11 @@ namespace CasaCejaRemake.ViewModels.Shared
             _existingUser.Phone = Phone.Trim();
             _existingUser.Username = Username.Trim();
 
-            // La contraseña ya no se actualiza al editar usuario en este formulario
-            // Se reserva para cuando se implemente la vista en Administrador.
+            // Si se proporciona una nueva contraseña, actualizarla
+            if (!string.IsNullOrWhiteSpace(Password))
+            {
+                _existingUser.Password = Password;
+            }
 
             // Solo cambiar rol en modo Admin
             if (_isAdminMode && SelectedRole != null)
@@ -263,12 +271,12 @@ namespace CasaCejaRemake.ViewModels.Shared
                 else
                 {
                     // Al editar, si se pone contraseña, validar longitud
-                    if (!string.IsNullOrWhiteSpace(Password) && Password.Length < 4)
+                    if (!string.IsNullOrEmpty(Password) && Password.Length < 4)
                         return "La contraseña debe tener al menos 4 caracteres.";
                 }
 
                 // Confirmar contraseña si se proporcionó
-                if (!string.IsNullOrWhiteSpace(Password) && Password != ConfirmPassword)
+                if (!string.IsNullOrEmpty(Password) && Password != ConfirmPassword)
                     return "Las contraseñas no coinciden.";
             }
 

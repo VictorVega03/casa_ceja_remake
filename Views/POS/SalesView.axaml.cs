@@ -105,6 +105,16 @@ namespace CasaCejaRemake.Views.POS
                 // Esto sobrescribe el comportamiento nativo de cambiar columnas con flechas izq/der
                 gridProducts.AddHandler(KeyDownEvent, (sender, e) =>
                 {
+                    if (e.Key == Key.Delete && _viewModel != null)
+                    {
+                        if (_viewModel.RemoveProductCommand.CanExecute(null))
+                        {
+                            _viewModel.RemoveProductCommand.Execute(null);
+                        }
+                        e.Handled = true; // Prevenir propagación al DataGrid
+                        return;
+                    }
+
                     if ((e.Key == Key.Left || e.Key == Key.Right) && _viewModel != null && _viewModel.SelectedItemIndex >= 0)
                     {
                         HandleQuantityArrowKey(e.Key);
@@ -472,7 +482,6 @@ namespace CasaCejaRemake.Views.POS
                     { Key.F6, () => ShowCashMovementDialogAsync(true) },   // Gasto
                     { Key.F7, () => ShowCashMovementDialogAsync(false) },  // Ingreso
                     { Key.F8, () => ShowCustomersDialogAsync() },          // Clientes
-                    { Key.F9, () => ShowCashCloseHistoryDialogAsync() },   // Historial Cortes
                     { Key.F10, () => ShowCashCloseDialogAsync() },         // Corte de Caja
                     { Key.F11, () => _viewModel.PayCommand.Execute(null) },
                     { Key.F12, () => _viewModel.CreditsLayawaysCommand.Execute(null) },
@@ -1273,7 +1282,7 @@ namespace CasaCejaRemake.Views.POS
             {
                 Title = "Leyenda de Colores - Tipos de Precio",
                 Width = 450,
-                Height = 380,
+                Height = 420,
                 WindowStartupLocation = WindowStartupLocation.CenterOwner,
                 CanResize = false,
                 Background = new SolidColorBrush(Color.Parse("#2D2D2D")),
@@ -1303,10 +1312,20 @@ namespace CasaCejaRemake.Views.POS
                 var row = new StackPanel
                 {
                     Orientation = Orientation.Horizontal,
-                    Spacing = 12
+                    Spacing = 12,
+                    Margin = new Thickness(0, 5)
                 };
 
-                // Texto (emoji ya incluido en title)
+                // Circulo dibujado para evitar problemas con Emojis en Windows
+                var colorCircle = new Avalonia.Controls.Shapes.Ellipse
+                {
+                    Width = 16,
+                    Height = 16,
+                    Fill = new SolidColorBrush(Color.Parse(color)),
+                    VerticalAlignment = Avalonia.Layout.VerticalAlignment.Top,
+                    Margin = new Thickness(0, 2, 0, 0)
+                };
+
                 var textPanel = new StackPanel { Spacing = 2 };
                 textPanel.Children.Add(new TextBlock
                 {
@@ -1319,18 +1338,20 @@ namespace CasaCejaRemake.Views.POS
                 {
                     Text = description,
                     FontSize = 12,
-                    Foreground = new SolidColorBrush(Color.Parse("#AAAAAA"))
+                    Foreground = new SolidColorBrush(Color.Parse("#AAAAAA")),
+                    TextWrapping = TextWrapping.Wrap
                 });
 
+                row.Children.Add(colorCircle);
                 row.Children.Add(textPanel);
                 panel.Children.Add(row);
             }
 
             // Agregar cada tipo de precio con su color
-            AddColorRow("#00897B", "🟢 Mayoreo", "Precio por mayoreo (cantidad mínima alcanzada)");
-            AddColorRow("#9C27B0", "🟣 Descuento de Categoría", "Descuento por categoría del producto");
-            AddColorRow("#2196F3", "🔵 Precio Especial", "Precio especial de promoción (Ctrl+F2)");
-            AddColorRow("#E65100", "🟠 Precio Vendedor", "Precio especial para vendedores (Ctrl+F3)");
+            AddColorRow("#00897B", "Mayoreo", "Precio por mayoreo (cantidad mínima alcanzada)");
+            AddColorRow("#9C27B0", "Descuento de Categoría", "Descuento por categoría del producto");
+            AddColorRow("#2196F3", "Precio Especial", "Precio especial de promoción (Ctrl+F2)");
+            AddColorRow("#E65100", "Precio Vendedor", "Precio especial para vendedores (Ctrl+F3)");
 
             panel.Children.Add(new Separator
             {
@@ -1541,7 +1562,16 @@ namespace CasaCejaRemake.Views.POS
             quickPanel.Children.Add(btnQ30);
             root.Children.Add(quickPanel);
 
-            var valueInput = new NumericUpDown { Value = 0, Minimum = 0, Maximum = _viewModel.Total, Increment = 1, FormatString = "N2", Width = 200, Height = 35, IsVisible = false, HorizontalAlignment = HorizontalAlignment.Center };
+            var valueInput = new TextBox
+            {
+                Text = "0",
+                Width = 200,
+                Height = 35,
+                IsVisible = false,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                HorizontalContentAlignment = HorizontalAlignment.Center
+            };
+            valueInput.GotFocus += (s, e) => Avalonia.Threading.Dispatcher.UIThread.Post(() => valueInput.SelectAll());
             root.Children.Add(valueInput);
 
             // --- Separador ---
@@ -1587,16 +1617,22 @@ namespace CasaCejaRemake.Views.POS
             dialog.Content = root;
 
             // ===== Lógica =====
+            decimal ParseInput()
+            {
+                if (decimal.TryParse(valueInput.Text, out var prs)) return Math.Max(0, prs);
+                return 0;
+            }
+
             void UpdatePreview()
             {
-                var v = isPercentMode ? selectedValue : (decimal)(valueInput.Value ?? 0);
+                var v = isPercentMode ? selectedValue : ParseInput();
                 var disc = isPercentMode ? _viewModel.Total * (v / 100m) : Math.Min(v, _viewModel.Total);
                 previewLabel.Text = $"Total: {(_viewModel.Total - disc):C2}";
             }
 
             void DoApply()
             {
-                var v = isPercentMode ? selectedValue : (decimal)(valueInput.Value ?? 0);
+                var v = isPercentMode ? selectedValue : ParseInput();
                 if (v > 0)
                 {
                     _viewModel.ApplyGeneralDiscountValue(v, isPercentMode);
@@ -1618,7 +1654,23 @@ namespace CasaCejaRemake.Views.POS
             btnQ20.Click += (_, _) => SelectQuick(btnQ20, 20);
             btnQ30.Click += (_, _) => SelectQuick(btnQ30, 30);
 
-            valueInput.ValueChanged += (_, _) => UpdatePreview();
+            valueInput.AddHandler(TextInputEvent, (sender, e) =>
+            {
+                if (!string.IsNullOrEmpty(e.Text))
+                {
+                    foreach (char c in e.Text)
+                    {
+                        if (char.IsDigit(c) || (c == '.' && valueInput.Text?.Contains('.') == false)) continue;
+                        e.Handled = true;
+                        return;
+                    }
+                }
+            }, RoutingStrategies.Tunnel);
+
+            valueInput.PropertyChanged += (s, e) =>
+            {
+                if (e.Property.Name == "Text") UpdatePreview();
+            };
 
             rbPercent.IsCheckedChanged += (_, _) =>
             {
@@ -1642,7 +1694,6 @@ namespace CasaCejaRemake.Views.POS
                     isPercentMode = false;
                     quickPanel.IsVisible = false;
                     valueInput.IsVisible = true;
-                    valueInput.Maximum = _viewModel.Total;
                     UpdatePreview();
                     valueInput.Focus();
                 }

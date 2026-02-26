@@ -40,6 +40,18 @@ namespace CasaCejaRemake.Views.POS
             {
                 txtAmount.Focus();
                 txtAmount.SelectAll();
+                
+                txtAmount.GotFocus += (s, args) => 
+                {
+                    if (txtAmount.Text == "0.00")
+                    {
+                        Avalonia.Threading.Dispatcher.UIThread.Post(() => txtAmount.Text = "");
+                    }
+                    else
+                    {
+                        Avalonia.Threading.Dispatcher.UIThread.Post(() => txtAmount.SelectAll());
+                    }
+                };
             }
         }
 
@@ -126,34 +138,43 @@ namespace CasaCejaRemake.Views.POS
                 return;
             }
 
-            // F5 para confirmar
-            if (e.Key == Key.F5)
+            // F8 para confirmar
+            if (e.Key == Key.F8)
             {
                 _viewModel.ConfirmCommand.Execute(null);
                 e.Handled = true;
                 return;
             }
 
-            // F4 para pagar restante
-            if (e.Key == Key.F4)
+            // F1 para pagar restante (consistente con PaymentView)
+            if (e.Key == Key.F1)
             {
                 _viewModel.PayRemainingCommand.Execute(null);
                 e.Handled = true;
                 return;
             }
 
-            // Enter para agregar pago si hay monto, o confirmar si ya se cubrió
+            // F2-F6 montos rápidos
+            if (e.Key == Key.F2) { _viewModel.AddToCurrentCommand.Execute("20"); e.Handled = true; return; }
+            if (e.Key == Key.F3) { _viewModel.AddToCurrentCommand.Execute("50"); e.Handled = true; return; }
+            if (e.Key == Key.F4) { _viewModel.AddToCurrentCommand.Execute("100"); e.Handled = true; return; }
+            if (e.Key == Key.F5) { _viewModel.AddToCurrentCommand.Execute("200"); e.Handled = true; return; }
+            if (e.Key == Key.F6) { _viewModel.AddToCurrentCommand.Execute("500"); e.Handled = true; return; }
+            
+            // F7 para limpiar
+            if (e.Key == Key.F7) { _viewModel.ClearCurrentCommand.Execute(null); e.Handled = true; return; }
+
+            // Enter para agregar pago si el textbox está enfocado
+            // Eliminar lógica que confirmaba con enter para que sólo sea posible con f8
             if (e.Key == Key.Enter)
             {
-                if (_viewModel.CanConfirm)
-                {
-                    _viewModel.ConfirmCommand.Execute(null);
-                }
-                else
+                var txtAmount = this.FindControl<TextBox>("TxtCurrentAmount");
+                if (txtAmount != null && txtAmount.IsFocused)
                 {
                     _viewModel.AddPaymentCommand.Execute(null);
+                    e.Handled = true;
+                    return;
                 }
-                e.Handled = true;
                 return;
             }
 

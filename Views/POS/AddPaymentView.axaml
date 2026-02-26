@@ -181,13 +181,13 @@
                         <Grid ColumnDefinitions="*,Auto">
                             <TextBlock Text="{Binding CurrentMethodName, StringFormat='Agregar: {0}'}" 
                                        FontSize="13" FontWeight="Bold" Foreground="White"/>
-                            <Button Grid.Column="1" Content="F4 Pagar Restante" 
+                            <Button Grid.Column="1" Content="F1 Pagar Restante" 
                                     Command="{Binding PayRemainingCommand}"
                                     Background="#4CAF50" Foreground="White" Padding="8,4" FontSize="10"/>
                         </Grid>
                         
                         <TextBox x:Name="TxtCurrentAmount"
-                                 Text="{Binding CurrentAmount, Mode=TwoWay, StringFormat='{}{0:F2}'}"
+                                 Text="{Binding CurrentAmountText, Mode=TwoWay}"
                                  FontSize="20" FontWeight="Bold"
                                  Padding="8" Margin="0,8,0,0"
                                  Background="#3D3D3D" Foreground="White"
@@ -195,15 +195,33 @@
                                  HorizontalContentAlignment="Right"/>
                         
                         <WrapPanel Margin="0,8,0,0">
-                            <Button Classes="quick-amount" Command="{Binding AddToCurrentCommand}" CommandParameter="20">+$20</Button>
-                            <Button Classes="quick-amount" Command="{Binding AddToCurrentCommand}" CommandParameter="50">+$50</Button>
-                            <Button Classes="quick-amount" Command="{Binding AddToCurrentCommand}" CommandParameter="100">+$100</Button>
-                            <Button Classes="quick-amount" Command="{Binding AddToCurrentCommand}" CommandParameter="200">+$200</Button>
-                            <Button Classes="quick-amount" Command="{Binding AddToCurrentCommand}" CommandParameter="500">+$500</Button>
-                            <Button Classes="quick-amount" Command="{Binding ClearCurrentCommand}">Limpiar</Button>
+                            <StackPanel Orientation="Vertical" Margin="2">
+                                <TextBlock Text="[F2]" FontSize="10" Foreground="#888" HorizontalAlignment="Center"/>
+                                <Button Classes="quick-amount" Command="{Binding AddToCurrentCommand}" CommandParameter="20" Margin="0">+$20</Button>
+                            </StackPanel>
+                            <StackPanel Orientation="Vertical" Margin="2">
+                                <TextBlock Text="[F3]" FontSize="10" Foreground="#888" HorizontalAlignment="Center"/>
+                                <Button Classes="quick-amount" Command="{Binding AddToCurrentCommand}" CommandParameter="50" Margin="0">+$50</Button>
+                            </StackPanel>
+                            <StackPanel Orientation="Vertical" Margin="2">
+                                <TextBlock Text="[F4]" FontSize="10" Foreground="#888" HorizontalAlignment="Center"/>
+                                <Button Classes="quick-amount" Command="{Binding AddToCurrentCommand}" CommandParameter="100" Margin="0">+$100</Button>
+                            </StackPanel>
+                            <StackPanel Orientation="Vertical" Margin="2">
+                                <TextBlock Text="[F5]" FontSize="10" Foreground="#888" HorizontalAlignment="Center"/>
+                                <Button Classes="quick-amount" Command="{Binding AddToCurrentCommand}" CommandParameter="200" Margin="0">+$200</Button>
+                            </StackPanel>
+                            <StackPanel Orientation="Vertical" Margin="2">
+                                <TextBlock Text="[F6]" FontSize="10" Foreground="#888" HorizontalAlignment="Center"/>
+                                <Button Classes="quick-amount" Command="{Binding AddToCurrentCommand}" CommandParameter="500" Margin="0">+$500</Button>
+                            </StackPanel>
+                            <StackPanel Orientation="Vertical" Margin="2">
+                                <TextBlock Text="[F7]" FontSize="10" Foreground="#888" HorizontalAlignment="Center"/>
+                                <Button Classes="quick-amount" Command="{Binding ClearCurrentCommand}" Margin="0">Limpiar</Button>
+                            </StackPanel>
                         </WrapPanel>
                         
-                        <Button Content="➕ Agregar Pago" 
+                        <Button Content="➕ [Enter] Agregar Pago" 
                                 Command="{Binding AddPaymentCommand}"
                                 Background="#0078D4" Foreground="White"
                                 Padding="12,8" Margin="0,8,0,0"
@@ -278,7 +296,7 @@
                             HorizontalAlignment="Center"
                             IsEnabled="{Binding !IsProcessing}">
                         <StackPanel Orientation="Horizontal" Spacing="5">
-                            <TextBlock Text="F5"/>
+                            <TextBlock Text="F8"/>
                             <TextBlock Text="Confirmar Abono"/>
                         </StackPanel>
                     </Button>

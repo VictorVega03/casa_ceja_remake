@@ -14,6 +14,10 @@ sealed class Program
         Console.WriteLine("Iniciando aplicación...");
         try
         {
+            var cultureInfo = new System.Globalization.CultureInfo("es-MX");
+            System.Globalization.CultureInfo.DefaultThreadCurrentCulture = cultureInfo;
+            System.Globalization.CultureInfo.DefaultThreadCurrentUICulture = cultureInfo;
+            
             BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
         }
         catch (Exception ex)

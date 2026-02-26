@@ -20,6 +20,21 @@ namespace CasaCejaRemake.ViewModels.POS
         private decimal _openingAmount = 0;
 
         [ObservableProperty]
+        private string _openingAmountString = "0.00";
+
+        partial void OnOpeningAmountStringChanged(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                OpeningAmount = 0;
+            }
+            else if (decimal.TryParse(value, out var parsedValue))
+            {
+                OpeningAmount = Math.Max(0, parsedValue);
+            }
+        }
+
+        [ObservableProperty]
         private string _errorMessage = string.Empty;
 
         [ObservableProperty]
@@ -50,9 +65,9 @@ namespace CasaCejaRemake.ViewModels.POS
         {
             ErrorMessage = string.Empty;
 
-            if (OpeningAmount < 0)
+            if (OpeningAmount <= 0)
             {
-                ErrorMessage = "El fondo de apertura no puede ser negativo";
+                ErrorMessage = "El fondo de apertura debe ser mayor a $0.00";
                 return;
             }
 

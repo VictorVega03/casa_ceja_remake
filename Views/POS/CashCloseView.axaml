@@ -255,7 +255,7 @@
                                 <TextBlock Grid.Column="0" Text="$" FontSize="22" FontWeight="Bold" Foreground="White" VerticalAlignment="Center" Margin="0,0,8,0"/>
                                 <TextBox x:Name="TxtDeclaredAmount"
                                          Grid.Column="1"
-                                         Text="{Binding DeclaredAmount, Mode=TwoWay, StringFormat='{}{0:F2}'}"
+                                         Text="{Binding DeclaredAmountString, Mode=TwoWay}"
                                          FontSize="22"
                                          FontWeight="Bold"
                                          HorizontalContentAlignment="Right"/>

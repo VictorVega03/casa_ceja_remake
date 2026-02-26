@@ -58,7 +58,11 @@ namespace CasaCejaRemake.Models
        
         /// Información descriptiva del descuento aplicado       
         [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(DiscountDisplayInfo))]
         private string _discountInfo = string.Empty;
+       
+        /// Información descriptiva del descuento formateada para la vista
+        public string DiscountDisplayInfo => string.IsNullOrWhiteSpace(DiscountInfo) ? string.Empty : $"({DiscountInfo.Trim()})";
        
         /// Indica si el item tiene descuento aplicado       
         public bool HasDiscount => TotalDiscount > 0;

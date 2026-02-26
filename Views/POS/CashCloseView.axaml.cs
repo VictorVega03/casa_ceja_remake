@@ -4,6 +4,7 @@ using System.Linq;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.Threading;
 using CasaCejaRemake.Models;
 using CasaCejaRemake.ViewModels.POS;
 using CasaCejaRemake.Services;
@@ -41,6 +42,11 @@ namespace CasaCejaRemake.Views.POS
             // Enfocar el campo de monto declarado
             TxtDeclaredAmount.Focus();
             TxtDeclaredAmount.SelectAll();
+
+            TxtDeclaredAmount.GotFocus += (s, focusArgs) => 
+            {
+                Dispatcher.UIThread.Post(() => TxtDeclaredAmount.SelectAll());
+            };
         }
 
         private void OnAmountTextInput(object? sender, TextInputEventArgs e)

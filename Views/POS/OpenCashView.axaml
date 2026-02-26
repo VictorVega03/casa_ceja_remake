@@ -76,7 +76,7 @@
                            Margin="0,0,10,0"/>
                 <TextBox x:Name="TxtOpeningAmount"
                          Grid.Column="1"
-                         Text="{Binding OpeningAmount, Mode=TwoWay, StringFormat='{}{0:F2}'}"
+                         Text="{Binding OpeningAmountString, Mode=TwoWay}"
                          FontSize="24"
                          FontWeight="Bold"
                          HorizontalContentAlignment="Right"/>

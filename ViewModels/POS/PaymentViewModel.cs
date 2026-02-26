@@ -81,7 +81,7 @@ namespace CasaCejaRemake.ViewModels.POS
             TotalToPay = total;
             TotalItems = articulos;
             RemainingAmount = total;
-            CurrentAmount = total; // Por defecto, pagar todo
+            CurrentAmount = 0; // Iniciar en 0 por defecto
             UpdateState();
         }
 
