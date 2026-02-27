@@ -988,6 +988,7 @@ namespace CasaCejaRemake.Views.POS
 
         /// <summary>
         /// Muestra el diálogo de corte de caja.
+        /// Si hay productos en el carrito, pide confirmación para vaciarlo antes de proceder.
         /// </summary>
         private async void ShowCashCloseDialogAsync()
         {
@@ -999,6 +1000,24 @@ namespace CasaCejaRemake.Views.POS
             {
                 ShowMessageDialog("Error", "Servicios no disponibles");
                 return;
+            }
+
+            // Verificar si hay productos en el carrito antes de proceder
+            if (_viewModel != null && _viewModel.Items.Count > 0)
+            {
+                var clearCart = await DialogHelper.ShowConfirmDialog(
+                    this,
+                    "Cobranza Pendiente",
+                    $"Hay {_viewModel.Items.Count} producto(s) en el carrito sin cobrar.\n\n¿Desea vaciar el carrito y proceder con el corte de caja?");
+
+                if (!clearCart)
+                {
+                    TxtBarcode.Focus();
+                    return;
+                }
+
+                // Vaciar el carrito antes de continuar
+                _viewModel.ConfirmClearCart();
             }
 
             // Verificar que hay caja abierta
@@ -1056,30 +1075,64 @@ namespace CasaCejaRemake.Views.POS
 
         private async void OnRequestExitConfirmation(object? sender, EventArgs e)
         {
-            var confirmed = await DialogHelper.ShowConfirmDialog(
-                this, 
-                "Salir", 
-                "¿Está seguro de salir del Punto de Venta?");
+            if (_viewModel == null) return;
 
-            if (confirmed && _viewModel != null)
+            bool confirmed;
+
+            if (_viewModel.Items.Count > 0)
             {
-                _viewModel.ConfirmExit();
+                // Una sola pregunta: vaciar y salir
+                confirmed = await DialogHelper.ShowConfirmDialog(
+                    this,
+                    "Cobranza Pendiente",
+                    $"Hay {_viewModel.Items.Count} producto(s) en el carrito sin cobrar.\n\n¿Desea vaciar el carrito y salir del Punto de Venta?");
+
+                if (confirmed)
+                    _viewModel.ConfirmClearCart();
             }
+            else
+            {
+                // Una sola pregunta: confirmar salida
+                confirmed = await DialogHelper.ShowConfirmDialog(
+                    this,
+                    "Salir",
+                    "¿Está seguro de salir del Punto de Venta?");
+            }
+
+            if (confirmed)
+                _viewModel.ConfirmExit();
 
             TxtBarcode.Focus();
         }
 
         private async void OnRequestLogoutConfirmation(object? sender, EventArgs e)
         {
-            var confirmed = await DialogHelper.ShowConfirmDialog(
-                this, 
-                "Cerrar Sesión", 
-                "¿Está seguro de cerrar la sesión?");
+            if (_viewModel == null) return;
 
-            if (confirmed && _viewModel != null)
+            bool confirmed;
+
+            if (_viewModel.Items.Count > 0)
             {
-                _viewModel.ConfirmLogout();
+                // Una sola pregunta: vaciar y cerrar sesión
+                confirmed = await DialogHelper.ShowConfirmDialog(
+                    this,
+                    "Cobranza Pendiente",
+                    $"Hay {_viewModel.Items.Count} producto(s) en el carrito sin cobrar.\n\n¿Desea vaciar el carrito y cerrar la sesión?");
+
+                if (confirmed)
+                    _viewModel.ConfirmClearCart();
             }
+            else
+            {
+                // Una sola pregunta: confirmar cierre de sesión
+                confirmed = await DialogHelper.ShowConfirmDialog(
+                    this,
+                    "Cerrar Sesión",
+                    "¿Está seguro de cerrar la sesión?");
+            }
+
+            if (confirmed)
+                _viewModel.ConfirmLogout();
 
             TxtBarcode.Focus();
         }
@@ -1733,46 +1786,28 @@ namespace CasaCejaRemake.Views.POS
         // ========== COLOREADO DINÁMICO DE FILAS DEL DATAGRID ==========
 
         /// <summary>
-        /// Handler para colorear las filas del DataGrid según el tipo de precio del CartItem.
+        /// Handler del DataGrid: suscribe cambios de propiedades del CartItem.
+        /// El color de fondo de descuento ahora se aplica solo en la celda
+        /// CÓDIGO mediante binding XAML (RowBackgroundColor), no en toda la fila.
         /// </summary>
         private void OnDataGridLoadingRow(object? sender, DataGridRowEventArgs e)
         {
             if (e.Row.DataContext is CartItem item)
             {
-                // Aplicar el color de fondo basado en el PriceType
-                e.Row.Background = item.RowBackgroundColor;
-
-                // Suscribir a cambios de PriceType para actualizar el color
+                // Suscribir a cambios del item (por si se necesita en el futuro)
                 item.PropertyChanged -= OnCartItemPropertyChanged;
                 item.PropertyChanged += OnCartItemPropertyChanged;
             }
         }
 
         /// <summary>
-        /// Handler para actualizar el color de la fila cuando cambia el PriceType de un CartItem.
+        /// Handler para cuando cambian propiedades del CartItem.
+        /// El color de la celda CÓDIGO se actualiza automáticamente con el binding XAML.
         /// </summary>
         private void OnCartItemPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
         {
-            if (e.PropertyName == nameof(CartItem.RowBackgroundColor) || e.PropertyName == nameof(CartItem.PriceType))
-            {
-                // Forzar actualización del DataGrid
-                Dispatcher.UIThread.Post(() =>
-                {
-                    var grid = this.FindControl<DataGrid>("GridProducts");
-                    if (grid != null && sender is CartItem item)
-                    {
-                        // Buscar la fila correspondiente y actualizar su color
-                        foreach (var row in grid.GetVisualDescendants().OfType<DataGridRow>())
-                        {
-                            if (row.DataContext == item)
-                            {
-                                row.Background = item.RowBackgroundColor;
-                                break;
-                            }
-                        }
-                    }
-                });
-            }
+            // El color de la celda CÓDIGO se actualiza via binding RowBackgroundColor en XAML.
+            // No es necesario actualizar el Row.Background manualmente.
         }
         private async void OnCashiersClick(object? sender, RoutedEventArgs e)
         {

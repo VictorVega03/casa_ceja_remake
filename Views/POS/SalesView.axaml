@@ -357,9 +357,22 @@
                             </Style>
                         </DataGrid.Styles>
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="CÓDIGO" 
-                                                Binding="{Binding Barcode}" 
-                                                Width="120"/>
+                            <!-- Columna CÓDIGO: el color de descuento se muestra solo aquí -->
+                            <DataGridTemplateColumn Header="CÓDIGO" Width="120">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <Border Background="{Binding RowBackgroundColor}"
+                                                Padding="10,0"
+                                                VerticalAlignment="Stretch"
+                                                HorizontalAlignment="Stretch">
+                                            <TextBlock Text="{Binding Barcode}"
+                                                       VerticalAlignment="Center"
+                                                       Foreground="White"
+                                                       FontWeight="SemiBold"/>
+                                        </Border>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
                             <DataGridTemplateColumn Header="ARTICULO" Width="*">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>

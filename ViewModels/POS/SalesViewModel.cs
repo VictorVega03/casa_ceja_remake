@@ -590,24 +590,12 @@ namespace CasaCejaRemake.ViewModels.POS
         [RelayCommand]
         private void Exit()
         {
-            if (_cartService.HasPendingCollections())
-            {
-                ShowMessage?.Invoke(this, "Hay cobranzas pendientes. Vacia los carritos antes de salir.");
-                return;
-            }
-
             RequestExitConfirmation?.Invoke(this, EventArgs.Empty);
         }
 
         [RelayCommand]
         private void Logout()
         {
-            if (_cartService.HasPendingCollections())
-            {
-                ShowMessage?.Invoke(this, "Hay cobranzas pendientes. Vacia los carritos antes de cerrar sesión.");
-                return;
-            }
-
             RequestLogoutConfirmation?.Invoke(this, EventArgs.Empty);
         }
 
