@@ -260,12 +260,19 @@ namespace CasaCejaRemake.Views.POS
                             var layawayFromVm = result.Item2.GetLayaway();
                             if (layawayFromVm != null)
                             {
-                                var paymentAdded = await ShowAddPaymentToLayawayDialog(layawayFromVm);
-                                if (paymentAdded)
+                                var resultPayment = await ShowAddPaymentToLayawayDialog(layawayFromVm);
+                                if (resultPayment.paymentMade)
                                 {
-                                    // Recargar el apartado actualizado
-                                    layaway = await layawayService.GetByIdAsync(layaway.Id) ?? layaway;
-                                    shouldContinue = true; // Volver a mostrar el detalle actualizado
+                                    if (resultPayment.layawayDelivered) 
+                                    {
+                                        shouldContinue = false;
+                                    }
+                                    else 
+                                    {
+                                        // Recargar el apartado actualizado
+                                        layaway = await layawayService.GetByIdAsync(layaway.Id) ?? layaway;
+                                        shouldContinue = true; // Volver a mostrar el detalle actualizado
+                                    }
                                 }
                                 else
                                 {
@@ -355,23 +362,23 @@ namespace CasaCejaRemake.Views.POS
             return false;
         }
 
-        private async System.Threading.Tasks.Task<bool> ShowAddPaymentToLayawayDialog(Layaway layaway)
+        private async System.Threading.Tasks.Task<(bool paymentMade, bool layawayDelivered)> ShowAddPaymentToLayawayDialog(Layaway layaway)
         {
             var app = (Avalonia.Application.Current as App);
-            if (app == null) return false;
+            if (app == null) return (false, false);
 
             var layawayService = app.GetLayawayService();
             var customerService = app.GetCustomerService();
             var authService = app.GetAuthService();
 
             if (layawayService == null || customerService == null || authService == null)
-                return false;
+                return (false, false);
 
             var customer = await customerService.GetByIdAsync(layaway.CustomerId);
             if (customer == null)
             {
                 await DialogHelper.ShowMessageDialog(this, "Error", "No se encontró el cliente");
-                return false;
+                return (false, false);
             }
 
             var balanceBefore = layaway.RemainingBalance;
@@ -406,14 +413,24 @@ namespace CasaCejaRemake.Views.POS
                     var shouldDeliver = await ShowConfirmDeliverDialog();
                     if (shouldDeliver)
                     {
-                        await ShowDeliverLayawayDialog(updatedLayaway);
+                        try
+                        {
+                            var userId = authService.CurrentUser?.Id ?? 1;
+                            await layawayService.MarkAsDeliveredAsync(updatedLayaway.Id, userId);
+                            await DialogHelper.ShowMessageDialog(this, "Éxito", "Apartado entregado correctamente");
+                            return (true, true);
+                        }
+                        catch (Exception ex)
+                        {
+                            await DialogHelper.ShowMessageDialog(this, "Error", $"Error al entregar apartado: {ex.Message}");
+                        }
                     }
                 }
                 
-                return true;
+                return (true, false);
             }
             
-            return false;
+            return (false, false);
         }
 
         private async System.Threading.Tasks.Task<bool> ShowDeliverLayawayDialog(Layaway layaway)

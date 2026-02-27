@@ -518,10 +518,12 @@ namespace CasaCejaRemake.Views.POS
                             var layawayFromVm = result.Item2.GetLayaway();
                             if (layawayFromVm != null)
                             {
-                                actionHandled = await ShowAddPaymentToLayaway(layawayFromVm);
+                                var resultPayment = await ShowAddPaymentToLayaway(layawayFromVm);
+                                actionHandled = resultPayment.paymentMade;
                                 if (actionHandled)
                                 {
-                                    paymentWasMade = true;
+                                    paymentWasMade = !resultPayment.layawayDelivered;
+                                    layawayDelivered = resultPayment.layawayDelivered;
                                     shouldContinue = false;
                                 }
                             }
@@ -606,13 +608,13 @@ namespace CasaCejaRemake.Views.POS
             return false;
         }
 
-        private async Task<bool> ShowAddPaymentToLayaway(Layaway layaway)
+        private async Task<(bool paymentMade, bool layawayDelivered)> ShowAddPaymentToLayaway(Layaway layaway)
         {
             var customer = await _customerService.GetByIdAsync(layaway.CustomerId);
             if (customer == null)
             {
                 ShowMessageDialog("Error", "No se encontró el cliente");
-                return false;
+                return (false, false);
             }
 
             var balanceBefore = layaway.RemainingBalance;
@@ -638,14 +640,23 @@ namespace CasaCejaRemake.Views.POS
                     var shouldDeliver = await ShowConfirmDeliverDialog();
                     if (shouldDeliver)
                     {
-                        await ShowDeliverLayaway(updatedLayaway);
+                        try
+                        {
+                            var userId = _authService?.CurrentUser?.Id ?? 1;
+                            await _layawayService.MarkAsDeliveredAsync(updatedLayaway.Id, userId);
+                            return (true, true);
+                        }
+                        catch (Exception ex)
+                        {
+                            ShowMessageDialog("Error", $"Error al entregar apartado: {ex.Message}");
+                        }
                     }
                 }
                 
-                return true;
+                return (true, false);
             }
             
-            return false;
+            return (false, false);
         }
 
         private async Task<bool> ShowDeliverLayaway(Layaway layaway)

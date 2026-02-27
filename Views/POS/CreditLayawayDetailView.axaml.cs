@@ -90,7 +90,21 @@ namespace CasaCejaRemake.Views.POS
                 var type = _viewModel.IsCredit
                     ? CasaCejaRemake.Services.TicketType.Credit
                     : CasaCejaRemake.Services.TicketType.Layaway;
-                var ticketText = ticketService.GenerateTicketText(ticketData, type);
+                
+                string ticketText;
+
+                if (_viewModel.RemainingBalance <= 0 && _viewModel.PaymentHistory.Count > 0)
+                {
+                    ticketText = ticketService.GenerateHistoryTicketText(
+                        ticketData, 
+                        type, 
+                        new List<PaymentHistoryItem>(_viewModel.PaymentHistory), 
+                        _viewModel.TotalPaid);
+                }
+                else
+                {
+                    ticketText = ticketService.GenerateTicketText(ticketData, type);
+                }
 
                 // Mostrar vista previa con opción de reimprimir
                 await DialogHelper.ShowTicketDialog(this, _viewModel.Folio, ticketText);

@@ -735,6 +735,37 @@ namespace CasaCejaRemake.Services
             return ThermalTicketTemplates.FormatReprintWithHistory(ticket, typeLabel, paymentDetailsJsonList, totalPaid, rfc, lineWidth);
         }
 
+        public string GenerateHistoryTicketText(
+            TicketData ticket,
+            TicketType type,
+            List<ViewModels.POS.PaymentHistoryItem> paymentHistory,
+            decimal totalPaid,
+            string rfc = "",
+            int lineWidth = 32)
+        {
+            // Auto-load config
+            string effectiveRfc = rfc;
+            try
+            {
+                var app = Avalonia.Application.Current as App;
+                var config = app?.GetConfigService()?.PosTerminalConfig;
+                if (config != null)
+                {
+                    if (string.IsNullOrWhiteSpace(effectiveRfc) && !string.IsNullOrWhiteSpace(config.Rfc))
+                        effectiveRfc = config.Rfc;
+                    if (lineWidth == 32 && config.TicketLineWidth > 0)
+                        lineWidth = config.TicketLineWidth;
+                }
+            }
+            catch { /* ignore */ }
+
+            if (string.IsNullOrWhiteSpace(effectiveRfc))
+                effectiveRfc = ticket.Branch.RazonSocial ?? string.Empty;
+
+            string typeLabel = type == TicketType.Credit ? "TICKET DE CREDITO" : "TICKET DE APARTADO";
+            return ThermalTicketTemplates.FormatHistoryTicket(ticket, typeLabel, paymentHistory, totalPaid, effectiveRfc, lineWidth);
+        }
+
         /// <summary>
         /// Genera el texto del ticket para corte de caja.
         /// Mantiene la firma existente para compatibilidad con CashCloseView.

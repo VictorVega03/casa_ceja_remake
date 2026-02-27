@@ -490,6 +490,89 @@ namespace CasaCejaRemake.Helpers
         }
 
         // =====================================================================
+        // TICKET HISTÓRICO CON FECHAS Y ABONOS
+        // =====================================================================
+        public static string FormatHistoryTicket(
+            TicketData ticket,
+            string typeLabel,
+            List<ViewModels.POS.PaymentHistoryItem> paymentHistory,
+            decimal totalPaid,
+            string rfc = "",
+            int lineWidth = 32)
+        {
+            var lines = new List<string>();
+            var sep = new string('-', lineWidth);
+
+            lines.AddRange(BuildHeader(ticket.Branch.Name, ticket.Branch.Address,
+                ticket.Sale.DateTime, ticket.Sale.Folio, lineWidth));
+            lines.Add("");
+            lines.Add(CenterText(typeLabel, lineWidth));
+            lines.Add(CenterText("(HISTORIAL DE ABONOS)", lineWidth));
+            lines.Add("");
+
+            lines.Add(BuildColumnHeader(lineWidth));
+            lines.Add(sep);
+
+            foreach (var p in ticket.Products)
+            {
+                lines.Add(FormatProductLine(p, lineWidth));
+                var discountLines = FormatProductDiscounts(p, lineWidth);
+                if (discountLines.Count > 0)
+                    lines.AddRange(discountLines);
+            }
+
+            lines.Add(sep);
+            lines.Add(FormatAmountLine("TOTAL DEUDA", ticket.Totals.GrandTotal, lineWidth));
+            lines.Add(sep);
+
+            if (paymentHistory != null && paymentHistory.Count > 0)
+            {
+                lines.Add("");
+                lines.Add("HISTORIAL DE PAGOS:");
+                lines.Add("");
+                
+                foreach (var payment in paymentHistory)
+                {
+                    lines.Add($"FECHA: {payment.DateFormatted}");
+                    lines.Add($"FOLIO: {payment.Folio}");
+                    lines.Add(FormatArrowLine(payment.PaymentMethod.ToUpper(), payment.Amount, lineWidth));
+                    lines.Add(sep);
+                }
+            }
+
+            decimal porPagar = ticket.Totals.GrandTotal - totalPaid;
+            if (porPagar < 0) porPagar = 0;
+            lines.Add(FormatArrowLine("TOTAL ABONADO $", totalPaid, lineWidth));
+            lines.Add(FormatArrowLine("POR PAGAR $", porPagar, lineWidth));
+            lines.Add("");
+
+            lines.Add($"LE ATENDIO: {ticket.Sale.UserName}");
+            lines.Add($"NO DE ARTICULOS: {ticket.Totals.ItemCount:D5}");
+
+            if (!string.IsNullOrEmpty(ticket.CustomerName))
+            {
+                lines.Add("");
+                lines.Add($"CLIENTE: {ticket.CustomerName}");
+            }
+
+            if (!string.IsNullOrEmpty(ticket.CustomerPhone))
+                lines.Add($"TEL: {ticket.CustomerPhone}");
+
+            lines.Add("");
+            lines.Add("GRACIAS POR SU PREFERENCIA");
+            lines.Add("");
+
+            if (!string.IsNullOrWhiteSpace(rfc))
+                lines.Add($"RFC: {rfc}");
+
+            lines.Add("");
+            lines.Add("SI DESEA FACTURAR INGRESE A:");
+            lines.Add(URL_FACTURACION);
+
+            return string.Join(Environment.NewLine, lines);
+        }
+
+        // =====================================================================
         // REIMPRIMIR VENTA — Sección 12
         // =====================================================================
         public static string FormatReprintSaleTicket(TicketData ticket, string rfc = "", string ticketFooter = "", int lineWidth = 32)
