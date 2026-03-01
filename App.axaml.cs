@@ -7,11 +7,15 @@ using Avalonia.Markup.Xaml;
 using CasaCejaRemake.Data;
 using CasaCejaRemake.Data.Repositories;
 using CasaCejaRemake.Helpers;
+using CasaCejaRemake.Infrastructure;
 using CasaCejaRemake.Services;
+using CasaCejaRemake.Services.Interfaces;
 using CasaCejaRemake.ViewModels.Shared;
 using CasaCejaRemake.ViewModels.POS;
-using CasaCejaRemake.ViewModels.POS;
-using CasaCejaRemake.Views.Shared;using casa_ceja_remake.Helpers;using CasaCejaRemake.Views.POS;
+using CasaCejaRemake.Views.Shared;
+using casa_ceja_remake.Helpers;
+using CasaCejaRemake.Views.POS;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace CasaCejaRemake
 {
@@ -64,68 +68,58 @@ namespace CasaCejaRemake
         {
             try
             {
-                // Inicializar base de datos
-                DatabaseService = new DatabaseService();
-                await DatabaseService.InitializeAsync();
+                // ── 1. Construir el contenedor DI ─────────────────────────────────────
+                var services = new ServiceCollection();
+                services.AddCasaCejaServices();
+                var provider = services.BuildServiceProvider();
+                AppServiceProvider.Initialize(provider);
 
-                // Inicializar datos por defecto (incluye roles)
-                var initializer = new DatabaseInitializer(DatabaseService);
+                // ── 2. DatabaseService: inicializar BD y datos por defecto ─────────────
+                var dbService = provider.GetRequiredService<DatabaseService>();
+                await dbService.InitializeAsync();
+
+                var initializer = new DatabaseInitializer(dbService);
                 await initializer.InitializeDefaultDataAsync();
 
-                // Inicializar RoleService (cargar roles desde la BD)
-                RoleService = new RoleService(DatabaseService);
-                await RoleService.LoadRolesAsync();
+                // ── 3. RoleService: cargar roles desde la BD ──────────────────────────
+                var roleService = (RoleService)provider.GetRequiredService<IRoleService>();
+                await roleService.LoadRolesAsync();
 
-                // Inicializar AuthService con RoleService
-                var userRepository = new BaseRepository<Models.User>(DatabaseService);
-                AuthService = new AuthService(userRepository, RoleService);
+                // ── 4. ConfigService: cargar configuración JSON ───────────────────────
+                var configService = (ConfigService)provider.GetRequiredService<IConfigService>();
+                await configService.LoadAsync();
 
-                // Inicializar UserService shared
-                UserService = new UserService(userRepository, RoleService);
+                // ── 5. Sincronizar sucursal inicial en AuthService ────────────────────
+                var authService = (AuthService)provider.GetRequiredService<IAuthService>();
+                var initialBranchId = configService.AppConfig.BranchId;
+                authService.SetCurrentBranch(initialBranchId);
+                Console.WriteLine($"[App] Sucursal inicial sincronizada: {initialBranchId}");
 
-                // Inicializar ConfigService (configuración local JSON)
-                ConfigService = new ConfigService();
-                await ConfigService.LoadAsync();
+                // ── 6. Suscribirse a cambios de configuración ─────────────────────────
+                configService.AppConfigChanged += OnAppConfigChanged;
 
-                // Sincronizar la sucursal inicial en AuthService desde ConfigService
-                // Esto asegura que al hacer login, la sucursal configurada esté disponible
-                if (AuthService != null && ConfigService != null)
-                {
-                    var initialBranchId = ConfigService.AppConfig.BranchId;
-                    AuthService.SetCurrentBranch(initialBranchId);
-                    Console.WriteLine($"[App] Sucursal inicial sincronizada: {initialBranchId}");
-                }
-
-                // Suscribirse a cambios de configuración
-                ConfigService.AppConfigChanged += OnAppConfigChanged;
-
-                // Inicializar PrintService
-                PrintService = new PrintService(ConfigService);
-
-                // Inicializar ExportService
-                ExportService = new ExportService();
-
-                // Inicializar FolioService
-                FolioService = new FolioService(DatabaseService);
-
-                // Inicializar estructura de carpetas para documentos
+                // ── 7. Inicializar estructura de carpetas ─────────────────────────────
                 FileHelper.EnsureDirectoriesExist();
 
-                // Inicializar servicios del POS
-                _cartService = new CartService();
-                _salesService = new SalesService(DatabaseService);
+                // ── 8. COMPATIBILIDAD TEMPORAL: propiedades estáticas = instancias DI ─
+                DatabaseService = dbService;
+                RoleService = roleService;
+                ConfigService = configService;
+                AuthService = authService;
+                PrintService = (PrintService)provider.GetRequiredService<IPrintService>();
+                ExportService = (ExportService)provider.GetRequiredService<IExportService>();
+                FolioService = (FolioService)provider.GetRequiredService<IFolioService>();
+                UserService = (UserService)provider.GetRequiredService<IUserService>();
 
-                // Inicializar servicio de clientes
-                _customerService = new CustomerService(DatabaseService);
+                // Servicios POS resueltos desde el contenedor
+                _cartService = (CartService)provider.GetRequiredService<ICartService>();
+                _salesService = (SalesService)provider.GetRequiredService<ISalesService>();
+                _customerService = (CustomerService)provider.GetRequiredService<ICustomerService>();
+                _creditService = (CreditService)provider.GetRequiredService<ICreditService>();
+                _layawayService = (LayawayService)provider.GetRequiredService<ILayawayService>();
+                _cashCloseService = (CashCloseService)provider.GetRequiredService<ICashCloseService>();
 
-                // Inicializar servicios de crédito y apartados
-                _creditService = new CreditService(DatabaseService);
-                _layawayService = new LayawayService(DatabaseService);
-
-                // Inicializar servicio de cortes de caja
-                _cashCloseService = new CashCloseService(DatabaseService);
-
-                Console.WriteLine("[App] Servicios inicializados correctamente");
+                Console.WriteLine("[App] Servicios inicializados desde DI correctamente");
             }
             catch (Exception ex)
             {
