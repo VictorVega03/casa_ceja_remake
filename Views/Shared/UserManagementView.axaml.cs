@@ -68,22 +68,8 @@ namespace CasaCejaRemake.Views.Shared
         {
             if (_viewModel == null) return;
             
-            // Determinar modo (Admin vs POS) basándose en el VM actual
+            // Obtener UserService via DI container expuesto por App
             bool isAdminMode = _viewModel.IsAdminMode;
-            
-            // Crear VM para el formulario
-            var userService = App.AuthService!.RoleService != null 
-                ? new UserService(new Data.Repositories.BaseRepository<User>(App.DatabaseService!), App.RoleService)
-                : null;
-            
-            // HACK: Obtener UserService desde App o inyectar. 
-            // Para simplificar, asumimos que podemos acceder via App.
-            // En una app real, usaríamos DI container.
-            // Aquí reconstruimos UserService o lo pasamos.
-            // Lo ideal es que el ViewModel principal cree el VM hijo, pero por simplicidad de la vista lo hacemos aquí o
-            // mejor aún, obtenemos el servicio del App.axaml.cs si lo expusimos, o lo creamos de nuevo.
-            
-            // NOTA: Implementaré un método estático en App para obtener UserService para evitar duplicar lógica
             var appUserService = App.Current is App app ? app.GetUserService() : null;
             
             if (appUserService == null)

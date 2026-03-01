@@ -2,8 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using CasaCejaRemake.Data;
-using CasaCejaRemake.Data.Repositories;
+using CasaCejaRemake.Data.Repositories.Interfaces;
 using CasaCejaRemake.Helpers;
 using CasaCejaRemake.Models;
 using CasaCejaRemake.Services.Interfaces;
@@ -47,25 +46,42 @@ namespace CasaCejaRemake.Services
 
     public class SalesService : ISalesService
     {
-        private readonly DatabaseService _databaseService;
-        private readonly BaseRepository<Sale> _saleRepository;
-        private readonly BaseRepository<SaleProduct> _saleProductRepository;
-        private readonly BaseRepository<Product> _productRepository;
-        private readonly BaseRepository<Branch> _branchRepository;
-        private readonly BaseRepository<Category> _categoryRepository;
-        private readonly TicketService _ticketService;
+        private readonly ISaleRepository _saleRepository;
+        private readonly ISaleProductRepository _saleProductRepository;
+        private readonly IProductRepository _productRepository;
+        private readonly IBranchRepository _branchRepository;
+        private readonly ICategoryRepository _categoryRepository;
+        private readonly IUnitRepository _unitRepository;
+        private readonly IUserRepository _userRepository;
+        private readonly ITicketService _ticketService;
         private readonly PricingService _pricingService;
+        private readonly IFolioService _folioService;
+        private readonly IConfigService _configService;
 
-        public SalesService(DatabaseService databaseService)
+        public SalesService(
+            ISaleRepository saleRepository,
+            ISaleProductRepository saleProductRepository,
+            IProductRepository productRepository,
+            IBranchRepository branchRepository,
+            ICategoryRepository categoryRepository,
+            IUnitRepository unitRepository,
+            IUserRepository userRepository,
+            ITicketService ticketService,
+            PricingService pricingService,
+            IFolioService folioService,
+            IConfigService configService)
         {
-            _databaseService = databaseService;
-            _saleRepository = new BaseRepository<Sale>(databaseService);
-            _saleProductRepository = new BaseRepository<SaleProduct>(databaseService);
-            _productRepository = new BaseRepository<Product>(databaseService);
-            _branchRepository = new BaseRepository<Branch>(databaseService);
-            _categoryRepository = new BaseRepository<Category>(databaseService);
-            _ticketService = new TicketService();
-            _pricingService = new PricingService();
+            _saleRepository = saleRepository;
+            _saleProductRepository = saleProductRepository;
+            _productRepository = productRepository;
+            _branchRepository = branchRepository;
+            _categoryRepository = categoryRepository;
+            _unitRepository = unitRepository;
+            _userRepository = userRepository;
+            _ticketService = ticketService;
+            _pricingService = pricingService;
+            _folioService = folioService;
+            _configService = configService;
         }
 
         public async Task<StockValidationResult> ValidateStockAsync(List<CartItem> items)
@@ -83,12 +99,6 @@ namespace CasaCejaRemake.Services
                 }
 
                 // TODO: Implement stock validation from inventory table
-                // if (product.Stock < item.Quantity)
-                // {
-                //     result.IsValid = false;
-                //     result.Errors.Add($"Stock insuficiente para '{item.ProductName}'. " +
-                //         $"Disponible: {product.Stock}, Solicitado: {item.Quantity}");
-                // }
             }
 
             return result;
@@ -97,11 +107,18 @@ namespace CasaCejaRemake.Services
         public async Task<int> GetNextConsecutiveAsync(int branchId)
         {
             var today = DateTime.Today;
-            var sales = await _saleRepository.FindAsync(s => 
-                s.BranchId == branchId && 
+            var sales = await _saleRepository.FindAsync(s =>
+                s.BranchId == branchId &&
                 s.CreatedAt >= today);
-            
+
             return sales.Count + 1;
+        }
+
+        private (int cajaId, string terminalId) GetCajaInfo()
+        {
+            var terminalId = _configService.PosTerminalConfig.TerminalId ?? "CAJA-01";
+            var cajaId = int.TryParse(terminalId.Replace("CAJA-", ""), out var caja) ? caja : 1;
+            return (cajaId, terminalId);
         }
 
         public async Task<SaleResult> ProcessSaleAsync(
@@ -115,20 +132,13 @@ namespace CasaCejaRemake.Services
             decimal generalDiscountPercent = 0,
             bool isGeneralDiscountPercentage = true)
         {
-            // Validar que hay items
             if (items == null || items.Count == 0)
-            {
                 return SaleResult.Error("El carrito esta vacio.");
-            }
 
-            // Validar stock
             var stockValidation = await ValidateStockAsync(items);
             if (!stockValidation.IsValid)
-            {
                 return SaleResult.Error(string.Join("\n", stockValidation.Errors));
-            }
 
-            // Calcular totales
             decimal total = 0;
             decimal totalDiscount = 0;
 
@@ -138,56 +148,33 @@ namespace CasaCejaRemake.Services
                 totalDiscount += item.TotalDiscount * item.Quantity;
             }
 
-            // Calcular total final con descuento general
             var finalTotal = total - generalDiscount;
 
-            // Validar pago
             if (paymentMethod == PaymentMethod.Efectivo && amountPaid < finalTotal)
-            {
                 return SaleResult.Error($"El monto recibido (${amountPaid:N2}) es menor al total (${finalTotal:N2}).");
-            }
 
-            // Calcular cambio
             decimal change = paymentMethod == PaymentMethod.Efectivo ? amountPaid - finalTotal : 0;
 
-            // Obtener informacion de sucursal
             var branch = await _branchRepository.GetByIdAsync(branchId);
             string branchName = branch?.Name ?? "Sucursal";
             string branchAddress = branch?.Address ?? "";
             string branchRazonSocial = branch?.RazonSocial ?? "";
 
-            // Generar folio usando FolioService
-            // Extraer cajaId del TerminalId configurado (ej: "CAJA-01" -> 1)
-            var terminalId = App.ConfigService?.PosTerminalConfig.TerminalId ?? "CAJA-01";
-            var cajaId = int.TryParse(terminalId.Replace("CAJA-", ""), out var caja) ? caja : 1;
-            string folio = await App.FolioService!.GenerarFolioVentaAsync(branchId, cajaId);
+            var (cajaId, _) = GetCajaInfo();
+            string folio = await _folioService.GenerarFolioVentaAsync(branchId, cajaId);
 
-            // Generar ticket (INMUTABLE - se genera antes de guardar)
             var ticketData = _ticketService.GenerateTicket(
-                folio,
-                branchId,
-                branchName,
-                branchAddress,
-                string.Empty,
-                branchRazonSocial,
-                userId,
-                userName,
-                items,
-                paymentMethod,
-                amountPaid,
-                change,
-                generalDiscount,
-                generalDiscountPercent,
-                isGeneralDiscountPercentage
-            );
+                folio, branchId, branchName, branchAddress,
+                string.Empty, branchRazonSocial,
+                userId, userName, items, paymentMethod,
+                amountPaid, change, generalDiscount,
+                generalDiscountPercent, isGeneralDiscountPercentage);
 
-            // Serializar y comprimir ticket
             string ticketJson = _ticketService.SerializeTicket(ticketData);
             byte[] ticketCompressed = JsonCompressor.Compress(ticketData);
 
             try
             {
-                // Crear venta
                 var sale = new Sale
                 {
                     Folio = folio,
@@ -203,20 +190,15 @@ namespace CasaCejaRemake.Services
                     TicketData = ticketCompressed,
                     SyncStatus = 1,
                     SaleDate = DateTime.Now
-                    // CreatedAt lo asigna automáticamente BaseRepository.AddAsync()
                 };
 
-                // Guardar venta
                 Console.WriteLine($"[SalesService] Guardando venta con {items.Count} productos");
                 var saleId = await _saleRepository.AddAsync(sale);
                 Console.WriteLine($"[SalesService] Venta guardada con ID: {saleId}");
 
-                // Guardar productos de la venta
-                Console.WriteLine($"[SalesService] Iniciando guardado de productos...");
                 int productCount = 0;
                 foreach (var item in items)
                 {
-                    // Crear SaleProduct
                     var saleProduct = new SaleProduct
                     {
                         SaleId = saleId,
@@ -231,23 +213,15 @@ namespace CasaCejaRemake.Services
                         PriceType = item.PriceType,
                         DiscountInfo = item.DiscountInfo,
                         PricingData = JsonCompressor.Compress(item.PricingData)
-                        // CreatedAt lo asigna automáticamente BaseRepository.AddAsync()
                     };
 
-                    Console.WriteLine($"[SalesService] Guardando producto {productCount + 1}: {item.ProductName} (Cantidad: {item.Quantity})");
-                    var saleProductId = await _saleProductRepository.AddAsync(saleProduct);
-                    Console.WriteLine($"[SalesService] Producto guardado con ID: {saleProductId}");
+                    await _saleProductRepository.AddAsync(saleProduct);
                     productCount++;
-
-                    // TODO: Implement stock update from inventory table
-                    // Update stock entries/outputs here
                 }
 
                 Console.WriteLine($"[SalesService] Total de productos guardados: {productCount}");
 
-                // Generar texto del ticket para impresion
                 string ticketText = _ticketService.GenerateTicketText(ticketData);
-
                 return SaleResult.Ok(sale, ticketData, ticketText);
             }
             catch (Exception ex)
@@ -258,9 +232,6 @@ namespace CasaCejaRemake.Services
             }
         }
 
-        /// <summary>
-        /// Procesa una venta con pagos mixtos (múltiples métodos de pago)
-        /// </summary>
         public async Task<SaleResult> ProcessSaleWithMixedPaymentAsync(
             List<CartItem> items,
             string paymentJson,
@@ -273,20 +244,13 @@ namespace CasaCejaRemake.Services
             decimal generalDiscountPercent = 0,
             bool isGeneralDiscountPercentage = true)
         {
-            // Validar que hay items
             if (items == null || items.Count == 0)
-            {
                 return SaleResult.Error("El carrito esta vacio.");
-            }
 
-            // Validar stock
             var stockValidation = await ValidateStockAsync(items);
             if (!stockValidation.IsValid)
-            {
                 return SaleResult.Error(string.Join("\n", stockValidation.Errors));
-            }
 
-            // Calcular totales
             decimal total = 0;
             decimal totalDiscount = 0;
 
@@ -296,59 +260,37 @@ namespace CasaCejaRemake.Services
                 totalDiscount += item.TotalDiscount * item.Quantity;
             }
 
-            // Calcular total final con descuento general
             var finalTotal = total - generalDiscount;
 
-            // Validar que el pago cubre el total
             if (totalPaid < finalTotal)
-            {
                 return SaleResult.Error($"El monto pagado (${totalPaid:N2}) es menor al total (${finalTotal:N2}).");
-            }
 
-            // Obtener informacion de sucursal
             var branch = await _branchRepository.GetByIdAsync(branchId);
             string branchName = branch?.Name ?? "Sucursal";
             string branchAddress = branch?.Address ?? "";
             string branchRazonSocial = branch?.RazonSocial ?? "";
 
-            // Generar folio usando FolioService
-            // Extraer cajaId del TerminalId configurado (ej: "CAJA-01" -> 1)
-            var terminalId = App.ConfigService?.PosTerminalConfig.TerminalId ?? "CAJA-01";
-            var cajaId = int.TryParse(terminalId.Replace("CAJA-", ""), out var caja) ? caja : 1;
-            string folio = await App.FolioService!.GenerarFolioVentaAsync(branchId, cajaId);
+            var (cajaId, _) = GetCajaInfo();
+            string folio = await _folioService.GenerarFolioVentaAsync(branchId, cajaId);
 
-            // Generar ticket con pagos mixtos
             var ticketData = _ticketService.GenerateTicketWithMixedPayment(
-                folio,
-                branchId,
-                branchName,
-                branchAddress,
-                string.Empty,
-                branchRazonSocial,
-                userId,
-                userName,
-                items,
-                paymentJson,
-                totalPaid,
-                changeGiven,
-                generalDiscount,
-                generalDiscountPercent,
-                isGeneralDiscountPercentage
-            );
+                folio, branchId, branchName, branchAddress,
+                string.Empty, branchRazonSocial,
+                userId, userName, items, paymentJson,
+                totalPaid, changeGiven, generalDiscount,
+                generalDiscountPercent, isGeneralDiscountPercentage);
 
-            // Serializar y comprimir ticket
             byte[] ticketCompressed = JsonCompressor.Compress(ticketData);
 
             try
             {
-                // Crear venta - PaymentMethod ahora es el JSON de pagos
                 var sale = new Sale
                 {
                     Folio = folio,
                     Total = finalTotal,
                     Subtotal = total + totalDiscount,
                     Discount = totalDiscount + generalDiscount,
-                    PaymentMethod = paymentJson, // JSON: {"efectivo": 500, "tarjeta_debito": 300}
+                    PaymentMethod = paymentJson,
                     AmountPaid = totalPaid,
                     ChangeGiven = changeGiven,
                     PaymentSummary = GetMixedPaymentSummaryText(paymentJson),
@@ -359,13 +301,10 @@ namespace CasaCejaRemake.Services
                     SaleDate = DateTime.Now
                 };
 
-                // Guardar venta
                 Console.WriteLine($"[SalesService.MixedPayment] Guardando venta con {items.Count} productos");
                 var saleId = await _saleRepository.AddAsync(sale);
                 Console.WriteLine($"[SalesService.MixedPayment] Venta guardada con ID: {saleId}");
 
-                // Guardar productos de la venta
-                Console.WriteLine($"[SalesService.MixedPayment] Iniciando guardado de productos...");
                 int productCount = 0;
                 foreach (var item in items)
                 {
@@ -385,19 +324,13 @@ namespace CasaCejaRemake.Services
                         PricingData = JsonCompressor.Compress(item.PricingData)
                     };
 
-                    Console.WriteLine($"[SalesService.MixedPayment] Guardando producto {productCount + 1}: {item.ProductName} (Cantidad: {item.Quantity})");
-                    var saleProductId = await _saleProductRepository.AddAsync(saleProduct);
-                    Console.WriteLine($"[SalesService.MixedPayment] Producto guardado con ID: {saleProductId}");
+                    await _saleProductRepository.AddAsync(saleProduct);
                     productCount++;
-
-                    // TODO: Implement stock update from inventory table
                 }
 
                 Console.WriteLine($"[SalesService.MixedPayment] Total de productos guardados: {productCount}");
 
-                // Generar texto del ticket para impresion
                 string ticketText = _ticketService.GenerateTicketText(ticketData);
-
                 return SaleResult.Ok(sale, ticketData, ticketText);
             }
             catch (Exception ex)
@@ -451,20 +384,16 @@ namespace CasaCejaRemake.Services
 
                 if (!string.IsNullOrWhiteSpace(searchTerm))
                 {
-                    matchesSearch = 
+                    matchesSearch =
                         (product.Barcode?.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ?? false) ||
                         (product.Name?.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ?? false);
                 }
 
                 if (categoryId.HasValue && categoryId > 0)
-                {
                     matchesCategory = product.CategoryId == categoryId;
-                }
 
                 if (matchesSearch && matchesCategory)
-                {
                     results.Add(product);
-                }
             }
 
             return results;
@@ -474,9 +403,9 @@ namespace CasaCejaRemake.Services
         {
             if (string.IsNullOrWhiteSpace(barcode)) return null;
 
-            var products = await _productRepository.FindAsync(p => 
+            var products = await _productRepository.FindAsync(p =>
                 p.Barcode == barcode && p.Active);
-            
+
             return products.Count > 0 ? products[0] : null;
         }
 
@@ -485,7 +414,6 @@ namespace CasaCejaRemake.Services
             var product = await _productRepository.GetByIdAsync(productId);
             if (product == null) return null;
 
-            // Obtener categoría para cálculo de descuentos y display
             Category? category = null;
             string categoryName = "";
             string unitName = "";
@@ -498,19 +426,14 @@ namespace CasaCejaRemake.Services
 
             if (product.UnitId > 0)
             {
-                var unitRepo = new BaseRepository<Unit>(_databaseService);
-                var unit = await unitRepo.GetByIdAsync(product.UnitId);
+                var unit = await _unitRepository.GetByIdAsync(product.UnitId);
                 unitName = unit?.Name ?? "";
             }
 
-            // Usar PricingService para calcular precio con todas las reglas de negocio
             var priceCalc = _pricingService.CalculatePrice(product, quantity, category);
 
-            // Determinar el tipo de precio para el row color:
-            // Si hay descuento de categoría, usar "category" para el color morado
-            // Si no, usar el tipo aplicado (retail, wholesale, special, dealer)
-            string priceType = priceCalc.CategoryDiscountPercent > 0 
-                ? "category" 
+            string priceType = priceCalc.CategoryDiscountPercent > 0
+                ? "category"
                 : priceCalc.AppliedPriceType.ToString().ToLower();
 
             return new CartItem
@@ -529,20 +452,15 @@ namespace CasaCejaRemake.Services
             };
         }
 
-        /// <summary>
-        /// Crea un CartItem con un tipo de precio forzado (especial o vendedor)
-        /// Usado cuando el usuario presiona F2 o F3 inmediatamente después de agregar
-        /// </summary>
         public async Task<CartItem?> CreateCartItemWithPriceTypeAsync(
-            int productId, 
-            int quantity, 
-            int userId, 
+            int productId,
+            int quantity,
+            int userId,
             PriceType priceType)
         {
             var product = await _productRepository.GetByIdAsync(productId);
             if (product == null) return null;
 
-            // Obtener categoría (aunque en precios aislados no se usa)
             Category? category = null;
             string categoryName = "";
             string unitName = "";
@@ -555,12 +473,10 @@ namespace CasaCejaRemake.Services
 
             if (product.UnitId > 0)
             {
-                var unitRepo = new BaseRepository<Unit>(_databaseService);
-                var unit = await unitRepo.GetByIdAsync(product.UnitId);
+                var unit = await _unitRepository.GetByIdAsync(product.UnitId);
                 unitName = unit?.Name ?? "";
             }
 
-            // Forzar tipo de precio
             var priceCalc = _pricingService.CalculatePrice(product, quantity, category, priceType);
 
             return new CartItem
@@ -579,9 +495,6 @@ namespace CasaCejaRemake.Services
             };
         }
 
-        /// <summary>
-        /// Intenta aplicar precio especial a un item existente (F2)
-        /// </summary>
         public async Task<(bool Success, string Message)> ApplySpecialPriceAsync(CartItem item)
         {
             var product = await _productRepository.GetByIdAsync(item.ProductId);
@@ -591,9 +504,6 @@ namespace CasaCejaRemake.Services
             return _pricingService.ApplySpecialPrice(item, product);
         }
 
-        /// <summary>
-        /// Intenta aplicar precio vendedor a un item existente (F3)
-        /// </summary>
         public async Task<(bool Success, string Message)> ApplyDealerPriceAsync(CartItem item)
         {
             var product = await _productRepository.GetByIdAsync(item.ProductId);
@@ -603,10 +513,6 @@ namespace CasaCejaRemake.Services
             return _pricingService.ApplyDealerPrice(item, product);
         }
 
-        /// <summary>
-        /// Revierte un item a su precio calculado (puede ser mayoreo/categoría según cantidad).
-        /// Ya no hardcodea "retail", sino que recalcula con las reglas de negocio.
-        /// </summary>
         public async Task<(bool Success, string Message)> RevertToRetailPriceAsync(CartItem item)
         {
             var product = await _productRepository.GetByIdAsync(item.ProductId);
@@ -619,19 +525,16 @@ namespace CasaCejaRemake.Services
             var oldPrice = item.FinalUnitPrice;
             var oldPriceType = item.PriceType == "special" ? "especial" : "vendedor";
 
-            // Recalcular con las reglas de negocio (mayoreo + categoría si aplican)
             Category? category = null;
             if (product.CategoryId > 0)
                 category = await _categoryRepository.GetByIdAsync(product.CategoryId);
 
             var priceCalc = _pricingService.CalculatePrice(product, item.Quantity, category);
 
-            // Determinar PriceType para el row color
-            string priceType = priceCalc.CategoryDiscountPercent > 0 
-                ? "category" 
+            string priceType = priceCalc.CategoryDiscountPercent > 0
+                ? "category"
                 : priceCalc.AppliedPriceType.ToString().ToLower();
 
-            // Actualizar el item
             item.FinalUnitPrice = priceCalc.FinalPrice;
             item.TotalDiscount = priceCalc.TotalDiscount;
             item.PriceType = priceType;
@@ -645,9 +548,6 @@ namespace CasaCejaRemake.Services
                 $"Precio actual ({newPriceLabel}): ${newPrice:N2}");
         }
 
-        /// <summary>
-        /// Obtiene el producto por ID (para validaciones de UI)
-        /// </summary>
         public async Task<Product?> GetProductByIdAsync(int productId)
         {
             return await _productRepository.GetByIdAsync(productId);
@@ -656,8 +556,8 @@ namespace CasaCejaRemake.Services
         public async Task<List<Sale>> GetDailySalesAsync(int branchId)
         {
             var today = DateTime.Today;
-            return await _saleRepository.FindAsync(s => 
-                s.BranchId == branchId && 
+            return await _saleRepository.FindAsync(s =>
+                s.BranchId == branchId &&
                 s.CreatedAt >= today);
         }
 
@@ -666,9 +566,7 @@ namespace CasaCejaRemake.Services
             var sales = await GetDailySalesAsync(branchId);
             decimal total = 0;
             foreach (var sale in sales)
-            {
                 total += sale.Total;
-            }
             return total;
         }
 
@@ -686,38 +584,24 @@ namespace CasaCejaRemake.Services
 
         public async Task<List<Category>> GetCategoriesAsync()
         {
-            var categoryRepo = new BaseRepository<Category>(_databaseService);
-            return await categoryRepo.FindAsync(c => c.Active);
+            return await _categoryRepository.FindAsync(c => c.Active);
         }
 
         public async Task<List<Unit>> GetUnitsAsync()
         {
-            var unitRepo = new BaseRepository<Unit>(_databaseService);
-            return await unitRepo.FindAsync(u => u.Active);
+            return await _unitRepository.FindAsync(u => u.Active);
         }
 
         public async Task<List<Product>> SearchProductsWithUnitAsync(string searchTerm, int? categoryId = null, int? unitId = null)
         {
             var products = await _productRepository.GetAllAsync();
+            var categories = await _categoryRepository.GetAllAsync();
+            var units = await _unitRepository.GetAllAsync();
+
+            var categoryDict = categories.ToDictionary(c => c.Id, c => c.Name);
+            var unitDict = units.ToDictionary(u => u.Id, u => u.Name);
+
             var results = new List<Product>();
-
-            // Cargar categorías y unidades para nombres
-            var categoryRepo = new BaseRepository<Category>(_databaseService);
-            var unitRepo = new BaseRepository<Unit>(_databaseService);
-            var categories = await categoryRepo.GetAllAsync();
-            var units = await unitRepo.GetAllAsync();
-
-            var categoryDict = new Dictionary<int, string>();
-            foreach (var c in categories)
-            {
-                categoryDict[c.Id] = c.Name;
-            }
-
-            var unitDict = new Dictionary<int, string>();
-            foreach (var u in units)
-            {
-                unitDict[u.Id] = u.Name;
-            }
 
             foreach (var product in products)
             {
@@ -729,24 +613,19 @@ namespace CasaCejaRemake.Services
 
                 if (!string.IsNullOrWhiteSpace(searchTerm))
                 {
-                    matchesSearch = 
+                    matchesSearch =
                         (product.Barcode?.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ?? false) ||
                         (product.Name?.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ?? false);
                 }
 
                 if (categoryId.HasValue && categoryId > 0)
-                {
                     matchesCategory = product.CategoryId == categoryId;
-                }
 
                 if (unitId.HasValue && unitId > 0)
-                {
                     matchesUnit = product.UnitId == unitId;
-                }
 
                 if (matchesSearch && matchesCategory && matchesUnit)
                 {
-                    // Asignar nombres de categoría y unidad
                     product.CategoryName = categoryDict.TryGetValue(product.CategoryId, out var catName) ? catName : "";
                     product.UnitName = unitDict.TryGetValue(product.UnitId, out var unitName) ? unitName : "";
                     results.Add(product);
@@ -756,9 +635,6 @@ namespace CasaCejaRemake.Services
             return results;
         }
 
-        /// <summary>
-        /// Obtiene el historial de ventas paginado para una sucursal específica.
-        /// </summary>
         public async Task<List<Sale>> GetSalesHistoryPagedAsync(
             int branchId,
             int page,
@@ -768,17 +644,11 @@ namespace CasaCejaRemake.Services
         {
             var sales = await _saleRepository.FindAsync(s => s.BranchId == branchId);
 
-            // Aplicar filtros de fecha
             if (startDate.HasValue)
-            {
                 sales = sales.Where(s => s.SaleDate.Date >= startDate.Value.Date).ToList();
-            }
             if (endDate.HasValue)
-            {
                 sales = sales.Where(s => s.SaleDate.Date <= endDate.Value.Date).ToList();
-            }
 
-            // Ordenar por fecha descendente y paginar
             return sales
                 .OrderByDescending(s => s.SaleDate)
                 .Skip((page - 1) * pageSize)
@@ -786,9 +656,6 @@ namespace CasaCejaRemake.Services
                 .ToList();
         }
 
-        /// <summary>
-        /// Cuenta el total de ventas para paginación.
-        /// </summary>
         public async Task<int> GetSalesCountAsync(
             int branchId,
             DateTime? startDate = null,
@@ -797,32 +664,21 @@ namespace CasaCejaRemake.Services
             var sales = await _saleRepository.FindAsync(s => s.BranchId == branchId);
 
             if (startDate.HasValue)
-            {
                 sales = sales.Where(s => s.SaleDate.Date >= startDate.Value.Date).ToList();
-            }
             if (endDate.HasValue)
-            {
                 sales = sales.Where(s => s.SaleDate.Date <= endDate.Value.Date).ToList();
-            }
 
             return sales.Count;
         }
 
-        /// <summary>
-        /// Obtiene los productos de una venta específica.
-        /// </summary>
         public async Task<List<SaleProduct>> GetSaleProductsAsync(int saleId)
         {
             return await _saleProductRepository.FindAsync(sp => sp.SaleId == saleId);
         }
 
-        /// <summary>
-        /// Obtiene el nombre de un usuario por su ID.
-        /// </summary>
-        public async Task<string> GetUserNameAsync(int userId)
+        public async Task<string?> GetUserNameAsync(int userId)
         {
-            var userRepo = new BaseRepository<User>(_databaseService);
-            var user = await userRepo.GetByIdAsync(userId);
+            var user = await _userRepository.GetByIdAsync(userId);
             return user?.Name ?? $"Usuario #{userId}";
         }
 

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using CasaCejaRemake.Data;
-using CasaCejaRemake.Data.Repositories;
+using CasaCejaRemake.Data.Repositories.Interfaces;
 using CasaCejaRemake.Models;
 using CasaCejaRemake.Services.Interfaces;
 
@@ -126,25 +126,36 @@ namespace CasaCejaRemake.Services
     /// </summary>
     public class CashCloseService : ICashCloseService
     {
-        private readonly DatabaseService _databaseService;
-        private readonly BaseRepository<CashClose> _cashCloseRepository;
-        private readonly BaseRepository<CashMovement> _movementRepository;
-        private readonly BaseRepository<Sale> _saleRepository;
-        private readonly BaseRepository<Credit> _creditRepository;
-        private readonly BaseRepository<Layaway> _layawayRepository;
-        private readonly BaseRepository<LayawayPayment> _layawayPaymentRepository;
-        private readonly BaseRepository<CreditPayment> _creditPaymentRepository;
+        private readonly ICashCloseRepository _cashCloseRepository;
+        private readonly ICashMovementRepository _movementRepository;
+        private readonly ISaleRepository _saleRepository;
+        private readonly ICreditRepository _creditRepository;
+        private readonly ILayawayRepository _layawayRepository;
+        private readonly ILayawayPaymentRepository _layawayPaymentRepository;
+        private readonly ICreditPaymentRepository _creditPaymentRepository;
+        private readonly IFolioService _folioService;
+        private readonly IConfigService _configService;
 
-        public CashCloseService(DatabaseService databaseService)
+        public CashCloseService(
+            ICashCloseRepository cashCloseRepository,
+            ICashMovementRepository movementRepository,
+            ISaleRepository saleRepository,
+            ICreditRepository creditRepository,
+            ILayawayRepository layawayRepository,
+            ILayawayPaymentRepository layawayPaymentRepository,
+            ICreditPaymentRepository creditPaymentRepository,
+            IFolioService folioService,
+            IConfigService configService)
         {
-            _databaseService = databaseService;
-            _cashCloseRepository = new BaseRepository<CashClose>(databaseService);
-            _movementRepository = new BaseRepository<CashMovement>(databaseService);
-            _saleRepository = new BaseRepository<Sale>(databaseService);
-            _creditRepository = new BaseRepository<Credit>(databaseService);
-            _layawayRepository = new BaseRepository<Layaway>(databaseService);
-            _layawayPaymentRepository = new BaseRepository<LayawayPayment>(databaseService);
-            _creditPaymentRepository = new BaseRepository<CreditPayment>(databaseService);
+            _cashCloseRepository = cashCloseRepository;
+            _movementRepository = movementRepository;
+            _saleRepository = saleRepository;
+            _creditRepository = creditRepository;
+            _layawayRepository = layawayRepository;
+            _layawayPaymentRepository = layawayPaymentRepository;
+            _creditPaymentRepository = creditPaymentRepository;
+            _folioService = folioService;
+            _configService = configService;
         }
 
         /// <summary>
@@ -663,15 +674,13 @@ namespace CasaCejaRemake.Services
         {
             try
             {
-                // Extraer cajaId del TerminalId configurado (ej: "CAJA-01" -> 1)
-                var terminalId = App.ConfigService?.PosTerminalConfig.TerminalId ?? "CAJA-01";
+                var terminalId = _configService.PosTerminalConfig.TerminalId ?? "CAJA-01";
                 var cajaId = int.TryParse(terminalId.Replace("CAJA-", ""), out var caja) ? caja : 1;
-                return await App.FolioService!.GenerarFolioCorteAsync(branchId, cajaId);
+                return await _folioService.GenerarFolioCorteAsync(branchId, cajaId);
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"[CashCloseService] Error generando folio: {ex.Message}");
-                // Fallback en caso de error
                 return $"CC-{DateTime.Now:yyyyMMddHHmmss}";
             }
         }

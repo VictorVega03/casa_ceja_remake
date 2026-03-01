@@ -2,8 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using CasaCejaRemake.Data;
 using CasaCejaRemake.Data.Repositories;
+using CasaCejaRemake.Data.Repositories.Interfaces;
 using CasaCejaRemake.Models;
 using CasaCejaRemake.Services.Interfaces;
 
@@ -11,20 +11,17 @@ namespace CasaCejaRemake.Services
 {
     public class CustomerService : ICustomerService
     {
-        private readonly DatabaseService _databaseService;
-        private readonly BaseRepository<Customer> _customerRepository;
+        private readonly ICustomerRepository _customerRepository;
 
-        public CustomerService(DatabaseService databaseService)
+        public CustomerService(ICustomerRepository customerRepository)
         {
-            _databaseService = databaseService;
-            _customerRepository = new BaseRepository<Customer>(databaseService);
+            _customerRepository = customerRepository ?? throw new ArgumentNullException(nameof(customerRepository));
         }
 
         public async Task<List<Customer>> SearchAsync(string term)
         {
             if (string.IsNullOrWhiteSpace(term))
             {
-                // Retornar todos los clientes activos (limitado a 100)
                 var allCustomers = await _customerRepository.FindAsync(c => c.Active);
                 return allCustomers.Take(100).OrderBy(c => c.Name).ToList();
             }
@@ -33,7 +30,7 @@ namespace CasaCejaRemake.Services
             var customers = await _customerRepository.FindAsync(c => c.Active);
 
             return customers
-                .Where(c => 
+                .Where(c =>
                     (c.Name?.ToLower().Contains(searchTerm) ?? false) ||
                     (c.Phone?.Contains(searchTerm) ?? false) ||
                     (c.Email?.ToLower().Contains(searchTerm) ?? false))
@@ -51,9 +48,9 @@ namespace CasaCejaRemake.Services
         {
             if (string.IsNullOrWhiteSpace(phone)) return null;
 
-            var customers = await _customerRepository.FindAsync(c => 
+            var customers = await _customerRepository.FindAsync(c =>
                 c.Phone == phone && c.Active);
-            
+
             return customers.FirstOrDefault();
         }
 
@@ -61,9 +58,9 @@ namespace CasaCejaRemake.Services
         {
             if (string.IsNullOrWhiteSpace(phone)) return false;
 
-            var customers = await _customerRepository.FindAsync(c => 
+            var customers = await _customerRepository.FindAsync(c =>
                 c.Phone == phone && c.Active);
-            
+
             return customers.Any();
         }
 
@@ -78,12 +75,11 @@ namespace CasaCejaRemake.Services
             if (string.IsNullOrWhiteSpace(customer.Phone))
                 throw new ArgumentException("El telefono del cliente es requerido.");
 
-            // Verificar si ya existe un cliente con el mismo telefono
             if (await ExistsByPhoneAsync(customer.Phone))
                 throw new InvalidOperationException($"Ya existe un cliente con el telefono {customer.Phone}.");
 
             customer.Active = true;
-            customer.SyncStatus = 1; // Pending
+            customer.SyncStatus = 1;
             customer.CreatedAt = DateTime.Now;
             customer.UpdatedAt = DateTime.Now;
 
@@ -99,18 +95,17 @@ namespace CasaCejaRemake.Services
             if (existing == null)
                 throw new InvalidOperationException($"Cliente con ID {customer.Id} no encontrado.");
 
-            // Verificar si el nuevo telefono ya existe en otro cliente
             if (existing.Phone != customer.Phone)
             {
-                var otherWithPhone = await _customerRepository.FindAsync(c => 
+                var otherWithPhone = await _customerRepository.FindAsync(c =>
                     c.Phone == customer.Phone && c.Active && c.Id != customer.Id);
-                
+
                 if (otherWithPhone.Any())
                     throw new InvalidOperationException($"Ya existe otro cliente con el telefono {customer.Phone}.");
             }
 
             customer.UpdatedAt = DateTime.Now;
-            customer.SyncStatus = 1; // Pending
+            customer.SyncStatus = 1;
 
             await _customerRepository.UpdateAsync(customer);
         }
@@ -122,7 +117,7 @@ namespace CasaCejaRemake.Services
 
             customer.Active = false;
             customer.UpdatedAt = DateTime.Now;
-            customer.SyncStatus = 1; // Pending
+            customer.SyncStatus = 1;
 
             await _customerRepository.UpdateAsync(customer);
             return true;

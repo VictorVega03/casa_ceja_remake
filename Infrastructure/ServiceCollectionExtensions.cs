@@ -16,7 +16,7 @@ public static class ServiceCollectionExtensions
 {
     /// <summary>
     /// Registra todos los repos y servicios de Casa Ceja en el contenedor DI.
-    /// Los Services internamente siguen creando repos con "new" (Fase 4 los migrará).
+    /// Fase 4 completa: todos los Services reciben sus dependencias por constructor.
     /// </summary>
     public static IServiceCollection AddCasaCejaServices(this IServiceCollection services)
     {
@@ -24,10 +24,6 @@ public static class ServiceCollectionExtensions
         // INFRAESTRUCTURA
         // ═══════════════════════════════════════════════════════════
         services.AddSingleton<DatabaseService>();
-
-        // IRepository<T> genérico — requerido por AuthService y UserService
-        services.AddTransient<IRepository<User>>(sp =>
-            new BaseRepository<User>(sp.GetRequiredService<DatabaseService>()));
 
         // ═══════════════════════════════════════════════════════════
         // REPOSITORIOS ESPECÍFICOS (Transient — nueva instancia por uso)
@@ -84,51 +80,90 @@ public static class ServiceCollectionExtensions
         // RoleService — requiere DatabaseService
         services.AddSingleton<IRoleService, RoleService>();
 
-        // AuthService — requiere IRepository<User> + RoleService
-        // Como RoleService es Singleton, se pide directamente
-        services.AddSingleton<IAuthService>(sp => new AuthService(
-            sp.GetRequiredService<IRepository<User>>(),
-            (RoleService)sp.GetRequiredService<IRoleService>()));
-
-        // UserService — misma firma que AuthService
-        services.AddSingleton<IUserService>(sp => new UserService(
-            sp.GetRequiredService<IRepository<User>>(),
-            (RoleService)sp.GetRequiredService<IRoleService>()));
-
-        // PrintService — requiere ConfigService concreto (no interfaz aún)
+        // PrintService — requiere ConfigService concreto
         services.AddSingleton<IPrintService>(sp => new PrintService(
             (ConfigService)sp.GetRequiredService<IConfigService>()));
 
         // ExportService — sin dependencias
         services.AddSingleton<IExportService, ExportService>();
 
-        // FolioService — requiere DatabaseService
-        services.AddSingleton<IFolioService, FolioService>();
+        // TicketService — sin dependencias
+        services.AddSingleton<ITicketService, TicketService>();
 
         // CartService — sin dependencias
         services.AddSingleton<ICartService, CartService>();
 
-        // TicketService — sin dependencias
-        services.AddSingleton<ITicketService, TicketService>();
+        // FolioService — requiere 6 repos + DatabaseService (para ExisteFolioAsync raw SQL)
+        services.AddSingleton<IFolioService>(sp => new FolioService(
+            sp.GetRequiredService<ICashCloseRepository>(),
+            sp.GetRequiredService<ISaleRepository>(),
+            sp.GetRequiredService<ICreditRepository>(),
+            sp.GetRequiredService<ILayawayRepository>(),
+            sp.GetRequiredService<ICreditPaymentRepository>(),
+            sp.GetRequiredService<ILayawayPaymentRepository>(),
+            sp.GetRequiredService<DatabaseService>()));
+
+        // AuthService — requiere IUserRepository + IRoleService
+        services.AddSingleton<IAuthService>(sp => new AuthService(
+            sp.GetRequiredService<IUserRepository>(),
+            sp.GetRequiredService<IRoleService>()));
+
+        // UserService — misma firma que AuthService
+        services.AddSingleton<IUserService>(sp => new UserService(
+            sp.GetRequiredService<IUserRepository>(),
+            sp.GetRequiredService<IRoleService>()));
 
         // ═══════════════════════════════════════════════════════════
         // SERVICIOS DE NEGOCIO (Transient — nueva instancia por request)
-        // Internamente siguen creando repos con "new" hasta Fase 4.
+        // Fase 4: todos los Services reciben sus dependencias por constructor.
         // ═══════════════════════════════════════════════════════════
-        services.AddTransient<ISalesService>(sp =>
-            new SalesService(sp.GetRequiredService<DatabaseService>()));
 
-        services.AddTransient<ICashCloseService>(sp =>
-            new CashCloseService(sp.GetRequiredService<DatabaseService>()));
+        services.AddTransient<ICustomerService>(sp => new CustomerService(
+            sp.GetRequiredService<ICustomerRepository>()));
 
-        services.AddTransient<ICreditService>(sp =>
-            new CreditService(sp.GetRequiredService<DatabaseService>()));
+        services.AddTransient<ISalesService>(sp => new SalesService(
+            sp.GetRequiredService<ISaleRepository>(),
+            sp.GetRequiredService<ISaleProductRepository>(),
+            sp.GetRequiredService<IProductRepository>(),
+            sp.GetRequiredService<IBranchRepository>(),
+            sp.GetRequiredService<ICategoryRepository>(),
+            sp.GetRequiredService<IUnitRepository>(),
+            sp.GetRequiredService<IUserRepository>(),
+            sp.GetRequiredService<ITicketService>(),
+            sp.GetRequiredService<PricingService>(),
+            sp.GetRequiredService<IFolioService>(),
+            sp.GetRequiredService<IConfigService>()));
 
-        services.AddTransient<ILayawayService>(sp =>
-            new LayawayService(sp.GetRequiredService<DatabaseService>()));
+        services.AddTransient<ICashCloseService>(sp => new CashCloseService(
+            sp.GetRequiredService<ICashCloseRepository>(),
+            sp.GetRequiredService<ICashMovementRepository>(),
+            sp.GetRequiredService<ISaleRepository>(),
+            sp.GetRequiredService<ICreditRepository>(),
+            sp.GetRequiredService<ILayawayRepository>(),
+            sp.GetRequiredService<ILayawayPaymentRepository>(),
+            sp.GetRequiredService<ICreditPaymentRepository>(),
+            sp.GetRequiredService<IFolioService>(),
+            sp.GetRequiredService<IConfigService>()));
 
-        services.AddTransient<ICustomerService>(sp =>
-            new CustomerService(sp.GetRequiredService<DatabaseService>()));
+        services.AddTransient<ICreditService>(sp => new CreditService(
+            sp.GetRequiredService<ICreditRepository>(),
+            sp.GetRequiredService<DatabaseService>(),
+            sp.GetRequiredService<ICreditPaymentRepository>(),
+            sp.GetRequiredService<ICustomerRepository>(),
+            sp.GetRequiredService<IBranchRepository>(),
+            sp.GetRequiredService<ITicketService>(),
+            sp.GetRequiredService<IFolioService>(),
+            sp.GetRequiredService<IConfigService>()));
+
+        services.AddTransient<ILayawayService>(sp => new LayawayService(
+            sp.GetRequiredService<ILayawayRepository>(),
+            sp.GetRequiredService<DatabaseService>(),
+            sp.GetRequiredService<ILayawayPaymentRepository>(),
+            sp.GetRequiredService<ICustomerRepository>(),
+            sp.GetRequiredService<IBranchRepository>(),
+            sp.GetRequiredService<ITicketService>(),
+            sp.GetRequiredService<IFolioService>(),
+            sp.GetRequiredService<IConfigService>()));
 
         return services;
     }

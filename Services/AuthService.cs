@@ -1,4 +1,5 @@
 using CasaCejaRemake.Data.Repositories;
+using CasaCejaRemake.Data.Repositories.Interfaces;
 using CasaCejaRemake.Models;
 using CasaCejaRemake.Services.Interfaces;
 using System;
@@ -8,8 +9,8 @@ namespace CasaCejaRemake.Services
 {
     public class AuthService : IAuthService
     {
-        private readonly IRepository<User> _userRepository;
-        private readonly RoleService _roleService;
+        private readonly IUserRepository _userRepository;
+        private readonly IRoleService _roleService;
         private int _currentBranchId = 1;
 
         public User? CurrentUser { get; private set; }
@@ -24,7 +25,7 @@ namespace CasaCejaRemake.Services
         public string? CurrentUserName => CurrentUser?.Name;
 
         /// <summary>Servicio de roles (expuesto para que otros servicios puedan consultarlo).</summary>
-        public RoleService RoleService => _roleService;
+        public RoleService RoleService => (RoleService)_roleService;
 
         /// <summary>
         /// Sucursal actual: Siempre usa _currentBranchId que se sincroniza con ConfigService.
@@ -39,7 +40,7 @@ namespace CasaCejaRemake.Services
         public event EventHandler<User>? UserLoggedIn;
         public event EventHandler? UserLoggedOut;
 
-        public AuthService(IRepository<User> userRepository, RoleService roleService)
+        public AuthService(IUserRepository userRepository, IRoleService roleService)
         {
             _userRepository = userRepository ?? throw new ArgumentNullException(nameof(userRepository));
             _roleService = roleService ?? throw new ArgumentNullException(nameof(roleService));

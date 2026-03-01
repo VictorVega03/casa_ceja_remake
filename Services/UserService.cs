@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using CasaCejaRemake.Data.Repositories;
+using CasaCejaRemake.Data.Repositories.Interfaces;
 using CasaCejaRemake.Helpers;
 using CasaCejaRemake.Models;
 using CasaCejaRemake.Services.Interfaces;
@@ -15,10 +16,10 @@ namespace CasaCejaRemake.Services
     /// </summary>
     public class UserService : IUserService
     {
-        private readonly IRepository<User> _userRepository;
-        private readonly RoleService _roleService;
+        private readonly IUserRepository _userRepository;
+        private readonly IRoleService _roleService;
 
-        public UserService(IRepository<User> userRepository, RoleService roleService)
+        public UserService(IUserRepository userRepository, IRoleService roleService)
         {
             _userRepository = userRepository ?? throw new ArgumentNullException(nameof(userRepository));
             _roleService = roleService ?? throw new ArgumentNullException(nameof(roleService));

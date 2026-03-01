@@ -98,7 +98,10 @@ namespace CasaCejaRemake.Views.POS
         {
             try
             {
-                var creditService = new Services.CreditService(new Data.DatabaseService());
+                var app = Avalonia.Application.Current as App;
+                var creditService = app?.GetCreditService();
+                if (creditService == null) return;
+
                 var creditTicket = await creditService.RecoverTicketAsync(e.Id);
                 
                 if (creditTicket != null)
@@ -115,7 +118,10 @@ namespace CasaCejaRemake.Views.POS
         {
             try
             {
-                var layawayService = new Services.LayawayService(new Data.DatabaseService());
+                var app = Avalonia.Application.Current as App;
+                var layawayService = app?.GetLayawayService();
+                if (layawayService == null) return;
+
                 var layawayTicket = await layawayService.RecoverTicketAsync(e.Id);
                 
                 if (layawayTicket != null)
