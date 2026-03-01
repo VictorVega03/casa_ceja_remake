@@ -37,6 +37,9 @@
     
     <!-- Excel Export -->
     <PackageReference Include="ClosedXML" Version="0.102.3" />
+
+    <!-- Dependency Injection -->
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.1" />
   </ItemGroup>
 
 </Project>
