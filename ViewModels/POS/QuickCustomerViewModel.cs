@@ -4,12 +4,13 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CasaCejaRemake.Models;
 using CasaCejaRemake.Services;
+using CasaCejaRemake.Services.Interfaces;
 
 namespace CasaCejaRemake.ViewModels.POS
 {
     public partial class QuickCustomerViewModel : ViewModelBase
     {
-        private readonly CustomerService _customerService;
+        private readonly ICustomerService _customerService;
 
         // Campos obligatorios
         [ObservableProperty]
@@ -44,7 +45,7 @@ namespace CasaCejaRemake.ViewModels.POS
         public event EventHandler<Customer>? CustomerCreated;
         public event EventHandler? Cancelled;
 
-        public QuickCustomerViewModel(CustomerService customerService)
+        public QuickCustomerViewModel(ICustomerService customerService)
         {
             _customerService = customerService;
         }

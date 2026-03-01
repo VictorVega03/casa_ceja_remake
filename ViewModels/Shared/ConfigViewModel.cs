@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CasaCejaRemake.Services;
+using CasaCejaRemake.Services.Interfaces;
 
 namespace CasaCejaRemake.ViewModels.Shared
 {
@@ -15,8 +16,8 @@ namespace CasaCejaRemake.ViewModels.Shared
     /// </summary>
     public partial class PosTerminalConfigViewModel : ViewModelBase
     {
-        private readonly ConfigService _configService;
-        private readonly AuthService _authService;
+        private readonly IConfigService _configService;
+        private readonly IAuthService _authService;
 
         // ============ TERMINAL ============
         [ObservableProperty] private string _terminalId = "CAJA-01";

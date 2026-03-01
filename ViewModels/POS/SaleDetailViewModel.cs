@@ -5,6 +5,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CasaCejaRemake.Models;
 using CasaCejaRemake.Services;
+using CasaCejaRemake.Services.Interfaces;
 
 namespace CasaCejaRemake.ViewModels.POS
 {
@@ -13,8 +14,8 @@ namespace CasaCejaRemake.ViewModels.POS
     /// </summary>
     public partial class SaleDetailViewModel : ViewModelBase
     {
-        private readonly SalesService _salesService;
-        private readonly TicketService _ticketService;
+        private readonly ISalesService _salesService;
+        private readonly ITicketService _ticketService;
 
         [ObservableProperty]
         private Sale? _sale;
@@ -45,10 +46,10 @@ namespace CasaCejaRemake.ViewModels.POS
         public event EventHandler<string>? ReprintRequested;
         public event EventHandler? CloseRequested;
 
-        public SaleDetailViewModel(SalesService salesService)
+        public SaleDetailViewModel(ISalesService salesService, ITicketService ticketService)
         {
             _salesService = salesService;
-            _ticketService = new TicketService();
+            _ticketService = ticketService;
         }
 
         public async Task InitializeAsync(int saleId)

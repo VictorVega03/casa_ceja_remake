@@ -938,7 +938,8 @@ namespace CasaCejaRemake.Views.POS
             var historyViewModel = new CashCloseHistoryViewModel(
                 cashCloseService,
                 authService,
-                App.DatabaseService!,
+                Infrastructure.AppServiceProvider.GetRequiredService<CasaCejaRemake.Data.Repositories.Interfaces.IUserRepository>(),
+                Infrastructure.AppServiceProvider.GetRequiredService<CasaCejaRemake.Data.Repositories.Interfaces.IBranchRepository>(),
                 _viewModel?.BranchId ?? 1);
 
             historyView.DataContext = historyViewModel;
@@ -1218,6 +1219,7 @@ namespace CasaCejaRemake.Views.POS
             var historyView = new SalesHistoryView();
             var historyViewModel = new SalesHistoryViewModel(
                 salesService,
+                Infrastructure.AppServiceProvider.GetRequiredService<CasaCejaRemake.Services.Interfaces.ITicketService>(),
                 _viewModel?.BranchId ?? 1);
 
             historyView.DataContext = historyViewModel;

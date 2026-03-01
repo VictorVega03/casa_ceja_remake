@@ -7,6 +7,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CasaCejaRemake.Models;
 using CasaCejaRemake.Services;
+using CasaCejaRemake.Services.Interfaces;
 using CasaCejaRemake.Helpers;
 
 
@@ -69,9 +70,9 @@ namespace CasaCejaRemake.ViewModels.POS
 
     public partial class CreditsLayawaysListViewModel : ViewModelBase
     {
-        private readonly CreditService _creditService;
-        private readonly LayawayService _layawayService;
-        private readonly CustomerService _customerService;
+        private readonly ICreditService _creditService;
+        private readonly ILayawayService _layawayService;
+        private readonly ICustomerService _customerService;
         private readonly int _branchId;
         private ObservableCollection<CreditLayawayListItemWrapper> _allItems = new();
 
@@ -104,16 +105,16 @@ namespace CasaCejaRemake.ViewModels.POS
         public event EventHandler? CloseRequested;
         public event EventHandler? ExportRequested;
 
-        public CreditService CreditServiceInstance => _creditService;
-        public LayawayService LayawayServiceInstance => _layawayService;
-        public CustomerService CustomerServiceInstance => _customerService;
+        public ICreditService CreditServiceInstance => _creditService;
+        public ILayawayService LayawayServiceInstance => _layawayService;
+        public ICustomerService CustomerServiceInstance => _customerService;
 
         public string FilterDescription => $"{GetFilterTypeName(FilterType)} - {GetFilterStatusName(FilterStatus)}";
 
         public CreditsLayawaysListViewModel(
-            CreditService creditService, 
-            LayawayService layawayService,
-            CustomerService customerService,
+            ICreditService creditService, 
+            ILayawayService layawayService,
+            ICustomerService customerService,
             int branchId)
         {
             _creditService = creditService;

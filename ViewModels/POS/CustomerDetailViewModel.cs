@@ -5,14 +5,15 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CasaCejaRemake.Models;
 using CasaCejaRemake.Services;
+using CasaCejaRemake.Services.Interfaces;
 
 namespace CasaCejaRemake.ViewModels.POS
 {
     public partial class CustomerDetailViewModel : ViewModelBase
     {
-        private readonly CustomerService _customerService;
-        private readonly CreditService _creditService;
-        private readonly LayawayService _layawayService;
+        private readonly ICustomerService _customerService;
+        private readonly ICreditService _creditService;
+        private readonly ILayawayService _layawayService;
         private Customer? _customer;
 
         [ObservableProperty]

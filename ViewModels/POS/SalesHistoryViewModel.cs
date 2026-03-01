@@ -7,6 +7,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CasaCejaRemake.Models;
 using CasaCejaRemake.Services;
+using CasaCejaRemake.Services.Interfaces;
 
 namespace CasaCejaRemake.ViewModels.POS
 {
@@ -53,8 +54,8 @@ namespace CasaCejaRemake.ViewModels.POS
     /// </summary>
     public partial class SalesHistoryViewModel : ViewModelBase
     {
-        private readonly SalesService _salesService;
-        private readonly TicketService _ticketService;
+        private readonly ISalesService _salesService;
+        private readonly ITicketService _ticketService;
         private readonly int _branchId;
 
         private const int PageSize = 50;
@@ -62,7 +63,7 @@ namespace CasaCejaRemake.ViewModels.POS
         /// <summary>
         /// Expone el servicio de ventas para uso en vistas hijas.
         /// </summary>
-        public SalesService SalesService => _salesService;
+        public ISalesService SalesService => _salesService;
 
         [ObservableProperty]
         private SaleListItemWrapper? _selectedItem;
@@ -103,11 +104,12 @@ namespace CasaCejaRemake.ViewModels.POS
         public event EventHandler? ExportRequested;
 
         public SalesHistoryViewModel(
-            SalesService salesService,
+            ISalesService salesService,
+            ITicketService ticketService,
             int branchId)
         {
             _salesService = salesService;
-            _ticketService = new TicketService();
+            _ticketService = ticketService;
             _branchId = branchId;
 
             // Filtros por defecto: hoy

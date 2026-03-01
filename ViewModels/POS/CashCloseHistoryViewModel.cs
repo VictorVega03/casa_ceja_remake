@@ -5,10 +5,10 @@ using System.Linq;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using CasaCejaRemake.Data.Repositories.Interfaces;
 using CasaCejaRemake.Models;
 using CasaCejaRemake.Services;
-using CasaCejaRemake.Data;
-using CasaCejaRemake.Data.Repositories;
+using CasaCejaRemake.Services.Interfaces;
 
 namespace CasaCejaRemake.ViewModels.POS
 {
@@ -50,9 +50,10 @@ namespace CasaCejaRemake.ViewModels.POS
     /// </summary>
     public partial class CashCloseHistoryViewModel : ViewModelBase
     {
-        private readonly CashCloseService _cashCloseService;
-        private readonly AuthService _authService;
-        private readonly DatabaseService _databaseService;
+        private readonly ICashCloseService _cashCloseService;
+        private readonly IAuthService _authService;
+        private readonly IUserRepository _userRepository;
+        private readonly IBranchRepository _branchRepository;
         private readonly int _branchId;
         private ObservableCollection<CashCloseListItemWrapper> _allItems = new();
 
@@ -86,14 +87,16 @@ namespace CasaCejaRemake.ViewModels.POS
         public event EventHandler? ExportRequested;
 
         public CashCloseHistoryViewModel(
-            CashCloseService cashCloseService,
-            AuthService authService,
-            DatabaseService databaseService,
+            ICashCloseService cashCloseService,
+            IAuthService authService,
+            IUserRepository userRepository,
+            IBranchRepository branchRepository,
             int branchId)
         {
             _cashCloseService = cashCloseService;
             _authService = authService;
-            _databaseService = databaseService;
+            _userRepository = userRepository;
+            _branchRepository = branchRepository;
             _branchId = branchId;
 
             // Filtros por defecto: último mes
@@ -128,10 +131,8 @@ namespace CasaCejaRemake.ViewModels.POS
                 }
 
                 // Cargar todos los usuarios y sucursales de una vez para eficiencia
-                var userRepository = new BaseRepository<User>(_databaseService);
-                var branchRepository = new BaseRepository<Branch>(_databaseService);
-                var allUsers = await userRepository.GetAllAsync();
-                var allBranches = await branchRepository.GetAllAsync();
+                var allUsers = await _userRepository.GetAllAsync();
+                var allBranches = await _branchRepository.GetAllAsync();
 
                 foreach (var cashClose in cashCloses)
                 {

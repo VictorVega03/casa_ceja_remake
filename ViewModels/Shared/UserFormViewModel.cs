@@ -7,6 +7,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CasaCejaRemake.Models;
 using CasaCejaRemake.Services;
+using CasaCejaRemake.Services.Interfaces;
 
 namespace CasaCejaRemake.ViewModels.Shared
 {
@@ -17,7 +18,7 @@ namespace CasaCejaRemake.ViewModels.Shared
     /// </summary>
     public partial class UserFormViewModel : ViewModelBase
     {
-        private readonly UserService _userService;
+        private readonly IUserService _userService;
         private readonly bool _isAdminMode;
         private readonly User? _existingUser;
 
@@ -70,7 +71,7 @@ namespace CasaCejaRemake.ViewModels.Shared
         public event EventHandler? CloseRequested;
         public event EventHandler? SaveCompleted;
 
-        public UserFormViewModel(UserService userService, bool isAdminMode, User? existingUser = null, bool isReadOnly = false)
+        public UserFormViewModel(IUserService userService, bool isAdminMode, User? existingUser = null, bool isReadOnly = false)
         {
             _userService = userService ?? throw new ArgumentNullException(nameof(userService));
             _isAdminMode = isAdminMode;

@@ -6,13 +6,14 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CasaCejaRemake.Models;
 using CasaCejaRemake.Services;
+using CasaCejaRemake.Services.Interfaces;
 
 namespace CasaCejaRemake.ViewModels.POS
 {
     public partial class CreateCreditViewModel : ViewModelBase
     {
-        private readonly CreditService _creditService;
-        private readonly AuthService _authService;
+        private readonly ICreditService _creditService;
+        private readonly IAuthService _authService;
         private readonly int _branchId;
 
         // Cliente (readonly)
@@ -75,7 +76,7 @@ namespace CasaCejaRemake.ViewModels.POS
         public event EventHandler<Credit>? CreditCreated;
         public event EventHandler? Cancelled;
 
-        public CreateCreditViewModel(CreditService creditService, AuthService authService, int branchId)
+        public CreateCreditViewModel(ICreditService creditService, IAuthService authService, int branchId)
         {
             _creditService = creditService;
             _authService = authService;

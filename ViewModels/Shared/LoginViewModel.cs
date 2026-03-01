@@ -1,6 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CasaCejaRemake.Services;
+using CasaCejaRemake.Services.Interfaces;
 using System;
 using System.Threading.Tasks;
 
@@ -11,7 +12,7 @@ namespace CasaCejaRemake.ViewModels.Shared
     /// </summary>
     public partial class LoginViewModel : ViewModelBase
     {
-        private readonly AuthService _authService;
+        private readonly IAuthService _authService;
 
         // ====================
         // PROPIEDADES OBSERVABLES
@@ -50,7 +51,7 @@ namespace CasaCejaRemake.ViewModels.Shared
         // CONSTRUCTOR
         // ====================
 
-        public LoginViewModel(AuthService authService)
+        public LoginViewModel(IAuthService authService)
         {
             _authService = authService ?? throw new ArgumentNullException(nameof(authService));
         }

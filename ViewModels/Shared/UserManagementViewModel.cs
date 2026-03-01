@@ -7,6 +7,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CasaCejaRemake.Models;
 using CasaCejaRemake.Services;
+using CasaCejaRemake.Services.Interfaces;
 
 namespace CasaCejaRemake.ViewModels.Shared
 {
@@ -16,8 +17,8 @@ namespace CasaCejaRemake.ViewModels.Shared
     /// </summary>
     public partial class UserManagementViewModel : ViewModelBase
     {
-        private readonly UserService _userService;
-        private readonly AuthService _authService;
+        private readonly IUserService _userService;
+        private readonly IAuthService _authService;
 
         // ============ PROPIEDADES ============
 
@@ -52,7 +53,7 @@ namespace CasaCejaRemake.ViewModels.Shared
         public event EventHandler<User?>? EditUserRequested;
         public event EventHandler? AddUserRequested;
 
-        public UserManagementViewModel(UserService userService, AuthService authService, bool isAdminMode)
+        public UserManagementViewModel(IUserService userService, IAuthService authService, bool isAdminMode)
         {
             _userService = userService ?? throw new ArgumentNullException(nameof(userService));
             _authService = authService ?? throw new ArgumentNullException(nameof(authService));

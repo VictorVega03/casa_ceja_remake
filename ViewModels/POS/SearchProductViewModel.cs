@@ -5,13 +5,14 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CasaCejaRemake.Models;
 using CasaCejaRemake.Services;
+using CasaCejaRemake.Services.Interfaces;
 using System.Linq;
 
 namespace CasaCejaRemake.ViewModels.POS
 {
     public partial class SearchProductViewModel : ViewModelBase
     {
-        private readonly SalesService _salesService;
+        private readonly ISalesService _salesService;
 
         // Paginación
         private const int PageSize = 50;
@@ -66,7 +67,7 @@ namespace CasaCejaRemake.ViewModels.POS
         public event EventHandler<(Product, int)>? ProductSelected;
         public event EventHandler? Cancelled;
 
-        public SearchProductViewModel(SalesService salesService)
+        public SearchProductViewModel(ISalesService salesService)
         {
             _salesService = salesService;
         }

@@ -7,15 +7,16 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CasaCejaRemake.Models;
 using CasaCejaRemake.Services;
+using CasaCejaRemake.Services.Interfaces;
 using PaymentMethodEnum = CasaCejaRemake.Models.PaymentMethod; // Keep for backward compatibility
 
 namespace CasaCejaRemake.ViewModels.POS
 {
     public partial class SalesViewModel : ViewModelBase
     {
-        private readonly CartService _cartService;
-        private readonly SalesService _salesService;
-        private readonly AuthService _authService;
+        private readonly ICartService _cartService;
+        private readonly ISalesService _salesService;
+        private readonly IAuthService _authService;
         private readonly int _branchId;
 
         public int BranchId => _branchId;

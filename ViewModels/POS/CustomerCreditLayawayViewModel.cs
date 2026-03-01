@@ -6,15 +6,16 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CasaCejaRemake.Models;
 using CasaCejaRemake.Services;
+using CasaCejaRemake.Services.Interfaces;
 using CasaCejaRemake.Helpers;
 
 namespace CasaCejaRemake.ViewModels.POS
 {
     public partial class CustomerCreditsLayawaysViewModel : ViewModelBase
     {
-        private readonly CreditService _creditService;
-        private readonly LayawayService _layawayService;
-        private readonly AuthService _authService;
+        private readonly ICreditService _creditService;
+        private readonly ILayawayService _layawayService;
+        private readonly IAuthService _authService;
 
         [ObservableProperty]
         private string _customerName = string.Empty;

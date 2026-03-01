@@ -116,7 +116,9 @@ namespace CasaCejaRemake.Views.POS
             if (_viewModel == null) return;
 
             var detailView = new SaleDetailView();
-            var detailViewModel = new SaleDetailViewModel(_viewModel.SalesService);
+            var detailViewModel = new SaleDetailViewModel(
+                _viewModel.SalesService,
+                CasaCejaRemake.Infrastructure.AppServiceProvider.GetRequiredService<CasaCejaRemake.Services.Interfaces.ITicketService>());
 
             // IMPORTANT: Asignar DataContext ANTES de cargar datos
             detailView.DataContext = detailViewModel;

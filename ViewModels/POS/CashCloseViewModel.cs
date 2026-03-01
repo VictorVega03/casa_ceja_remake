@@ -7,6 +7,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CasaCejaRemake.Models;
 using CasaCejaRemake.Services;
+using CasaCejaRemake.Services.Interfaces;
 
 namespace CasaCejaRemake.ViewModels.POS
 {
@@ -25,8 +26,8 @@ namespace CasaCejaRemake.ViewModels.POS
     /// </summary>
     public partial class CashCloseViewModel : ViewModelBase
     {
-        private readonly CashCloseService _cashCloseService;
-        private readonly AuthService _authService;
+        private readonly ICashCloseService _cashCloseService;
+        private readonly IAuthService _authService;
         private readonly CashClose _currentCashClose;
 
         // ========== CAMPOS DE APERTURA ==========
@@ -176,7 +177,7 @@ namespace CasaCejaRemake.ViewModels.POS
         public event EventHandler<CashClose>? CloseCompleted;
         public event EventHandler? Cancelled;
 
-        public CashCloseViewModel(CashCloseService cashCloseService, AuthService authService, CashClose currentCashClose)
+        public CashCloseViewModel(ICashCloseService cashCloseService, IAuthService authService, CashClose currentCashClose)
         {
             _cashCloseService = cashCloseService;
             _authService = authService;

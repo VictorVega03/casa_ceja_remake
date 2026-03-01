@@ -5,6 +5,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CasaCejaRemake.Models;
 using CasaCejaRemake.Services;
+using CasaCejaRemake.Services.Interfaces;
 
 namespace CasaCejaRemake.ViewModels.POS
 {
@@ -24,7 +25,7 @@ namespace CasaCejaRemake.ViewModels.POS
     /// </summary>
     public partial class CashCloseDetailViewModel : ViewModelBase
     {
-        private readonly CashCloseService _cashCloseService;
+        private readonly ICashCloseService _cashCloseService;
 
         [ObservableProperty]
         private CashClose _cashClose = null!;
@@ -118,7 +119,7 @@ namespace CasaCejaRemake.ViewModels.POS
         public event EventHandler? CloseRequested;
         public event EventHandler<(string Folio, string TicketText)>? PrintRequested;
 
-        public CashCloseDetailViewModel(CashCloseService cashCloseService)
+        public CashCloseDetailViewModel(ICashCloseService cashCloseService)
         {
             _cashCloseService = cashCloseService;
         }

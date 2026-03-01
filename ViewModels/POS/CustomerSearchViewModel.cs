@@ -6,12 +6,13 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CasaCejaRemake.Models;
 using CasaCejaRemake.Services;
+using CasaCejaRemake.Services.Interfaces;
 
 namespace CasaCejaRemake.ViewModels.POS
 {
     public partial class CustomerSearchViewModel : ViewModelBase
     {
-        private readonly CustomerService _customerService;
+        private readonly ICustomerService _customerService;
 
         [ObservableProperty]
         private string _searchTerm = string.Empty;
@@ -38,7 +39,7 @@ namespace CasaCejaRemake.ViewModels.POS
 
         public bool HasSelectedCustomer => SelectedCustomer != null;
 
-        public CustomerSearchViewModel(CustomerService customerService)
+        public CustomerSearchViewModel(ICustomerService customerService)
         {
             _customerService = customerService;
         }

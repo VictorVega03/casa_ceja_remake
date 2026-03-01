@@ -6,13 +6,14 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CasaCejaRemake.Models;
 using CasaCejaRemake.Services;
+using CasaCejaRemake.Services.Interfaces;
 
 namespace CasaCejaRemake.ViewModels.POS
 {
     public partial class CreateLayawayViewModel : ViewModelBase
     {
-        private readonly LayawayService _layawayService;
-        private readonly AuthService _authService;
+        private readonly ILayawayService _layawayService;
+        private readonly IAuthService _authService;
         private readonly int _branchId;
 
         // Cliente (readonly)
@@ -78,7 +79,7 @@ namespace CasaCejaRemake.ViewModels.POS
         public event EventHandler<Layaway>? LayawayCreated;
         public event EventHandler? Cancelled;
 
-        public CreateLayawayViewModel(LayawayService layawayService, AuthService authService, int branchId)
+        public CreateLayawayViewModel(ILayawayService layawayService, IAuthService authService, int branchId)
         {
             _layawayService = layawayService;
             _authService = authService;

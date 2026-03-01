@@ -5,8 +5,10 @@ using System.Linq;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using CasaCejaRemake.Data.Repositories.Interfaces;
 using CasaCejaRemake.Models;
 using CasaCejaRemake.Services;
+using CasaCejaRemake.Services.Interfaces;
 
 namespace CasaCejaRemake.ViewModels.Shared
 {
@@ -17,11 +19,11 @@ namespace CasaCejaRemake.ViewModels.Shared
     /// </summary>
     public partial class AppConfigViewModel : ViewModelBase
     {
-        private readonly ConfigService _configService;
-        private readonly AuthService _authService;
-        private readonly Data.DatabaseService _databaseService;
-        private readonly PrintService _printService;
-        private readonly UserService _userService;
+        private readonly IConfigService _configService;
+        private readonly IAuthService _authService;
+        private readonly IBranchRepository _branchRepository;
+        private readonly IPrintService _printService;
+        private readonly IUserService _userService;
         private readonly ThermalPrinterSetupService _thermalSetupService;
 
         // ============ SUCURSAL ============
@@ -63,15 +65,15 @@ namespace CasaCejaRemake.ViewModels.Shared
         public event Func<Task<bool>>? AdminVerificationRequested;
 
         public AppConfigViewModel(
-            ConfigService configService,
-            AuthService authService,
-            Data.DatabaseService databaseService,
-            PrintService printService,
-            UserService userService)
+            IConfigService configService,
+            IAuthService authService,
+            IBranchRepository branchRepository,
+            IPrintService printService,
+            IUserService userService)
         {
             _configService = configService;
             _authService = authService;
-            _databaseService = databaseService;
+            _branchRepository = branchRepository;
             _printService = printService;
             _userService = userService;
             _thermalSetupService = new ThermalPrinterSetupService();
@@ -91,10 +93,9 @@ namespace CasaCejaRemake.ViewModels.Shared
             try
             {
                 // 1. Cargar sucursales activas
-                var branchList = await _databaseService.Table<Branch>()
-                    .Where(b => b.Active)
-                    .ToListAsync();
-                Branches = new ObservableCollection<Branch>(branchList);
+                var branchList = await _branchRepository.GetAllAsync();
+                var activeBranches = branchList.Where(b => b.Active).ToList();
+                Branches = new ObservableCollection<Branch>(activeBranches);
 
                 // 2. Aplicar configuración de sucursal guardada
                 var appConfig = _configService.AppConfig;

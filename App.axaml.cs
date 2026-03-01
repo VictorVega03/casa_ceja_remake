@@ -494,7 +494,7 @@ namespace CasaCejaRemake
             var viewModel = new ViewModels.Shared.AppConfigViewModel(
                 ConfigService,
                 AuthService,
-                DatabaseService,
+                AppServiceProvider.GetRequiredService<CasaCejaRemake.Data.Repositories.Interfaces.IBranchRepository>(),
                 PrintService,
                 UserService);
 
