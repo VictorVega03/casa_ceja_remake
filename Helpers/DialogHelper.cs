@@ -3,6 +3,7 @@ using Avalonia.Layout;
 using Avalonia.Media;
 using System;
 using System.Threading.Tasks;
+using CasaCejaRemake.Models.Results;
 using CasaCejaRemake.Services;
 
 namespace casa_ceja_remake.Helpers;
@@ -155,7 +156,7 @@ public static class DialogHelper
         dialog.Content = mainPanel;
 
         // ── Helper: actualizar el banner según PrintResult ────────────────────
-        void UpdateStatusBar(CasaCejaRemake.Services.PrintResult result, bool isAuto)
+        void UpdateStatusBar(PrintResult result, bool isAuto)
         {
             if (result.Success)
             {
@@ -168,11 +169,11 @@ public static class DialogHelper
             {
                 var (bg, icon) = result.FailReason switch
                 {
-                    CasaCejaRemake.Services.PrintFailReason.NoPrinterConfigured =>
+                    PrintFailReason.NoPrinterConfigured =>
                         ("#B71C1C", " Sin impresora configurada — ve a Configuración → Impresora"),
-                    CasaCejaRemake.Services.PrintFailReason.AutoPrintDisabled =>
+                    PrintFailReason.AutoPrintDisabled =>
                         ("#455A64", "ℹImpresión automática desactivada — usa Reimprimir si necesitas"),
-                    CasaCejaRemake.Services.PrintFailReason.DriverError =>
+                    PrintFailReason.DriverError =>
                         ("#E65100", "✗ Error de impresora — verifica que esté encendida y conectada"),
                     _ =>
                         ("#B71C1C", $"✗ {result.ErrorMessage ?? "Error desconocido"}")

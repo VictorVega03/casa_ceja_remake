@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CasaCejaRemake.Models;
+using CasaCejaRemake.Models.Results;
 using CasaCejaRemake.Services;
 using PaymentMethodEnum = CasaCejaRemake.Models.PaymentMethod; // Keep for backward compatibility
 

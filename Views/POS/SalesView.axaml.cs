@@ -16,6 +16,7 @@ using CasaCejaRemake.Views.Shared;
 using casa_ceja_remake.Helpers;
 using CasaCejaRemake.Services;
 using CasaCejaRemake.Models;
+using CasaCejaRemake.Models.Results;
 
 namespace CasaCejaRemake.Views.POS
 {
