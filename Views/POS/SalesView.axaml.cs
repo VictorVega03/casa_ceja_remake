@@ -936,10 +936,13 @@ namespace CasaCejaRemake.Views.POS
             }
 
             var historyView = new CashCloseHistoryView();
+            var userRepo   = new Data.Repositories.BaseRepository<Models.User>(App.DatabaseService!);
+            var branchRepo = new Data.Repositories.BaseRepository<Models.Branch>(App.DatabaseService!);
             var historyViewModel = new CashCloseHistoryViewModel(
                 cashCloseService,
                 authService,
-                App.DatabaseService!,
+                userRepo,
+                branchRepo,
                 _viewModel?.BranchId ?? 1);
 
             historyView.DataContext = historyViewModel;

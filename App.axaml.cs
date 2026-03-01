@@ -523,9 +523,9 @@ namespace CasaCejaRemake
             }
 
             var viewModel = new ViewModels.Shared.AppConfigViewModel(
+                new BaseRepository<Models.Branch>(DatabaseService),
                 ConfigService,
                 AuthService,
-                DatabaseService,
                 PrintService,
                 UserService);
 
