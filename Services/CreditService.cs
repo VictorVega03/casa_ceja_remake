@@ -2,35 +2,43 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using CasaCejaRemake.Data;
 using CasaCejaRemake.Data.Repositories;
 using CasaCejaRemake.Helpers;
 using CasaCejaRemake.Models;
+using CasaCejaRemake.Models.Results;
 
 namespace CasaCejaRemake.Services
 {
     public class CreditService
     {
-        private readonly DatabaseService _databaseService;
-        private readonly BaseRepository<Credit> _creditRepository;
+        private readonly CreditRepository _creditRepository;
         private readonly BaseRepository<CreditProduct> _creditProductRepository;
         private readonly BaseRepository<CreditPayment> _creditPaymentRepository;
         private readonly BaseRepository<Customer> _customerRepository;
         private readonly BaseRepository<Branch> _branchRepository;
         private readonly TicketService _ticketService;
+        private readonly FolioService _folioService;
+        private readonly ConfigService _configService;
 
-        public CreditService(DatabaseService databaseService)
+        public CreditService(
+            CreditRepository creditRepository,
+            BaseRepository<CreditProduct> creditProductRepository,
+            BaseRepository<CreditPayment> creditPaymentRepository,
+            BaseRepository<Customer> customerRepository,
+            BaseRepository<Branch> branchRepository,
+            TicketService ticketService,
+            FolioService folioService,
+            ConfigService configService)
         {
-            _databaseService = databaseService;
-            _creditRepository = new BaseRepository<Credit>(databaseService);
-            _creditProductRepository = new BaseRepository<CreditProduct>(databaseService);
-            _creditPaymentRepository = new BaseRepository<CreditPayment>(databaseService);
-            _customerRepository = new BaseRepository<Customer>(databaseService);
-            _branchRepository = new BaseRepository<Branch>(databaseService);
-            _ticketService = new TicketService();
+            _creditRepository = creditRepository;
+            _creditProductRepository = creditProductRepository;
+            _creditPaymentRepository = creditPaymentRepository;
+            _customerRepository = customerRepository;
+            _branchRepository = branchRepository;
+            _ticketService = ticketService;
+            _folioService = folioService;
+            _configService = configService;
         }
-
-
 
         public async Task<(bool Success, Credit? Credit, string? Error)> CreateCreditAsync(
             List<CartItem> items,
@@ -55,24 +63,21 @@ namespace CasaCejaRemake.Services
             var branch = await _branchRepository.GetByIdAsync(branchId);
 
             decimal total = items.Sum(i => i.LineTotal);
-            
+
             if (initialPayment < 0)
                 return (false, null, "El abono inicial no puede ser negativo.");
-            
+
             if (initialPayment > total)
                 return (false, null, "El abono inicial no puede ser mayor al total.");
 
             try
             {
-                // Generar folio usando FolioService
-                // Extraer cajaId del TerminalId configurado (ej: "CAJA-01" -> 1)
-                var terminalId = App.ConfigService?.PosTerminalConfig.TerminalId ?? "CAJA-01";
+                var terminalId = _configService.PosTerminalConfig.TerminalId ?? "CAJA-01";
                 var cajaId = int.TryParse(terminalId.Replace("CAJA-", ""), out var caja) ? caja : 1;
-                string folio = await App.FolioService!.GenerarFolioCreditoAsync(branchId, cajaId);
+                string folio = await _folioService.GenerarFolioCreditoAsync(branchId, cajaId);
                 var creditDate = DateTime.Now;
                 var dueDate = creditDate.AddMonths(monthsToPay);
 
-                // Crear credito (sin TotalPaid inicial, se agregará con el pago)
                 var credit = new Credit
                 {
                     Folio = folio,
@@ -80,7 +85,7 @@ namespace CasaCejaRemake.Services
                     BranchId = branchId,
                     UserId = userId,
                     Total = total,
-                    TotalPaid = 0, // Se actualizará con el pago inicial
+                    TotalPaid = 0,
                     MonthsToPay = monthsToPay,
                     CreditDate = creditDate,
                     DueDate = dueDate,
@@ -89,11 +94,9 @@ namespace CasaCejaRemake.Services
                     SyncStatus = 1
                 };
 
-                // Guardar credito
                 await _creditRepository.AddAsync(credit);
-                var creditId = credit.Id; // SQLite actualiza el ID automáticamente
+                var creditId = credit.Id;
 
-                // Guardar productos del credito
                 foreach (var item in items)
                 {
                     var creditProduct = new CreditProduct
@@ -116,14 +119,12 @@ namespace CasaCejaRemake.Services
                     await AddPaymentInternalAsync(credit, initialPayment, paymentMethod, userId, "Abono inicial");
                 }
 
-                // Recargar el credit actualizado de la BD
                 var updatedCredit = await _creditRepository.GetByIdAsync(creditId);
                 if (updatedCredit == null)
                 {
                     return (false, null, "Error al recargar crédito después del pago inicial");
                 }
 
-                // Verificar si está completamente pagado
                 if (updatedCredit.TotalPaid >= updatedCredit.Total)
                 {
                     updatedCredit.Status = 2;
@@ -136,7 +137,7 @@ namespace CasaCejaRemake.Services
                     branch?.Address ?? "",
                     string.Empty,
                     branch?.RazonSocial ?? "",
-                    currentUser?.Name ?? "", 
+                    currentUser?.Name ?? "",
                     customer.Name,
                     customer.Phone,
                     items,
@@ -164,19 +165,13 @@ namespace CasaCejaRemake.Services
 
         public async Task<List<Credit>> GetPendingByCustomerAsync(int customerId)
         {
-            var credits = await _creditRepository.FindAsync(c => 
-                c.CustomerId == customerId && 
-                (c.Status == 1 || c.Status == 3));
-            
+            var credits = await _creditRepository.GetPendingByCustomerAsync(customerId);
             return credits.OrderByDescending(c => c.CreditDate).ToList();
         }
 
         public async Task<List<Credit>> GetPendingByBranchAsync(int branchId)
         {
-            var credits = await _creditRepository.FindAsync(c => 
-                c.BranchId == branchId && 
-                (c.Status == 1 || c.Status == 3));
-            
+            var credits = await _creditRepository.GetPendingByBranchAsync(branchId);
             return credits.OrderByDescending(c => c.CreditDate).ToList();
         }
 
@@ -201,9 +196,7 @@ namespace CasaCejaRemake.Services
         public async Task<Credit?> GetByFolioAsync(string folio)
         {
             if (string.IsNullOrWhiteSpace(folio)) return null;
-
-            var credits = await _creditRepository.FindAsync(c => c.Folio == folio);
-            return credits.FirstOrDefault();
+            return await _creditRepository.GetByFolioAsync(folio);
         }
 
         public async Task<List<CreditProduct>> GetProductsAsync(int creditId)
@@ -235,9 +228,7 @@ namespace CasaCejaRemake.Services
             return await AddPaymentInternalAsync(credit, amount, method, userId, notes);
         }
 
-        /// <summary>
-        /// Agrega un abono con pagos mixtos (múltiples métodos de pago)
-        /// </summary>
+        /// <summary>Agrega un abono con pagos mixtos (múltiples métodos de pago)</summary>
         public async Task<bool> AddPaymentWithMixedAsync(int creditId, decimal amount, string paymentJson, int userId, string? notes)
         {
             var credit = await _creditRepository.GetByIdAsync(creditId);
@@ -254,19 +245,17 @@ namespace CasaCejaRemake.Services
 
             try
             {
-                // Los pagos/abonos generan su propio folio tipo P con secuencial diario
-                var terminalId = App.ConfigService?.PosTerminalConfig.TerminalId ?? "CAJA-01";
+                var terminalId = _configService.PosTerminalConfig.TerminalId ?? "CAJA-01";
                 var cajaId = int.TryParse(terminalId.Replace("CAJA-", ""), out var caja) ? caja : 1;
-                var paymentFolio = await App.FolioService!.GenerarFolioPagoAsync(credit.BranchId, cajaId);
+                var paymentFolio = await _folioService.GenerarFolioPagoAsync(credit.BranchId, cajaId);
 
-                // Crear registro de pago con JSON guardado en PaymentMethod
                 var payment = new CreditPayment
                 {
                     Folio = paymentFolio,
                     CreditId = creditId,
                     UserId = userId,
                     AmountPaid = amount,
-                    PaymentMethod = paymentJson, // Guardar el JSON directamente
+                    PaymentMethod = paymentJson,
                     PaymentDate = DateTime.Now,
                     CashCloseFolio = string.Empty,
                     Notes = notes,
@@ -275,14 +264,12 @@ namespace CasaCejaRemake.Services
 
                 await _creditPaymentRepository.AddAsync(payment);
 
-                // Actualizar saldo del crédito
                 credit.TotalPaid += amount;
                 credit.UpdatedAt = DateTime.Now;
 
-                // Si se pagó todo, marcar como completado
                 if (credit.TotalPaid >= credit.Total)
                 {
-                    credit.Status = 2; // Completado
+                    credit.Status = 2;
                 }
 
                 await _creditRepository.UpdateAsync(credit);
@@ -298,16 +285,13 @@ namespace CasaCejaRemake.Services
         {
             try
             {
-                // Los pagos/abonos generan su propio folio tipo P con secuencial diario
-                var terminalId = App.ConfigService?.PosTerminalConfig.TerminalId ?? "CAJA-01";
+                var terminalId = _configService.PosTerminalConfig.TerminalId ?? "CAJA-01";
                 var cajaId = int.TryParse(terminalId.Replace("CAJA-", ""), out var caja) ? caja : 1;
-                var paymentFolio = await App.FolioService!.GenerarFolioPagoAsync(credit.BranchId, cajaId);
+                var paymentFolio = await _folioService.GenerarFolioPagoAsync(credit.BranchId, cajaId);
 
-                // Convertir el enum a snake_case: TarjetaDebito -> tarjeta_debito
                 var methodName = method.ToString();
                 var snakeCaseMethod = System.Text.RegularExpressions.Regex.Replace(methodName, "([a-z])([A-Z])", "$1_$2").ToLower();
 
-                // Serializar el método de pago a JSON con la misma estructura que pagos mixtos
                 var paymentJson = System.Text.Json.JsonSerializer.Serialize(new Dictionary<string, decimal>
                 {
                     { snakeCaseMethod, amount }

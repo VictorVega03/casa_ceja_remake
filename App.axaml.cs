@@ -72,23 +72,37 @@ namespace CasaCejaRemake
                 var initializer = new DatabaseInitializer(DatabaseService);
                 await initializer.InitializeDefaultDataAsync();
 
-                // Inicializar RoleService (cargar roles desde la BD)
+                // ── Repos especializados ──────────────────────────────────────
+                var productRepo = new ProductRepository(DatabaseService);
+                var saleRepo = new SaleRepository(DatabaseService);
+                var cashCloseRepo = new CashCloseRepository(DatabaseService);
+                var creditRepo = new CreditRepository(DatabaseService);
+                var layawayRepo = new LayawayRepository(DatabaseService);
+
+                // ── Repos genéricos ───────────────────────────────────────────
+                var userRepo         = new BaseRepository<Models.User>(DatabaseService);
+                var saleProductRepo  = new BaseRepository<Models.SaleProduct>(DatabaseService);
+                var branchRepo       = new BaseRepository<Models.Branch>(DatabaseService);
+                var categoryRepo     = new BaseRepository<Models.Category>(DatabaseService);
+                var unitRepo         = new BaseRepository<Models.Unit>(DatabaseService);
+                var customerRepo     = new BaseRepository<Models.Customer>(DatabaseService);
+                var creditProductRepo  = new BaseRepository<Models.CreditProduct>(DatabaseService);
+                var creditPaymentRepo  = new BaseRepository<Models.CreditPayment>(DatabaseService);
+                var layawayProductRepo = new BaseRepository<Models.LayawayProduct>(DatabaseService);
+                var layawayPaymentRepo = new BaseRepository<Models.LayawayPayment>(DatabaseService);
+                var cashMovementRepo   = new BaseRepository<Models.CashMovement>(DatabaseService);
+
+                // ── Servicios base ────────────────────────────────────────────
                 RoleService = new RoleService(DatabaseService);
                 await RoleService.LoadRolesAsync();
 
-                // Inicializar AuthService con RoleService
-                var userRepository = new BaseRepository<Models.User>(DatabaseService);
-                AuthService = new AuthService(userRepository, RoleService);
+                AuthService = new AuthService(userRepo, RoleService);
+                UserService = new UserService(userRepo, RoleService);
 
-                // Inicializar UserService shared
-                UserService = new UserService(userRepository, RoleService);
-
-                // Inicializar ConfigService (configuración local JSON)
                 ConfigService = new ConfigService();
                 await ConfigService.LoadAsync();
 
                 // Sincronizar la sucursal inicial en AuthService desde ConfigService
-                // Esto asegura que al hacer login, la sucursal configurada esté disponible
                 if (AuthService != null && ConfigService != null)
                 {
                     var initialBranchId = ConfigService.AppConfig.BranchId;
@@ -99,31 +113,41 @@ namespace CasaCejaRemake
                 // Suscribirse a cambios de configuración
                 ConfigService.AppConfigChanged += OnAppConfigChanged;
 
-                // Inicializar PrintService
                 PrintService = new PrintService(ConfigService);
-
-                // Inicializar ExportService
                 ExportService = new ExportService();
 
-                // Inicializar FolioService
-                FolioService = new FolioService(DatabaseService);
+                FolioService = new FolioService(
+                    cashCloseRepo, saleRepo, creditRepo,
+                    layawayRepo, creditPaymentRepo, layawayPaymentRepo);
 
-                // Inicializar estructura de carpetas para documentos
                 FileHelper.EnsureDirectoriesExist();
 
-                // Inicializar servicios del POS
+                // ── Servicios POS ─────────────────────────────────────────────
+                var ticketService  = new TicketService();
+                var pricingService = new PricingService();
+
                 _cartService = new CartService();
-                _salesService = new SalesService(DatabaseService);
 
-                // Inicializar servicio de clientes
-                _customerService = new CustomerService(DatabaseService);
+                _salesService = new SalesService(
+                    productRepo, saleRepo, saleProductRepo,
+                    branchRepo, categoryRepo, unitRepo, userRepo,
+                    ticketService, pricingService, FolioService, ConfigService);
 
-                // Inicializar servicios de crédito y apartados
-                _creditService = new CreditService(DatabaseService);
-                _layawayService = new LayawayService(DatabaseService);
+                _customerService = new CustomerService(customerRepo);
 
-                // Inicializar servicio de cortes de caja
-                _cashCloseService = new CashCloseService(DatabaseService);
+                _creditService = new CreditService(
+                    creditRepo, creditProductRepo, creditPaymentRepo,
+                    customerRepo, branchRepo, ticketService, FolioService, ConfigService);
+
+                _layawayService = new LayawayService(
+                    layawayRepo, layawayProductRepo, layawayPaymentRepo,
+                    customerRepo, branchRepo, ticketService, FolioService, ConfigService);
+
+                _cashCloseService = new CashCloseService(
+                    cashCloseRepo, cashMovementRepo,
+                    saleRepo, creditRepo, layawayRepo,
+                    layawayPaymentRepo, creditPaymentRepo,
+                    FolioService, ConfigService);
 
                 Console.WriteLine("[App] Servicios inicializados correctamente");
             }
@@ -133,6 +157,7 @@ namespace CasaCejaRemake
                 throw;
             }
         }
+
 
         /// <summary>
         /// Muestra la pantalla de login.

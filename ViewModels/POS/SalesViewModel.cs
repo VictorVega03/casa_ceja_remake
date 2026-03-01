@@ -171,7 +171,8 @@ namespace CasaCejaRemake.ViewModels.POS
         {
             try
             {
-                var cashCloseService = new CashCloseService(App.DatabaseService!);
+                var cashCloseService = (Avalonia.Application.Current as App)?.GetCashCloseService();
+                if (cashCloseService == null) return;
                 var openCash = await cashCloseService.GetOpenCashAsync(_branchId);
                 
                 if (openCash != null)

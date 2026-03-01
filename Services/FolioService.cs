@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using CasaCejaRemake.Data;
 using CasaCejaRemake.Data.Repositories;
 using CasaCejaRemake.Models;
 
@@ -20,47 +19,56 @@ namespace CasaCejaRemake.Services
     /// YYYY = Año (4 dígitos)
     /// T = Tipo (V=Venta, A=Apartado, C=Crédito, P=Pago/Abono, X=Corte)
     /// #### = Secuencial (4 dígitos)
-    /// 
+    ///
     /// REGLA CRÍTICA: Secuencial de cortes (X) es GLOBAL y nunca reinicia.
     /// Otros tipos (V, A, C, P) reinician secuencial cada día.
     /// </summary>
     public class FolioService
     {
-        private readonly DatabaseService _databaseService;
+        private readonly CashCloseRepository _cashCloseRepository;
+        private readonly SaleRepository _saleRepository;
+        private readonly CreditRepository _creditRepository;
+        private readonly LayawayRepository _layawayRepository;
+        private readonly BaseRepository<CreditPayment> _creditPaymentRepository;
+        private readonly BaseRepository<LayawayPayment> _layawayPaymentRepository;
+
         private static readonly SemaphoreSlim _lock = new SemaphoreSlim(1, 1);
 
-        public FolioService(DatabaseService databaseService)
+        public FolioService(
+            CashCloseRepository cashCloseRepository,
+            SaleRepository saleRepository,
+            CreditRepository creditRepository,
+            LayawayRepository layawayRepository,
+            BaseRepository<CreditPayment> creditPaymentRepository,
+            BaseRepository<LayawayPayment> layawayPaymentRepository)
         {
-            _databaseService = databaseService ?? throw new ArgumentNullException(nameof(databaseService));
+            _cashCloseRepository = cashCloseRepository ?? throw new ArgumentNullException(nameof(cashCloseRepository));
+            _saleRepository = saleRepository ?? throw new ArgumentNullException(nameof(saleRepository));
+            _creditRepository = creditRepository ?? throw new ArgumentNullException(nameof(creditRepository));
+            _layawayRepository = layawayRepository ?? throw new ArgumentNullException(nameof(layawayRepository));
+            _creditPaymentRepository = creditPaymentRepository ?? throw new ArgumentNullException(nameof(creditPaymentRepository));
+            _layawayPaymentRepository = layawayPaymentRepository ?? throw new ArgumentNullException(nameof(layawayPaymentRepository));
         }
 
-        /// <summary>
-        /// Genera un folio único para venta.
-        /// </summary>
+        /// <summary>Genera un folio único para venta.</summary>
         public async Task<string> GenerarFolioVentaAsync(int sucursalId, int cajaId)
         {
             return await GenerarFolioAsync(sucursalId, cajaId, 'V');
         }
 
-        /// <summary>
-        /// Genera un folio único para apartado.
-        /// </summary>
+        /// <summary>Genera un folio único para apartado.</summary>
         public async Task<string> GenerarFolioApartadoAsync(int sucursalId, int cajaId)
         {
             return await GenerarFolioAsync(sucursalId, cajaId, 'A');
         }
 
-        /// <summary>
-        /// Genera un folio único para crédito.
-        /// </summary>
+        /// <summary>Genera un folio único para crédito.</summary>
         public async Task<string> GenerarFolioCreditoAsync(int sucursalId, int cajaId)
         {
             return await GenerarFolioAsync(sucursalId, cajaId, 'C');
         }
 
-        /// <summary>
-        /// Genera un folio único para pago/abono.
-        /// </summary>
+        /// <summary>Genera un folio único para pago/abono.</summary>
         public async Task<string> GenerarFolioPagoAsync(int sucursalId, int cajaId)
         {
             return await GenerarFolioAsync(sucursalId, cajaId, 'P');
@@ -69,7 +77,6 @@ namespace CasaCejaRemake.Services
         /// <summary>
         /// Genera un folio único para corte de caja.
         /// REGLA: El secuencial de cortes es GLOBAL y nunca reinicia.
-        /// Simplemente obtiene el último corte y suma 1 al secuencial.
         /// </summary>
         public async Task<string> GenerarFolioCorteAsync(int sucursalId, int cajaId)
         {
@@ -77,26 +84,23 @@ namespace CasaCejaRemake.Services
             try
             {
                 var ahora = DateTime.Now;
-                
-                // Obtener el último corte global (mayor secuencial en todos los registros)
-                var repository = new BaseRepository<CashClose>(_databaseService);
-                var todosLosCortes = await repository.GetAllAsync();
-                
+
+                var todosLosCortes = await _cashCloseRepository.GetAllAsync();
+
                 int nuevoSecuencial = 1;
-                
+
                 if (todosLosCortes.Any())
                 {
-                    // Buscar el máximo secuencial entre TODOS los cortes (sin filtro)
                     var maxSecuencial = todosLosCortes
-                        .Where(c => c.Folio.Length == 17) // Validar formato correcto
+                        .Where(c => c.Folio.Length == 17)
                         .Select(c =>
                         {
-                            var secStr = c.Folio.Substring(13, 4); // Últimos 4 dígitos
+                            var secStr = c.Folio.Substring(13, 4);
                             return int.TryParse(secStr, out var sec) ? sec : 0;
                         })
                         .DefaultIfEmpty(0)
                         .Max();
-                    
+
                     nuevoSecuencial = maxSecuencial + 1;
                     Console.WriteLine($"[FolioService] Último secuencial global de corte: {maxSecuencial}");
                 }
@@ -104,10 +108,8 @@ namespace CasaCejaRemake.Services
                 {
                     Console.WriteLine($"[FolioService] No hay cortes previos en el sistema");
                 }
-                
-                // Construir el nuevo folio (17 caracteres)
+
                 var folio = $"{sucursalId:D2}{cajaId:D2}{ahora:ddMMyyyy}X{nuevoSecuencial:D4}";
-                
                 Console.WriteLine($"[FolioService] Folio de corte generado: {folio} (secuencial global: {nuevoSecuencial})");
                 return folio;
             }
@@ -118,8 +120,7 @@ namespace CasaCejaRemake.Services
         }
 
         /// <summary>
-        /// Método principal de generación de folios.
-        /// Thread-safe mediante SemaphoreSlim.
+        /// Método principal de generación de folios. Thread-safe mediante SemaphoreSlim.
         /// </summary>
         private async Task<string> GenerarFolioAsync(int sucursalId, int cajaId, char tipo)
         {
@@ -130,20 +131,14 @@ namespace CasaCejaRemake.Services
                 var inicioDelDia = ahora.Date;
                 var finDelDia = inicioDelDia.AddDays(1);
 
-                // Obtener el último secuencial usado hoy
                 var ultimoSecuencial = await ObtenerUltimoSecuencialAsync(
                     sucursalId, cajaId, tipo, inicioDelDia, finDelDia);
 
-                // Incrementar el secuencial
                 var nuevoSecuencial = ultimoSecuencial + 1;
-
-                // Construir el folio
                 var folio = $"{sucursalId:D2}{cajaId:D2}{ahora:ddMMyyyy}{tipo}{nuevoSecuencial:D4}";
 
-                // Validar que no existe (por seguridad adicional)
                 if (await ExisteFolioAsync(folio))
                 {
-                    // Si existe (caso extremadamente raro), reintentar
                     Console.WriteLine($"[FolioService] Folio duplicado detectado: {folio}. Reintentando...");
                     return await GenerarFolioAsync(sucursalId, cajaId, tipo);
                 }
@@ -165,90 +160,62 @@ namespace CasaCejaRemake.Services
         {
             try
             {
-                // Construir el prefijo del folio para buscar (13 caracteres: SSCCDMMYYYYT)
                 var prefijo = $"{sucursalId:D2}{cajaId:D2}{fechaInicio:ddMMyyyy}{tipo}";
-                
                 Console.WriteLine($"[FolioService] Buscando último secuencial con prefijo: {prefijo}");
 
-                // Determinar la tabla según el tipo
                 List<string> foliosEncontrados = new List<string>();
-                
+
                 if (tipo == 'P')
                 {
-                    // Para pagos, buscar en ambas tablas usando GetAllAsync y filtrar en memoria
-                    var creditPaymentRepo = new BaseRepository<CreditPayment>(_databaseService);
-                    var layawayPaymentRepo = new BaseRepository<LayawayPayment>(_databaseService);
-                    
-                    var allCreditPayments = await creditPaymentRepo.GetAllAsync();
-                    var allLayawayPayments = await layawayPaymentRepo.GetAllAsync();
-                    
-                    // Filtrar en memoria
-                    var creditPayments = allCreditPayments
-                        .Where(p => p.PaymentDate >= fechaInicio && 
-                                   p.PaymentDate < fechaFin && 
-                                   p.Folio.StartsWith(prefijo) && 
-                                   p.Folio.Length == 17)
-                        .ToList();
-                    
-                    var layawayPayments = allLayawayPayments
-                        .Where(p => p.PaymentDate >= fechaInicio && 
-                                   p.PaymentDate < fechaFin && 
-                                   p.Folio.StartsWith(prefijo) && 
-                                   p.Folio.Length == 17)
-                        .ToList();
-                    
-                    foliosEncontrados.AddRange(creditPayments.Select(p => p.Folio));
-                    foliosEncontrados.AddRange(layawayPayments.Select(p => p.Folio));
+                    var allCreditPayments = await _creditPaymentRepository.FindAsync(p =>
+                        p.PaymentDate >= fechaInicio && p.PaymentDate < fechaFin);
+                    var allLayawayPayments = await _layawayPaymentRepository.FindAsync(p =>
+                        p.PaymentDate >= fechaInicio && p.PaymentDate < fechaFin);
+
+                    foliosEncontrados.AddRange(allCreditPayments
+                        .Where(p => p.Folio.StartsWith(prefijo) && p.Folio.Length == 17)
+                        .Select(p => p.Folio));
+                    foliosEncontrados.AddRange(allLayawayPayments
+                        .Where(p => p.Folio.StartsWith(prefijo) && p.Folio.Length == 17)
+                        .Select(p => p.Folio));
                 }
-                else
+                else if (tipo == 'V')
                 {
-                    // Para otros tipos, buscar en su tabla correspondiente
-                    if (tipo == 'V')
-                    {
-                        var repo = new BaseRepository<Sale>(_databaseService);
-                        var all = await repo.GetAllAsync();
-                        var items = all.Where(s => 
-                            s.SaleDate >= fechaInicio && 
-                            s.SaleDate < fechaFin && 
-                            s.Folio.StartsWith(prefijo) && 
-                            s.Folio.Length == 17).ToList();
-                        foliosEncontrados.AddRange(items.Select(s => s.Folio));
-                    }
-                    else if (tipo == 'A')
-                    {
-                        var repo = new BaseRepository<Layaway>(_databaseService);
-                        var all = await repo.GetAllAsync();
-                        var items = all.Where(l => 
-                            l.LayawayDate >= fechaInicio && 
-                            l.LayawayDate < fechaFin && 
-                            l.Folio.StartsWith(prefijo) && 
-                            l.Folio.Length == 17).ToList();
-                        foliosEncontrados.AddRange(items.Select(l => l.Folio));
-                    }
-                    else if (tipo == 'C')
-                    {
-                        var repo = new BaseRepository<Credit>(_databaseService);
-                        var all = await repo.GetAllAsync();
-                        var items = all.Where(c => 
-                            c.CreditDate >= fechaInicio && 
-                            c.CreditDate < fechaFin && 
-                            c.Folio.StartsWith(prefijo) && 
-                            c.Folio.Length == 17).ToList();
-                        foliosEncontrados.AddRange(items.Select(c => c.Folio));
-                    }
+                    var items = await _saleRepository.GetByBranchSinceDateAsync(0, fechaInicio);
+                    // GetByBranchSinceDateAsync with branchId=0 won't filter by branch,
+                    // but FolioService needs all branches — fall back to FindAsync
+                    var all = await _saleRepository.FindAsync(s =>
+                        s.SaleDate >= fechaInicio && s.SaleDate < fechaFin);
+                    foliosEncontrados.AddRange(all
+                        .Where(s => s.Folio.StartsWith(prefijo) && s.Folio.Length == 17)
+                        .Select(s => s.Folio));
+                }
+                else if (tipo == 'A')
+                {
+                    var all = await _layawayRepository.FindAsync(l =>
+                        l.LayawayDate >= fechaInicio && l.LayawayDate < fechaFin);
+                    foliosEncontrados.AddRange(all
+                        .Where(l => l.Folio.StartsWith(prefijo) && l.Folio.Length == 17)
+                        .Select(l => l.Folio));
+                }
+                else if (tipo == 'C')
+                {
+                    var all = await _creditRepository.GetCreatedSinceAsync(fechaInicio);
+                    foliosEncontrados.AddRange(all
+                        .Where(c => c.CreditDate < fechaFin && c.Folio.StartsWith(prefijo) && c.Folio.Length == 17)
+                        .Select(c => c.Folio));
                 }
 
                 if (!foliosEncontrados.Any())
                 {
                     Console.WriteLine($"[FolioService] No se encontraron folios con prefijo {prefijo}");
-                    return 0; // No hay folios previos hoy
+                    return 0;
                 }
 
-                // Extraer los secuenciales y encontrar el máximo
                 var maxSecuencial = foliosEncontrados
                     .Select(folio =>
                     {
-                        var secStr = folio.Substring(13, 4); // Posición 13-16
+                        var secStr = folio.Substring(13, 4);
                         return int.TryParse(secStr, out var sec) ? sec : 0;
                     })
                     .Max();
@@ -259,36 +226,34 @@ namespace CasaCejaRemake.Services
             catch (Exception ex)
             {
                 Console.WriteLine($"[FolioService] Error obteniendo último secuencial: {ex.Message}");
-                return 0; // En caso de error, empezar desde 0
+                return 0;
             }
         }
 
         /// <summary>
-        /// Verifica si un folio ya existe en alguna de las tablas.
+        /// Verifica si un folio ya existe en alguna de las tablas usando FindAsync.
         /// </summary>
         private async Task<bool> ExisteFolioAsync(string folio)
         {
             try
             {
-                // Buscar en todas las tablas que tienen folios
-                var queries = new[]
-                {
-                    $"SELECT COUNT(*) FROM sales WHERE folio = '{folio}'",
-                    $"SELECT COUNT(*) FROM layaways WHERE folio = '{folio}'",
-                    $"SELECT COUNT(*) FROM credits WHERE folio = '{folio}'",
-                    $"SELECT COUNT(*) FROM credit_payments WHERE folio = '{folio}'",
-                    $"SELECT COUNT(*) FROM layaway_payments WHERE folio = '{folio}'",
-                    $"SELECT COUNT(*) FROM cash_closes WHERE folio = '{folio}'"
-                };
+                var inSales = await _saleRepository.FindAsync(s => s.Folio == folio);
+                if (inSales.Any()) return true;
 
-                foreach (var query in queries)
-                {
-                    var count = await _databaseService.ExecuteScalarAsync<int>(query);
-                    if (count > 0)
-                    {
-                        return true;
-                    }
-                }
+                var inLayaways = await _layawayRepository.FindAsync(l => l.Folio == folio);
+                if (inLayaways.Any()) return true;
+
+                var inCredits = await _creditRepository.FindAsync(c => c.Folio == folio);
+                if (inCredits.Any()) return true;
+
+                var inCreditPayments = await _creditPaymentRepository.FindAsync(p => p.Folio == folio);
+                if (inCreditPayments.Any()) return true;
+
+                var inLayawayPayments = await _layawayPaymentRepository.FindAsync(p => p.Folio == folio);
+                if (inLayawayPayments.Any()) return true;
+
+                var inCashCloses = await _cashCloseRepository.FindAsync(c => c.Folio == folio);
+                if (inCashCloses.Any()) return true;
 
                 return false;
             }
@@ -312,13 +277,13 @@ namespace CasaCejaRemake.Services
 
             try
             {
-                var sucursalId = int.Parse(folio.Substring(0, 2));    // Posición 0-1
-                var cajaId = int.Parse(folio.Substring(2, 2));         // Posición 2-3
-                var dia = int.Parse(folio.Substring(4, 2));            // Posición 4-5
-                var mes = int.Parse(folio.Substring(6, 2));            // Posición 6-7
-                var anio = int.Parse(folio.Substring(8, 4));           // Posición 8-11
-                var tipo = folio[12];                                   // Posición 12
-                var secuencial = int.Parse(folio.Substring(13, 4));    // Posición 13-16
+                var sucursalId = int.Parse(folio.Substring(0, 2));
+                var cajaId = int.Parse(folio.Substring(2, 2));
+                var dia = int.Parse(folio.Substring(4, 2));
+                var mes = int.Parse(folio.Substring(6, 2));
+                var anio = int.Parse(folio.Substring(8, 4));
+                var tipo = folio[12];
+                var secuencial = int.Parse(folio.Substring(13, 4));
 
                 var fecha = new DateTime(anio, mes, dia);
 

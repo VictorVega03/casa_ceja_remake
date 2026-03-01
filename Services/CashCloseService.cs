@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using CasaCejaRemake.Data;
 using CasaCejaRemake.Data.Repositories;
 using CasaCejaRemake.Models;
 using CasaCejaRemake.Models.Results;
@@ -15,42 +14,49 @@ namespace CasaCejaRemake.Services
     /// </summary>
     public class CashCloseService
     {
-        private readonly DatabaseService _databaseService;
-        private readonly BaseRepository<CashClose> _cashCloseRepository;
+        private readonly CashCloseRepository _cashCloseRepository;
         private readonly BaseRepository<CashMovement> _movementRepository;
-        private readonly BaseRepository<Sale> _saleRepository;
-        private readonly BaseRepository<Credit> _creditRepository;
-        private readonly BaseRepository<Layaway> _layawayRepository;
+        private readonly SaleRepository _saleRepository;
+        private readonly CreditRepository _creditRepository;
+        private readonly LayawayRepository _layawayRepository;
         private readonly BaseRepository<LayawayPayment> _layawayPaymentRepository;
         private readonly BaseRepository<CreditPayment> _creditPaymentRepository;
+        private readonly FolioService _folioService;
+        private readonly ConfigService _configService;
 
-        public CashCloseService(DatabaseService databaseService)
+        public CashCloseService(
+            CashCloseRepository cashCloseRepository,
+            BaseRepository<CashMovement> movementRepository,
+            SaleRepository saleRepository,
+            CreditRepository creditRepository,
+            LayawayRepository layawayRepository,
+            BaseRepository<LayawayPayment> layawayPaymentRepository,
+            BaseRepository<CreditPayment> creditPaymentRepository,
+            FolioService folioService,
+            ConfigService configService)
         {
-            _databaseService = databaseService;
-            _cashCloseRepository = new BaseRepository<CashClose>(databaseService);
-            _movementRepository = new BaseRepository<CashMovement>(databaseService);
-            _saleRepository = new BaseRepository<Sale>(databaseService);
-            _creditRepository = new BaseRepository<Credit>(databaseService);
-            _layawayRepository = new BaseRepository<Layaway>(databaseService);
-            _layawayPaymentRepository = new BaseRepository<LayawayPayment>(databaseService);
-            _creditPaymentRepository = new BaseRepository<CreditPayment>(databaseService);
+            _cashCloseRepository = cashCloseRepository;
+            _movementRepository = movementRepository;
+            _saleRepository = saleRepository;
+            _creditRepository = creditRepository;
+            _layawayRepository = layawayRepository;
+            _layawayPaymentRepository = layawayPaymentRepository;
+            _creditPaymentRepository = creditPaymentRepository;
+            _folioService = folioService;
+            _configService = configService;
         }
 
-        /// <summary>
-        /// Abre una nueva caja con el fondo inicial especificado.
-        /// </summary>
+        /// <summary>Abre una nueva caja con el fondo inicial especificado.</summary>
         public async Task<CashCloseResult> OpenCashAsync(decimal openingAmount, int userId, int branchId)
         {
             try
             {
-                // Verificar que no haya caja abierta
                 var existingOpen = await GetOpenCashAsync(branchId);
                 if (existingOpen != null)
                 {
                     return CashCloseResult.Error("Ya existe una caja abierta para esta sucursal");
                 }
 
-                // Generar folio
                 var folio = await GenerateFolioAsync(branchId);
 
                 var cashClose = new CashClose
@@ -60,7 +66,7 @@ namespace CasaCejaRemake.Services
                     UserId = userId,
                     OpeningCash = openingAmount,
                     OpeningDate = DateTime.Now,
-                    CloseDate = DateTime.Now, // Se actualizará al cerrar
+                    CloseDate = DateTime.Now,
                     CreatedAt = DateTime.Now,
                     UpdatedAt = DateTime.Now,
                     SyncStatus = 1
@@ -78,26 +84,12 @@ namespace CasaCejaRemake.Services
             }
         }
 
-        /// <summary>
-        /// Obtiene la caja abierta para una sucursal.
-        /// </summary>
+        /// <summary>Obtiene la caja abierta para una sucursal.</summary>
         public async Task<CashClose?> GetOpenCashAsync(int branchId)
         {
             try
             {
-                // Una caja está "abierta" si CloseDate es igual a OpeningDate (no se ha cerrado)
-                // O si no tiene TotalCash > 0 y fue creada hoy
-                var today = DateTime.Today;
-                var cashCloses = await _cashCloseRepository.GetAllAsync();
-                
-                var openCash = cashCloses
-                    .Where(c => c.BranchId == branchId)
-                    .Where(c => c.OpeningDate.Date == today)
-                    .Where(c => c.CloseDate <= c.OpeningDate.AddSeconds(1)) // No cerrada aún
-                    .OrderByDescending(c => c.OpeningDate)
-                    .FirstOrDefault();
-
-                return openCash;
+                return await _cashCloseRepository.GetOpenByBranchAsync(branchId);
             }
             catch (Exception ex)
             {
@@ -108,7 +100,7 @@ namespace CasaCejaRemake.Services
 
         /// <summary>
         /// Calcula los totales para el corte de caja según las reglas de negocio.
-        /// 
+        ///
         /// REGLAS CLAVE (de reglas_corte.md):
         /// 1. Para ventas se usa sale.Total (NO AmountPaid). El cambio está implícito.
         /// 2. Los créditos/apartados CREADOS suman al Total del Corte (productividad).
@@ -122,28 +114,22 @@ namespace CasaCejaRemake.Services
             try
             {
                 Console.WriteLine($"[CashCloseService] CalculateTotalsAsync - openingDate={openingDate}");
-                
+
                 // ==================== 1. VENTAS DIRECTAS ====================
-                // Se contabiliza el TOTAL de la venta (NO AmountPaid)
-                // El cambio dado ya está implícito en esta operación
-                
-                var allSales = await _saleRepository.GetAllAsync();
-                var salesSinceOpen = allSales.Where(s => s.SaleDate >= openingDate).ToList();
-                
+                var salesSinceOpen = await _saleRepository.GetByBranchSinceDateAsync(0, openingDate);
+                // branchId=0 → filter all branches; we only want since openingDate which is already done
+
                 totals.SalesCount = salesSinceOpen.Count;
                 Console.WriteLine($"[CashCloseService] Ventas directas: {salesSinceOpen.Count}");
 
                 foreach (var sale in salesSinceOpen)
                 {
-                    // Clasificar por método de pago usando el TOTAL de la venta
                     if (sale.PaymentMethod.StartsWith("{"))
                     {
-                        // Pago mixto (JSON) - distribuir proporcionalmente
                         ProcessMixedPaymentSale(sale, totals);
                     }
                     else
                     {
-                        // Pago simple
                         switch (sale.PaymentMethod)
                         {
                             case "Efectivo":
@@ -164,56 +150,36 @@ namespace CasaCejaRemake.Services
                         }
                     }
                 }
-                
-                totals.TotalSales = totals.TotalCash + totals.TotalDebitCard + 
+
+                totals.TotalSales = totals.TotalCash + totals.TotalDebitCard +
                                     totals.TotalCreditCard + totals.TotalTransfers + totals.TotalChecks;
 
                 // ==================== 2. CRÉDITOS CREADOS ====================
-                // El TOTAL del crédito suma al "Total del Corte" (productividad)
-                // Solo el efectivo de enganches/abonos suma al "Efectivo Esperado"
-                
-                var allCredits = await _creditRepository.GetAllAsync();
-                var creditsCreated = allCredits.Where(c => c.CreditDate >= openingDate).ToList();
-                
+                var creditsCreated = await _creditRepository.GetCreatedSinceAsync(openingDate);
                 totals.CreditCount = creditsCreated.Count;
                 totals.CreditTotalCreated = creditsCreated.Sum(c => c.Total);
-                
                 Console.WriteLine($"[CashCloseService] Créditos creados: {creditsCreated.Count}, Total: ${totals.CreditTotalCreated}");
 
-                // Abonos de créditos (incluyendo enganches) en efectivo
-                var allCreditPayments = await _creditPaymentRepository.GetAllAsync();
-                var creditPaymentsSinceOpen = allCreditPayments.Where(p => p.PaymentDate >= openingDate).ToList();
-                
+                var creditPaymentsSinceOpen = await _creditPaymentRepository.FindAsync(p => p.PaymentDate >= openingDate);
                 foreach (var payment in creditPaymentsSinceOpen)
                 {
                     decimal cashAmount = ExtractCashFromPaymentMethod(payment.PaymentMethod, payment.AmountPaid);
                     totals.CreditCash += cashAmount;
                 }
-                
                 Console.WriteLine($"[CashCloseService] Efectivo de créditos (abonos): ${totals.CreditCash}");
 
                 // ==================== 3. APARTADOS CREADOS ====================
-                // El TOTAL del apartado suma al "Total del Corte" (productividad)
-                // Solo el efectivo de abonos suma al "Efectivo Esperado"
-                
-                var allLayaways = await _layawayRepository.GetAllAsync();
-                var layawaysCreated = allLayaways.Where(l => l.LayawayDate >= openingDate).ToList();
-                
+                var layawaysCreated = await _layawayRepository.GetCreatedSinceAsync(openingDate);
                 totals.LayawayCount = layawaysCreated.Count;
                 totals.LayawayTotalCreated = layawaysCreated.Sum(l => l.Total);
-                
                 Console.WriteLine($"[CashCloseService] Apartados creados: {layawaysCreated.Count}, Total: ${totals.LayawayTotalCreated}");
 
-                // Abonos de apartados en efectivo
-                var allLayawayPayments = await _layawayPaymentRepository.GetAllAsync();
-                var layawayPaymentsSinceOpen = allLayawayPayments.Where(p => p.PaymentDate >= openingDate).ToList();
-                
+                var layawayPaymentsSinceOpen = await _layawayPaymentRepository.FindAsync(p => p.PaymentDate >= openingDate);
                 foreach (var payment in layawayPaymentsSinceOpen)
                 {
                     decimal cashAmount = ExtractCashFromPaymentMethod(payment.PaymentMethod, payment.AmountPaid);
                     totals.LayawayCash += cashAmount;
                 }
-                
                 Console.WriteLine($"[CashCloseService] Efectivo de apartados (abonos): ${totals.LayawayCash}");
 
                 // ==================== 4. MOVIMIENTOS DE CAJA ====================
@@ -262,7 +228,6 @@ namespace CasaCejaRemake.Services
                 decimal totalPaidInJson = payments.Values.Sum();
                 if (totalPaidInJson <= 0) return;
 
-                // Distribuir el Total de la venta proporcionalmente
                 foreach (var kvp in payments)
                 {
                     decimal proportion = kvp.Value / totalPaidInJson;
@@ -297,18 +262,14 @@ namespace CasaCejaRemake.Services
         /// <summary>
         /// Extrae el monto en efectivo de un PaymentMethod (puede ser JSON o string simple)
         /// </summary>
-        /// <param name="paymentMethod">Método de pago (JSON o string)</param>
-        /// <param name="totalAmount">Monto total del pago (usado si es pago simple en efectivo)</param>
         private decimal ExtractCashFromPaymentMethod(string paymentMethod, decimal totalAmount)
         {
             if (string.IsNullOrEmpty(paymentMethod))
                 return 0;
 
-            // Si es "Efectivo" string simple, el abono completo es en efectivo
             if (paymentMethod == "Efectivo")
                 return totalAmount;
 
-            // Si es JSON
             if (paymentMethod.StartsWith("{"))
             {
                 try
@@ -330,11 +291,11 @@ namespace CasaCejaRemake.Services
 
         /// <summary>
         /// Cierra la caja con los datos finales.
-        /// 
+        ///
         /// FÓRMULA (de reglas_corte.md):
-        /// EFECTIVO ESPERADO = Fondo + Efectivo Ventas + Efectivo Abonos Créditos 
+        /// EFECTIVO ESPERADO = Fondo + Efectivo Ventas + Efectivo Abonos Créditos
         ///                   + Efectivo Abonos Apartados + Ingresos - Gastos
-        /// 
+        ///
         /// NOTA: El cambio NO se resta porque ya está implícito al usar sale.Total
         /// en lugar de sale.AmountPaid.
         /// </summary>
@@ -343,10 +304,9 @@ namespace CasaCejaRemake.Services
             try
             {
                 Console.WriteLine($"[CashCloseService] CloseCashAsync iniciado - Id={cashClose.Id}, Folio={cashClose.Folio}");
-                
-                // Calcular totales según reglas de negocio
+
                 var totals = await CalculateTotalsAsync(cashClose.Id, cashClose.OpeningDate);
-                
+
                 Console.WriteLine($"[CashCloseService] Totales calculados:");
                 Console.WriteLine($"  - Ventas efectivo: ${totals.TotalCash}");
                 Console.WriteLine($"  - Créditos creados: ${totals.CreditTotalCreated}");
@@ -354,53 +314,34 @@ namespace CasaCejaRemake.Services
                 Console.WriteLine($"  - Efectivo abonos créditos: ${totals.CreditCash}");
                 Console.WriteLine($"  - Efectivo abonos apartados: ${totals.LayawayCash}");
 
-                // ==================== ACTUALIZAR CAMPOS DEL MODELO ====================
-                // IMPORTANTE: Redondear todos los valores a 2 decimales para evitar
-                // problemas de precisión de punto flotante en la base de datos
-                
-                // Ventas directas por método de pago
                 cashClose.TotalCash = Math.Round(totals.TotalCash, 2);
                 cashClose.TotalDebitCard = Math.Round(totals.TotalDebitCard, 2);
                 cashClose.TotalCreditCard = Math.Round(totals.TotalCreditCard, 2);
                 cashClose.TotalTransfers = Math.Round(totals.TotalTransfers, 2);
                 cashClose.TotalChecks = Math.Round(totals.TotalChecks, 2);
-                
-                // Créditos y Apartados CREADOS (para Total del Corte / productividad)
+
                 cashClose.CreditTotalCreated = Math.Round(totals.CreditTotalCreated, 2);
                 cashClose.LayawayTotalCreated = Math.Round(totals.LayawayTotalCreated, 2);
-                
-                // Efectivo de abonos (para Efectivo Esperado)
+
                 cashClose.CreditCash = Math.Round(totals.CreditCash, 2);
                 cashClose.LayawayCash = Math.Round(totals.LayawayCash, 2);
-                
-                // Total de ventas directas
+
                 cashClose.TotalSales = Math.Round(totals.TotalSales, 2);
 
-                // Serializar gastos e ingresos como JSON
                 var movements = await GetMovementsAsync(cashClose.Id);
                 var expenses = movements.Where(m => m.IsExpense).Select(m => new { description = m.Concept, amount = m.Amount }).ToList();
                 var income = movements.Where(m => !m.IsExpense).Select(m => new { description = m.Concept, amount = m.Amount }).ToList();
-                
+
                 cashClose.Expenses = System.Text.Json.JsonSerializer.Serialize(expenses);
                 cashClose.Income = System.Text.Json.JsonSerializer.Serialize(income);
 
-                // ==================== FÓRMULA DE EFECTIVO ESPERADO ====================
-                // IMPORTANTE: NO restamos cambio porque al usar sale.Total ya está implícito.
-                // 
-                // Efectivo Esperado = Fondo Inicial 
-                //                   + Ventas en Efectivo (sale.Total, no AmountPaid)
-                //                   + Efectivo de Abonos/Enganches de Créditos
-                //                   + Efectivo de Abonos de Apartados
-                //                   + Ingresos Extra
-                //                   - Gastos
-                decimal expectedCash = cashClose.OpeningCash 
-                                     + totals.TotalCash      // Ventas directas en efectivo
-                                     + totals.CreditCash     // Efectivo de abonos créditos
-                                     + totals.LayawayCash    // Efectivo de abonos apartados
-                                     + totals.TotalIncome    // Ingresos extra
-                                     - totals.TotalExpenses; // Gastos
+                decimal expectedCash = cashClose.OpeningCash
+                                     + totals.TotalCash
+                                     + totals.CreditCash
+                                     + totals.LayawayCash
+                                     + totals.TotalIncome
+                                     - totals.TotalExpenses;
 
-                // Redondear a 2 decimales
                 cashClose.ExpectedCash = Math.Round(expectedCash, 2);
                 cashClose.Surplus = Math.Round(declaredAmount - expectedCash, 2);
                 cashClose.CloseDate = DateTime.Now;
@@ -408,8 +349,7 @@ namespace CasaCejaRemake.Services
 
                 await _cashCloseRepository.UpdateAsync(cashClose);
 
-                // ==================== ASIGNAR FOLIO DE CORTE A TODAS LAS TRANSACCIONES ====================
-                // Actualizar ventas con el folio del corte
+                // ==================== ASIGNAR FOLIO DE CORTE A TRANSACCIONES ====================
                 var salesSinceOpen = await _saleRepository.FindAsync(s => s.SaleDate >= cashClose.OpeningDate);
                 foreach (var sale in salesSinceOpen)
                 {
@@ -420,7 +360,6 @@ namespace CasaCejaRemake.Services
                     }
                 }
 
-                // Actualizar pagos de créditos con el folio del corte
                 var creditPaymentsSinceOpen = await _creditPaymentRepository.FindAsync(p => p.PaymentDate >= cashClose.OpeningDate);
                 foreach (var payment in creditPaymentsSinceOpen)
                 {
@@ -431,7 +370,6 @@ namespace CasaCejaRemake.Services
                     }
                 }
 
-                // Actualizar pagos de apartados con el folio del corte
                 var layawayPaymentsSinceOpen = await _layawayPaymentRepository.FindAsync(p => p.PaymentDate >= cashClose.OpeningDate);
                 foreach (var payment in layawayPaymentsSinceOpen)
                 {
@@ -443,7 +381,6 @@ namespace CasaCejaRemake.Services
                 }
 
                 Console.WriteLine($"[CashCloseService] Folio de corte asignado a transacciones: {cashClose.Folio}");
-
                 Console.WriteLine($"[CashCloseService] === CORTE DE CAJA COMPLETADO ===");
                 Console.WriteLine($"  Fondo inicial: ${cashClose.OpeningCash}");
                 Console.WriteLine($"  + Ventas efectivo: ${totals.TotalCash}");
@@ -466,9 +403,7 @@ namespace CasaCejaRemake.Services
             }
         }
 
-        /// <summary>
-        /// Agrega un movimiento (gasto o ingreso) al turno actual.
-        /// </summary>
+        /// <summary>Agrega un movimiento (gasto o ingreso) al turno actual.</summary>
         public async Task<CashMovementResult> AddMovementAsync(int cashCloseId, string type, string concept, decimal amount, int userId)
         {
             try
@@ -505,15 +440,12 @@ namespace CasaCejaRemake.Services
             }
         }
 
-        /// <summary>
-        /// Obtiene los movimientos de un corte de caja.
-        /// </summary>
+        /// <summary>Obtiene los movimientos de un corte de caja.</summary>
         public async Task<List<CashMovement>> GetMovementsAsync(int cashCloseId)
         {
             try
             {
-                var all = await _movementRepository.GetAllAsync();
-                return all.Where(m => m.CashCloseId == cashCloseId).ToList();
+                return await _movementRepository.FindAsync(m => m.CashCloseId == cashCloseId);
             }
             catch (Exception ex)
             {
@@ -530,13 +462,7 @@ namespace CasaCejaRemake.Services
         {
             try
             {
-                var all = await _cashCloseRepository.GetAllAsync();
-                return all
-                    .Where(c => c.BranchId == branchId)
-                    .Where(c => c.CloseDate > c.OpeningDate.AddSeconds(1)) // Excluir cortes abiertos
-                    .OrderByDescending(c => c.CloseDate)
-                    .Take(limit)
-                    .ToList();
+                return await _cashCloseRepository.GetHistoryByBranchAsync(branchId, limit);
             }
             catch (Exception ex)
             {
@@ -545,22 +471,18 @@ namespace CasaCejaRemake.Services
             }
         }
 
-        /// <summary>
-        /// Genera un folio único para el corte usando FolioService.
-        /// </summary>
+        /// <summary>Genera un folio único para el corte usando FolioService.</summary>
         private async Task<string> GenerateFolioAsync(int branchId)
         {
             try
             {
-                // Extraer cajaId del TerminalId configurado (ej: "CAJA-01" -> 1)
-                var terminalId = App.ConfigService?.PosTerminalConfig.TerminalId ?? "CAJA-01";
+                var terminalId = _configService.PosTerminalConfig.TerminalId ?? "CAJA-01";
                 var cajaId = int.TryParse(terminalId.Replace("CAJA-", ""), out var caja) ? caja : 1;
-                return await App.FolioService!.GenerarFolioCorteAsync(branchId, cajaId);
+                return await _folioService.GenerarFolioCorteAsync(branchId, cajaId);
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"[CashCloseService] Error generando folio: {ex.Message}");
-                // Fallback en caso de error
                 return $"CC-{DateTime.Now:yyyyMMddHHmmss}";
             }
         }
