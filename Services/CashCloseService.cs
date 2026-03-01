@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using CasaCejaRemake.Data;
 using CasaCejaRemake.Data.Repositories;
 using CasaCejaRemake.Models;
+using CasaCejaRemake.Services.Interfaces;
 
 namespace CasaCejaRemake.Services
 {
@@ -123,7 +124,7 @@ namespace CasaCejaRemake.Services
     /// Servicio para gestión de apertura y cierre de caja.
     /// Implementa las reglas de negocio documentadas en reglas_corte.md
     /// </summary>
-    public class CashCloseService
+    public class CashCloseService : ICashCloseService
     {
         private readonly DatabaseService _databaseService;
         private readonly BaseRepository<CashClose> _cashCloseRepository;

@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using ClosedXML.Excel;
 using CasaCejaRemake.Helpers;
+using CasaCejaRemake.Services.Interfaces;
 
 namespace CasaCejaRemake.Services
 {
@@ -58,7 +59,7 @@ namespace CasaCejaRemake.Services
     /// Los archivos se guardan en CasaCejaDocs/{módulo}/.
     /// Compatible con Windows y macOS.
     /// </summary>
-    public class ExportService
+    public class ExportService : IExportService
     {
         // ============ COLORES DEL TEMA ============
         private const string HEADER_BG_COLOR = "#2196F3";

@@ -4,6 +4,7 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using CasaCejaRemake.Helpers;
 using CasaCejaRemake.Models;
+using CasaCejaRemake.Services.Interfaces;
 
 namespace CasaCejaRemake.Services
 {
@@ -13,7 +14,7 @@ namespace CasaCejaRemake.Services
     /// 1. AppConfig: Configuración general (sucursal actual) - Solo Admin
     /// 2. PosTerminalConfig: Configuración del terminal POS (impresora, tickets, etc.)
     /// </summary>
-    public class ConfigService
+    public class ConfigService : IConfigService
     {
         private readonly string _appConfigPath;
         private readonly string _posTerminalConfigPath;

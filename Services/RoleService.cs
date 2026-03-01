@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using CasaCejaRemake.Data;
 using CasaCejaRemake.Helpers;
 using CasaCejaRemake.Models;
+using CasaCejaRemake.Services.Interfaces;
 
 namespace CasaCejaRemake.Services
 {
@@ -13,7 +14,7 @@ namespace CasaCejaRemake.Services
     /// Carga los roles desde la base de datos y los mantiene en memoria
     /// para consultas rápidas. Reemplaza las constantes estáticas.
     /// </summary>
-    public class RoleService
+    public class RoleService : IRoleService
     {
         private readonly DatabaseService _databaseService;
         private List<Role> _roles = new();

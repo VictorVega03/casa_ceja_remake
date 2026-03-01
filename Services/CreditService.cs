@@ -6,10 +6,11 @@ using CasaCejaRemake.Data;
 using CasaCejaRemake.Data.Repositories;
 using CasaCejaRemake.Helpers;
 using CasaCejaRemake.Models;
+using CasaCejaRemake.Services.Interfaces;
 
 namespace CasaCejaRemake.Services
 {
-    public class CreditService
+    public class CreditService : ICreditService
     {
         private readonly DatabaseService _databaseService;
         private readonly BaseRepository<Credit> _creditRepository;

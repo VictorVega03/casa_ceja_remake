@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using CasaCejaRemake.Data.Repositories;
 using CasaCejaRemake.Helpers;
 using CasaCejaRemake.Models;
+using CasaCejaRemake.Services.Interfaces;
 
 namespace CasaCejaRemake.Services
 {
@@ -12,7 +13,7 @@ namespace CasaCejaRemake.Services
     /// Servicio para gestión de usuarios (CRUD).
     /// Usado desde el módulo Shared para Admin y POS.
     /// </summary>
-    public class UserService
+    public class UserService : IUserService
     {
         private readonly IRepository<User> _userRepository;
         private readonly RoleService _roleService;

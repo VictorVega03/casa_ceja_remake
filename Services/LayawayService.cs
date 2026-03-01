@@ -6,10 +6,11 @@ using CasaCejaRemake.Data;
 using CasaCejaRemake.Data.Repositories;
 using CasaCejaRemake.Helpers;
 using CasaCejaRemake.Models;
+using CasaCejaRemake.Services.Interfaces;
 
 namespace CasaCejaRemake.Services
 {
-    public class LayawayService
+    public class LayawayService : ILayawayService
     {
         private readonly DatabaseService _databaseService;
         private readonly BaseRepository<Layaway> _layawayRepository;

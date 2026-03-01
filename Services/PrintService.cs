@@ -5,6 +5,7 @@ using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using CasaCejaRemake.Models;
+using CasaCejaRemake.Services.Interfaces;
 using CasaCejaRemake.Services.Platform;
 
 namespace CasaCejaRemake.Services
@@ -50,7 +51,7 @@ namespace CasaCejaRemake.Services
     /// Servicio de impresión multiplataforma.
     /// Soporta impresoras térmicas (ticket) y convencionales (carta).
     /// </summary>
-    public class PrintService
+    public class PrintService : IPrintService
     {
         private readonly ConfigService _configService;
 

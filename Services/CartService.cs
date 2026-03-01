@@ -3,13 +3,14 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using CasaCejaRemake.Models;
+using CasaCejaRemake.Services.Interfaces;
 
 namespace CasaCejaRemake.Services
 {
     /// Servicio para gestión de carritos de compra
     /// Soporta múltiples colecciones (A, B, C, D) para manejar ventas simultáneas
 
-    public class CartService
+    public class CartService : ICartService
     {
         private readonly Dictionary<char, Collection> _collections;
         private char _currentCollection = 'A';

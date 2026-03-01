@@ -5,10 +5,11 @@ using System.Threading.Tasks;
 using CasaCejaRemake.Data;
 using CasaCejaRemake.Data.Repositories;
 using CasaCejaRemake.Models;
+using CasaCejaRemake.Services.Interfaces;
 
 namespace CasaCejaRemake.Services
 {
-    public class CustomerService
+    public class CustomerService : ICustomerService
     {
         private readonly DatabaseService _databaseService;
         private readonly BaseRepository<Customer> _customerRepository;

@@ -6,6 +6,7 @@ using CasaCejaRemake.Data;
 using CasaCejaRemake.Data.Repositories;
 using CasaCejaRemake.Helpers;
 using CasaCejaRemake.Models;
+using CasaCejaRemake.Services.Interfaces;
 
 namespace CasaCejaRemake.Services
 {
@@ -44,7 +45,7 @@ namespace CasaCejaRemake.Services
         public List<string> Errors { get; set; } = new();
     }
 
-    public class SalesService
+    public class SalesService : ISalesService
     {
         private readonly DatabaseService _databaseService;
         private readonly BaseRepository<Sale> _saleRepository;

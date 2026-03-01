@@ -1,11 +1,12 @@
 using CasaCejaRemake.Data.Repositories;
 using CasaCejaRemake.Models;
+using CasaCejaRemake.Services.Interfaces;
 using System;
 using System.Threading.Tasks;
 
 namespace CasaCejaRemake.Services
 {
-    public class AuthService
+    public class AuthService : IAuthService
     {
         private readonly IRepository<User> _userRepository;
         private readonly RoleService _roleService;

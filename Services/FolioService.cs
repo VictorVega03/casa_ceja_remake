@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using CasaCejaRemake.Data;
 using CasaCejaRemake.Data.Repositories;
 using CasaCejaRemake.Models;
+using CasaCejaRemake.Services.Interfaces;
 
 namespace CasaCejaRemake.Services
 {
@@ -24,7 +25,7 @@ namespace CasaCejaRemake.Services
     /// REGLA CRÍTICA: Secuencial de cortes (X) es GLOBAL y nunca reinicia.
     /// Otros tipos (V, A, C, P) reinician secuencial cada día.
     /// </summary>
-    public class FolioService
+    public class FolioService : IFolioService
     {
         private readonly DatabaseService _databaseService;
         private static readonly SemaphoreSlim _lock = new SemaphoreSlim(1, 1);

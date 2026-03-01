@@ -6,6 +6,7 @@ using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using CasaCejaRemake.Helpers;
 using CasaCejaRemake.Models;
+using CasaCejaRemake.Services.Interfaces;
 
 namespace CasaCejaRemake.Services
 {
@@ -223,7 +224,7 @@ namespace CasaCejaRemake.Services
         public decimal RemainingBalance { get; set; }
     }
 
-    public class TicketService
+    public class TicketService : ITicketService
     {
         public string GenerateFolio(int branchId, int consecutivo)
         {
