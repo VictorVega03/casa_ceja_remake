@@ -45,10 +45,10 @@ namespace CasaCejaRemake.ViewModels.POS
         public event EventHandler<string>? ReprintRequested;
         public event EventHandler? CloseRequested;
 
-        public SaleDetailViewModel(SalesService salesService)
+        public SaleDetailViewModel(SalesService salesService, TicketService ticketService)
         {
             _salesService = salesService;
-            _ticketService = new TicketService();
+            _ticketService = ticketService;
         }
 
         public async Task InitializeAsync(int saleId)

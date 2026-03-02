@@ -7,7 +7,6 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CasaCejaRemake.Models;
 using CasaCejaRemake.Services;
-using CasaCejaRemake.Data;
 using CasaCejaRemake.Data.Repositories;
 
 namespace CasaCejaRemake.ViewModels.POS
@@ -52,7 +51,8 @@ namespace CasaCejaRemake.ViewModels.POS
     {
         private readonly CashCloseService _cashCloseService;
         private readonly AuthService _authService;
-        private readonly DatabaseService _databaseService;
+        private readonly BaseRepository<User> _userRepository;
+        private readonly BaseRepository<Branch> _branchRepository;
         private readonly int _branchId;
         private ObservableCollection<CashCloseListItemWrapper> _allItems = new();
 
@@ -88,12 +88,14 @@ namespace CasaCejaRemake.ViewModels.POS
         public CashCloseHistoryViewModel(
             CashCloseService cashCloseService,
             AuthService authService,
-            DatabaseService databaseService,
+            BaseRepository<User> userRepository,
+            BaseRepository<Branch> branchRepository,
             int branchId)
         {
             _cashCloseService = cashCloseService;
             _authService = authService;
-            _databaseService = databaseService;
+            _userRepository = userRepository;
+            _branchRepository = branchRepository;
             _branchId = branchId;
 
             // Filtros por defecto: último mes
@@ -128,10 +130,8 @@ namespace CasaCejaRemake.ViewModels.POS
                 }
 
                 // Cargar todos los usuarios y sucursales de una vez para eficiencia
-                var userRepository = new BaseRepository<User>(_databaseService);
-                var branchRepository = new BaseRepository<Branch>(_databaseService);
-                var allUsers = await userRepository.GetAllAsync();
-                var allBranches = await branchRepository.GetAllAsync();
+                var allUsers = await _userRepository.GetAllAsync();
+                var allBranches = await _branchRepository.GetAllAsync();
 
                 foreach (var cashClose in cashCloses)
                 {

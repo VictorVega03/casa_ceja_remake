@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CasaCejaRemake.Models;
+using CasaCejaRemake.Models.Results;
 using CasaCejaRemake.Services;
 using PaymentMethodEnum = CasaCejaRemake.Models.PaymentMethod; // Keep for backward compatibility
 
@@ -170,7 +171,8 @@ namespace CasaCejaRemake.ViewModels.POS
         {
             try
             {
-                var cashCloseService = new CashCloseService(App.DatabaseService!);
+                var cashCloseService = (Avalonia.Application.Current as App)?.GetCashCloseService();
+                if (cashCloseService == null) return;
                 var openCash = await cashCloseService.GetOpenCashAsync(_branchId);
                 
                 if (openCash != null)

@@ -77,7 +77,7 @@ namespace CasaCejaRemake.Views.POS
             GenerateCashCloseTicket(cashClose);
             
             // Guardar el ticket y el resultado
-            Tag = new CashCloseResult 
+            Tag = new CashCloseDialogResult 
             { 
                 CashClose = cashClose, 
                 TicketText = _ticketText 
@@ -204,7 +204,7 @@ namespace CasaCejaRemake.Views.POS
     }
 
     // Resultado del corte con ticket
-    public class CashCloseResult
+    public class CashCloseDialogResult
     {
         public CashClose? CashClose { get; set; }
         public string? TicketText { get; set; }

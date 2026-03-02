@@ -104,10 +104,11 @@ namespace CasaCejaRemake.ViewModels.POS
 
         public SalesHistoryViewModel(
             SalesService salesService,
+            TicketService ticketService,
             int branchId)
         {
             _salesService = salesService;
-            _ticketService = new TicketService();
+            _ticketService = ticketService;
             _branchId = branchId;
 
             // Filtros por defecto: hoy

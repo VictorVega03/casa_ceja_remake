@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using CasaCejaRemake.Data.Repositories;
 using CasaCejaRemake.Models;
 using CasaCejaRemake.Services;
 
@@ -19,7 +20,7 @@ namespace CasaCejaRemake.ViewModels.Shared
     {
         private readonly ConfigService _configService;
         private readonly AuthService _authService;
-        private readonly Data.DatabaseService _databaseService;
+        private readonly BaseRepository<Branch> _branchRepository;
         private readonly PrintService _printService;
         private readonly UserService _userService;
         private readonly ThermalPrinterSetupService _thermalSetupService;
@@ -63,18 +64,19 @@ namespace CasaCejaRemake.ViewModels.Shared
         public event Func<Task<bool>>? AdminVerificationRequested;
 
         public AppConfigViewModel(
+            BaseRepository<Branch> branchRepository,
             ConfigService configService,
             AuthService authService,
-            Data.DatabaseService databaseService,
             PrintService printService,
-            UserService userService)
+            UserService userService,
+            ThermalPrinterSetupService thermalSetupService)
         {
+            _branchRepository = branchRepository;
             _configService = configService;
             _authService = authService;
-            _databaseService = databaseService;
             _printService = printService;
             _userService = userService;
-            _thermalSetupService = new ThermalPrinterSetupService();
+            _thermalSetupService = thermalSetupService;
         }
 
         partial void OnBranchChangeUnlockedChanged(bool value)
@@ -91,9 +93,8 @@ namespace CasaCejaRemake.ViewModels.Shared
             try
             {
                 // 1. Cargar sucursales activas
-                var branchList = await _databaseService.Table<Branch>()
-                    .Where(b => b.Active)
-                    .ToListAsync();
+                var allBranches = await _branchRepository.GetAllAsync();
+                var branchList = allBranches.Where(b => b.Active).ToList();
                 Branches = new ObservableCollection<Branch>(branchList);
 
                 // 2. Aplicar configuración de sucursal guardada
