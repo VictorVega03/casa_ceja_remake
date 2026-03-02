@@ -68,14 +68,15 @@ namespace CasaCejaRemake.ViewModels.Shared
             ConfigService configService,
             AuthService authService,
             PrintService printService,
-            UserService userService)
+            UserService userService,
+            ThermalPrinterSetupService thermalSetupService)
         {
             _branchRepository = branchRepository;
             _configService = configService;
             _authService = authService;
             _printService = printService;
             _userService = userService;
-            _thermalSetupService = new ThermalPrinterSetupService();
+            _thermalSetupService = thermalSetupService;
         }
 
         partial void OnBranchChangeUnlockedChanged(bool value)

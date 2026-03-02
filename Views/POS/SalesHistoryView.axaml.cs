@@ -115,8 +115,11 @@ namespace CasaCejaRemake.Views.POS
         {
             if (_viewModel == null) return;
 
+            var app = (Avalonia.Application.Current as App);
             var detailView = new SaleDetailView();
-            var detailViewModel = new SaleDetailViewModel(_viewModel.SalesService);
+            var detailViewModel = new SaleDetailViewModel(
+                _viewModel.SalesService,
+                app?.GetTicketService() ?? new CasaCejaRemake.Services.TicketService());
 
             // IMPORTANT: Asignar DataContext ANTES de cargar datos
             detailView.DataContext = detailViewModel;

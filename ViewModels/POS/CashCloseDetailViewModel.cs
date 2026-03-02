@@ -25,6 +25,7 @@ namespace CasaCejaRemake.ViewModels.POS
     public partial class CashCloseDetailViewModel : ViewModelBase
     {
         private readonly CashCloseService _cashCloseService;
+        private readonly TicketService _ticketService;
 
         [ObservableProperty]
         private CashClose _cashClose = null!;
@@ -118,9 +119,10 @@ namespace CasaCejaRemake.ViewModels.POS
         public event EventHandler? CloseRequested;
         public event EventHandler<(string Folio, string TicketText)>? PrintRequested;
 
-        public CashCloseDetailViewModel(CashCloseService cashCloseService)
+        public CashCloseDetailViewModel(CashCloseService cashCloseService, TicketService ticketService)
         {
             _cashCloseService = cashCloseService;
+            _ticketService = ticketService;
         }
 
         public async Task InitializeAsync(CashClose cashClose, string userName, string branchName)
@@ -224,7 +226,6 @@ namespace CasaCejaRemake.ViewModels.POS
             if (CashClose == null) return;
             try
             {
-                var ticketService = new TicketService();
                 var expenseList = new List<(string Concept, decimal Amount)>();
                 var incomeList = new List<(string Concept, decimal Amount)>();
                 foreach (var m in Movements)
@@ -235,7 +236,7 @@ namespace CasaCejaRemake.ViewModels.POS
                         incomeList.Add((m.Concept, m.Amount));
                 }
 
-                var ticketText = ticketService.GenerateCashCloseTicketText(
+                var ticketText = _ticketService.GenerateCashCloseTicketText(
                     branchName: BranchName,
                     branchAddress: string.Empty,
                     branchPhone: string.Empty,

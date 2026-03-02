@@ -978,7 +978,9 @@ namespace CasaCejaRemake.Views.POS
             }
 
             var detailView = new CashCloseDetailView();
-            var detailViewModel = new CashCloseDetailViewModel(cashCloseService);
+            var detailViewModel = new CashCloseDetailViewModel(
+                cashCloseService,
+                app.GetTicketService()!);
 
             // Inicializar con los datos del corte
             await detailViewModel.InitializeAsync(item.CashClose, item.UserName, item.BranchName);
@@ -1040,7 +1042,7 @@ namespace CasaCejaRemake.Views.POS
             await closeView.ShowDialog(this);
             _hasOpenDialog = false;
 
-            if (closeView.Tag is CashCloseResult result && result.CashClose != null)
+            if (closeView.Tag is CashCloseDialogResult result && result.CashClose != null)
             {
                 // Mostrar ticket de corte si se generó — AWAIT antes de cerrar la ventana
                 if (!string.IsNullOrEmpty(result.TicketText))
@@ -1222,6 +1224,7 @@ namespace CasaCejaRemake.Views.POS
             var historyView = new SalesHistoryView();
             var historyViewModel = new SalesHistoryViewModel(
                 salesService,
+                app.GetTicketService()!,
                 _viewModel?.BranchId ?? 1);
 
             historyView.DataContext = historyViewModel;

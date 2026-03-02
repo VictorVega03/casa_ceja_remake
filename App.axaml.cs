@@ -34,6 +34,7 @@ namespace CasaCejaRemake
         private LayawayService? _layawayService;
         private CustomerService? _customerService;
         private CashCloseService? _cashCloseService;
+        private TicketService? _ticketService;
 
         // Referencia a la ventana de login actual (para evitar duplicados)
         private LoginView? _currentLoginView;
@@ -124,6 +125,7 @@ namespace CasaCejaRemake
 
                 // ── Servicios POS ─────────────────────────────────────────────
                 var ticketService  = new TicketService();
+                _ticketService = ticketService;
                 var pricingService = new PricingService();
 
                 _cartService = new CartService();
@@ -527,7 +529,8 @@ namespace CasaCejaRemake
                 ConfigService,
                 AuthService,
                 PrintService,
-                UserService);
+                UserService,
+                new Services.ThermalPrinterSetupService());
 
             // Suscribirse al evento de configuración guardada (cambio de sucursal)
             viewModel.ConfigurationSaved += async (s, e) =>
@@ -604,6 +607,14 @@ namespace CasaCejaRemake
         public LayawayService? GetLayawayService()
         {
             return _layawayService;
+        }
+
+        /// <summary>
+        /// Obtiene el servicio de tickets (usado por las vistas).
+        /// </summary>
+        public TicketService? GetTicketService()
+        {
+            return _ticketService;
         }
 
         /// <summary>
