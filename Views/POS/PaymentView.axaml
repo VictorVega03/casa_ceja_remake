@@ -6,7 +6,7 @@
         x:DataType="vm:PaymentViewModel"
         Title="Cobro"
         Width="650"
-        Height="550"
+        Height="620"
         WindowStartupLocation="CenterOwner"
         CanResize="False"
         Focusable="True"
@@ -179,7 +179,7 @@
                 </Border>
 
                 <!-- Lista de pagos agregados (dentro de Row=* para no desbordar) -->
-                <Border Grid.Row="1" Background="#252525" Padding="10" CornerRadius="4">
+                <Border Grid.Row="1" Background="#252525" Padding="10" CornerRadius="4" MinHeight="120">
                     <Grid RowDefinitions="Auto,*,Auto">
                         <TextBlock Grid.Row="0" Text="PAGOS REGISTRADOS" FontSize="12" Foreground="#888" FontWeight="Bold" Margin="0,0,0,10"/>
                         
