@@ -3,11 +3,11 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:vm="using:CasaCejaRemake.ViewModels.POS"
-        mc:Ignorable="d" d:DesignWidth="750" d:DesignHeight="420"
+        mc:Ignorable="d" d:DesignWidth="860" d:DesignHeight="490"
         x:Class="CasaCejaRemake.Views.POS.CustomerDetailView"
         x:DataType="vm:CustomerDetailViewModel"
         Title="Detalles de Cliente"
-        Width="750" Height="420"
+        Width="860" Height="490"
         WindowStartupLocation="CenterOwner"
         CanResize="False"
         ShowInTaskbar="False"
@@ -18,8 +18,8 @@
         <Style Selector="Border.section">
             <Setter Property="Background" Value="#2D2D2D"/>
             <Setter Property="CornerRadius" Value="8"/>
-            <Setter Property="Padding" Value="18"/>
-            <Setter Property="Margin" Value="10,6"/>
+            <Setter Property="Padding" Value="12"/>
+            <Setter Property="Margin" Value="8,4"/>
         </Style>
         <Style Selector="TextBlock.field-label">
             <Setter Property="Foreground" Value="#999"/>
@@ -27,9 +27,9 @@
         </Style>
         <Style Selector="TextBlock.field-value">
             <Setter Property="Foreground" Value="White"/>
-            <Setter Property="FontSize" Value="15"/>
+            <Setter Property="FontSize" Value="13"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="Margin" Value="0,3,0,0"/>
+            <Setter Property="Margin" Value="0,2,0,0"/>
         </Style>
         <Style Selector="TextBlock.stat-label">
             <Setter Property="Foreground" Value="#999"/>
@@ -37,15 +37,15 @@
         </Style>
         <Style Selector="TextBlock.stat-value">
             <Setter Property="Foreground" Value="White"/>
-            <Setter Property="FontSize" Value="18"/>
+            <Setter Property="FontSize" Value="15"/>
             <Setter Property="FontWeight" Value="Bold"/>
-            <Setter Property="Margin" Value="0,3,0,0"/>
+            <Setter Property="Margin" Value="0,2,0,0"/>
         </Style>
     </Window.Styles>
 
     <Grid RowDefinitions="Auto,*,Auto">
         <!-- Header -->
-        <Border Grid.Row="0" Background="#2D2D2D" Padding="20,14">
+        <Border Grid.Row="0" Background="#2D2D2D" Padding="14,10">
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="12">
                 <TextBlock Text="DETALLES DEL CLIENTE"
                            FontSize="20"

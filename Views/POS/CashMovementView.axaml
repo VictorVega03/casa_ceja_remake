@@ -104,7 +104,7 @@
                            Margin="0,0,10,0"/>
                 <TextBox x:Name="TxtAmount"
                          Grid.Column="1"
-                         Text="{Binding Amount, Mode=TwoWay, StringFormat='{}{0:F2}'}"
+                         Text="{Binding AmountText, Mode=TwoWay}"
                          FontSize="20"
                          FontWeight="Bold"
                          HorizontalContentAlignment="Right"/>

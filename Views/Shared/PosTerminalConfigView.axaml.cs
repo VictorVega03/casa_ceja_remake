@@ -36,6 +36,14 @@ namespace CasaCejaRemake.Views.Shared
             if (DataContext is PosTerminalConfigViewModel vm)
             {
                 vm.CloseRequested += (s, args) => Close();
+                
+                vm.AdminVerificationRequested += async () =>
+                {
+                    var app = (CasaCejaRemake.App)Avalonia.Application.Current!;
+                    var userService = app.GetUserService();
+                    if (userService == null) return false;
+                    return await AdminVerificationHelper.VerifyAdminAsync(this, userService);
+                };
             }
         }
     }

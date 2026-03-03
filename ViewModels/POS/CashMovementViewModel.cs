@@ -26,6 +26,27 @@ namespace CasaCejaRemake.ViewModels.POS
         [ObservableProperty]
         private decimal _amount;
 
+        /// <summary>
+        /// Texto del campo monto. Permite entrada vacía sin lanzar InvalidCastException.
+        /// </summary>
+        private string _amountText = string.Empty;
+        public string AmountText
+        {
+            get => _amountText;
+            set
+            {
+                if (_amountText == value) return;
+                _amountText = value;
+                OnPropertyChanged(nameof(AmountText));
+                // Parsear a decimal internamente usando la propiedad generada
+                if (string.IsNullOrWhiteSpace(value))
+                    Amount = 0;
+                else if (decimal.TryParse(value, System.Globalization.NumberStyles.Any,
+                             System.Globalization.CultureInfo.InvariantCulture, out var parsed))
+                    Amount = parsed;
+            }
+        }
+
         [ObservableProperty]
         private string _errorMessage = string.Empty;
 

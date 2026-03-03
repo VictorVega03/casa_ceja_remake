@@ -480,8 +480,7 @@ namespace CasaCejaRemake.Views.POS
                     { Key.F3, () => _viewModel.SearchProductCommand.Execute(null) },
                     { Key.F4, () => _viewModel.ChangeCollectionPreviousCommand.Execute(null) },
                     { Key.F5, () => _viewModel.ChangeCollectionCommand.Execute(null) },
-                    { Key.F6, () => ShowCashMovementDialogAsync(true) },   // Gasto
-                    { Key.F7, () => ShowCashMovementDialogAsync(false) },  // Ingreso
+                    { Key.F7, () => ShowCashMovementDialogAsync(false) },  // Ingreso / Gasto
                     { Key.F8, () => ShowCustomersDialogAsync() },          // Clientes
                     { Key.F10, () => ShowCashCloseDialogAsync() },         // Corte de Caja
                     { Key.F11, () => _viewModel.PayCommand.Execute(null) },
@@ -1153,12 +1152,7 @@ namespace CasaCejaRemake.Views.POS
             ShowCashCloseHistoryDialogAsync();
         }
 
-        private void OnExpenseClick(object? sender, RoutedEventArgs e)
-        {
-            ShowCashMovementDialogAsync(true);
-        }
-
-        private void OnIncomeClick(object? sender, RoutedEventArgs e)
+        private void OnCashMovementClick(object? sender, RoutedEventArgs e)
         {
             ShowCashMovementDialogAsync(false);
         }

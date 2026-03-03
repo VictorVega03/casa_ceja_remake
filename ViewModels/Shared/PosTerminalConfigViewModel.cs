@@ -32,6 +32,34 @@ namespace CasaCejaRemake.ViewModels.Shared
         [ObservableProperty] private bool _autoPrint = true;
         [ObservableProperty] private bool _openCashDrawer = false;
 
+        // ============ LOCK DE PARÁMETROS DE TICKET ============
+        /// <summary>
+        /// Si los parámetros del ticket están desbloqueados para edición.
+        /// Para admin: desbloqueado por defecto.
+        /// Para cajero: bloqueado, requiere verificación de admin.
+        /// </summary>
+        [ObservableProperty] private bool _ticketSettingsUnlocked;
+
+        public bool IsTicketSettingsLocked => !TicketSettingsUnlocked;
+
+        /// <summary>Texto del botón de bloqueo de parámetros del ticket</summary>
+        public string TicketLockButtonText => TicketSettingsUnlocked ? "🔒 Bloquear" : "🔓 Desbloquear";
+
+        public string TicketSettingsBorderColor => TicketSettingsUnlocked ? "#4CAF50" : "#404040";
+        public string TicketStatusText => TicketSettingsUnlocked ? "🟢 Desbloqueado" : "";
+        public string TicketStatusColor => TicketSettingsUnlocked ? "#4CAF50" : "Transparent";
+        public string TicketButtonBackground => TicketSettingsUnlocked ? "#555555" : "Transparent";
+
+        partial void OnTicketSettingsUnlockedChanged(bool value)
+        {
+            OnPropertyChanged(nameof(IsTicketSettingsLocked));
+            OnPropertyChanged(nameof(TicketLockButtonText));
+            OnPropertyChanged(nameof(TicketSettingsBorderColor));
+            OnPropertyChanged(nameof(TicketStatusText));
+            OnPropertyChanged(nameof(TicketStatusColor));
+            OnPropertyChanged(nameof(TicketButtonBackground));
+        }
+
         // ============ PERMISOS ============
         /// <summary>Solo Admin puede editar ID de Terminal</summary>
         public bool CanEditAdminFields => _authService.IsAdmin;
@@ -52,6 +80,12 @@ namespace CasaCejaRemake.ViewModels.Shared
         /// <summary>Evento para solicitar cierre de la vista</summary>
         public event EventHandler? CloseRequested;
 
+        /// <summary>
+        /// Evento para solicitar verificación de admin antes de desbloquear parámetros del ticket.
+        /// Si el suscriptor devuelve true, se concede el acceso.
+        /// </summary>
+        public event Func<Task<bool>>? AdminVerificationRequested;
+
         public PosTerminalConfigViewModel(
             ConfigService configService,
             AuthService authService,
@@ -59,6 +93,9 @@ namespace CasaCejaRemake.ViewModels.Shared
         {
             _configService = configService;
             _authService = authService;
+
+            // Si el usuario ya es Admin, empezar desbloqueado (no pedir verificación redundante)
+            _ticketSettingsUnlocked = _authService.IsAdmin;
         }
 
         /// <summary>
@@ -79,7 +116,9 @@ namespace CasaCejaRemake.ViewModels.Shared
                 AutoPrint = config.AutoPrint;
                 OpenCashDrawer = config.OpenCashDrawer;
 
-                StatusMessage = "Configuración cargada";
+                StatusMessage = _authService.IsAdmin
+                    ? "Configuración cargada"
+                    : "Configuración cargada — parámetros de ticket bloqueados";
                 await Task.CompletedTask;
             }
             catch (Exception ex)
@@ -90,6 +129,46 @@ namespace CasaCejaRemake.ViewModels.Shared
             finally
             {
                 IsLoading = false;
+            }
+        }
+
+        /// <summary>
+        /// Desbloquea/bloquea los parámetros del ticket.
+        /// Si el usuario es admin, lo hace directo.
+        /// Si es cajero, pide verificación de admin.
+        /// </summary>
+        [RelayCommand]
+        private async Task ToggleTicketLockAsync()
+        {
+            if (TicketSettingsUnlocked)
+            {
+                // Bloquear de nuevo
+                TicketSettingsUnlocked = false;
+                StatusMessage = "Parámetros de ticket bloqueados";
+                return;
+            }
+
+            // Si ya es admin, desbloquear sin verificación adicional
+            if (_authService.IsAdmin)
+            {
+                TicketSettingsUnlocked = true;
+                StatusMessage = "Parámetros de ticket desbloqueados";
+                return;
+            }
+
+            // Solicitar verificación de administrador
+            if (AdminVerificationRequested != null)
+            {
+                var verified = await AdminVerificationRequested.Invoke();
+                if (verified)
+                {
+                    TicketSettingsUnlocked = true;
+                    StatusMessage = "✓ Parámetros de ticket desbloqueados por administrador";
+                }
+                else
+                {
+                    StatusMessage = "Verificación de administrador cancelada";
+                }
             }
         }
 
@@ -110,13 +189,16 @@ namespace CasaCejaRemake.ViewModels.Shared
                         config.TerminalName = TerminalName;
                     }
 
-                    // Todos pueden cambiar parámetros de ticket
-                    config.TicketFooter = TicketFooter;
-                    config.FontSize = SelectedFontSize;
-                    config.FontFamily = SelectedFontFamily;
-                    config.TicketLineWidth = SelectedTicketLineWidth;
-                    config.AutoPrint = AutoPrint;
-                    config.OpenCashDrawer = OpenCashDrawer;
+                    // Parámetros de ticket: solo si están desbloqueados
+                    if (TicketSettingsUnlocked)
+                    {
+                        config.TicketFooter = TicketFooter;
+                        config.FontSize = SelectedFontSize;
+                        config.FontFamily = SelectedFontFamily;
+                        config.TicketLineWidth = SelectedTicketLineWidth;
+                        config.AutoPrint = AutoPrint;
+                        config.OpenCashDrawer = OpenCashDrawer;
+                    }
                 });
 
                 StatusMessage = "✓ Configuración guardada correctamente";

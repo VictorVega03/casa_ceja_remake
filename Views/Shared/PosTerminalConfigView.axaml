@@ -143,39 +143,83 @@
                 <Border Background="#252525" 
                         CornerRadius="6" 
                         Padding="16,12"
-                        BorderBrush="#404040"
+                        BorderBrush="{Binding TicketSettingsBorderColor}"
                         BorderThickness="1"
                         Margin="0,8,0,0">
                     <StackPanel>
-                        <StackPanel Orientation="Horizontal" Spacing="10">
-                            <TextBlock Text="🎫" FontSize="18" VerticalAlignment="Center" />
-                            <TextBlock Classes="section-title" 
-                                       Text="Parámetros del Ticket"
-                                       Margin="0" />
-                        </StackPanel>
-
-                        <TextBlock Classes="label" Text="Mensaje al pie del ticket:" />
-                        <TextBox Text="{Binding TicketFooter}"
-                                 Watermark="Ej: ¡Gracias por su compra!" />
-
-                        <Grid ColumnDefinitions="*,16,*" Margin="0,8,0,0">
-                            <StackPanel Grid.Column="0">
-                                <TextBlock Classes="label" Text="Tamaño de fuente:" />
-                                <ComboBox ItemsSource="{Binding FontSizeOptions}"
-                                          SelectedItem="{Binding SelectedFontSize}" />
+                        <!-- Header con botón desbloquear -->
+                        <Grid ColumnDefinitions="Auto,*,Auto">
+                            <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                                <TextBlock Text="🎫" FontSize="18" VerticalAlignment="Center" />
+                                <TextBlock Classes="section-title" 
+                                           Text="Parámetros del Ticket"
+                                           Margin="0" />
                             </StackPanel>
-                            <StackPanel Grid.Column="2">
-                                <TextBlock Classes="label" Text="Ancho de línea (caracteres):" />
-                                <ComboBox ItemsSource="{Binding TicketLineWidthOptions}"
-                                          SelectedItem="{Binding SelectedTicketLineWidth}" />
-                            </StackPanel>
+
+                            <!-- Indicador de estado de bloqueo -->
+                            <TextBlock Grid.Column="1"
+                                       Text="{Binding TicketStatusText}"
+                                       Foreground="{Binding TicketStatusColor}"
+                                       FontSize="11"
+                                       VerticalAlignment="Center"
+                                       Margin="10,0,0,0" />
+
+                            <Button Grid.Column="2"
+                                    Content="{Binding TicketLockButtonText}"
+                                    Command="{Binding ToggleTicketLockCommand}"
+                                    VerticalAlignment="Center"
+                                    Height="32"
+                                    Padding="12,0"
+                                    FontSize="12"
+                                    CornerRadius="6"
+                                    Background="{Binding TicketButtonBackground}"
+                                    Foreground="White" />
                         </Grid>
 
-                        <TextBlock Classes="label" Text="Tipo de fuente:" />
-                        <ComboBox ItemsSource="{Binding FontFamilyOptions}"
-                                  SelectedItem="{Binding SelectedFontFamily}" />
+                        <!-- Banner de bloqueo (solo visible para cajeros sin desbloquear) -->
+                        <Border Background="#1A2A3A"
+                                CornerRadius="6"
+                                Padding="10,8"
+                                Margin="0,10,0,0"
+                                BorderBrush="#2196F3"
+                                BorderThickness="1"
+                                IsVisible="{Binding IsTicketSettingsLocked}">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <TextBlock Text="🔒" FontSize="14" VerticalAlignment="Center" />
+                                <TextBlock Text="Estos parámetros requieren autorización de administrador para modificarse."
+                                           Foreground="#90CAF9"
+                                           FontSize="12"
+                                           VerticalAlignment="Center"
+                                           TextWrapping="Wrap" />
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Campos del ticket (deshabilitados si están bloqueados) -->
+                        <StackPanel IsEnabled="{Binding TicketSettingsUnlocked}">
+                            <TextBlock Classes="label" Text="Mensaje al pie del ticket:" />
+                            <TextBox Text="{Binding TicketFooter}"
+                                     Watermark="Ej: ¡Gracias por su compra!" />
+
+                            <Grid ColumnDefinitions="*,16,*" Margin="0,8,0,0">
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Classes="label" Text="Tamaño de fuente (T. Carta):" />
+                                    <ComboBox ItemsSource="{Binding FontSizeOptions}"
+                                              SelectedItem="{Binding SelectedFontSize}" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Classes="label" Text="Ancho de línea -T. Carta- (chars):" />
+                                    <ComboBox ItemsSource="{Binding TicketLineWidthOptions}"
+                                              SelectedItem="{Binding SelectedTicketLineWidth}" />
+                                </StackPanel>
+                            </Grid>
+
+                            <TextBlock Classes="label" Text="Tipo de fuente (T. Carta):" />
+                            <ComboBox ItemsSource="{Binding FontFamilyOptions}"
+                                      SelectedItem="{Binding SelectedFontFamily}" />
+                        </StackPanel>
                     </StackPanel>
                 </Border>
+
 
             </StackPanel>
         </ScrollViewer>

@@ -182,19 +182,11 @@
                             <Separator Background="#444" Margin="10,5"/>
                             
                             <TextBlock Text="OPERACIONES DE CAJA" FontSize="12" Foreground="#888" FontWeight="Bold" Margin="10,10,0,5"/>
-                            <Button x:Name="BtnIncome" Classes="action-button" Background="#4CAF50" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Click="OnIncomeClick">
+                            <Button x:Name="BtnCashMovement" Classes="action-button" Background="#FF9800" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Click="OnCashMovementClick">
                                 <StackPanel Orientation="Horizontal" Spacing="10">
-                                    <!-- Add Icon -->
-                                    <Path Fill="White" Width="16" Height="16" Stretch="Uniform" Data="M19,13h-6v6h-2v-6H5v-2h6V5h2v6h6V13z"/>
-                                    <TextBlock Text="Ingreso (F7)"/>
-                                </StackPanel>
-                            </Button>
-                            
-                            <Button x:Name="BtnExpense" Classes="action-button" Background="#FF9800" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Click="OnExpenseClick">
-                                <StackPanel Orientation="Horizontal" Spacing="10">
-                                    <!-- Remove/Minus Icon -->
-                                    <Path Fill="White" Width="16" Height="16" Stretch="Uniform" Data="M19,13H5v-2h14V13z"/>
-                                    <TextBlock Text="Gasto (F6)"/>
+                                    <!-- Sync/Transfer Icon -->
+                                    <Path Fill="White" Width="16" Height="16" Stretch="Uniform" Data="M16 1h-2v4h4V3h-2zm-3 8h6v-2h-6zm8.5 2H21v2h-2v4h-4v-2h4v-2H10v-2h11.5zM2 11h2v4h4v2H4v4h2v-2h6v-2H2v-6z"/>
+                                    <TextBlock Text="Ingreso / Gasto (F7)"/>
                                 </StackPanel>
                             </Button>
                             

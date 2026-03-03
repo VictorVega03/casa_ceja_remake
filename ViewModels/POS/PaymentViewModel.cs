@@ -37,6 +37,37 @@ namespace CasaCejaRemake.ViewModels.POS
         [ObservableProperty]
         private decimal _currentAmount;
 
+        /// <summary>
+        /// Texto del campo monto actual. Permite entrada vacía sin lanzar InvalidCastException.
+        /// Sincronizado con CurrentAmount (decimal).
+        /// </summary>
+        private string _currentAmountText = string.Empty;
+        public string CurrentAmountText
+        {
+            get => _currentAmountText;
+            set
+            {
+                if (_currentAmountText == value) return;
+                _currentAmountText = value;
+                OnPropertyChanged(nameof(CurrentAmountText));
+                if (string.IsNullOrWhiteSpace(value))
+                    CurrentAmount = 0;
+                else if (decimal.TryParse(value, System.Globalization.NumberStyles.Any,
+                             System.Globalization.CultureInfo.InvariantCulture, out var parsed))
+                    CurrentAmount = parsed;
+            }
+        }
+
+        partial void OnCurrentAmountChanged(decimal value)
+        {
+            var formatted = value == 0 ? string.Empty : value.ToString("F2", System.Globalization.CultureInfo.InvariantCulture);
+            if (_currentAmountText != formatted)
+            {
+                _currentAmountText = formatted;
+                OnPropertyChanged(nameof(CurrentAmountText));
+            }
+        }
+
         [ObservableProperty]
         private string _currentMethodName = "Efectivo";
 

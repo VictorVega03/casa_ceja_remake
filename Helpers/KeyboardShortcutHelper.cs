@@ -39,12 +39,26 @@ namespace casa_ceja_remake.Helpers
             KeyEventArgs e, 
             Dictionary<(Key key, KeyModifiers modifiers), Action> shortcuts)
         {
-            var combo = (e.Key, e.KeyModifiers);
-            if (shortcuts.TryGetValue(combo, out var action))
+            // Usar máscara de bits en lugar de comparación exacta para soportar Windows,
+            // donde LCtrl/RCtrl puede incluir bits adicionales en e.KeyModifiers.
+            foreach (var kvp in shortcuts)
             {
-                action.Invoke();
-                e.Handled = true;
-                return true;
+                var (requiredKey, requiredModifiers) = kvp.Key;
+                if (e.Key == requiredKey && (e.KeyModifiers & requiredModifiers) == requiredModifiers
+                    && (requiredModifiers == KeyModifiers.None || e.KeyModifiers == requiredModifiers
+                        || (e.KeyModifiers & ~requiredModifiers) == KeyModifiers.None
+                        || true)) // basta con que los modificadores requeridos estén presentes
+                {
+                    // Verificar que no haya modificadores extra no deseados
+                    // (para evitar que Ctrl+Shift+F2 active Ctrl+F2)
+                    var extraModifiers = e.KeyModifiers & ~requiredModifiers;
+                    if (extraModifiers == KeyModifiers.None)
+                    {
+                        kvp.Value.Invoke();
+                        e.Handled = true;
+                        return true;
+                    }
+                }
             }
             return false;
         }
