@@ -61,17 +61,17 @@ namespace CasaCejaRemake.Services.Platform
 
         /// <summary>
         /// Envía texto plano directamente a la impresora usando el driver instalado.
-        /// El texto se codifica en CP850 (codepage DOS español) para compatibilidad
-        /// con drivers de impresoras térmicas que esperan ese encoding.
+        /// El texto se codifica en UTF-8, el encoding estándar compatible con los
+        /// drivers modernos de impresoras térmicas en Windows.
         /// </summary>
         /// <param name="printerName">Nombre exacto de la impresora tal como aparece en Windows.</param>
         /// <param name="text">Texto del ticket (ya formateado con el ancho correcto).</param>
         /// <returns>true si se envió correctamente al spooler.</returns>
         public static bool SendText(string printerName, string text)
         {
-            // CP850: codepage DOS, compatible con la mayoría de drivers de impresoras térmicas
-            // en español. Si el driver espera UTF-8, cambiar a Encoding.UTF8.
-            var encoding = Encoding.GetEncoding(850);
+            // UTF-8: encoding estándar, compatible con los drivers modernos de impresoras
+            // térmicas en Windows (incluida Xprinter y similares).
+            var encoding = Encoding.UTF8;
             byte[] bytes = encoding.GetBytes(text);
             return SendRawBytes(printerName, bytes);
         }
