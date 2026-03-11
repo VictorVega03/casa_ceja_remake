@@ -51,7 +51,7 @@ DESKTOP_DIR=~/Desktop/CasaCeja
 mkdir -p "$DESKTOP_DIR/Data/Database"
 
 cp bin/Release/net8.0/win-x64/publish/casa_ceja_remake.exe "$DESKTOP_DIR/"
-cp Data/Database/ScriptInicial.sql "$DESKTOP_DIR/Data/Database/ScriptInicial.sql"
+cp Data/Database/ScriptInicial_CasaCeja.sql "$DESKTOP_DIR/Data/Database/ScriptInicial_CasaCeja.sql"
 
 SIZE=$(du -h "$DESKTOP_DIR/casa_ceja_remake.exe" | cut -f1)
 
@@ -88,7 +88,7 @@ echo ""
 echo "💻 Windows:"
 echo "   📁 Carpeta:  ~/Desktop/CasaCeja/"
 echo "      ├── casa_ceja_remake.exe  ($SIZE)"
-echo "      └── Data/Database/ScriptInicial.sql"
+echo "      └── Data/Database/ScriptInicial_CasaCeja.sql"
 echo "   ℹ️  El ícono está embebido en el .exe"
 echo ""
 echo "🍎 macOS:"
