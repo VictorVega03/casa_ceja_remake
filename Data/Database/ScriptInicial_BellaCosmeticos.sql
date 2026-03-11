@@ -6,11 +6,17 @@ BEGIN TRANSACTION;
 INSERT INTO branches (id, name, address, active, created_at, updated_at, sync_status) VALUES (1, 'BELLA COSMETICOS', 'Dirección General', 1, 1771892366274, 1771892366274, 0);
 
 -- 2. Crear Roles
-INSERT INTO roles (id, name, key, access_level, active, created_at, updated_at) VALUES (1, 'Administrador', 'admin', 100, 1, 1771892366274, 1771892366274), (2, 'Cajero', 'cajero', 10, 1, 1771892366274, 1771892366274);
+INSERT OR IGNORE INTO roles (id, name, key, access_level, active, created_at, updated_at)
+VALUES
+    (1, 'Administrador', 'admin',   100, 1, datetime('now'), datetime('now')),
+    (2, 'Cajero',        'cashier',  10, 1, datetime('now'), datetime('now'));
 
 -- 3. Crear Usuario Administrador
-INSERT INTO users (name, username, password, user_type, branch_id, active, created_at, updated_at, sync_status) VALUES ('Administrador', 'admin', 'admin', 1, 1, 1, 1771892366274, 1771892366274, 0);
-
+INSERT OR IGNORE INTO users (id, name, email, username, password, user_type, branch_id, active, created_at, updated_at, sync_status)
+VALUES
+    (1, 'Administrador', 'admin@casaceja.com',  'admin', 'admin', 1, NULL, 1, datetime('now'), datetime('now'), 0),
+    (2, 'Cajero',        'cajero@casaceja.com', 'cajero',   'cajero',   2, NULL, 1, datetime('now'), datetime('now'), 0);
+   
 -- 4. Catálogo: Categorías
 INSERT INTO categories (id, name, active, created_at, updated_at, sync_status, has_discount) VALUES (1, 'PERFUMERIA', 1, 1771892366274, 1771892366274, 0, 0);
 INSERT INTO categories (id, name, active, created_at, updated_at, sync_status, has_discount) VALUES (2, 'BISUTERIA', 1, 1771892366274, 1771892366274, 0, 0);

@@ -30,7 +30,7 @@ namespace CasaCejaRemake.Data
         //   Ejemplos: "ScriptInicial.sql", "ScriptInicial_BellaCosmeticos.sql"
         // =====================================================
         private const bool AUTO_RUN_SEED_SCRIPT = true;
-        private const string SEED_SCRIPT_NAME = "ScriptInicial.sql";
+        private const string SEED_SCRIPT_NAME = "ScriptInicial_CasaCeja.sql";
 
         private readonly DatabaseService _databaseService;
 
@@ -163,7 +163,9 @@ namespace CasaCejaRemake.Data
 
         /// <summary>
         /// Divide el contenido SQL en sentencias individuales,
-        /// ignorando líneas de comentarios (--) y bloques vacíos.
+        /// ignorando líneas de comentarios (--), bloques vacíos,
+        /// y sentencias de control de transacción/pragma que sqlite-net
+        /// no soporta ejecutar como sentencias sueltas.
         /// </summary>
         private static string[] SplitSqlStatements(string sql)
         {
@@ -171,12 +173,22 @@ namespace CasaCejaRemake.Data
             var lines   = sql.Split('\n');
             var current = new System.Text.StringBuilder();
 
+            // Prefijos de sentencias que se deben ignorar
+            var ignoredPrefixes = new[]
+            {
+                "BEGIN",
+                "COMMIT",
+                "ROLLBACK",
+                "PRAGMA",
+            };
+
             foreach (var rawLine in lines)
             {
                 var line = rawLine.TrimEnd();
+                var trimmed = line.TrimStart();
 
                 // Ignorar líneas de puro comentario
-                if (line.TrimStart().StartsWith("--"))
+                if (trimmed.StartsWith("--"))
                     continue;
 
                 current.AppendLine(line);
@@ -185,9 +197,25 @@ namespace CasaCejaRemake.Data
                 if (line.TrimEnd().EndsWith(';'))
                 {
                     var stmt = current.ToString().Trim();
-                    if (!string.IsNullOrWhiteSpace(stmt))
-                        results.Add(stmt);
                     current.Clear();
+
+                    if (string.IsNullOrWhiteSpace(stmt))
+                        continue;
+
+                    // Ignorar sentencias de transacción y pragma
+                    var upper = stmt.TrimStart().ToUpperInvariant();
+                    bool skip = false;
+                    foreach (var prefix in ignoredPrefixes)
+                    {
+                        if (upper.StartsWith(prefix))
+                        {
+                            skip = true;
+                            break;
+                        }
+                    }
+                    if (skip) continue;
+
+                    results.Add(stmt);
                 }
             }
 
