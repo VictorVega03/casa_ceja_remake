@@ -59,21 +59,43 @@ namespace CasaCejaRemake.Services.Platform
         // API pública
         // ============================================================
 
+        // ── Comandos ESC/POS ──────────────────────────────────────────────
+        private static readonly byte[] ESC_INIT = { 0x1B, 0x40 };       // ESC @ — inicializar impresora
+        private static readonly byte[] CUT_FEED = { 0x0A, 0x0A, 0x0A, 0x0A, 0x0A }; // 5 líneas de avance
+        private static readonly byte[] GS_CUT   = { 0x1D, 0x56, 0x01 }; // GS V 1 — corte parcial
+
         /// <summary>
         /// Envía texto plano directamente a la impresora usando el driver instalado.
-        /// El texto se codifica en UTF-8, el encoding estándar compatible con los
-        /// drivers modernos de impresoras térmicas en Windows.
+        /// Normaliza saltos de línea (\r\n → \n) para compatibilidad con impresoras
+        /// térmicas en modo RAW, e inyecta comandos ESC/POS de inicialización y corte.
         /// </summary>
         /// <param name="printerName">Nombre exacto de la impresora tal como aparece en Windows.</param>
         /// <param name="text">Texto del ticket (ya formateado con el ancho correcto).</param>
         /// <returns>true si se envió correctamente al spooler.</returns>
         public static bool SendText(string printerName, string text)
         {
-            // UTF-8: encoding estándar, compatible con los drivers modernos de impresoras
-            // térmicas en Windows (incluida Xprinter y similares).
+            // Normalizar \r\n → \n para impresoras térmicas (evita doble interlineado)
+            var normalized = text.Replace("\r\n", "\n");
+
             var encoding = Encoding.UTF8;
-            byte[] bytes = encoding.GetBytes(text);
-            return SendRawBytes(printerName, bytes);
+            byte[] textBytes = encoding.GetBytes(normalized);
+
+            // Construir payload: ESC@ + texto + avance + corte
+            byte[] payload = new byte[ESC_INIT.Length + textBytes.Length + CUT_FEED.Length + GS_CUT.Length];
+            int offset = 0;
+
+            Buffer.BlockCopy(ESC_INIT, 0, payload, offset, ESC_INIT.Length);
+            offset += ESC_INIT.Length;
+
+            Buffer.BlockCopy(textBytes, 0, payload, offset, textBytes.Length);
+            offset += textBytes.Length;
+
+            Buffer.BlockCopy(CUT_FEED, 0, payload, offset, CUT_FEED.Length);
+            offset += CUT_FEED.Length;
+
+            Buffer.BlockCopy(GS_CUT, 0, payload, offset, GS_CUT.Length);
+
+            return SendRawBytes(printerName, payload);
         }
 
         /// <summary>
