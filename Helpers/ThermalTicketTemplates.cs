@@ -112,25 +112,25 @@ namespace CasaCejaRemake.Helpers
 
             // ── Pie ──
             lines.Add("");
-            lines.Add($"LE ATENDIO: {ticket.Sale.UserName}");
-            lines.Add($"NO DE ARTICULOS: {ticket.Totals.ItemCount:D5}");
-            lines.Add("GRACIAS POR SU COMPRA");
+            lines.Add(CenterText($"LE ATENDIO: {ticket.Sale.UserName}", lineWidth));
+            lines.Add(CenterText($"NO DE ARTICULOS: {ticket.Totals.ItemCount:D5}", lineWidth));
+            lines.Add(CenterText("GRACIAS POR SU COMPRA", lineWidth));
             lines.Add("");
 
             // Pie personalizado (antes del RFC)
             if (!string.IsNullOrWhiteSpace(ticketFooter))
             {
-                lines.Add(ticketFooter);
+                lines.Add(CenterText(ticketFooter, lineWidth));
                 lines.Add("");
             }
 
             // RFC y facturación
             if (!string.IsNullOrWhiteSpace(rfc))
-                lines.Add($"RFC: {rfc}");
+                lines.Add(CenterText($"RFC: {rfc}", lineWidth));
 
             lines.Add("");
-            lines.Add("SI DESEA FACTURAR INGRESE A:");
-            lines.Add(URL_FACTURACION);
+            lines.Add(CenterText("SI DESEA FACTURAR INGRESE A:", lineWidth));
+            lines.Add(CenterText(URL_FACTURACION, lineWidth));
 
             return string.Join(Environment.NewLine, lines);
         }
@@ -215,26 +215,26 @@ namespace CasaCejaRemake.Helpers
             lines.Add("");
 
             // ── Pie ──
-            lines.Add($"LE ATENDIO: {ticket.Sale.UserName}");
-            lines.Add($"NO DE ARTICULOS: {ticket.Totals.ItemCount:D5}");
+            lines.Add(CenterText($"LE ATENDIO: {ticket.Sale.UserName}", lineWidth));
+            lines.Add(CenterText($"NO DE ARTICULOS: {ticket.Totals.ItemCount:D5}", lineWidth));
 
             if (ticket.DueDate.HasValue)
             {
-                lines.Add($"{dueDateLabel}:");
-                lines.Add(ticket.DueDate.Value.ToString("dd/MM/yyyy"));
+                lines.Add(CenterText($"{dueDateLabel}:", lineWidth));
+                lines.Add(CenterText(ticket.DueDate.Value.ToString("dd/MM/yyyy"), lineWidth));
             }
 
             if (!string.IsNullOrEmpty(ticket.CustomerName))
             {
                 lines.Add("");
-                lines.Add($"CLIENTE: {ticket.CustomerName}");
+                lines.Add(CenterText($"CLIENTE: {ticket.CustomerName}", lineWidth));
             }
 
             if (!string.IsNullOrEmpty(ticket.CustomerPhone))
-                lines.Add($"TEL: {ticket.CustomerPhone}");
+                lines.Add(CenterText($"TEL: {ticket.CustomerPhone}", lineWidth));
 
             lines.Add("");
-            lines.Add("GRACIAS POR SU PREFERENCIA");
+            lines.Add(CenterText("GRACIAS POR SU PREFERENCIA", lineWidth));
             lines.Add("");
             lines.AddRange(BuildFooter(rfc, ticketFooter, lineWidth));
 
@@ -275,24 +275,24 @@ namespace CasaCejaRemake.Helpers
             lines.Add(FormatArrowLine("POR PAGAR $", data.RemainingBalance, lineWidth));
             lines.Add("");
 
-            lines.Add($"LE ATENDIO: {data.UserName}");
-            lines.Add("GRACIAS POR SU PREFERENCIA");
+            lines.Add(CenterText($"LE ATENDIO: {data.UserName}", lineWidth));
+            lines.Add(CenterText("GRACIAS POR SU PREFERENCIA", lineWidth));
             lines.Add("");
 
             // Pie personalizado
             if (!string.IsNullOrWhiteSpace(ticketFooter))
             {
-                lines.Add(ticketFooter);
+                lines.Add(CenterText(ticketFooter, lineWidth));
                 lines.Add("");
             }
 
             // RFC
             if (!string.IsNullOrWhiteSpace(rfc))
-                lines.Add($"RFC: {rfc}");
+                lines.Add(CenterText($"RFC: {rfc}", lineWidth));
 
             lines.Add("");
-            lines.Add("SI DESEA FACTURAR INGRESE A:");
-            lines.Add(URL_FACTURACION);
+            lines.Add(CenterText("SI DESEA FACTURAR INGRESE A:", lineWidth));
+            lines.Add(CenterText(URL_FACTURACION, lineWidth));
 
             return string.Join(Environment.NewLine, lines);
         }
@@ -463,28 +463,28 @@ namespace CasaCejaRemake.Helpers
             lines.Add(FormatArrowLine("POR PAGAR $", porPagar, lineWidth));
             lines.Add("");
 
-            lines.Add($"LE ATENDIO: {ticket.Sale.UserName}");
-            lines.Add($"NO DE ARTICULOS: {ticket.Totals.ItemCount:D5}");
+            lines.Add(CenterText($"LE ATENDIO: {ticket.Sale.UserName}", lineWidth));
+            lines.Add(CenterText($"NO DE ARTICULOS: {ticket.Totals.ItemCount:D5}", lineWidth));
 
             if (!string.IsNullOrEmpty(ticket.CustomerName))
             {
                 lines.Add("");
-                lines.Add($"CLIENTE: {ticket.CustomerName}");
+                lines.Add(CenterText($"CLIENTE: {ticket.CustomerName}", lineWidth));
             }
 
             if (!string.IsNullOrEmpty(ticket.CustomerPhone))
-                lines.Add($"TEL: {ticket.CustomerPhone}");
+                lines.Add(CenterText($"TEL: {ticket.CustomerPhone}", lineWidth));
 
             lines.Add("");
-            lines.Add("GRACIAS POR SU PREFERENCIA");
+            lines.Add(CenterText("GRACIAS POR SU PREFERENCIA", lineWidth));
             lines.Add("");
 
             if (!string.IsNullOrWhiteSpace(rfc))
-                lines.Add($"RFC: {rfc}");
+                lines.Add(CenterText($"RFC: {rfc}", lineWidth));
 
             lines.Add("");
-            lines.Add("SI DESEA FACTURAR INGRESE A:");
-            lines.Add(URL_FACTURACION);
+            lines.Add(CenterText("SI DESEA FACTURAR INGRESE A:", lineWidth));
+            lines.Add(CenterText(URL_FACTURACION, lineWidth));
 
             return string.Join(Environment.NewLine, lines);
         }
@@ -546,28 +546,28 @@ namespace CasaCejaRemake.Helpers
             lines.Add(FormatArrowLine("POR PAGAR $", porPagar, lineWidth));
             lines.Add("");
 
-            lines.Add($"LE ATENDIO: {ticket.Sale.UserName}");
-            lines.Add($"NO DE ARTICULOS: {ticket.Totals.ItemCount:D5}");
+            lines.Add(CenterText($"LE ATENDIO: {ticket.Sale.UserName}", lineWidth));
+            lines.Add(CenterText($"NO DE ARTICULOS: {ticket.Totals.ItemCount:D5}", lineWidth));
 
             if (!string.IsNullOrEmpty(ticket.CustomerName))
             {
                 lines.Add("");
-                lines.Add($"CLIENTE: {ticket.CustomerName}");
+                lines.Add(CenterText($"CLIENTE: {ticket.CustomerName}", lineWidth));
             }
 
             if (!string.IsNullOrEmpty(ticket.CustomerPhone))
-                lines.Add($"TEL: {ticket.CustomerPhone}");
+                lines.Add(CenterText($"TEL: {ticket.CustomerPhone}", lineWidth));
 
             lines.Add("");
-            lines.Add("GRACIAS POR SU PREFERENCIA");
+            lines.Add(CenterText("GRACIAS POR SU PREFERENCIA", lineWidth));
             lines.Add("");
 
             if (!string.IsNullOrWhiteSpace(rfc))
-                lines.Add($"RFC: {rfc}");
+                lines.Add(CenterText($"RFC: {rfc}", lineWidth));
 
             lines.Add("");
-            lines.Add("SI DESEA FACTURAR INGRESE A:");
-            lines.Add(URL_FACTURACION);
+            lines.Add(CenterText("SI DESEA FACTURAR INGRESE A:", lineWidth));
+            lines.Add(CenterText(URL_FACTURACION, lineWidth));
 
             return string.Join(Environment.NewLine, lines);
         }
@@ -591,14 +591,14 @@ namespace CasaCejaRemake.Helpers
             {
                 CenterText(bigTitle, lineWidth),
                 "",
-                branchName.ToUpper()
+                CenterText(branchName.ToUpper(), lineWidth)
             };
 
             if (!string.IsNullOrWhiteSpace(address))
-                lines.Add(address);
+                lines.Add(CenterText(address, lineWidth));
 
-            lines.Add(date.ToString("dd/MM/yyyy hh:mm tt"));
-            lines.Add($"FOLIO: {folio}");
+            lines.Add(CenterText(date.ToString("dd/MM/yyyy hh:mm tt"), lineWidth));
+            lines.Add(CenterText($"FOLIO: {folio}", lineWidth));
 
             // Agregar CAJA desde la configuración local
             try
@@ -606,7 +606,7 @@ namespace CasaCejaRemake.Helpers
                 var app = Avalonia.Application.Current as CasaCejaRemake.App;
                 var terminalId = app?.GetConfigService()?.PosTerminalConfig.TerminalId;
                 if (!string.IsNullOrWhiteSpace(terminalId))
-                    lines.Add($"CAJA: {terminalId}");
+                    lines.Add(CenterText($"CAJA: {terminalId}", lineWidth));
             }
             catch { /* ignore */ }
 
@@ -687,11 +687,11 @@ namespace CasaCejaRemake.Helpers
 
             // RFC / Razón Social
             if (!string.IsNullOrWhiteSpace(rfc))
-                lines.Add($"RFC: {rfc}");
+                lines.Add(CenterText($"RFC: {rfc}", lineWidth));
 
             lines.Add("");
-            lines.Add("SI DESEA FACTURAR INGRESE A:");
-            lines.Add(URL_FACTURACION);
+            lines.Add(CenterText("SI DESEA FACTURAR INGRESE A:", lineWidth));
+            lines.Add(CenterText(URL_FACTURACION, lineWidth));
 
             return lines;
         }
