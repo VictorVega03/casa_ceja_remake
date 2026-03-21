@@ -173,7 +173,9 @@ namespace CasaCejaRemake.Views.POS
             }
 
             // Teclas 1-4 para seleccionar método de pago
-            if (e.Key >= Key.D1 && e.Key <= Key.D4)
+            // Solo activan si el campo de monto NO tiene foco (evita interferir con escritura en Windows)
+            var txtAmountFocused = this.FindControl<TextBox>("TxtCurrentAmount");
+            if (!(txtAmountFocused?.IsFocused ?? false) && e.Key >= Key.D1 && e.Key <= Key.D4)
             {
                 string method = e.Key switch
                 {

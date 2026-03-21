@@ -11,11 +11,17 @@ namespace CasaCejaRemake.Models
         [Column("id")]
         public int Id { get; set; }
 
-        // ========== FOLIO ==========
+        // ========== FOLIOS ==========
         [Column("folio")]
         [MaxLength(50)]
         [Indexed(Name = "IX_StockEntries_Folio", Unique = true)]
         public string Folio { get; set; } = string.Empty;
+       
+        /// Folio de la salida de origen cuando la entrada viene de un traspaso.
+        /// Null cuando la entrada viene de un proveedor (compra directa).
+        [Column("folio_output")]
+        [MaxLength(50)]
+        public string? FolioOutput { get; set; }
 
         // ========== RELACIONES ==========
         [Column("branch_id")]
@@ -30,9 +36,9 @@ namespace CasaCejaRemake.Models
         [Indexed(Name = "IX_StockEntries_User")]
         public int UserId { get; set; }
 
-        // ========== INFORMACIÓN DE FACTURA ==========    
-        [Column("total_cost")]
-        public decimal TotalCost { get; set; }
+        // ========== TOTALES ==========
+        [Column("total_amount")]
+        public decimal TotalAmount { get; set; }
 
         // ========== FECHAS ==========
         [Column("entry_date")]

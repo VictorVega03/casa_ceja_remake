@@ -10,7 +10,6 @@ using CasaCejaRemake.Helpers;
 using CasaCejaRemake.Services;
 using CasaCejaRemake.ViewModels.Shared;
 using CasaCejaRemake.ViewModels.POS;
-using CasaCejaRemake.ViewModels.POS;
 using CasaCejaRemake.Views.Shared;using casa_ceja_remake.Helpers;using CasaCejaRemake.Views.POS;
 
 namespace CasaCejaRemake
@@ -18,6 +17,8 @@ namespace CasaCejaRemake
     public partial class App : Application
     {
         // Servicios estaticos
+        public static ApiClient? ApiClient { get; private set; }
+        public static SyncService? SyncService { get; private set; }
         public static DatabaseService? DatabaseService { get; private set; }
         public static AuthService? AuthService { get; private set; }
         public static RoleService? RoleService { get; private set; }
@@ -65,6 +66,9 @@ namespace CasaCejaRemake
         {
             try
             {
+                // ── Servicios de sincronización ───────────────────────────────────
+                ApiClient  = new ApiClient(ConfigService);
+                SyncService = new SyncService(ApiClient, ConfigService, DatabaseService);
                 // Inicializar base de datos
                 DatabaseService = new DatabaseService();
                 await DatabaseService.InitializeAsync();
@@ -529,8 +533,7 @@ namespace CasaCejaRemake
                 ConfigService,
                 AuthService,
                 PrintService,
-                UserService,
-                new Services.ThermalPrinterSetupService());
+                UserService);
 
             // Suscribirse al evento de configuración guardada (cambio de sucursal)
             viewModel.ConfigurationSaved += async (s, e) =>
