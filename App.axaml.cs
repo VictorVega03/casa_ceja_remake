@@ -529,8 +529,7 @@ namespace CasaCejaRemake
                 ConfigService,
                 AuthService,
                 PrintService,
-                UserService,
-                new Services.ThermalPrinterSetupService());
+                UserService);
 
             // Suscribirse al evento de configuración guardada (cambio de sucursal)
             viewModel.ConfigurationSaved += async (s, e) =>

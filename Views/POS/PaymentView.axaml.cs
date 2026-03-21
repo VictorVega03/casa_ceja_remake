@@ -98,21 +98,17 @@ namespace CasaCejaRemake.Views.POS
                 }
 
                 // Teclas numéricas para selección de método de pago
-                if (KeyboardShortcutHelper.HandleShortcuts(e, () => _viewModel.SelectMethodCommand.Execute("Efectivo"), Key.D1, Key.NumPad1))
+                // Solo activan si el campo de monto NO tiene foco (evita interferir con escritura en Windows)
+                if (!TxtCurrentAmount.IsFocused)
                 {
-                    return;
-                }
-                if (KeyboardShortcutHelper.HandleShortcuts(e, () => _viewModel.SelectMethodCommand.Execute("Debito"), Key.D2, Key.NumPad2))
-                {
-                    return;
-                }
-                if (KeyboardShortcutHelper.HandleShortcuts(e, () => _viewModel.SelectMethodCommand.Execute("Credito"), Key.D3, Key.NumPad3))
-                {
-                    return;
-                }
-                if (KeyboardShortcutHelper.HandleShortcuts(e, () => _viewModel.SelectMethodCommand.Execute("Transferencia"), Key.D4, Key.NumPad4))
-                {
-                    return;
+                    if (KeyboardShortcutHelper.HandleShortcuts(e, () => _viewModel.SelectMethodCommand.Execute("Efectivo"), Key.D1, Key.NumPad1))
+                        return;
+                    if (KeyboardShortcutHelper.HandleShortcuts(e, () => _viewModel.SelectMethodCommand.Execute("Debito"), Key.D2, Key.NumPad2))
+                        return;
+                    if (KeyboardShortcutHelper.HandleShortcuts(e, () => _viewModel.SelectMethodCommand.Execute("Credito"), Key.D3, Key.NumPad3))
+                        return;
+                    if (KeyboardShortcutHelper.HandleShortcuts(e, () => _viewModel.SelectMethodCommand.Execute("Transferencia"), Key.D4, Key.NumPad4))
+                        return;
                 }
             }
 
