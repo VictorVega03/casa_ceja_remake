@@ -67,9 +67,6 @@ namespace CasaCejaRemake
             try
             {
                 // ── Servicios de sincronización ───────────────────────────────────
-                ApiClient  = new ApiClient(ConfigService);
-                SyncService = new SyncService(ApiClient, ConfigService, DatabaseService);
-                // Inicializar base de datos
                 DatabaseService = new DatabaseService();
                 await DatabaseService.InitializeAsync();
 
@@ -116,6 +113,12 @@ namespace CasaCejaRemake
                 }
 
                 // Suscribirse a cambios de configuración
+                ConfigService = new ConfigService();
+                await ConfigService.LoadAsync();
+
+                ApiClient   = new ApiClient(ConfigService);
+                SyncService = new SyncService(ApiClient, ConfigService, DatabaseService);
+                
                 ConfigService.AppConfigChanged += OnAppConfigChanged;
 
                 PrintService = new PrintService(ConfigService);
