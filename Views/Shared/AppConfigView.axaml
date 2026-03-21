@@ -62,6 +62,13 @@
         <Style Selector="Button.save:pointerover">
             <Setter Property="Background" Value="#66BB6A" />
         </Style>
+        <Style Selector="Button.open-printers">
+            <Setter Property="Background" Value="#2196F3" />
+            <Setter Property="Foreground" Value="White" />
+        </Style>
+        <Style Selector="Button.open-printers:pointerover">
+            <Setter Property="Background" Value="#42A5F5" />
+        </Style>
     </Window.Styles>
 
     <StackPanel>
@@ -191,6 +198,15 @@
                         </Grid>
                         <ComboBox ItemsSource="{Binding AvailablePrinters}"
                                   SelectedItem="{Binding SelectedPrinter}" />
+
+                        <Button Content="🖥️ Abrir gestor de impresoras"
+                                Command="{Binding OpenNativePrinterManagerCommand}"
+                                Classes="open-printers"
+                                Margin="0,8,0,0"
+                                Padding="12,8"
+                                Height="36"
+                                HorizontalAlignment="Left"
+                                FontSize="12" />
 
                         <TextBlock Classes="label" Text="Tipo de Impresión:" />
                         <ComboBox ItemsSource="{Binding PrintFormatOptions}"

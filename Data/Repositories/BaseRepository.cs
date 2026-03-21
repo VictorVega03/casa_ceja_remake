@@ -196,6 +196,60 @@ namespace CasaCejaRemake.Data.Repositories
             }
         }
 
+        /// <summary>
+/// Inserta o reemplaza un registro.
+/// Si ya existe un registro con el mismo ID, lo actualiza.
+/// Si no existe, lo inserta.
+/// Usado principalmente por SyncService al recibir datos del servidor.
+/// </summary>
+/// <summary>
+/// Inserta o actualiza un registro según si ya existe por ID.
+/// Usado por SyncService al recibir datos del servidor.
+/// </summary>
+public virtual async Task<int> UpsertAsync(T entity)
+{
+    try
+    {
+        var idProperty = typeof(T).GetProperty("Id");
+        if (idProperty == null)
+            return await AddAsync(entity);
+
+        var id = (int)(idProperty.GetValue(entity) ?? 0);
+        var existing = id > 0 ? await GetByIdAsync(id) : default(T);
+
+        if (existing != null)
+        {
+            SetUpdatedAt(entity);
+            return await _databaseService.UpdateAsync(entity);
+        }
+        else
+        {
+            SetCreatedAt(entity);
+            SetUpdatedAt(entity);
+            return await _databaseService.InsertAsync(entity);
+        }
+    }
+    catch (Exception ex)
+    {
+        throw new InvalidOperationException($"Error upserting {typeof(T).Name}", ex);
+    }
+}
+
+/// <summary>
+/// Inserta o actualiza múltiples registros.
+/// </summary>
+public virtual async Task UpsertRangeAsync(IEnumerable<T> entities)
+{
+    try
+    {
+        foreach (var entity in entities)
+            await UpsertAsync(entity);
+    }
+    catch (Exception ex)
+    {
+        throw new InvalidOperationException($"Error upserting multiple {typeof(T).Name} records", ex);
+    }
+}
 
         // ============================================
         // ACTUALIZACIÓN (UPDATE)

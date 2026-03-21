@@ -2,13 +2,20 @@ using System;
 
 namespace CasaCejaRemake.Models
 {
-    /// <summary>
     /// Configuración general de la aplicación (nivel global).
     /// Se persiste como JSON en disco: app_config.json
     /// Solo Admin puede modificar estos valores.
-    /// </summary>
+    
     public class AppConfig
     {
+        // ============ SERVIDOR ============
+    /// <summary>URL base del servidor Laravel</summary>
+    public string ServerUrl { get; set; } = string.Empty;
+
+    /// <summary>Token de autenticación de esta sucursal</summary>
+    public string BranchToken { get; set; } = string.Empty;
+
+    public long LastSyncTimestamp { get; set; } = 0;
         // ============ SUCURSAL ============
         /// <summary>ID de la sucursal seleccionada (solo Admin puede cambiar)</summary>
         public int BranchId { get; set; } = 1;

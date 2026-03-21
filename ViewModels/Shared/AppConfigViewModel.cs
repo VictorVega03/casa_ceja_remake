@@ -271,6 +271,37 @@ namespace CasaCejaRemake.ViewModels.Shared
         }
 
         [RelayCommand]
+        private void OpenNativePrinterManager()
+        {
+            try
+            {
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                {
+                    Process.Start(new ProcessStartInfo
+                    {
+                        FileName = "open",
+                        Arguments = "x-apple.systempreferences:com.apple.preference.printfax",
+                        UseShellExecute = false
+                    });
+                }
+                else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                {
+                    Process.Start(new ProcessStartInfo
+                    {
+                        FileName = "ms-settings:printers",
+                        UseShellExecute = true
+                    });
+                }
+                StatusMessage = "Gestor de impresoras abierto";
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"No se pudo abrir el gestor: {ex.Message}";
+                Console.WriteLine($"[AppConfigViewModel] Error abriendo gestor de impresoras: {ex.Message}");
+            }
+        }
+
+        [RelayCommand]
         private void Close() => CloseRequested?.Invoke(this, EventArgs.Empty);
     }
 }
