@@ -185,7 +185,7 @@
                                     VerticalAlignment="Bottom"
                                     Margin="0,0,6,5" />
                             <Button Grid.Column="2"
-                                    Content="Configurar impresora"
+                                    Content="🖥️ Configurar impresora"
                                     Command="{Binding OpenPrinterManagerCommand}"
                                     FontSize="11"
                                     Padding="10,6"
@@ -198,15 +198,6 @@
                         </Grid>
                         <ComboBox ItemsSource="{Binding AvailablePrinters}"
                                   SelectedItem="{Binding SelectedPrinter}" />
-
-                        <Button Content="🖥️ Abrir gestor de impresoras"
-                                Command="{Binding OpenNativePrinterManagerCommand}"
-                                Classes="open-printers"
-                                Margin="0,8,0,0"
-                                Padding="12,8"
-                                Height="36"
-                                HorizontalAlignment="Left"
-                                FontSize="12" />
 
                         <TextBlock Classes="label" Text="Tipo de Impresión:" />
                         <ComboBox ItemsSource="{Binding PrintFormatOptions}"
