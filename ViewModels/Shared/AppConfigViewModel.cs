@@ -202,52 +202,6 @@ namespace CasaCejaRemake.ViewModels.Shared
                     }
                 }
 
-                // === [DESACTIVADO] Configuración automática de impresora térmica ===
-                // Se desactivó para simplificar el flujo. Ahora el usuario configura
-                // su impresora desde el gestor nativo del SO y solo la selecciona aquí.
-                //
-                // if (SelectedPrintFormat == "Térmica")
-                // {
-                //     var runtimeOS = System.Runtime.InteropServices.RuntimeInformation.OSDescription;
-                //
-                //     if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-                //     {
-                //         // macOS: configuración automática completa con lpadmin/CUPS
-                //         StatusMessage = "Configurando impresora térmica automáticamente...";
-                //         var setupResult = await _thermalSetupService.AutoConfigureThermalPrinterMacAsync("Xprinter_USB_Printer_P");
-                //         foreach (var logEntry in setupResult.Log)
-                //             Console.WriteLine($"[ThermalSetup] {logEntry}");
-                //         if (setupResult.Success)
-                //         {
-                //             await RefreshPrintersAsync();
-                //             SelectedPrinter = setupResult.PrinterName;
-                //             StatusMessage = $"✓ {setupResult.Message}";
-                //         }
-                //         else
-                //         {
-                //             StatusMessage = $"⚠️ {setupResult.Message}";
-                //             await Task.Delay(3000);
-                //         }
-                //     }
-                //     else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                //     {
-                //         if (!string.IsNullOrEmpty(SelectedPrinter))
-                //         {
-                //             StatusMessage = "Verificando impresora térmica...";
-                //             var setupResult = await _thermalSetupService.AutoConfigureThermalPrinterWindowsAsync(SelectedPrinter);
-                //             foreach (var logEntry in setupResult.Log)
-                //                 Console.WriteLine($"[ThermalSetup] {logEntry}");
-                //             if (setupResult.Success)
-                //                 StatusMessage = $"✓ {setupResult.Message}";
-                //             else
-                //             {
-                //                 StatusMessage = $"⚠️ {setupResult.Message}";
-                //                 await Task.Delay(3000);
-                //             }
-                //         }
-                //     }
-                // }
-
                 // === Guardar solo impresora y tipo de impresión ===
                 await _configService.UpdatePosTerminalConfigAsync(config =>
                 {
@@ -278,6 +232,41 @@ namespace CasaCejaRemake.ViewModels.Shared
             finally
             {
                 IsLoading = false;
+            }
+        }
+
+        /// <summary>
+        /// Abre el gestor de impresoras nativo del sistema operativo.
+        /// En macOS: Preferencias del Sistema > Impresoras y Escáneres.
+        /// En Windows: Panel de control > Dispositivos e impresoras.
+        /// </summary>
+        [RelayCommand]
+        private void OpenPrinterManager()
+        {
+            try
+            {
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                {
+                    Process.Start(new ProcessStartInfo
+                    {
+                        FileName = "open",
+                        Arguments = "/System/Library/PreferencePanes/PrintAndFax.prefPane",
+                        UseShellExecute = false
+                    });
+                }
+                else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                {
+                    Process.Start(new ProcessStartInfo
+                    {
+                        FileName = "ms-settings:printers",
+                        UseShellExecute = true
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[AppConfigViewModel] Error abriendo gestor de impresoras: {ex.Message}");
+                StatusMessage = "No se pudo abrir el gestor de impresoras del sistema.";
             }
         }
 
