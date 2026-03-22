@@ -107,19 +107,17 @@ namespace CasaCejaRemake
                 // Sincronizar la sucursal inicial en AuthService desde ConfigService
                 if (AuthService != null && ConfigService != null)
                 {
-                    var initialBranchId = ConfigService.AppConfig.BranchId;
+                    var initialBranchId = ConfigService.AppConfig.CurrentBranchId ?? 0;
                     AuthService.SetCurrentBranch(initialBranchId);
                     Console.WriteLine($"[App] Sucursal inicial sincronizada: {initialBranchId}");
                 }
 
+               
                 // Suscribirse a cambios de configuración
-                ConfigService = new ConfigService();
-                await ConfigService.LoadAsync();
+                ConfigService.AppConfigChanged += OnAppConfigChanged;
 
                 ApiClient   = new ApiClient(ConfigService);
                 SyncService = new SyncService(ApiClient, ConfigService, DatabaseService);
-                
-                ConfigService.AppConfigChanged += OnAppConfigChanged;
 
                 PrintService = new PrintService(ConfigService);
                 ExportService = new ExportService();
@@ -234,7 +232,7 @@ namespace CasaCejaRemake
             // Sincronizar sucursal desde ConfigService para TODOS los usuarios
             if (AuthService != null && ConfigService != null)
             {
-                var configBranchId = ConfigService.AppConfig.BranchId;
+                var configBranchId = ConfigService.AppConfig.CurrentBranchId ?? 0;
                 AuthService.SetCurrentBranch(configBranchId);
                 Console.WriteLine($"[App] Sucursal sincronizada desde ConfigService: {configBranchId} (Usuario: {AuthService.CurrentUserName})");
             }
@@ -354,9 +352,9 @@ namespace CasaCejaRemake
                 currentBranchName = branch?.Name ?? $"Sucursal #{currentBranchId}";
 
                 // Sincronizar el nombre en el config para que quede actualizado
-                if (ConfigService != null && branch != null && ConfigService.AppConfig.BranchName != branch.Name)
+                if (ConfigService != null && branch != null && ConfigService.AppConfig.CurrentBranchName != branch.Name)
                 {
-                    await ConfigService.UpdateAppConfigAsync(c => c.BranchName = branch.Name);
+                    await ConfigService.UpdateAppConfigAsync(c => c.CurrentBranchName = branch.Name);
                 }
             }
             catch (Exception ex)
@@ -653,7 +651,7 @@ namespace CasaCejaRemake
         public async System.Threading.Tasks.Task<Models.Branch?> GetCurrentBranchAsync()
         {
             if (DatabaseService == null || ConfigService == null) return null;
-            var branchId = ConfigService.AppConfig.BranchId;
+            var branchId = ConfigService.AppConfig.CurrentBranchId ?? 0;
             var repo = new Data.Repositories.BaseRepository<Models.Branch>(DatabaseService);
             return await repo.GetByIdAsync(branchId);
         }
@@ -665,8 +663,8 @@ namespace CasaCejaRemake
         {
             if (ConfigService == null) return;
             
-            var branchId = ConfigService.AppConfig.BranchId;
-            var branchName = ConfigService.AppConfig.BranchName;
+            var branchId = ConfigService.AppConfig.CurrentBranchId ?? 0;
+            var branchName = ConfigService.AppConfig.CurrentBranchName ?? string.Empty;
             
             Console.WriteLine($"[App] Configuración cambiada - Nueva sucursal: {branchName} (ID: {branchId})");
             

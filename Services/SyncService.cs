@@ -92,7 +92,7 @@ namespace CasaCejaRemake.Services
         public async Task<List<SyncResult>> PullAllAsync(CancellationToken ct = default)
         {
             var since    = _configService.AppConfig.LastSyncTimestamp;
-            var branchId = _configService.AppConfig.BranchId;
+            var branchId = _configService.AppConfig.CurrentBranchId ?? 0;
             var results  = new List<SyncResult>();
 
             results.Add(await PullAsync("categories",      since, _categoryRepo,      ct));

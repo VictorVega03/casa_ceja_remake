@@ -98,9 +98,9 @@ namespace CasaCejaRemake.ViewModels.Shared
 
                 // 2. Aplicar configuración de sucursal guardada
                 var appConfig = _configService.AppConfig;
-                SelectedBranch = Branches.FirstOrDefault(b => b.Id == appConfig.BranchId)
+                SelectedBranch = Branches.FirstOrDefault(b => b.Id == appConfig.CurrentBranchId)
                                  ?? Branches.FirstOrDefault();
-                _originalBranchId = appConfig.BranchId;
+                _originalBranchId = appConfig.CurrentBranchId ?? 0;
 
                 // 3. Cargar impresoras del sistema
                 var printers = _printService.GetAvailablePrinters();
@@ -195,8 +195,8 @@ namespace CasaCejaRemake.ViewModels.Shared
                     {
                         await _configService.UpdateAppConfigAsync(config =>
                         {
-                            config.BranchId = SelectedBranch.Id;
-                            config.BranchName = SelectedBranch.Name;
+                            config.CurrentBranchId = SelectedBranch.Id;
+                            config.CurrentBranchName = SelectedBranch.Name;
                         });
                         _authService.SetCurrentBranch(SelectedBranch.Id);
                     }

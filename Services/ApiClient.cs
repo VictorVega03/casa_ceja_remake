@@ -34,13 +34,13 @@ namespace CasaCejaRemake.Services
         // ──────────────────────────────────────────────────────
 
         private string BaseUrl => _configService.AppConfig.ServerUrl.TrimEnd('/');
-        private string Token   => _configService.AppConfig.BranchToken;
+        private string Token   => _configService.AppConfig.UserToken;
 
         private void SetAuthHeader()
         {
-            _httpClient.DefaultRequestHeaders.Remove("Authorization");
-            if (!string.IsNullOrEmpty(Token))
-                _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {Token}");
+            _httpClient.DefaultRequestHeaders.Remove("X-User-Token");
+if (!string.IsNullOrEmpty(Token))
+    _httpClient.DefaultRequestHeaders.Add("X-User-Token", Token);
         }
 
         // ──────────────────────────────────────────────────────

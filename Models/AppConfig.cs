@@ -5,75 +5,79 @@ namespace CasaCejaRemake.Models
     /// Configuración general de la aplicación (nivel global).
     /// Se persiste como JSON en disco: app_config.json
     /// Solo Admin puede modificar estos valores.
-    
     public class AppConfig
     {
         // ============ SERVIDOR ============
-    /// <summary>URL base del servidor Laravel</summary>
-    public string ServerUrl { get; set; } = string.Empty;
+        /// URL base del servidor Laravel
+        public string ServerUrl { get; set; } = string.Empty;
 
-    /// <summary>Token de autenticación de esta sucursal</summary>
-    public string BranchToken { get; set; } = string.Empty;
+        /// Token de autenticación del usuario actual.
+        /// Se genera automáticamente al hacer login por primera vez.
+        /// Null hasta que el usuario haga login.
+        public string? UserToken { get; set; } = null;
 
-    public long LastSyncTimestamp { get; set; } = 0;
+        /// Timestamp Unix del último sync exitoso.
+        /// Se actualiza con el server_time del servidor, no con el reloj local.
+        /// 0 = nunca se ha sincronizado.
+        public long LastSyncTimestamp { get; set; } = 0;
+
         // ============ SUCURSAL ============
-        /// <summary>ID de la sucursal seleccionada (solo Admin puede cambiar)</summary>
-        public int BranchId { get; set; } = 1;
+        /// ID de la sucursal seleccionada.
+        /// Null hasta que el admin configure una sucursal después del primer login.
+        public int? CurrentBranchId { get; set; } = null;
 
-        /// <summary>Nombre de la sucursal (se obtiene desde la BD, no hardcodeado)</summary>
-        public string BranchName { get; set; } = string.Empty;
+        /// Nombre de la sucursal actual
+        public string? CurrentBranchName { get; set; } = null;
 
         // ============ METADATA ============
-        /// <summary>Fecha de última modificación</summary>
+        /// Fecha de última modificación
         public DateTime LastModified { get; set; } = DateTime.Now;
     }
 
-    /// <summary>
     /// Configuración específica del terminal POS (nivel máquina).
     /// Se persiste como JSON en disco: pos_terminal_config.json
     /// Cada terminal/computadora tiene su propia configuración.
-    /// </summary>
     public class PosTerminalConfig
     {
         // ============ IDENTIFICACIÓN ============
-        /// <summary>Identificador único de esta terminal/caja (solo Admin puede cambiar)</summary>
+        /// Identificador único de esta terminal/caja (solo Admin puede cambiar)
         public string TerminalId { get; set; } = "CAJA-01";
 
-        /// <summary>Nombre descriptivo de la terminal (opcional)</summary>
+        /// Nombre descriptivo de la terminal (opcional)
         public string TerminalName { get; set; } = "Terminal Principal";
 
         // ============ IMPRESORA ============
-        /// <summary>Nombre del sistema de la impresora seleccionada para tickets</summary>
+        /// Nombre del sistema de la impresora seleccionada para tickets
         public string PrinterName { get; set; } = string.Empty;
 
-        /// <summary>Formato de impresión: "thermal" = ticket térmico, "letter" = hoja carta</summary>
+        /// Formato de impresión: "thermal" = ticket térmico, "letter" = hoja carta
         public string PrintFormat { get; set; } = "thermal";
 
         // ============ PARÁMETROS DEL TICKET ============
-        /// <summary>Pie de página personalizado del ticket</summary>
+        /// Pie de página personalizado del ticket
         public string TicketFooter { get; set; } = "Gracias por su compra";
 
-        /// <summary>Tamaño de letra para impresión (8, 9, 10, 11, 12)</summary>
+        /// Tamaño de letra para impresión (8, 9, 10, 11, 12)
         public int FontSize { get; set; } = 9;
 
-        /// <summary>Familia de fuente: "Courier New", "Consolas", "Lucida Console"</summary>
+        /// Familia de fuente: "Courier New", "Consolas", "Lucida Console"
         public string FontFamily { get; set; } = "Courier New";
 
-        /// <summary>RFC del negocio (se muestra en tickets si tiene valor)</summary>
+        /// RFC del negocio (se muestra en tickets si tiene valor)
         public string Rfc { get; set; } = string.Empty;
 
-        /// <summary>Ancho de línea en caracteres para ticket térmico (32, 40, 48)</summary>
+        /// Ancho de línea en caracteres para ticket térmico (32, 40, 48)
         public int TicketLineWidth { get; set; } = 32;
 
         // ============ OPCIONES ============
-        /// <summary>Imprimir automáticamente al finalizar venta</summary>
+        /// Imprimir automáticamente al finalizar venta
         public bool AutoPrint { get; set; } = true;
 
-        /// <summary>Abrir cajón de dinero al imprimir (si está conectado)</summary>
+        /// Abrir cajón de dinero al imprimir (si está conectado)
         public bool OpenCashDrawer { get; set; } = false;
 
         // ============ METADATA ============
-        /// <summary>Fecha de última modificación</summary>
+        /// Fecha de última modificación
         public DateTime LastModified { get; set; } = DateTime.Now;
     }
 }

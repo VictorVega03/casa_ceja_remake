@@ -68,7 +68,7 @@ namespace CasaCejaRemake.Views.POS
 
                     // Load branch from DB to get RazonSocial and address
                     var branch = app != null ? await app.GetCurrentBranchAsync() : null;
-                    var branchName = branch?.Name ?? configService?.AppConfig.BranchName ?? string.Empty;
+                    var branchName = branch?.Name ?? configService?.AppConfig.CurrentBranchName ?? string.Empty;
                     var branchAddress = branch?.Address ?? string.Empty;
                     var branchRazonSocial = branch?.RazonSocial ?? string.Empty;
 
