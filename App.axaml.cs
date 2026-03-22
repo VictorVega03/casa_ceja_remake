@@ -223,10 +223,8 @@ namespace CasaCejaRemake
             windowToClose?.Close();
         }
 
-        /// <summary>
         /// Maneja el login exitoso: siempre va al selector de módulos.
         /// Sincroniza la sucursal con ConfigService si es Admin.
-        /// </summary>
         private void HandleSuccessfulLogin()
         {
             // Sincronizar sucursal desde ConfigService para TODOS los usuarios
@@ -241,9 +239,46 @@ namespace CasaCejaRemake
             ShowModuleSelector();
         }
 
-        /// <summary>
+        /// Hace login al servidor y guarda el token del usuario en AppConfig.
+        /// Si el servidor no está disponible, continúa en modo offline.
+        private async Task SyncUserTokenAsync()
+        {
+            if (ApiClient == null || ConfigService == null || AuthService?.CurrentUser == null)
+                return;
+
+            if (string.IsNullOrEmpty(ConfigService.AppConfig.ServerUrl))
+            {
+                Console.WriteLine("[App] ServerUrl no configurado — modo offline");
+                return;
+            }
+
+            try
+            {
+                var username = AuthService.CurrentUser.Username;
+                var password = AuthService.CurrentUser.Password;
+
+                var response = await ApiClient.LoginAsync(username, password);
+
+                if (response?.IsSuccess == true && response.Data != null)
+                {
+                    await ConfigService.UpdateAppConfigAsync(config =>
+                    {
+                        config.UserToken = response.Data.Token;
+                    });
+
+                    Console.WriteLine($"[App] Token de usuario sincronizado correctamente");
+                }
+                else
+                {
+                    Console.WriteLine("[App] No se pudo obtener token del servidor — modo offline");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[App] Error sincronizando token: {ex.Message} — modo offline");
+            }
+        }
         /// Muestra el selector de modulos (solo Admin).
-        /// </summary>
         private void ShowModuleSelector()
         {
             if (ApplicationLifetime is not IClassicDesktopStyleApplicationLifetime desktop) return;
@@ -319,9 +354,7 @@ namespace CasaCejaRemake
             selectorView.Show();
         }
 
-        /// <summary>
         /// Muestra el modulo POS.
-        /// </summary>
         private async void ShowPOS(Window? windowToClose = null)
         {
             Console.WriteLine("[App] ShowPOS() llamado");

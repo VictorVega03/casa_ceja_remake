@@ -84,6 +84,30 @@ if (!string.IsNullOrEmpty(Token))
             }
         }
 
+    /// Hace login al servidor y regresa el token del usuario.
+    /// Endpoint público — no requiere token previo.
+    public async Task<ApiResponse<LoginResponse>?> LoginAsync(string username, string password)
+    {
+        var url  = $"{BaseUrl}/api/v1/auth/login";
+        var body = new LoginRequest { Username = username, Password = password };
+
+        try
+        {
+            var response = await _httpClient.PostAsJsonAsync(url, body);
+            var json     = await response.Content.ReadAsStringAsync();
+
+            if (response.IsSuccessStatusCode)
+                return JsonSerializer.Deserialize<ApiResponse<LoginResponse>>(json);
+
+            Console.WriteLine($"[ApiClient] Login fallido: {response.StatusCode}");
+            return null;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[ApiClient] Error en login: {ex.Message}");
+            return null;
+        }
+    }
         // ──────────────────────────────────────────────────────
         // GET (PULL)
         // ──────────────────────────────────────────────────────

@@ -97,4 +97,56 @@ namespace CasaCejaRemake.Models.DTOs
             ErrorMessage = error,
         };
     }
+  
+    /// Request para el endpoint de login.
+    public class LoginRequest
+    {
+        [JsonPropertyName("username")]
+        public string Username { get; set; } = string.Empty;
+
+        [JsonPropertyName("password")]
+        public string Password { get; set; } = string.Empty;
+    }
+
+    /// Respuesta del endpoint de login.
+    public class LoginResponse
+    {
+        [JsonPropertyName("token")]
+        public string Token { get; set; } = string.Empty;
+
+        [JsonPropertyName("user")]
+        public LoginUser User { get; set; } = new();
+
+        [JsonPropertyName("branches")]
+        public List<LoginBranch> Branches { get; set; } = new();
+    }
+
+    /// Datos del usuario autenticado.
+    public class LoginUser
+    {
+        [JsonPropertyName("id")]
+        public int Id { get; set; }
+
+        [JsonPropertyName("name")]
+        public string Name { get; set; } = string.Empty;
+
+        [JsonPropertyName("username")]
+        public string Username { get; set; } = string.Empty;
+
+        [JsonPropertyName("user_type")]
+        public int UserType { get; set; }
+
+        [JsonPropertyName("branch_id")]
+        public int? BranchId { get; set; }
+    }
+
+    /// Sucursal disponible para selección post-login.
+    public class LoginBranch
+    {
+        [JsonPropertyName("id")]
+        public int Id { get; set; }
+
+        [JsonPropertyName("name")]
+        public string Name { get; set; } = string.Empty;
+    }
 }
