@@ -69,14 +69,41 @@ namespace CasaCejaRemake.ViewModels.Shared
                 var username = _authService.CurrentUser?.Username ?? string.Empty;
                 var password = _authService.CurrentUser?.Password ?? string.Empty;
                 var loginResponse = await _apiClient.LoginAsync(username, password);
+                var token = loginResponse?.Data?.Token;
 
-                if (loginResponse?.IsSuccess == true && loginResponse.Data != null)
+                Console.WriteLine($"[SyncLoading] Login API status={loginResponse?.Status ?? "null"} message={loginResponse?.Message ?? "null"}");
+
+                if (!string.IsNullOrWhiteSpace(token))
                 {
+                    var tokenPreview = token.Length <= 10
+                        ? "***"
+                        : $"{token[..6]}...{token[^4..]}";
+                    Console.WriteLine($"[SyncLoading] Token recibido (len={token.Length}, preview={tokenPreview})");
                     await _configService.UpdateAppConfigAsync(config =>
                     {
-                        config.UserToken = loginResponse.Data.Token;
+                        config.UserToken = token;
                     });
                 }
+                else
+                {
+                    Console.WriteLine("[SyncLoading] No se obtuvo token en login; se omite Push");
+                }
+
+                // Paso 3 — Push de operaciones pendientes
+                int totalPushed = 0;
+                int totalRejected = 0;
+                if (!string.IsNullOrWhiteSpace(_configService.AppConfig.UserToken))
+                {
+                    StatusMessage = "Enviando datos pendientes...";
+                    var pushResults = await _syncService.PushAllAsync();
+                    foreach (var result in pushResults)
+                    {
+                        totalPushed    += result.RecordsPushed;
+                        totalRejected  += result.RecordsRejected;
+                    }
+                }
+                if (totalPushed > 0)
+                    Console.WriteLine($"[SyncLoading] Push completado — {totalPushed} enviados, {totalRejected} rechazados");
 
                 // Paso 3 — Pull de catálogos solo si hay cambios
                 StatusMessage = "Verificando actualizaciones...";

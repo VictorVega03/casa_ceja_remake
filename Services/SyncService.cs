@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -219,7 +220,9 @@ namespace CasaCejaRemake.Services
         {
             try
             {
-                var pending = await repo.FindAsync(x => GetSyncStatus(x) == 1);
+                // Traer todos y filtrar en memoria — FindAsync no soporta reflexión
+                var all     = await repo.GetAllAsync();
+                var pending = all.Where(x => GetSyncStatus(x) == 1).ToList();
 
                 if (pending.Count == 0)
                     return SyncResult.Ok(entity);
