@@ -89,26 +89,41 @@ namespace CasaCejaRemake.Services
         // PULL
         // ──────────────────────────────────────────────────────
 
-        public async Task<List<SyncResult>> PullAllAsync(CancellationToken ct = default)
+    public async Task<List<SyncResult>> PullAllAsync(CancellationToken ct = default)
+    {
+        var since    = _configService.AppConfig.LastSyncTimestamp;
+        var branchId = _configService.AppConfig.CurrentBranchId ?? 0;
+        var results  = new List<SyncResult>();
+
+        // Catálogos globales — corren en paralelo
+        var catalogTasks = new[]
         {
-            var since    = _configService.AppConfig.LastSyncTimestamp;
-            var branchId = _configService.AppConfig.CurrentBranchId ?? 0;
-            var results  = new List<SyncResult>();
+            PullAsync("categories",   since, _categoryRepo,  ct),
+            PullAsync("units",        since, _unitRepo,       ct),
+            PullAsync("branches",     since, _branchRepo,     ct),
+            PullAsync("suppliers",    since, _supplierRepo,   ct),
+            PullAsync("customers",    since, _customerRepo,   ct),
+            PullAsync("users",        since, _userRepo,       ct),
+            PullAsync("products",     since, _productRepo,    ct),
+        };
 
-            results.Add(await PullAsync("categories",      since, _categoryRepo,      ct));
-            results.Add(await PullAsync("units",           since, _unitRepo,           ct));
-            results.Add(await PullAsync("branches",        since, _branchRepo,         ct));
-            results.Add(await PullAsync("suppliers",       since, _supplierRepo,       ct));
-            results.Add(await PullAsync("customers",       since, _customerRepo,       ct));
-            results.Add(await PullAsync("users",           since, _userRepo,           ct));
-            results.Add(await PullAsync("products",        since, _productRepo,        ct));
-            results.Add(await PullAsync("credits",         since, _creditRepo,         ct, $"&branch_id={branchId}"));
-            results.Add(await PullAsync("credit-payments", since, _creditPaymentRepo,  ct, $"&branch_id={branchId}"));
-            results.Add(await PullAsync("layaways",        since, _layawayRepo,        ct, $"&branch_id={branchId}"));
-            results.Add(await PullAsync("layaway-payments",since, _layawayPaymentRepo, ct, $"&branch_id={branchId}"));
+        var catalogResults = await Task.WhenAll(catalogTasks);
+        results.AddRange(catalogResults);
 
-            return results;
-        }
+        // Operaciones por sucursal — también en paralelo
+        var operationTasks = new[]
+        {
+            PullAsync("credits",          since, _creditRepo,         ct, $"&branch_id={branchId}"),
+            PullAsync("credit-payments",  since, _creditPaymentRepo,  ct, $"&branch_id={branchId}"),
+            PullAsync("layaways",         since, _layawayRepo,        ct, $"&branch_id={branchId}"),
+            PullAsync("layaway-payments", since, _layawayPaymentRepo, ct, $"&branch_id={branchId}"),
+        };
+
+        var operationResults = await Task.WhenAll(operationTasks);
+        results.AddRange(operationResults);
+
+        return results;
+    }
 
         // ──────────────────────────────────────────────────────
         // PUSH
@@ -157,6 +172,7 @@ namespace CasaCejaRemake.Services
         {
             int totalPulled = 0;
             int page        = 1;
+            Console.WriteLine($"[SyncService] Iniciando Pull {entity} since={since}");
 
             try
             {

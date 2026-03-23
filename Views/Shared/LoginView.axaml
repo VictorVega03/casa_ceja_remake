@@ -10,7 +10,7 @@
         Width="680" Height="420"
         WindowStartupLocation="CenterScreen"
         CanResize="False"
-        Background="#F5F5F5">
+        Background="#1A1A2E">
 
 
     <Window.Styles>
@@ -74,19 +74,19 @@
 
         <!-- FORMULARIO DE LOGIN -->
         <Border Grid.Row="1"
-                Background="White"
-                BorderBrush="#CCCCCC"
+            Background="#252B45"
+            BorderBrush="#3A446E"
                 BorderThickness="1"
-                CornerRadius="4"
+            CornerRadius="8"
                 Padding="30">
             <StackPanel Spacing="15">
                 
                 <!-- LABEL: USUARIO -->
                 <TextBlock Text="USUARIO"
                            FontFamily="Segoe UI"
-                           FontSize="16"
+                           FontSize="15"
                            FontWeight="SemiBold"
-                           Foreground="#333333" />
+                           Foreground="#E7ECF8" />
 
                 <!-- TEXTBOX: USUARIO -->
                 <TextBox x:Name="UsernameTextBox"
@@ -100,9 +100,9 @@
                 <!-- LABEL: CONTRASEÑA -->
                 <TextBlock Text="CONTRASEÑA"
                            FontFamily="Segoe UI"
-                           FontSize="16"
+                           FontSize="15"
                            FontWeight="SemiBold"
-                           Foreground="#333333"
+                           Foreground="#E7ECF8"
                            Margin="0,10,0,0" />
 
                 <!-- TEXTBOX: CONTRASEÑA -->
@@ -136,23 +136,22 @@
                             Margin="0,10,0,0">
                     <TextBlock Text="Autenticando..."
                                FontSize="13"
-                               Foreground="#666666"
+                               Foreground="#B7C0D9"
                                Margin="0,0,10,0" />
                 </StackPanel>
 
                 <!-- BOTONES: ACEPTAR Y SALIR -->
-                <Grid Margin="0,20,0,0">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="10" />
-                        <ColumnDefinition Width="*" />
-                    </Grid.ColumnDefinitions>
+                <StackPanel Orientation="Horizontal"
+                            HorizontalAlignment="Center"
+                            Spacing="12"
+                            Margin="0,20,0,0">
 
                     <!-- BOTÓN ACEPTAR (F5) -->
-                    <Button Grid.Column="0"
+                    <Button
                             Content="ACEPTAR (F5)"
                             Command="{Binding LoginCommand}"
                             Height="68"
+                            MinWidth="220"
                             FontSize="16"
                             FontWeight="SemiBold"
                             Background="#4CAF50"
@@ -168,18 +167,21 @@
                             <Style Selector="Button:pressed /template/ ContentPresenter">
                                 <Setter Property="Background" Value="#2E7D32" />
                             </Style>
+                            <Style Selector="Button:disabled /template/ ContentPresenter">
+                                <Setter Property="Background" Value="#6F778D" />
+                            </Style>
                             <Style Selector="Button:disabled">
-                                <Setter Property="Background" Value="#CCCCCC" />
-                                <Setter Property="Foreground" Value="#999999" />
+                                <Setter Property="Foreground" Value="#D7DCE9" />
                             </Style>
                         </Button.Styles>
                     </Button>
 
                     <!-- BOTÓN SALIR (ESC) -->
-                    <Button Grid.Column="2"
+                    <Button
                             Content="SALIR (Esc)"
                             Command="{Binding CancelCommand}"
                             Height="68"
+                            MinWidth="220"
                             FontSize="16"
                             FontWeight="SemiBold"
                             Background="#F44336"
@@ -197,12 +199,12 @@
                             </Style>
                         </Button.Styles>
                     </Button>
-                </Grid>
+                </StackPanel>
 
                 <!-- INSTRUCCIONES -->
                 <TextBlock Text="Use F5 para aceptar o Esc para salir"
                            FontSize="11"
-                           Foreground="#999999"
+                           Foreground="#B0B7C9"
                            HorizontalAlignment="Center"
                            Margin="0,10,0,0" />
             </StackPanel>

@@ -225,8 +225,8 @@ namespace CasaCejaRemake
 
         /// Maneja el login exitoso: siempre va al selector de módulos.
         /// Sincroniza la sucursal con ConfigService si es Admin.
-        private async void HandleSuccessfulLogin()
-     {
+    private void HandleSuccessfulLogin()
+    {
         if (AuthService != null && ConfigService != null)
         {
             var configBranchId = ConfigService.AppConfig.CurrentBranchId ?? 0;
@@ -234,60 +234,36 @@ namespace CasaCejaRemake
             Console.WriteLine($"[App] Sucursal sincronizada desde ConfigService: {configBranchId} (Usuario: {AuthService.CurrentUserName})");
         }
 
-        // Mostrar selector primero para que Avalonia no cierre la app
-        ShowModuleSelector();
-
-        // Sincronizar token en background
-        _ = Task.Run(async () => await SyncUserTokenAsync());
-     }
-
-        /// Hace login al servidor y guarda el token del usuario en AppConfig.
-        /// Si el servidor no está disponible, continúa en modo offline.
-        private async Task SyncUserTokenAsync()
-{
-    if (ApiClient == null || ConfigService == null || AuthService?.CurrentUser == null)
-    {
-        Console.WriteLine("[App] SyncUserTokenAsync — faltan dependencias");
-        return;
+        // Mostrar pantalla de carga y sincronización
+        ShowSyncLoading();
     }
 
-    if (string.IsNullOrEmpty(ConfigService.AppConfig.ServerUrl))
+    private void ShowSyncLoading()
     {
-        Console.WriteLine("[App] ServerUrl no configurado — modo offline");
-        return;
-    }
+        if (ApplicationLifetime is not IClassicDesktopStyleApplicationLifetime desktop) return;
 
-    Console.WriteLine($"[App] Intentando sync token con servidor: {ConfigService.AppConfig.ServerUrl}");
-
-    try
-    {
-        var username = AuthService.CurrentUser.Username;
-        var password = AuthService.CurrentUser.Password;
-
-        Console.WriteLine($"[App] Haciendo login al servidor con usuario: {username}");
-
-        var response = await ApiClient.LoginAsync(username, password);
-
-        Console.WriteLine($"[App] Respuesta del servidor: {(response == null ? "null" : response.Status)}");
-
-        if (response?.IsSuccess == true && response.Data != null)
+        if (ApiClient == null || SyncService == null || ConfigService == null || AuthService == null)
         {
-            await ConfigService.UpdateAppConfigAsync(config =>
-            {
-                config.UserToken = response.Data.Token;
-            });
-            Console.WriteLine($"[App] Token de usuario sincronizado correctamente");
+            ShowModuleSelector();
+            return;
         }
-        else
+
+        var syncViewModel = new SyncLoadingViewModel(ApiClient, SyncService, ConfigService, AuthService);
+        var syncView = new SyncLoadingView
         {
-            Console.WriteLine("[App] No se pudo obtener token del servidor — modo offline");
-        }
+            DataContext = syncViewModel
+        };
+
+        syncView.Closed += (s, e) =>
+        {
+            ShowModuleSelector();
+        };
+
+        // Establecer como MainWindow antes de mostrar
+        desktop.MainWindow = syncView;
+        syncView.Show();
+        syncView.StartSync();
     }
-    catch (Exception ex)
-    {
-        Console.WriteLine($"[App] Error sincronizando token: {ex.Message} — modo offline");
-    }
-}
         /// Muestra el selector de modulos (solo Admin).
         private void ShowModuleSelector()
         {

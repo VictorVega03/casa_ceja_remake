@@ -1,0 +1,96 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="CasaCejaRemake.Views.Shared.OfflineDialog"
+        Title="Sin conexión"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False"
+        ShowInTaskbar="False"
+        SystemDecorations="None"
+        Background="#1A1A2E">
+
+    <Border CornerRadius="12" Background="#1A1A2E">
+        <Grid Margin="36">
+            <StackPanel HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Spacing="8">
+
+            <!-- Ícono sin internet -->
+            <Border Width="80" Height="80"
+                CornerRadius="40"
+                Background="#2A2A3E"
+                HorizontalAlignment="Center">
+            <Grid Width="48" Height="48"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center">
+
+                <!-- Nube -->
+                <Path Data="M38,20 C38,14.5 33.5,10 28,10 C24.8,10 22,11.5 20.2,13.8 C19.5,13.5 18.8,13.3 18,13.3 C14.9,13.3 12.3,15.9 12.3,19 C12.3,19.1 12.3,19.2 12.3,19.3 C10,20.1 8.3,22.3 8.3,24.8 C8.3,28 11,30.7 14.2,30.7 L36.8,30.7 C40,30.7 42.7,28 42.7,24.8 C42.7,22.4 41.1,20.3 38.8,19.5 C38.8,19.3 38,20 38,20 Z"
+                    Fill="#4A4A6A"
+                    Stretch="Uniform" />
+
+                <!-- X roja -->
+                <Path Data="M18,33 L30,45 M30,33 L18,45"
+                    Stroke="#E53935"
+                    StrokeThickness="4"
+                    StrokeLineCap="Round"
+                    Stretch="None"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Bottom"
+                    Margin="0,20,0,0" />
+            </Grid>
+            </Border>
+
+            <!-- Título -->
+            <TextBlock
+                       Text="Sin conexión al servidor"
+                       FontSize="16"
+                       FontWeight="Bold"
+                       Foreground="White"
+                       HorizontalAlignment="Center"
+                       Margin="0,16,0,0" />
+
+            <!-- Mensaje -->
+            <TextBlock
+                       Text="No se pudo conectar con el servidor. El sistema funcionará en modo offline con los datos locales disponibles."
+                       FontSize="11"
+                       Foreground="#888888"
+                       HorizontalAlignment="Center"
+                       TextWrapping="Wrap"
+                       TextAlignment="Center"
+                       Margin="0,8,0,0" />
+
+            <!-- Sugerencia -->
+            <TextBlock
+                       Text="Se recomienda restablecer la conexión a la brevedad posible."
+                       FontSize="10"
+                       Foreground="#555555"
+                       HorizontalAlignment="Center"
+                       TextWrapping="Wrap"
+                       TextAlignment="Center"
+                       Margin="0,6,0,0" />
+
+            <!-- Botón continuar -->
+                    <Button
+                    Content="Aceptar"
+                    HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                    Padding="24,10"
+                    Background="#2196F3"
+                    Foreground="White"
+                    BorderThickness="0"
+                    CornerRadius="6"
+                        Margin="0,16,0,0"
+                    Name="BtnContinue"
+                    IsDefault="True"
+                    Click="OnContinueClick">
+                <Button.Styles>
+                    <Style Selector="Button:pointerover">
+                        <Setter Property="Background" Value="#1976D2" />
+                    </Style>
+                </Button.Styles>
+            </Button>
+
+            </StackPanel>
+        </Grid>
+    </Border>
+</Window>

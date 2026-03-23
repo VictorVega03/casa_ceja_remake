@@ -18,6 +18,7 @@ namespace CasaCejaRemake.Services
         private readonly ConfigService _configService;
 
         private const int MaxRetries    = 3;
+        private const int MaxGetRetries = 1;
         private const int TimeoutSeconds = 15;
 
         public ApiClient(ConfigService configService)
@@ -39,9 +40,9 @@ namespace CasaCejaRemake.Services
         private void SetAuthHeader()
         {
             _httpClient.DefaultRequestHeaders.Remove("X-User-Token");
-if (!string.IsNullOrEmpty(Token))
-    _httpClient.DefaultRequestHeaders.Add("X-User-Token", Token);
-        }
+            if (!string.IsNullOrEmpty(Token))
+                _httpClient.DefaultRequestHeaders.Add("X-User-Token", Token);
+            }
 
         // ──────────────────────────────────────────────────────
         // HEALTH CHECK
@@ -51,18 +52,20 @@ if (!string.IsNullOrEmpty(Token))
         /// Verifica si el servidor está disponible.
         /// No requiere token.
         
-        public async Task<bool> IsServerAvailableAsync()
+     public async Task<bool> IsServerAvailableAsync()
+    {
+        try
         {
-            try
-            {
-                var response = await _httpClient.GetAsync($"{BaseUrl}/api/v1/health");
-                return response.IsSuccessStatusCode;
-            }
-            catch
-            {
-                return false;
-            }
+            var response = await _httpClient.GetAsync($"{BaseUrl}/api/v1/health");
+            Console.WriteLine($"[ApiClient] Health check: {response.StatusCode}");
+            return response.IsSuccessStatusCode;
         }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[ApiClient] Health check falló: {ex.Message}");
+            return false;
+        }
+    }
 
         
         /// Obtiene el server_time del servidor para usarlo como LastSyncTimestamp.
@@ -86,6 +89,7 @@ if (!string.IsNullOrEmpty(Token))
 
     /// Hace login al servidor y regresa el token del usuario.
     /// Endpoint público — no requiere token previo.
+    /// 
     public async Task<ApiResponse<LoginResponse>?> LoginAsync(string username, string password)
     {
         var url  = $"{BaseUrl}/api/v1/auth/login";
@@ -121,7 +125,7 @@ if (!string.IsNullOrEmpty(Token))
             SetAuthHeader();
             var url = $"{BaseUrl}{endpoint}";
 
-            for (int attempt = 1; attempt <= MaxRetries; attempt++)
+            for (int attempt = 1; attempt <= MaxGetRetries; attempt++)
             {
                 try
                 {
