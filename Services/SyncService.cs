@@ -220,7 +220,6 @@ namespace CasaCejaRemake.Services
         {
             try
             {
-                // Traer todos y filtrar en memoria — FindAsync no soporta reflexión
                 var all     = await repo.GetAllAsync();
                 var pending = all.Where(x => GetSyncStatus(x) == 1).ToList();
 
@@ -230,11 +229,14 @@ namespace CasaCejaRemake.Services
                 int accepted = 0;
                 int rejected = 0;
 
+                var branchId = _configService.AppConfig.CurrentBranchId ?? 0;
+
                 const int batchSize = 100;
                 for (int i = 0; i < pending.Count; i += batchSize)
                 {
-                    var batch    = pending.GetRange(i, Math.Min(batchSize, pending.Count - i));
-                    var body     = new { records = batch };
+                    var batch = pending.GetRange(i, Math.Min(batchSize, pending.Count - i));
+                    var body  = new { branch_id = branchId, records = batch };
+
                     var response = await _apiClient.PostAsync<PushResponse>(
                         $"/api/v1/sync/push/{entity}", body, ct);
 
@@ -272,7 +274,6 @@ namespace CasaCejaRemake.Services
                 return SyncResult.Fail(entity, ex.Message);
             }
         }
-
         // ──────────────────────────────────────────────────────
         // REFLEXIÓN — acceso a propiedades comunes
         // ──────────────────────────────────────────────────────

@@ -1,5 +1,6 @@
 using SQLite;
 using System;
+using System.Text.Json.Serialization;
 
 namespace CasaCejaRemake.Models
 {
@@ -7,6 +8,7 @@ namespace CasaCejaRemake.Models
     public class Layaway
     {
         // ========== IDENTIFICADOR ==========
+        [JsonIgnore]
         [PrimaryKey, AutoIncrement]
         [Column("id")]
         public int Id { get; set; }
@@ -74,9 +76,11 @@ namespace CasaCejaRemake.Models
         public DateTime UpdatedAt { get; set; } = DateTime.Now;
 
         // ========== SINCRONIZACIÓN ==========
+        [JsonIgnore]
         [Column("sync_status")]
         public int SyncStatus { get; set; } = 1; // 1=Pending, 2=Synced, 3=Error
 
+        [JsonIgnore]
         [Column("last_sync")]
         public DateTime? LastSync { get; set; }
 

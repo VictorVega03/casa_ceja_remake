@@ -1,11 +1,13 @@
 using SQLite;
 using System;
+using System.Text.Json.Serialization;
 
 namespace CasaCejaRemake.Models
 {
     [Table("sales")]
     public class Sale
     {
+        [JsonIgnore]
         [PrimaryKey, AutoIncrement]
         [Column("id")]
         public int Id { get; set; }
@@ -63,9 +65,11 @@ namespace CasaCejaRemake.Models
         public string CashCloseFolio { get; set; } = string.Empty;
 
         // ============ SINCRONIZACIÓN ============
+        [JsonIgnore]
         [Column("sync_status")]
         public int SyncStatus { get; set; } = 1;
 
+        [JsonIgnore]
         [Column("last_sync")]
         public DateTime? LastSync { get; set; }
     }
