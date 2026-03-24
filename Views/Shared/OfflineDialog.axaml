@@ -2,6 +2,8 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         x:Class="CasaCejaRemake.Views.Shared.OfflineDialog"
         Title="Sin conexión"
+        Width="420"
+        Height="400"
         WindowStartupLocation="CenterOwner"
         CanResize="False"
         ShowInTaskbar="False"

@@ -24,8 +24,8 @@ namespace CasaCejaRemake.Views.Shared
             if (screen == null) return;
 
             var area = screen.WorkingArea;
-            Width = Math.Max(360, Math.Min(640, area.Width * 0.28));
-            Height = Math.Max(280, Math.Min(540, area.Height * 0.38));
+            Width = Math.Max(400, Math.Min(640, area.Width * 0.28));
+            Height = Math.Max(400, Math.Min(540, area.Height * 0.50));
 
             var posX = area.X + (int)((area.Width - Width) / 2);
             var posY = area.Y + (int)((area.Height - Height) / 2);

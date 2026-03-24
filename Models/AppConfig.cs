@@ -9,7 +9,7 @@ namespace CasaCejaRemake.Models
     {
         // ============ SERVIDOR ============
         /// URL base del servidor Laravel
-        public string ServerUrl { get; set; } = string.Empty;
+        public string ServerUrl { get; set; } = "http://127.0.0.1:8000";
 
         /// Token de autenticación del usuario actual.
         /// Se genera automáticamente al hacer login por primera vez.

@@ -337,6 +337,7 @@ namespace CasaCejaRemake
             };
 
             Console.WriteLine("[App] Mostrando ModuleSelector");
+            desktop.MainWindow = selectorView;
             selectorView.Show();
         }
 

@@ -181,9 +181,6 @@ namespace CasaCejaRemake.Services
                 }
                 else if (tipo == 'V')
                 {
-                    var items = await _saleRepository.GetByBranchSinceDateAsync(0, fechaInicio);
-                    // GetByBranchSinceDateAsync with branchId=0 won't filter by branch,
-                    // but FolioService needs all branches — fall back to FindAsync
                     var all = await _saleRepository.FindAsync(s =>
                         s.SaleDate >= fechaInicio && s.SaleDate < fechaFin);
                     foliosEncontrados.AddRange(all
@@ -200,9 +197,10 @@ namespace CasaCejaRemake.Services
                 }
                 else if (tipo == 'C')
                 {
-                    var all = await _creditRepository.GetCreatedSinceAsync(fechaInicio);
+                    var all = await _creditRepository.FindAsync(c =>
+                        c.CreditDate >= fechaInicio && c.CreditDate < fechaFin);
                     foliosEncontrados.AddRange(all
-                        .Where(c => c.CreditDate < fechaFin && c.Folio.StartsWith(prefijo) && c.Folio.Length == 17)
+                        .Where(c => c.Folio.StartsWith(prefijo) && c.Folio.Length == 17)
                         .Select(c => c.Folio));
                 }
 

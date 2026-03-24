@@ -107,17 +107,16 @@ namespace CasaCejaRemake.Services
         /// 3. Solo el efectivo de abonos/enganches suma al Efectivo Esperado.
         /// 4. El cambio NO se resta (ya está contemplado al usar Total en vez de AmountPaid).
         /// </summary>
-        public async Task<CashCloseTotals> CalculateTotalsAsync(int cashCloseId, DateTime openingDate)
+        public async Task<CashCloseTotals> CalculateTotalsAsync(int cashCloseId, DateTime openingDate, int branchId)
         {
             var totals = new CashCloseTotals();
 
             try
             {
-                Console.WriteLine($"[CashCloseService] CalculateTotalsAsync - openingDate={openingDate}");
+                Console.WriteLine($"[CashCloseService] CalculateTotalsAsync - openingDate={openingDate}, branchId={branchId}");
 
                 // ==================== 1. VENTAS DIRECTAS ====================
-                var salesSinceOpen = await _saleRepository.GetByBranchSinceDateAsync(0, openingDate);
-                // branchId=0 → filter all branches; we only want since openingDate which is already done
+                var salesSinceOpen = await _saleRepository.GetByBranchSinceDateAsync(branchId, openingDate);
 
                 totals.SalesCount = salesSinceOpen.Count;
                 Console.WriteLine($"[CashCloseService] Ventas directas: {salesSinceOpen.Count}");
@@ -155,12 +154,15 @@ namespace CasaCejaRemake.Services
                                     totals.TotalCreditCard + totals.TotalTransfers + totals.TotalChecks;
 
                 // ==================== 2. CRÉDITOS CREADOS ====================
-                var creditsCreated = await _creditRepository.GetCreatedSinceAsync(openingDate);
+                var creditsCreated = await _creditRepository.GetCreatedSinceAsync(openingDate, branchId);
                 totals.CreditCount = creditsCreated.Count;
                 totals.CreditTotalCreated = creditsCreated.Sum(c => c.Total);
                 Console.WriteLine($"[CashCloseService] Créditos creados: {creditsCreated.Count}, Total: ${totals.CreditTotalCreated}");
 
-                var creditPaymentsSinceOpen = await _creditPaymentRepository.FindAsync(p => p.PaymentDate >= openingDate);
+                var branchCreditIds = (await _creditRepository.FindAsync(c => c.BranchId == branchId))
+                    .Select(c => c.Id).ToHashSet();
+                var allCreditPaymentsSinceOpen = await _creditPaymentRepository.FindAsync(p => p.PaymentDate >= openingDate);
+                var creditPaymentsSinceOpen = allCreditPaymentsSinceOpen.Where(p => branchCreditIds.Contains(p.CreditId)).ToList();
                 foreach (var payment in creditPaymentsSinceOpen)
                 {
                     decimal cashAmount = ExtractCashFromPaymentMethod(payment.PaymentMethod, payment.AmountPaid);
@@ -169,12 +171,15 @@ namespace CasaCejaRemake.Services
                 Console.WriteLine($"[CashCloseService] Efectivo de créditos (abonos): ${totals.CreditCash}");
 
                 // ==================== 3. APARTADOS CREADOS ====================
-                var layawaysCreated = await _layawayRepository.GetCreatedSinceAsync(openingDate);
+                var layawaysCreated = await _layawayRepository.GetCreatedSinceAsync(openingDate, branchId);
                 totals.LayawayCount = layawaysCreated.Count;
                 totals.LayawayTotalCreated = layawaysCreated.Sum(l => l.Total);
                 Console.WriteLine($"[CashCloseService] Apartados creados: {layawaysCreated.Count}, Total: ${totals.LayawayTotalCreated}");
 
-                var layawayPaymentsSinceOpen = await _layawayPaymentRepository.FindAsync(p => p.PaymentDate >= openingDate);
+                var branchLayawayIds = (await _layawayRepository.FindAsync(l => l.BranchId == branchId))
+                    .Select(l => l.Id).ToHashSet();
+                var allLayawayPaymentsSinceOpen = await _layawayPaymentRepository.FindAsync(p => p.PaymentDate >= openingDate);
+                var layawayPaymentsSinceOpen = allLayawayPaymentsSinceOpen.Where(p => branchLayawayIds.Contains(p.LayawayId)).ToList();
                 foreach (var payment in layawayPaymentsSinceOpen)
                 {
                     decimal cashAmount = ExtractCashFromPaymentMethod(payment.PaymentMethod, payment.AmountPaid);
@@ -305,7 +310,7 @@ namespace CasaCejaRemake.Services
             {
                 Console.WriteLine($"[CashCloseService] CloseCashAsync iniciado - Id={cashClose.Id}, Folio={cashClose.Folio}");
 
-                var totals = await CalculateTotalsAsync(cashClose.Id, cashClose.OpeningDate);
+                var totals = await CalculateTotalsAsync(cashClose.Id, cashClose.OpeningDate, cashClose.BranchId);
 
                 Console.WriteLine($"[CashCloseService] Totales calculados:");
                 Console.WriteLine($"  - Ventas efectivo: ${totals.TotalCash}");
@@ -350,7 +355,7 @@ namespace CasaCejaRemake.Services
                 await _cashCloseRepository.UpdateAsync(cashClose);
 
                 // ==================== ASIGNAR FOLIO DE CORTE A TRANSACCIONES ====================
-                var salesSinceOpen = await _saleRepository.FindAsync(s => s.SaleDate >= cashClose.OpeningDate);
+                var salesSinceOpen = await _saleRepository.FindAsync(s => s.SaleDate >= cashClose.OpeningDate && s.BranchId == cashClose.BranchId);
                 foreach (var sale in salesSinceOpen)
                 {
                     if (string.IsNullOrEmpty(sale.CashCloseFolio))
@@ -360,7 +365,10 @@ namespace CasaCejaRemake.Services
                     }
                 }
 
-                var creditPaymentsSinceOpen = await _creditPaymentRepository.FindAsync(p => p.PaymentDate >= cashClose.OpeningDate);
+                var closeBranchCreditIds = (await _creditRepository.FindAsync(c => c.BranchId == cashClose.BranchId))
+                    .Select(c => c.Id).ToHashSet();
+                var allCloseCreditPayments = await _creditPaymentRepository.FindAsync(p => p.PaymentDate >= cashClose.OpeningDate);
+                var creditPaymentsSinceOpen = allCloseCreditPayments.Where(p => closeBranchCreditIds.Contains(p.CreditId)).ToList();
                 foreach (var payment in creditPaymentsSinceOpen)
                 {
                     if (string.IsNullOrEmpty(payment.CashCloseFolio))
@@ -370,7 +378,10 @@ namespace CasaCejaRemake.Services
                     }
                 }
 
-                var layawayPaymentsSinceOpen = await _layawayPaymentRepository.FindAsync(p => p.PaymentDate >= cashClose.OpeningDate);
+                var closeBranchLayawayIds = (await _layawayRepository.FindAsync(l => l.BranchId == cashClose.BranchId))
+                    .Select(l => l.Id).ToHashSet();
+                var allCloseLayawayPayments = await _layawayPaymentRepository.FindAsync(p => p.PaymentDate >= cashClose.OpeningDate);
+                var layawayPaymentsSinceOpen = allCloseLayawayPayments.Where(p => closeBranchLayawayIds.Contains(p.LayawayId)).ToList();
                 foreach (var payment in layawayPaymentsSinceOpen)
                 {
                     if (string.IsNullOrEmpty(payment.CashCloseFolio))

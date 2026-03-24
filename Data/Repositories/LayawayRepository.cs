@@ -68,11 +68,11 @@ namespace CasaCejaRemake.Data.Repositories
         }
 
         /// <summary>
-        /// Obtiene todos los apartados creados a partir de una fecha dada.
+        /// Obtiene todos los apartados creados a partir de una fecha dada para una sucursal.
         /// </summary>
-        public async Task<List<Models.Layaway>> GetCreatedSinceAsync(DateTime since)
+        public async Task<List<Models.Layaway>> GetCreatedSinceAsync(DateTime since, int branchId)
         {
-            return await FindAsync(l => l.CreatedAt >= since);
+            return await FindAsync(l => l.BranchId == branchId && l.CreatedAt >= since);
         }
     }
 }

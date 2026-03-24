@@ -68,11 +68,11 @@ namespace CasaCejaRemake.Data.Repositories
         }
 
         /// <summary>
-        /// Obtiene todos los créditos creados a partir de una fecha dada.
+        /// Obtiene todos los créditos creados a partir de una fecha dada para una sucursal.
         /// </summary>
-        public async Task<List<Models.Credit>> GetCreatedSinceAsync(DateTime since)
+        public async Task<List<Models.Credit>> GetCreatedSinceAsync(DateTime since, int branchId)
         {
-            return await FindAsync(c => c.CreatedAt >= since);
+            return await FindAsync(c => c.BranchId == branchId && c.CreatedAt >= since);
         }
     }
 }

@@ -14,6 +14,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Content Include="Data\Database\ScriptInicial_CasaCeja.sql">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
     <!-- Avalonia Core - Versión 11.3.0 -->
     <PackageReference Include="Avalonia" Version="11.3.0" />
     <PackageReference Include="Avalonia.Desktop" Version="11.3.0" />
