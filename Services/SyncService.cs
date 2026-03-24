@@ -15,6 +15,7 @@ namespace CasaCejaRemake.Services
     {
         private readonly ApiClient _apiClient;
         private readonly ConfigService _configService;
+        private readonly DatabaseService _databaseService;
 
         // Repositorios — uno por entidad sincronizable
         private readonly BaseRepository<Category> _categoryRepo;
@@ -40,6 +41,7 @@ namespace CasaCejaRemake.Services
         {
             _apiClient          = apiClient;
             _configService      = configService;
+            _databaseService    = databaseService;
             _categoryRepo       = new BaseRepository<Category>(databaseService);
             _unitRepo           = new BaseRepository<Unit>(databaseService);
             _branchRepo         = new BaseRepository<Branch>(databaseService);
@@ -134,16 +136,419 @@ namespace CasaCejaRemake.Services
         {
             var results = new List<SyncResult>();
 
-            results.Add(await PushAsync("sales",            _saleRepo,           ct));
-            results.Add(await PushAsync("cash-closes",      _cashCloseRepo,      ct));
-            results.Add(await PushAsync("credits",          _creditRepo,         ct));
+            results.Add(await PushSalesAsync(ct));
+            results.Add(await PushCashClosesAsync(ct));
+            results.Add(await PushCreditsAsync(ct));
             results.Add(await PushAsync("credit-payments",  _creditPaymentRepo,  ct));
-            results.Add(await PushAsync("layaways",         _layawayRepo,        ct));
+            results.Add(await PushLayawaysAsync(ct));
             results.Add(await PushAsync("layaway-payments", _layawayPaymentRepo, ct));
-            results.Add(await PushAsync("stock-entries",    _stockEntryRepo,     ct));
-            results.Add(await PushAsync("stock-outputs",    _stockOutputRepo,    ct));
+            results.Add(await PushStockEntriesAsync(ct));
+            results.Add(await PushStockOutputsAsync(ct));
 
             return results;
+        }
+        private async Task<SyncResult> PushSalesAsync(CancellationToken ct)
+        {
+            try
+            {
+                var all     = await _saleRepo.GetAllAsync();
+                var pending = all.Where(x => GetSyncStatus(x) == 1).ToList();
+
+                if (pending.Count == 0)
+                    return SyncResult.Ok("sales");
+
+                var saleProductRepo = new BaseRepository<SaleProduct>(_databaseService);
+                var allProducts     = await saleProductRepo.GetAllAsync();
+
+                var dtos = pending.Select(sale => new SalePushDto
+                {
+                    Folio          = sale.Folio,
+                    BranchId       = sale.BranchId,
+                    UserId         = sale.UserId,
+                    Subtotal       = sale.Subtotal,
+                    Discount       = sale.Discount,
+                    Total          = sale.Total,
+                    AmountPaid     = sale.AmountPaid,
+                    ChangeGiven    = sale.ChangeGiven,
+                    PaymentMethod  = sale.PaymentMethod,
+                    PaymentSummary = sale.PaymentSummary,
+                    CashCloseFolio = sale.CashCloseFolio,
+                    SaleDate       = sale.SaleDate,
+                    TicketData     = sale.TicketData,
+                    Products       = allProducts
+                        .Where(p => p.SaleId == sale.Id)
+                        .Select(p => new SaleProductPushDto
+                        {
+                            ProductId           = p.ProductId,
+                            Barcode             = p.Barcode,
+                            ProductName         = p.ProductName,
+                            Quantity            = p.Quantity,
+                            ListPrice           = p.ListPrice,
+                            FinalUnitPrice      = p.FinalUnitPrice,
+                            LineTotal           = p.LineTotal,
+                            TotalDiscountAmount = p.TotalDiscountAmount,
+                            PriceType           = p.PriceType,
+                            DiscountInfo        = p.DiscountInfo,
+                            PricingData         = p.PricingData,
+                        }).ToList()
+                }).ToList();
+
+                int accepted = 0;
+                int rejected = 0;
+                var branchId = _configService.AppConfig.CurrentBranchId ?? 0;
+
+                const int batchSize = 100;
+                for (int i = 0; i < dtos.Count; i += batchSize)
+                {
+                    var batch    = dtos.GetRange(i, Math.Min(batchSize, dtos.Count - i));
+                    var body     = new { branch_id = branchId, records = batch };
+                    var response = await _apiClient.PostAsync<PushResponse>(
+                        "/api/v1/sync/push/sales", body, ct);
+
+                    if (response?.Data == null) continue;
+
+                    foreach (var sale in pending)
+                    {
+                        if (response.Data.Accepted.Contains(sale.Folio))
+                        {
+                            SetSyncStatus(sale, 2);
+                            SetLastSync(sale, DateTime.Now);
+                            await _saleRepo.UpdateAsync(sale);
+                        }
+                    }
+
+                    accepted += response.Data.Accepted.Count;
+                    rejected += response.Data.Rejected.Count;
+
+                    foreach (var r in response.Data.Rejected)
+                        Console.WriteLine($"[SyncService] Rechazado sales folio={r.Folio}: {r.Reason}");
+                }
+
+                return new SyncResult
+                {
+                    Success         = true,
+                    Entity          = "sales",
+                    RecordsPushed   = accepted,
+                    RecordsRejected = rejected,
+                };
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[SyncService] Error Push sales: {ex.Message}");
+                return SyncResult.Fail("sales", ex.Message);
+            }
+        }
+
+        private async Task<SyncResult> PushCashClosesAsync(CancellationToken ct)
+        {
+            try
+            {
+                var all     = await _cashCloseRepo.GetAllAsync();
+                var pending = all.Where(x => GetSyncStatus(x) == 1).ToList();
+
+                if (pending.Count == 0)
+                    return SyncResult.Ok("cash-closes");
+
+                var movementRepo = new BaseRepository<CashMovement>(_databaseService);
+                var allMovements = await movementRepo.GetAllAsync();
+                var branchId     = _configService.AppConfig.CurrentBranchId ?? 0;
+
+                var dtos = pending.Select(cc => new CashClosePushDto
+                {
+                    Folio                = cc.Folio,
+                    BranchId             = cc.BranchId,
+                    UserId               = cc.UserId,
+                    OpeningCash          = cc.OpeningCash,
+                    TotalCash            = cc.TotalCash,
+                    TotalDebitCard       = cc.TotalDebitCard,
+                    TotalCreditCard      = cc.TotalCreditCard,
+                    TotalChecks          = cc.TotalChecks,
+                    TotalTransfers       = cc.TotalTransfers,
+                    LayawayCash          = cc.LayawayCash,
+                    CreditCash           = cc.CreditCash,
+                    CreditTotalCreated   = cc.CreditTotalCreated,
+                    LayawayTotalCreated  = cc.LayawayTotalCreated,
+                    Expenses             = cc.Expenses,
+                    Income               = cc.Income,
+                    Surplus              = cc.Surplus,
+                    ExpectedCash         = cc.ExpectedCash,
+                    TotalSales           = cc.TotalSales,
+                    Notes                = cc.Notes,
+                    OpeningDate          = cc.OpeningDate,
+                    CloseDate            = cc.CloseDate,
+                    Movements            = allMovements
+                        .Where(m => m.CashCloseId == cc.Id)
+                        .Select(m => new CashMovementPushDto
+                        {
+                            Type    = m.Type,
+                            Concept = m.Concept,
+                            Amount  = m.Amount,
+                            UserId  = m.UserId,
+                        }).ToList()
+                }).ToList();
+
+                return await PushWithDtoAsync("cash-closes", dtos, pending, branchId, ct);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[SyncService] Error Push cash-closes: {ex.Message}");
+                return SyncResult.Fail("cash-closes", ex.Message);
+            }
+        }
+
+        private async Task<SyncResult> PushCreditsAsync(CancellationToken ct)
+        {
+            try
+            {
+                var all     = await _creditRepo.GetAllAsync();
+                var pending = all.Where(x => GetSyncStatus(x) == 1).ToList();
+
+                if (pending.Count == 0)
+                    return SyncResult.Ok("credits");
+
+                var productRepo = new BaseRepository<CreditProduct>(_databaseService);
+                var allProducts = await productRepo.GetAllAsync();
+                var branchId    = _configService.AppConfig.CurrentBranchId ?? 0;
+
+                var dtos = pending.Select(c => new CreditPushDto
+                {
+                    Folio        = c.Folio,
+                    BranchId     = c.BranchId,
+                    UserId       = c.UserId,
+                    CustomerId   = c.CustomerId,
+                    Total        = c.Total,
+                    TotalPaid    = c.TotalPaid,
+                    MonthsToPay  = c.MonthsToPay,
+                    CreditDate   = c.CreditDate,
+                    DueDate      = c.DueDate,
+                    Status       = c.Status,
+                    Notes        = c.Notes,
+                    TicketData   = c.TicketData,
+                    Products     = allProducts
+                        .Where(p => p.CreditId == c.Id)
+                        .Select(p => new CreditProductPushDto
+                        {
+                            ProductId   = p.ProductId,
+                            Barcode     = p.Barcode,
+                            ProductName = p.ProductName,
+                            Quantity    = p.Quantity,
+                            UnitPrice   = p.UnitPrice,
+                            LineTotal   = p.LineTotal,
+                            PricingData = p.PricingData,
+                        }).ToList()
+                }).ToList();
+
+                return await PushWithDtoAsync("credits", dtos, pending, branchId, ct);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[SyncService] Error Push credits: {ex.Message}");
+                return SyncResult.Fail("credits", ex.Message);
+            }
+        }
+
+        private async Task<SyncResult> PushLayawaysAsync(CancellationToken ct)
+        {
+            try
+            {
+                var all     = await _layawayRepo.GetAllAsync();
+                var pending = all.Where(x => GetSyncStatus(x) == 1).ToList();
+
+                if (pending.Count == 0)
+                    return SyncResult.Ok("layaways");
+
+                var productRepo = new BaseRepository<LayawayProduct>(_databaseService);
+                var allProducts = await productRepo.GetAllAsync();
+                var branchId    = _configService.AppConfig.CurrentBranchId ?? 0;
+
+                var dtos = pending.Select(l => new LayawayPushDto
+                {
+                    Folio           = l.Folio,
+                    BranchId        = l.BranchId,
+                    UserId          = l.UserId,
+                    DeliveryUserId  = l.DeliveryUserId,
+                    CustomerId      = l.CustomerId,
+                    Total           = l.Total,
+                    TotalPaid       = l.TotalPaid,
+                    LayawayDate     = l.LayawayDate,
+                    PickupDate      = l.PickupDate,
+                    DeliveryDate    = l.DeliveryDate,
+                    Status          = l.Status,
+                    Notes           = l.Notes,
+                    TicketData      = l.TicketData,
+                    Products        = allProducts
+                        .Where(p => p.LayawayId == l.Id)
+                        .Select(p => new LayawayProductPushDto
+                        {
+                            ProductId   = p.ProductId,
+                            Barcode     = p.Barcode,
+                            ProductName = p.ProductName,
+                            Quantity    = p.Quantity,
+                            UnitPrice   = p.UnitPrice,
+                            LineTotal   = p.LineTotal,
+                            PricingData = p.PricingData,
+                        }).ToList()
+                }).ToList();
+
+                return await PushWithDtoAsync("layaways", dtos, pending, branchId, ct);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[SyncService] Error Push layaways: {ex.Message}");
+                return SyncResult.Fail("layaways", ex.Message);
+            }
+        }
+
+        private async Task<SyncResult> PushStockEntriesAsync(CancellationToken ct)
+        {
+            try
+            {
+                var all     = await _stockEntryRepo.GetAllAsync();
+                var pending = all.Where(x => GetSyncStatus(x) == 1).ToList();
+
+                if (pending.Count == 0)
+                    return SyncResult.Ok("stock-entries");
+
+                var productRepo = new BaseRepository<EntryProduct>(_databaseService);
+                var allProducts = await productRepo.GetAllAsync();
+                var branchId    = _configService.AppConfig.CurrentBranchId ?? 0;
+
+                var dtos = pending.Select(e => new StockEntryPushDto
+                {
+                    Folio        = e.Folio,
+                    FolioOutput  = e.FolioOutput,
+                    BranchId     = e.BranchId,
+                    SupplierId   = e.SupplierId,
+                    UserId       = e.UserId,
+                    TotalAmount  = e.TotalAmount,
+                    EntryDate    = e.EntryDate,
+                    Notes        = e.Notes,
+                    Products     = allProducts
+                        .Where(p => p.EntryId == e.Id)
+                        .Select(p => new EntryProductPushDto
+                        {
+                            ProductId   = p.ProductId,
+                            Barcode     = p.Barcode,
+                            ProductName = p.ProductName,
+                            Quantity    = p.Quantity,
+                            UnitCost    = p.UnitCost,
+                            LineTotal   = p.LineTotal,
+                        }).ToList()
+                }).ToList();
+
+                return await PushWithDtoAsync("stock-entries", dtos, pending, branchId, ct);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[SyncService] Error Push stock-entries: {ex.Message}");
+                return SyncResult.Fail("stock-entries", ex.Message);
+            }
+        }
+
+        private async Task<SyncResult> PushStockOutputsAsync(CancellationToken ct)
+        {
+            try
+            {
+                var all     = await _stockOutputRepo.GetAllAsync();
+                var pending = all.Where(x => GetSyncStatus(x) == 1).ToList();
+
+                if (pending.Count == 0)
+                    return SyncResult.Ok("stock-outputs");
+
+                var productRepo = new BaseRepository<OutputProduct>(_databaseService);
+                var allProducts = await productRepo.GetAllAsync();
+                var branchId    = _configService.AppConfig.CurrentBranchId ?? 0;
+
+                var dtos = pending.Select(o => new StockOutputPushDto
+                {
+                    Folio                 = o.Folio,
+                    OriginBranchId        = o.OriginBranchId,
+                    DestinationBranchId   = o.DestinationBranchId,
+                    UserId                = o.UserId,
+                    Type                  = "OTHER",
+                    TotalAmount           = o.TotalAmount,
+                    OutputDate            = o.OutputDate,
+                    Notes                 = o.Notes,
+                    Products              = allProducts
+                        .Where(p => p.OutputId == o.Id)
+                        .Select(p => new OutputProductPushDto
+                        {
+                            ProductId   = p.ProductId,
+                            Barcode     = p.Barcode,
+                            ProductName = p.ProductName,
+                            Quantity    = p.Quantity,
+                            UnitCost    = p.UnitCost,
+                            LineTotal   = p.LineTotal,
+                        }).ToList()
+                }).ToList();
+
+                return await PushWithDtoAsync("stock-outputs", dtos, pending, branchId, ct);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[SyncService] Error Push stock-outputs: {ex.Message}");
+                return SyncResult.Fail("stock-outputs", ex.Message);
+            }
+        }
+
+        private async Task<SyncResult> PushWithDtoAsync<TDto, TModel>(
+            string entity,
+            List<TDto> dtos,
+            List<TModel> originals,
+            int branchId,
+            CancellationToken ct) where TModel : class, new()
+        {
+            int accepted = 0;
+            int rejected = 0;
+
+            const int batchSize = 100;
+            for (int i = 0; i < dtos.Count; i += batchSize)
+            {
+                var batchDtos = dtos.GetRange(i, Math.Min(batchSize, dtos.Count - i));
+                var body      = new { branch_id = branchId, records = batchDtos };
+                var response  = await _apiClient.PostAsync<PushResponse>(
+                    $"/api/v1/sync/push/{entity}", body, ct);
+
+                if (response?.Data == null) continue;
+
+                foreach (var original in originals)
+                {
+                    var folio = GetFolio(original);
+                    if (folio != null && response.Data.Accepted.Contains(folio))
+                    {
+                        SetSyncStatus(original, 2);
+                        SetLastSync(original, DateTime.Now);
+
+                        var repo = GetRepoForModel<TModel>();
+                        if (repo != null)
+                            await repo.UpdateAsync(original);
+                    }
+                }
+
+                accepted += response.Data.Accepted.Count;
+                rejected += response.Data.Rejected.Count;
+
+                foreach (var r in response.Data.Rejected)
+                    Console.WriteLine($"[SyncService] Rechazado {entity} folio={r.Folio}: {r.Reason}");
+            }
+
+            return new SyncResult
+            {
+                Success         = true,
+                Entity          = entity,
+                RecordsPushed   = accepted,
+                RecordsRejected = rejected,
+            };
+        }
+
+        private BaseRepository<T>? GetRepoForModel<T>() where T : class, new()
+        {
+            if (typeof(T) == typeof(CashClose))    return _cashCloseRepo as BaseRepository<T>;
+            if (typeof(T) == typeof(Credit))       return _creditRepo as BaseRepository<T>;
+            if (typeof(T) == typeof(Layaway))      return _layawayRepo as BaseRepository<T>;
+            if (typeof(T) == typeof(StockEntry))   return _stockEntryRepo as BaseRepository<T>;
+            if (typeof(T) == typeof(StockOutput))  return _stockOutputRepo as BaseRepository<T>;
+            return null;
         }
 
         // ──────────────────────────────────────────────────────

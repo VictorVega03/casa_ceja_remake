@@ -24,10 +24,10 @@ namespace CasaCejaRemake.Models
         // ============ SUCURSAL ============
         /// ID de la sucursal seleccionada.
         /// Null hasta que el admin configure una sucursal después del primer login.
-        public int? CurrentBranchId { get; set; } = null;
+        public int? CurrentBranchId { get; set; } = 1;
 
         /// Nombre de la sucursal actual
-        public string? CurrentBranchName { get; set; } = null;
+        public string? CurrentBranchName { get; set; } = "Casa Ceja Carranza";
 
         // ============ METADATA ============
         /// Fecha de última modificación
