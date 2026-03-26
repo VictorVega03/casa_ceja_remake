@@ -15,7 +15,8 @@ namespace CasaCejaRemake.Services
         private readonly ConfigService _configService;
         private static readonly JsonSerializerOptions _jsonOptions = new()
         {
-            PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower
+            PropertyNamingPolicy        = JsonNamingPolicy.SnakeCaseLower,
+            PropertyNameCaseInsensitive = true,
         };
 
         private const int MaxRetries     = 3;
@@ -101,7 +102,7 @@ namespace CasaCejaRemake.Services
                     var json     = await response.Content.ReadAsStringAsync(ct);
 
                     if (response.IsSuccessStatusCode)
-                        return JsonSerializer.Deserialize<ApiResponse<T>>(json);
+                        return JsonSerializer.Deserialize<ApiResponse<T>>(json, _jsonOptions);
 
                     if ((int)response.StatusCode >= 400 && (int)response.StatusCode < 500)
                     {
@@ -166,7 +167,7 @@ namespace CasaCejaRemake.Services
                 var response    = await _httpClient.SendAsync(request);
                 var json        = await response.Content.ReadAsStringAsync();
                 if (response.IsSuccessStatusCode)
-                    return JsonSerializer.Deserialize<ApiResponse<T>>(json);
+                    return JsonSerializer.Deserialize<ApiResponse<T>>(json, _jsonOptions);
             }
             catch (Exception ex)
             {

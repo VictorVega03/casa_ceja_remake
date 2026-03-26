@@ -28,8 +28,8 @@
     <PackageReference Include="Avalonia.Controls.DataGrid" Version="11.3.0" />
     
     <!-- Diagnostics (solo Debug) -->
-    <PackageReference Condition="'$(Configuration)' == 'Debug'" 
-                      Include="Avalonia.Diagnostics" Version="11.3.0" />
+    <PackageReference Condition="'$(Configuration)' == 'Debug'" Include="Avalonia.Diagnostics" Version="11.3.0" />
+    <PackageReference Include="BCrypt.Net-Next" Version="4.1.0" />
     
     <!-- MVVM Toolkit - CommunityToolkit -->
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.3.2" />

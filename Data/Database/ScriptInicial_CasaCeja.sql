@@ -29,37 +29,6 @@ VALUES
     (1, 'Administrador', 'admin',   100, 1, datetime('now'), datetime('now')),
     (2, 'Cajero',        'cashier',  10, 1, datetime('now'), datetime('now'));
 
--- =====================================================
--- 4. SUCURSALES
--- =====================================================
-INSERT OR IGNORE INTO branches (id, name, address, email, razon_social, active, created_at, updated_at, sync_status)
-VALUES
-    (1,  'Casa Ceja Carranza',      'E. Carranza 212 Z.C. Tampico',          'houseceja@gmail.com',           'CASA CEJA CARRANZA',       1, datetime('now'), datetime('now'), 0),
-    (2,  'Casa Ceja Obregon',       'Obregon Z.C. Tampico',                  'houseceja@gmail.com',           'CASA CEJA',                0, datetime('now'), datetime('now'), 0),
-    (3,  'Casa Ceja Obregon #408',  'Obregon #408 Z.C. Tampico',             'houseceja@gmail.com',           'CASA CEJA OBREGON',        1, datetime('now'), datetime('now'), 0),
-    (4,  'Casa Ceja Olmos',         'Olmos 111 Z.C. Tampico',                'casacejapapeleria@gmail.com',   'CASA CEJA OLMOS',          1, datetime('now'), datetime('now'), 0),
-    (5,  'Casa Ceja B.Juarez 1',    'B. Juarez #1111 Z.C. Tampico',          'casacejapapeleria@gmail.com',   'CASA CEJA B.JUAREZ1',      1, datetime('now'), datetime('now'), 0),
-    (6,  'Casa Ceja B.Juarez 2',    'B. Juarez #2222 Z.C. Tampico',          'casacejapapeleria@gmail.com',   'CASA CEJA B.JUAREZ2',      1, datetime('now'), datetime('now'), 0),
-    (7,  'Casa Ceja Allende',       'Allende 311 Z.C. Altamira',             'houseceja@gmail.com',           'CASA CEJA ALLENDE',        1, datetime('now'), datetime('now'), 0),
-    (8,  'Casa Ceja Hidalgo',       'Hidalgo 100-A Z.C. Altamira',           'houseceja@gmail.com',           'CASA CEJA HIDALGO',        1, datetime('now'), datetime('now'), 0),
-    (9,  'Casa Ceja Fco. I. Madero','Fco. I. Madero 500 Z.C. Tampico',       'casacejapapeleria@gmail.com',   'CASA CEJA FCO. I. MADERO', 1, datetime('now'), datetime('now'), 0),
-    (10, 'Casa Ceja Aduana',        'Aduana 700 Z.C. Tampico',               'casacejapapeleria@gmail.com',   'CASA CEJA ADUANA',         1, datetime('now'), datetime('now'), 0),
-    (11, 'Casa Ceja 1ero. de Mayo', '1ero. de Mayo 800 Z.C. Cd. Madero',     'casacejapapeleria@gmail.com',   'CASA CEJA 1ERO. DE MAYO',  1, datetime('now'), datetime('now'), 0),
-    (12, 'Casa Ceja 13 de Enero',   '13 de Enero 900 Z.C. Cd. Madero',       'casacejapapeleria@gmail.com',   'CASA CEJA 13 DE ENERO',    1, datetime('now'), datetime('now'), 0),
-    (13, 'CEDI Ceja Obregon',       'Obregon 408 Z.C. Tampico',              'houseceja@gmail.com',           'CEDI CEJA OBREGON',        1, datetime('now'), datetime('now'), 0),
-    (14, 'Marcelo Reyes Mujica',    'Col. Morelos Tampico',                  'chelovendedor@gmail.com',       'MARCELO REYES MUJICA',     1, datetime('now'), datetime('now'), 0),
-    (15, 'Isabel Lara',             'Altamira',                              'isabelvendedora@gmail.com',     'ISABEL LARA',              1, datetime('now'), datetime('now'), 0);
-
--- =====================================================
--- 5. USUARIOS
--- branch_id se deja NULL (se asigna desde la app al iniciar sesión)
--- user_type: 1=Administrador, 2=Cajero
--- =====================================================
-INSERT OR IGNORE INTO users (id, name, email, username, password, user_type, branch_id, active, created_at, updated_at, sync_status)
-VALUES
-    (1, 'Administrador', 'admin@casaceja.com',  'admin', 'admin', 1, NULL, 1, datetime('now'), datetime('now'), 0),
-    (2, 'Cajero',        'cajero@casaceja.com', 'cajero',   'cajero',   2, NULL, 1, datetime('now'), datetime('now'), 0);
-   
 
 -- =====================================================
 -- 6. PRODUCTOS

@@ -57,28 +57,34 @@ namespace CasaCejaRemake.Services
             try
             {
                 Console.WriteLine("Buscando usuario en base de datos...");
+               // Busca por username, luego verifica contraseña con BCrypt:
                 var user = await _userRepository.FirstOrDefaultAsync(u =>
                     u.Username == username &&
-                    u.Password == password &&
                     u.Active
                 );
 
-                if (user != null)
+                if (user == null) 
                 {
-                    Console.WriteLine($"Usuario encontrado: {user.Name} (Tipo: {user.UserType})");
-                    // Autenticación exitosa
-                    CurrentUser = user;
-                    
-                    // NO establecer _currentBranchId aquí - se sincroniza desde ConfigService en HandleSuccessfulLogin
-                    
-                    // Registrar el último login (opcional)
-                    user.UpdatedAt = DateTime.Now;
-                    await _userRepository.UpdateAsync(user);
-                    
-                    // Disparar evento de login
-                    UserLoggedIn?.Invoke(this, user);
-                    
-                    return true;
+                    Console.WriteLine("Credenciales inválidas - Usuario no encontrado");
+                    return false;
+                }
+
+                // Verificar contraseña — soporta tanto BCrypt como texto plano (migración)
+                bool passwordValid = false;
+                try
+                {
+                    passwordValid = BCrypt.Net.BCrypt.Verify(password, user.Password);
+                }
+                catch
+                {
+                    // Si falla BCrypt (contraseña en texto plano), comparar directamente
+                    passwordValid = user.Password == password;
+                }
+
+                if (!passwordValid)
+                {
+                    Console.WriteLine("Credenciales inválidas - Contraseña incorrecta");
+                    return false;
                 }
 
                 Console.WriteLine("Credenciales inválidas - Usuario no encontrado");

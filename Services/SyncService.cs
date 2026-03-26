@@ -592,11 +592,14 @@ namespace CasaCejaRemake.Services
 
                     var pullData = response.Data;
 
+                    Console.WriteLine($"[SyncService] Pull {entity} page={page} count={pullData.Data.Count}");
+
                     if (pullData.Data.Count == 0)
                         break;
 
                     foreach (var item in pullData.Data)
                     {
+                        Console.WriteLine($"[SyncService] Item recibido tipo={typeof(T).Name}");
                         SetSyncStatus(item, 2);
                         await repo.UpsertAsync(item);
                     }
