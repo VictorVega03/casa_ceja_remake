@@ -64,29 +64,17 @@ namespace CasaCejaRemake.ViewModels.Shared
                     ServerUnavailable?.Invoke(this, EventArgs.Empty);
                     return;
                 }
-                // Paso 2 — Obtener token
+                // Paso 2 — Verificar token (ya fue guardado durante el login)
                 StatusMessage = "Autenticando...";
-                var username = _authService.CurrentUser?.Username ?? string.Empty;
-                var password = _authService.CurrentUser?.Password ?? string.Empty;
-                var loginResponse = await _apiClient.LoginAsync(username, password);
-                var token = loginResponse?.Data?.Token;
-
-                Console.WriteLine($"[SyncLoading] Login API status={loginResponse?.Status ?? "null"} message={loginResponse?.Message ?? "null"}");
+                var token = _configService.AppConfig.UserToken;
 
                 if (!string.IsNullOrWhiteSpace(token))
                 {
-                    var tokenPreview = token.Length <= 10
-                        ? "***"
-                        : $"{token[..6]}...{token[^4..]}";
-                    Console.WriteLine($"[SyncLoading] Token recibido (len={token.Length}, preview={tokenPreview})");
-                    await _configService.UpdateAppConfigAsync(config =>
-                    {
-                        config.UserToken = token;
-                    });
+                    Console.WriteLine($"[SyncLoading] Token disponible (len={token.Length})");
                 }
                 else
                 {
-                    Console.WriteLine("[SyncLoading] No se obtuvo token en login; se omite Push");
+                    Console.WriteLine("[SyncLoading] Sin token — se omite Push");
                 }
 
                 // Paso 3 — Push de operaciones pendientes

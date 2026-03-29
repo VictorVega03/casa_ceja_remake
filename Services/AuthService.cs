@@ -87,8 +87,10 @@ namespace CasaCejaRemake.Services
                     return false;
                 }
 
-                Console.WriteLine("Credenciales inválidas - Usuario no encontrado");
-                return false;
+                // Credenciales válidas — establecer usuario actual
+                SetCurrentUser(user);
+                Console.WriteLine($"[AuthService] Login local exitoso para '{username}'");
+                return true;
             }
             catch (Exception ex)
             {

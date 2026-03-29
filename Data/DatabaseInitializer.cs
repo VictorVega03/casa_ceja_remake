@@ -2,49 +2,26 @@ using System;
 using System.IO;
 using System.Threading.Tasks;
 using CasaCejaRemake.Models;
+using CasaCejaRemake.Services;
 
 namespace CasaCejaRemake.Data
 {
-    /// <summary>
-    /// Maneja la inicialización de la base de datos.
-    /// 
-    /// COMPORTAMIENTO:
-    /// - La BD siempre se crea con tablas VACÍAS.
-    /// - Si AUTO_RUN_SEED_SCRIPT = true Y la BD está vacía → ejecuta SEED_SCRIPT_NAME automáticamente.
-    /// - Si AUTO_RUN_SEED_SCRIPT = false → la BD queda vacía (para pruebas manuales).
-    /// 
-    /// En desarrollo: deja AUTO_RUN_SEED_SCRIPT = false y carga el script manualmente con sqlite3.
-    /// En producción: pon AUTO_RUN_SEED_SCRIPT = true y SEED_SCRIPT_NAME al script del cliente.
-    /// </summary>
     public class DatabaseInitializer
     {
-        // =====================================================
-        // 🚩 CONFIGURACIÓN DE AUTO-SEED
-        // 
-        // AUTO_RUN_SEED_SCRIPT:
-        //   false → BD vacía (desarrollo/pruebas)
-        //   true  → ejecuta SEED_SCRIPT_NAME al detectar BD vacía (producción)
-        //
-        // SEED_SCRIPT_NAME:
-        //   Nombre del archivo .sql en Data/Database/ que se ejecutará.
-        //   Ejemplos: "ScriptInicial.sql", "ScriptInicial_BellaCosmeticos.sql"
-        // =====================================================
-        private const bool AUTO_RUN_SEED_SCRIPT = true;
-        private const string SEED_SCRIPT_NAME = "ScriptInicial_CasaCeja.sql";
+        private static readonly bool AUTO_RUN_SEED_SCRIPT = true;
+        private const string SEED_SCRIPT_NAME   = "ScriptInicial_CasaCeja.sql";
 
         private readonly DatabaseService _databaseService;
+        private readonly ConfigService   _configService;
 
-        public DatabaseInitializer(DatabaseService databaseService)
+        public DatabaseInitializer(DatabaseService databaseService, ConfigService configService)
         {
             _databaseService = databaseService;
+            _configService   = configService;
         }
 
-        /// <summary>
-        /// Verifica el estado de la BD y opcionalmente ejecuta el script inicial.
-        /// </summary>
         public async Task InitializeDefaultDataAsync()
         {
-            // Verificar conteos actuales
             var roleCount     = await _databaseService.Table<Role>().CountAsync();
             var unitCount     = await _databaseService.Table<Unit>().CountAsync();
             var categoryCount = await _databaseService.Table<Category>().CountAsync();
@@ -54,7 +31,6 @@ namespace CasaCejaRemake.Data
 
             Console.WriteLine($"📊 Estado BD → Roles: {roleCount} | Unidades: {unitCount} | Categorías: {categoryCount} | Sucursales: {branchCount} | Usuarios: {userCount} | Productos: {productCount}");
 
-            // Si ya hay datos, no hacer nada más
             bool hasData = roleCount > 0 || branchCount > 0 || userCount > 0 || productCount > 0;
             if (hasData)
             {
@@ -62,17 +38,21 @@ namespace CasaCejaRemake.Data
                 return;
             }
 
-            // BD vacía detectada
             Console.WriteLine("📭 BD vacía detectada");
 
             if (AUTO_RUN_SEED_SCRIPT)
             {
-                // Producción: ejecutar script automáticamente
                 var scriptPath = FindSeedScript();
                 if (!string.IsNullOrEmpty(scriptPath))
                 {
                     Console.WriteLine($"🌱 Auto-seed habilitado — ejecutando: {SEED_SCRIPT_NAME}");
                     await RunScriptAsync(scriptPath);
+
+                    // Después de cargar el script, establecer LastSyncTimestamp
+                    // basándonos en el updated_at más reciente de los productos cargados.
+                    // Esto evita que el primer Pull descargue los 8,799 productos
+                    // que ya tenemos — solo traerá los modificados DESPUÉS del script.
+                    await SetLastSyncFromScriptDataAsync();
                 }
                 else
                 {
@@ -81,24 +61,75 @@ namespace CasaCejaRemake.Data
             }
             else
             {
-                // Desarrollo: solo mostrar advertencia
                 Console.WriteLine("ℹ️  AUTO_RUN_SEED_SCRIPT=false — carga el script manualmente:");
                 Console.WriteLine($"   sqlite3 ~/Library/Application\\ Support/CasaCeja/casaceja.db < Data/Database/{SEED_SCRIPT_NAME}");
             }
         }
 
         /// <summary>
-        /// Busca el script seed en ubicaciones conocidas.
+        /// Lee el updated_at más reciente de los productos recién insertados
+        /// y lo guarda como LastSyncTimestamp. Así el primer Pull del login
+        /// solo descarga productos modificados DESPUÉS de que se generó el script.
         /// </summary>
+        private async Task SetLastSyncFromScriptDataAsync()
+        {
+            try
+            {
+                // Ya cargamos ConfigService antes de llamar a InitializeDefaultDataAsync
+                // así que podemos usarlo directamente
+                if (_configService.AppConfig.LastSyncTimestamp > 0)
+                {
+                    Console.WriteLine("ℹ️  LastSyncTimestamp ya tiene valor — no se sobreescribe");
+                    return;
+                }
+
+                // Obtener el updated_at más reciente de los productos del script
+                var products = await _databaseService.Table<Product>().ToListAsync();
+                if (products.Count == 0)
+                {
+                    Console.WriteLine("⚠️  No se encontraron productos para establecer timestamp");
+                    return;
+                }
+
+                // Buscar el updated_at más reciente
+                DateTime maxUpdatedAt = DateTime.MinValue;
+                foreach (var p in products)
+                {
+                    if (p.UpdatedAt > maxUpdatedAt)
+                        maxUpdatedAt = p.UpdatedAt;
+                }
+
+                // Si el updated_at más reciente es anterior al año 2000,
+                // el script no tenía fechas válidas — usar "hace 7 días" como fallback
+                if (maxUpdatedAt < new DateTime(2000, 1, 1))
+                {
+                    Console.WriteLine("⚠️  updated_at del script inválido — usando fallback de 7 días");
+                    maxUpdatedAt = DateTime.UtcNow.AddDays(-7);
+                }
+
+                // Convertir a Unix timestamp UTC
+                var unixTimestamp = new DateTimeOffset(maxUpdatedAt, TimeSpan.Zero).ToUnixTimeSeconds();
+
+                await _configService.UpdateAppConfigAsync(config =>
+                {
+                    config.LastSyncTimestamp = unixTimestamp;
+                });
+
+                Console.WriteLine($"✅ LastSyncTimestamp establecido desde script: {unixTimestamp} ({maxUpdatedAt:dd/MM/yyyy HH:mm:ss})");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"⚠️  Error estableciendo LastSyncTimestamp desde script: {ex.Message}");
+                // No es crítico — el Pull fallback hará since=0 si LastSyncTimestamp=0
+            }
+        }
+
         private string? FindSeedScript()
         {
             var possiblePaths = new[]
             {
-                // Junto al ejecutable
                 Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "Database", SEED_SCRIPT_NAME),
-                // En el directorio de trabajo
                 Path.Combine(Directory.GetCurrentDirectory(), "Data", "Database", SEED_SCRIPT_NAME),
-                // Ruta absoluta desde el proyecto (desarrollo)
                 Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", "Data", "Database", SEED_SCRIPT_NAME),
             };
 
@@ -115,10 +146,6 @@ namespace CasaCejaRemake.Data
             return null;
         }
 
-        /// <summary>
-        /// Ejecuta un script SQL arbitrario contra la BD activa.
-        /// </summary>
-        /// <param name="scriptPath">Ruta absoluta al archivo .sql</param>
         public async Task<(int executed, int errors)> RunScriptAsync(string scriptPath)
         {
             Console.WriteLine($"▶️  Ejecutando script: {scriptPath}");
@@ -131,10 +158,10 @@ namespace CasaCejaRemake.Data
 
             try
             {
-                var sql = await File.ReadAllTextAsync(scriptPath);
+                var sql        = await File.ReadAllTextAsync(scriptPath);
                 var statements = SplitSqlStatements(sql);
-                int executed = 0;
-                int errors = 0;
+                int executed   = 0;
+                int errors     = 0;
 
                 foreach (var stmt in statements)
                 {
@@ -161,19 +188,12 @@ namespace CasaCejaRemake.Data
             }
         }
 
-        /// <summary>
-        /// Divide el contenido SQL en sentencias individuales,
-        /// ignorando líneas de comentarios (--), bloques vacíos,
-        /// y sentencias de control de transacción/pragma que sqlite-net
-        /// no soporta ejecutar como sentencias sueltas.
-        /// </summary>
         private static string[] SplitSqlStatements(string sql)
         {
             var results = new System.Collections.Generic.List<string>();
             var lines   = sql.Split('\n');
             var current = new System.Text.StringBuilder();
 
-            // Prefijos de sentencias que se deben ignorar
             var ignoredPrefixes = new[]
             {
                 "BEGIN",
@@ -184,16 +204,14 @@ namespace CasaCejaRemake.Data
 
             foreach (var rawLine in lines)
             {
-                var line = rawLine.TrimEnd();
+                var line    = rawLine.TrimEnd();
                 var trimmed = line.TrimStart();
 
-                // Ignorar líneas de puro comentario
                 if (trimmed.StartsWith("--"))
                     continue;
 
                 current.AppendLine(line);
 
-                // Una sentencia termina cuando hay un ; al final de la línea
                 if (line.TrimEnd().EndsWith(';'))
                 {
                     var stmt = current.ToString().Trim();
@@ -202,7 +220,6 @@ namespace CasaCejaRemake.Data
                     if (string.IsNullOrWhiteSpace(stmt))
                         continue;
 
-                    // Ignorar sentencias de transacción y pragma
                     var upper = stmt.TrimStart().ToUpperInvariant();
                     bool skip = false;
                     foreach (var prefix in ignoredPrefixes)

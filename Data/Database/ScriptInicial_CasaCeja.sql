@@ -12,8 +12,6 @@
 --   1. Roles
 --   2. Unidades de medida
 --   3. Categorías
---   4. Sucursales
---   5. Usuarios
 --   6. Productos
 -- =====================================================
 PRAGMA foreign_keys = OFF;

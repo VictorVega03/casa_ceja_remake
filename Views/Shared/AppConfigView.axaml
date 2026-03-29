@@ -220,6 +220,77 @@
             </StackPanel>
         </StackPanel>
 
+        <!-- ========== SINCRONIZACIÓN CATÁLOGO ========== -->
+        <Border Background="#252525"
+                CornerRadius="8"
+                Padding="20,18"
+                BorderBrush="#404040"
+                BorderThickness="1"
+                Margin="28,12,28,0">
+            <StackPanel>
+
+                <!-- Título -->
+                <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,0,0,4">
+                    <TextBlock Text="🔄" FontSize="18" VerticalAlignment="Center" />
+                    <TextBlock Text="Sincronización de Catálogo"
+                            FontSize="16"
+                            FontWeight="Bold"
+                            Foreground="#FF9800"
+                            VerticalAlignment="Center" />
+                </StackPanel>
+
+                <TextBlock Text="Descarga el catálogo completo del servidor. Úsalo cuando haya cambios masivos de productos o precios."
+                        FontSize="11"
+                        Foreground="#999999"
+                        TextWrapping="Wrap"
+                        Margin="0,0,0,8" />
+
+                <!-- Último sync -->
+                <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,0,0,12">
+                    <TextBlock Text="Último sync:"
+                            FontSize="12"
+                            Foreground="#888888" />
+                    <TextBlock Text="{Binding LastSyncTimestampText}"
+                            FontSize="12"
+                            Foreground="#B0B0B0"
+                            FontWeight="Medium" />
+                </StackPanel>
+
+                <!-- Barra de progreso (visible solo durante sync) -->
+                <ProgressBar Value="{Binding SyncProgress}"
+                            Minimum="0"
+                            Maximum="1"
+                            Height="6"
+                            CornerRadius="3"
+                            Foreground="#FF9800"
+                            Background="#404040"
+                            Margin="0,0,0,8"
+                            IsVisible="{Binding IsSyncing}" />
+
+                <!-- Mensaje de estado del sync -->
+                <TextBlock Text="{Binding SyncStatusMessage}"
+                        FontSize="12"
+                        Foreground="#FFA726"
+                        Margin="0,0,0,10"
+                        IsVisible="{Binding SyncStatusMessage,
+                                    Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+
+                <!-- Botón -->
+                <Button Content="🔄  Sincronizar Catálogo"
+                        Command="{Binding SyncCatalogCommand}"
+                        IsEnabled="{Binding !IsSyncing}"
+                        Height="38"
+                        Padding="16,8"
+                        FontSize="13"
+                        FontWeight="Medium"
+                        Background="#E65100"
+                        Foreground="White"
+                        CornerRadius="6"
+                        HorizontalAlignment="Left" />
+
+            </StackPanel>
+        </Border>
+
         <!-- ===== FOOTER ===== -->
         <Border Background="#252525" Padding="28,18" Margin="0,16,0,0" BorderBrush="#404040" BorderThickness="0,1,0,0">
             <Grid RowDefinitions="Auto,Auto" ColumnDefinitions="*">

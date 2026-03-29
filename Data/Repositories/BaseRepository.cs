@@ -54,14 +54,11 @@ namespace CasaCejaRemake.Data.Repositories
             {
                 return await _databaseService.GetAsync<T>(id);
             }
-            catch (Exception ex)
+            catch
             {
-                // sqlite-net-pcl lanza excepción si no encuentra el registro
-                // Retornamos null para mantener la interfaz consistente
-                if (ex.Message.Contains("not found"))
-                    return default;
-                
-                throw new InvalidOperationException($"Error getting {typeof(T).Name} with ID {id}", ex);
+                // sqlite-net-pcl lanza excepción cuando no encuentra el registro.
+                // En cualquier caso retornamos null — UpsertAsync hará Insert en lugar de Update.
+                return default;
             }
         }
 
@@ -101,6 +98,19 @@ namespace CasaCejaRemake.Data.Repositories
             catch (Exception ex)
             {
                 throw new InvalidOperationException($"Error counting {typeof(T).Name} records", ex);
+            }
+        }
+
+        public virtual async Task<bool> AnyAsync()
+        {
+            try
+            {
+                var table = _databaseService.Table<T>();
+                return await table.CountAsync() > 0;
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Error checking existence of {typeof(T).Name}", ex);
             }
         }
 

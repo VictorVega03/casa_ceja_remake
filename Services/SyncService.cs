@@ -106,7 +106,7 @@ namespace CasaCejaRemake.Services
             PullAsync("branches",     since, _branchRepo,     ct),
             PullAsync("suppliers",    since, _supplierRepo,   ct),
             PullAsync("customers",    since, _customerRepo,   ct),
-            PullAsync("users",        since, _userRepo,       ct),
+            PullUsersAsync(since, ct),   // especializado — preserva password
             PullAsync("products",     since, _productRepo,    ct),
         };
 
@@ -569,6 +569,65 @@ namespace CasaCejaRemake.Services
         // HELPERS PRIVADOS
         // ──────────────────────────────────────────────────────
 
+        private async Task<SyncResult> PullUsersAsync(long since, CancellationToken ct)
+        {
+            int totalPulled = 0;
+            int page        = 1;
+            Console.WriteLine($"[SyncService] Iniciando Pull users since={since}");
+
+            try
+            {
+                while (true)
+                {
+                    var endpoint = $"/api/v1/sync/pull/users?since={since}&page={page}";
+                    var response = await _apiClient.GetAsync<PullResponse<User>>(endpoint, ct);
+
+                    if (response?.IsSuccess != true || response.Data == null)
+                        break;
+
+                    var pullData = response.Data;
+
+                    Console.WriteLine($"[SyncService] Pull users page={page} count={pullData.Data.Count}");
+
+                    if (pullData.Data.Count == 0)
+                        break;
+
+                    foreach (var serverUser in pullData.Data)
+                    {
+                        SetSyncStatus(serverUser, 2);
+
+                        var existing = await _userRepo.FirstOrDefaultAsync(u => u.Id == serverUser.Id);
+
+                        if (existing != null)
+                        {
+                            if (string.IsNullOrWhiteSpace(serverUser.Password))
+                                serverUser.Password = existing.Password;
+
+                            await _userRepo.UpdateAsync(serverUser);
+                        }
+                        else
+                        {
+                            await _userRepo.AddAsync(serverUser);
+                        }
+                    }
+
+                    totalPulled += pullData.Count;
+
+                    if (!pullData.HasMorePages)
+                        break;
+
+                    page++;
+                }
+
+                return SyncResult.Ok("users", pulled: totalPulled);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[SyncService] Error Pull users: {ex.Message}");
+                return SyncResult.Fail("users", ex.Message);
+            }
+        }
+
         private async Task<SyncResult> PullAsync<T>(
             string entity,
             long since,
@@ -682,6 +741,39 @@ namespace CasaCejaRemake.Services
                 return SyncResult.Fail(entity, ex.Message);
             }
         }
+    
+        /// Pull completo con since=0 — descarga y sobreescribe todo el catálogo.
+        /// onProgress recibe (label, índice actual, total de entidades).
+        public async Task<List<SyncResult>> PullCatalogFullAsync(
+            Action<string, int, int>? onProgress = null,
+            CancellationToken ct = default)
+        {
+            var results = new List<SyncResult>();
+
+            var steps = new (string Endpoint, string Label, Func<Task<SyncResult>> Action)[]
+            {
+                ("categories", "Categorías",  () => PullAsync("categories", 0, _categoryRepo,  ct)),
+                ("units",      "Unidades",    () => PullAsync("units",      0, _unitRepo,       ct)),
+                ("branches",   "Sucursales",  () => PullAsync("branches",   0, _branchRepo,     ct)),
+                ("suppliers",  "Proveedores", () => PullAsync("suppliers",  0, _supplierRepo,   ct)),
+                ("customers",  "Clientes",    () => PullAsync("customers",  0, _customerRepo,   ct)),
+                ("users",      "Usuarios",    () => PullUsersAsync(0, ct)),
+                ("products",   "Productos",   () => PullAsync("products",   0, _productRepo,    ct)),
+            };
+
+            for (int i = 0; i < steps.Length; i++)
+            {
+                if (ct.IsCancellationRequested) break;
+
+                var (_, label, action) = steps[i];
+                onProgress?.Invoke(label, i + 1, steps.Length);
+
+                results.Add(await action());
+            }
+
+            return results;
+        }
+
         // ──────────────────────────────────────────────────────
         // REFLEXIÓN — acceso a propiedades comunes
         // ──────────────────────────────────────────────────────
@@ -706,4 +798,5 @@ namespace CasaCejaRemake.Services
             return typeof(T).GetProperty("Folio")?.GetValue(entity)?.ToString();
         }
     }
+    
 }

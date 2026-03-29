@@ -70,8 +70,11 @@ namespace CasaCejaRemake
                 DatabaseService = new DatabaseService();
                 await DatabaseService.InitializeAsync();
 
+                ConfigService = new ConfigService();
+                await ConfigService.LoadAsync();
+
                 // Inicializar datos por defecto (incluye roles)
-                var initializer = new DatabaseInitializer(DatabaseService);
+                var initializer = new DatabaseInitializer(DatabaseService, ConfigService);
                 await initializer.InitializeDefaultDataAsync();
 
                 // ── Repos especializados ──────────────────────────────────────
@@ -100,9 +103,6 @@ namespace CasaCejaRemake
 
                 AuthService = new AuthService(userRepo, RoleService);
                 UserService = new UserService(userRepo, RoleService);
-
-                ConfigService = new ConfigService();
-                await ConfigService.LoadAsync();
 
                 // Sincronizar la sucursal inicial en AuthService desde ConfigService
                 if (AuthService != null && ConfigService != null)
@@ -185,7 +185,9 @@ namespace CasaCejaRemake
                 return;
             }
 
-            var loginViewModel = new LoginViewModel(AuthService);
+            var userRepo       = new BaseRepository<Models.User>(DatabaseService!);
+            var loginViewModel = new LoginViewModel(AuthService, ApiClient, ConfigService, userRepo);
+
             var loginView = new LoginView
             {
                 DataContext = loginViewModel
@@ -550,11 +552,13 @@ namespace CasaCejaRemake
             }
 
             var viewModel = new ViewModels.Shared.AppConfigViewModel(
-                new BaseRepository<Models.Branch>(DatabaseService),
-                ConfigService,
-                AuthService,
-                PrintService,
-                UserService);
+                new BaseRepository<Models.Branch>(DatabaseService!),
+                ConfigService!,
+                AuthService!,
+                PrintService!,
+                UserService!,
+                SyncService!,
+                ApiClient!);
 
             // Suscribirse al evento de configuración guardada (cambio de sucursal)
             viewModel.ConfigurationSaved += async (s, e) =>

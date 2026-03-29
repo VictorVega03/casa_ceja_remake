@@ -132,6 +132,9 @@ namespace CasaCejaRemake.Models.DTOs
 
         [JsonPropertyName("username")]
         public string Username { get; set; } = string.Empty;
+        
+        [JsonPropertyName("password")]
+        public string Password { get; set; } = string.Empty;
 
         [JsonPropertyName("user_type")]
         public int UserType { get; set; }
