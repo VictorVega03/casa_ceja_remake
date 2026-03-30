@@ -115,7 +115,10 @@ namespace CasaCejaRemake.Data
         
         private async Task ConnectToDatabaseAsync()
         {
-            _database = new SQLiteAsyncConnection(_dbPath, SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.Create);
+            _database = new SQLiteAsyncConnection(
+                _dbPath,
+                SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.Create,
+                storeDateTimeAsTicks: false);
             
             // Habilitar foreign keys
             await _database.ExecuteAsync("PRAGMA foreign_keys = ON");

@@ -244,8 +244,11 @@ namespace CasaCejaRemake.Services
             try
             {
                 var all     = await _cashCloseRepo.GetAllAsync();
-                var pending = all.Where(x => GetSyncStatus(x) == 1).ToList();
-
+                var pending = all.Where(x => 
+                    GetSyncStatus(x) == 1 && 
+                    x.CloseDate > x.OpeningDate.AddSeconds(1)  // Solo cortes cerrados
+                ).ToList();
+                
                 if (pending.Count == 0)
                     return SyncResult.Ok("cash-closes");
 

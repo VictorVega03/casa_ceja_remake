@@ -68,6 +68,7 @@ namespace CasaCejaRemake.ViewModels.POS
         // Totales calculados
         public decimal TotalDelCorte => CashClose?.TotalDelCorte ?? 0;
         public decimal EfectivoTotal => CashClose?.EfectivoTotal ?? 0;
+        public decimal EfectivoEnCaja => OpeningCash + TotalCash + CreditCash + LayawayCash + TotalIncome - TotalExpenses;
         public decimal TotalElectronicPayments => CashClose?.TotalElectronicPayments ?? 0;
         
         // Efectivo esperado y diferencia
@@ -176,6 +177,7 @@ namespace CasaCejaRemake.ViewModels.POS
                 OnPropertyChanged(nameof(HasMovements));
                 OnPropertyChanged(nameof(TotalExpenses));
                 OnPropertyChanged(nameof(TotalIncome));
+                OnPropertyChanged(nameof(EfectivoEnCaja));
             }
             catch (Exception ex)
             {
@@ -201,6 +203,7 @@ namespace CasaCejaRemake.ViewModels.POS
             OnPropertyChanged(nameof(LayawayCash));
             OnPropertyChanged(nameof(TotalDelCorte));
             OnPropertyChanged(nameof(EfectivoTotal));
+            OnPropertyChanged(nameof(EfectivoEnCaja));
             OnPropertyChanged(nameof(TotalElectronicPayments));
             OnPropertyChanged(nameof(ExpectedCash));
             OnPropertyChanged(nameof(Surplus));

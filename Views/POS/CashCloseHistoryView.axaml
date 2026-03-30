@@ -156,7 +156,7 @@
                   Margin="10"
                   SelectionMode="Single">
             <DataGrid.Columns>
-                <DataGridTextColumn Header="FOLIO" Binding="{Binding Folio}" Width="160"/>
+                <DataGridTextColumn Header="FOLIO" Binding="{Binding Folio}" Width="260"/>
                 <DataGridTextColumn Header="USUARIO" Binding="{Binding UserName}" Width="180"/>
                 <DataGridTextColumn Header="FECHA CIERRE" Binding="{Binding CloseDate, StringFormat='{}{0:dd/MM/yyyy HH:mm}'}" Width="160"/>
                 <DataGridTextColumn Header="FONDO" Binding="{Binding OpeningCash, StringFormat='{}{0:C2}'}" Width="130"/>

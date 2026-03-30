@@ -360,7 +360,7 @@
                                                FontSize="9"/>
                                 </StackPanel>
                                 <TextBlock Grid.Column="1" 
-                                           Text="{Binding EfectivoTotal, StringFormat='{}{0:C2}'}" 
+                                           Text="{Binding EfectivoEnCaja, StringFormat='{}{0:C2}'}" 
                                            FontSize="20" 
                                            FontWeight="Bold" 
                                            Foreground="#42A5F5"

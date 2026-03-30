@@ -8,10 +8,10 @@ using CasaCejaRemake.Models;
 
 namespace CasaCejaRemake.Services
 {
-    /// <summary>
+    
     /// Servicio para gestión de usuarios (CRUD).
     /// Usado desde el módulo Shared para Admin y POS.
-    /// </summary>
+    
     public class UserService
     {
         private readonly IRepository<User> _userRepository;
@@ -23,9 +23,9 @@ namespace CasaCejaRemake.Services
             _roleService = roleService ?? throw new ArgumentNullException(nameof(roleService));
         }
 
-        /// <summary>
+        
         /// Obtiene todos los usuarios activos con nombre de rol resuelto.
-        /// </summary>
+        
         public async Task<List<User>> GetAllUsersAsync()
         {
             var users = await _userRepository.FindAsync(u => u.Active);
@@ -36,9 +36,9 @@ namespace CasaCejaRemake.Services
             return users.OrderBy(u => u.Name).ToList();
         }
 
-        /// <summary>
+        
         /// Obtiene solo los cajeros activos (para modo POS).
-        /// </summary>
+        
         public async Task<List<User>> GetCashiersAsync()
         {
             var cashierRoleId = _roleService.GetCashierRoleId();
@@ -50,9 +50,9 @@ namespace CasaCejaRemake.Services
             return users.OrderBy(u => u.Name).ToList();
         }
 
-        /// <summary>
+        
         /// Obtiene un usuario por su ID.
-        /// </summary>
+        
         public async Task<User?> GetByIdAsync(int id)
         {
             var user = await _userRepository.GetByIdAsync(id);
@@ -63,9 +63,9 @@ namespace CasaCejaRemake.Services
             return user;
         }
 
-        /// <summary>
+        
         /// Crea un nuevo usuario con validaciones.
-        /// </summary>
+        
         /// <returns>El usuario creado, o null si hubo error de validación.</returns>
         public async Task<(bool Success, string Message)> CreateUserAsync(User user)
         {
@@ -116,9 +116,9 @@ namespace CasaCejaRemake.Services
             }
         }
 
-        /// <summary>
+        
         /// Actualiza los datos de un usuario existente.
-        /// </summary>
+        
         public async Task<(bool Success, string Message)> UpdateUserAsync(User user)
         {
             // Validaciones
@@ -158,9 +158,9 @@ namespace CasaCejaRemake.Services
             }
         }
 
-        /// <summary>
+        
         /// Desactiva un usuario (soft delete). Solo Admin.
-        /// </summary>
+        
         public async Task<(bool Success, string Message)> DeactivateUserAsync(int userId)
         {
             var user = await _userRepository.GetByIdAsync(userId);
@@ -192,9 +192,9 @@ namespace CasaCejaRemake.Services
             }
         }
 
-        /// <summary>
+        
         /// Verifica si un nombre de usuario está disponible.
-        /// </summary>
+        
         /// <param name="username">Nombre de usuario a verificar.</param>
         /// <param name="excludeUserId">ID de usuario a excluir (para edición).</param>
         public async Task<bool> IsUsernameAvailableAsync(string username, int? excludeUserId = null)
@@ -208,25 +208,23 @@ namespace CasaCejaRemake.Services
             return false;
         }
 
-        /// <summary>
+        
         /// Obtiene todos los roles disponibles.
-        /// </summary>
+        
         public List<Role> GetAvailableRoles()
         {
             return _roleService.GetAllRoles();
         }
 
-        /// <summary>
+        
         /// Obtiene el ID del rol de cajero.
-        /// </summary>
+        
         public int GetCashierRoleId()
         {
             return _roleService.GetCashierRoleId();
         }
 
-        /// <summary>
         /// Verifica si un usuario es administrador.
-        /// </summary>
         public async Task<bool> IsAdminAsync(int userId)
         {
             var user = await _userRepository.GetByIdAsync(userId);
@@ -234,10 +232,9 @@ namespace CasaCejaRemake.Services
             return user.UserType == _roleService.GetAdminRoleId();
         }
 
-        /// <summary>
         /// Autentica un usuario sin modificar la sesión actual.
         /// Usado para verificación de credenciales de administrador.
-        /// </summary>
+       // DESPUÉS
         public async Task<(bool Success, User? User)> AuthenticateAsync(string username, string password)
         {
             var user = await _userRepository.FirstOrDefaultAsync(u =>
@@ -246,7 +243,18 @@ namespace CasaCejaRemake.Services
             if (user == null)
                 return (false, null);
 
-            if (user.Password != password)
+            // Verificar con BCrypt — con fallback a texto plano para migración
+            bool passwordValid = false;
+            try
+            {
+                passwordValid = BCrypt.Net.BCrypt.Verify(password, user.Password);
+            }
+            catch
+            {
+                passwordValid = user.Password == password;
+            }
+
+            if (!passwordValid)
                 return (false, null);
 
             return (true, user);
