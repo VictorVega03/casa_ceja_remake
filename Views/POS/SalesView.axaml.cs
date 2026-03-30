@@ -1048,7 +1048,27 @@ namespace CasaCejaRemake.Views.POS
                 {
                     await DialogHelper.ShowTicketDialog(this, result.CashClose.Folio, result.TicketText);
                 }
-                
+
+                // Push automático al cerrar corte — sincroniza ventas, cortes y operaciones pendientes
+                var syncService = App.SyncService;
+                var apiClient   = App.ApiClient;
+                if (syncService != null && apiClient != null)
+                {
+                    var serverAvailable = await apiClient.IsServerAvailableAsync();
+                    if (serverAvailable)
+                    {
+                        Console.WriteLine("[SalesView] Corte completado — iniciando Push automático...");
+                        var pushResults = await syncService.PushAllAsync();
+                        var pushed   = pushResults.Sum(r => r.RecordsPushed);
+                        var rejected = pushResults.Sum(r => r.RecordsRejected);
+                        Console.WriteLine($"[SalesView] Push post-corte: {pushed} enviados, {rejected} rechazados");
+                    }
+                    else
+                    {
+                        Console.WriteLine("[SalesView] Push post-corte omitido — sin conexión");
+                    }
+                }
+
                 // Corte completado exitosamente
                 // Volver al selector de módulos (manteniendo la sesión)
                 Tag = "module_selector";

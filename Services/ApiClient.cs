@@ -17,6 +17,11 @@ namespace CasaCejaRemake.Services
         {
             PropertyNamingPolicy        = JsonNamingPolicy.SnakeCaseLower,
             PropertyNameCaseInsensitive = true,
+            Converters =
+            {
+                new CasaCejaRemake.Helpers.DateTimeConverter(),
+                new CasaCejaRemake.Helpers.NullableDateTimeConverter(),
+            }
         };
 
         private const int MaxRetries     = 3;
