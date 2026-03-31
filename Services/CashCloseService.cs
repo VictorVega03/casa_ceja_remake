@@ -107,17 +107,16 @@ namespace CasaCejaRemake.Services
         /// 3. Solo el efectivo de abonos/enganches suma al Efectivo Esperado.
         /// 4. El cambio NO se resta (ya está contemplado al usar Total en vez de AmountPaid).
         /// </summary>
-        public async Task<CashCloseTotals> CalculateTotalsAsync(int cashCloseId, DateTime openingDate)
+        public async Task<CashCloseTotals> CalculateTotalsAsync(int cashCloseId, DateTime openingDate, int branchId = 0)
         {
             var totals = new CashCloseTotals();
 
             try
             {
-                Console.WriteLine($"[CashCloseService] CalculateTotalsAsync - openingDate={openingDate}");
+                Console.WriteLine($"[CashCloseService] CalculateTotalsAsync - openingDate={openingDate}, branchId={branchId}");
 
                 // ==================== 1. VENTAS DIRECTAS ====================
-                var salesSinceOpen = await _saleRepository.GetByBranchSinceDateAsync(0, openingDate);
-                // branchId=0 → filter all branches; we only want since openingDate which is already done
+                var salesSinceOpen = await _saleRepository.GetByBranchSinceDateAsync(branchId, openingDate);
 
                 totals.SalesCount = salesSinceOpen.Count;
                 Console.WriteLine($"[CashCloseService] Ventas directas: {salesSinceOpen.Count}");
@@ -305,7 +304,7 @@ namespace CasaCejaRemake.Services
             {
                 Console.WriteLine($"[CashCloseService] CloseCashAsync iniciado - Id={cashClose.Id}, Folio={cashClose.Folio}");
 
-                var totals = await CalculateTotalsAsync(cashClose.Id, cashClose.OpeningDate);
+                var totals = await CalculateTotalsAsync(cashClose.Id, cashClose.OpeningDate, cashClose.BranchId);
 
                 Console.WriteLine($"[CashCloseService] Totales calculados:");
                 Console.WriteLine($"  - Ventas efectivo: ${totals.TotalCash}");

@@ -211,7 +211,7 @@ namespace CasaCejaRemake.ViewModels.POS
             try
             {
                 // Calcular totales según reglas de negocio
-                var totals = await _cashCloseService.CalculateTotalsAsync(_currentCashClose.Id, _currentCashClose.OpeningDate);
+                var totals = await _cashCloseService.CalculateTotalsAsync(_currentCashClose.Id, _currentCashClose.OpeningDate, _currentCashClose.BranchId);
 
                 // ==================== VENTAS DIRECTAS ====================
                 TotalCash = totals.TotalCash;

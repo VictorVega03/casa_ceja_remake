@@ -109,7 +109,7 @@ namespace CasaCejaRemake.ViewModels.POS
                 {
                     Console.WriteLine($"[CashMovementVM] Caja abierta encontrada: {cashClose.Folio}, ID={cashClose.Id}");
                     
-                    var totals = await _cashCloseService.CalculateTotalsAsync(cashClose.Id, cashClose.OpeningDate);
+                    var totals = await _cashCloseService.CalculateTotalsAsync(cashClose.Id, cashClose.OpeningDate, cashClose.BranchId);
                     
                     // Calcular efectivo disponible actual
                     decimal availableCash = cashClose.OpeningCash + totals.TotalCash + 

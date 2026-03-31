@@ -16,6 +16,8 @@ namespace CasaCejaRemake.Data.Repositories
         /// </summary>
         public async Task<List<Models.Sale>> GetByBranchSinceDateAsync(int branchId, DateTime since)
         {
+            if (branchId == 0)
+                return await FindAsync(s => s.SaleDate >= since);
             return await FindAsync(s => s.BranchId == branchId && s.SaleDate >= since);
         }
 
