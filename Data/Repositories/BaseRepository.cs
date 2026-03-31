@@ -185,6 +185,26 @@ namespace CasaCejaRemake.Data.Repositories
             }
         }
 
+        /// <summary>
+        /// Inserta una entidad respetando el ID que ya trae.
+        /// Úsalo cuando el ID viene del servidor y necesitas preservarlo.
+        /// Si ya existe un registro con ese ID, lo reemplaza.
+        /// </summary>
+        public virtual async Task<int> AddWithExplicitIdAsync(T entity)
+        {
+            try
+            {
+                SetCreatedAt(entity);
+                SetUpdatedAt(entity);
+                return await _databaseService.InsertOrReplaceAsync(entity);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[BaseRepository] Error en AddWithExplicitIdAsync para {typeof(T).Name}");
+                throw new InvalidOperationException($"Error adding {typeof(T).Name} with explicit id", ex);
+            }
+        }
+
         public virtual async Task<int> AddRangeAsync(IEnumerable<T> entities)
         {
             try

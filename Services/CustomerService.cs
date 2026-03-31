@@ -10,10 +10,12 @@ namespace CasaCejaRemake.Services
     public class CustomerService
     {
         private readonly BaseRepository<Customer> _customerRepository;
+        private readonly SyncService? _syncService;
 
-        public CustomerService(BaseRepository<Customer> customerRepository)
+        public CustomerService(BaseRepository<Customer> customerRepository, SyncService? syncService = null)
         {
             _customerRepository = customerRepository;
+             _syncService = syncService;
         }
 
         public async Task<List<Customer>> SearchAsync(string term)
@@ -81,7 +83,13 @@ namespace CasaCejaRemake.Services
             customer.CreatedAt = DateTime.Now;
             customer.UpdatedAt = DateTime.Now;
 
-            return await _customerRepository.AddAsync(customer);
+            var id = await _customerRepository.AddAsync(customer);
+
+            // Push inmediato al servidor si hay conexión
+            if (_syncService != null)
+                _ = Task.Run(() => _syncService.PushCustomerAsync(customer));
+
+            return id;
         }
 
         public async Task UpdateAsync(Customer customer)
@@ -106,6 +114,10 @@ namespace CasaCejaRemake.Services
             customer.SyncStatus = 1;
 
             await _customerRepository.UpdateAsync(customer);
+
+            // Push inmediato al servidor si hay conexión
+            if (_syncService != null)
+                _ = Task.Run(() => _syncService.PushCustomerAsync(customer));
         }
 
         public async Task<bool> DeactivateAsync(int id)
@@ -118,6 +130,11 @@ namespace CasaCejaRemake.Services
             customer.SyncStatus = 1;
 
             await _customerRepository.UpdateAsync(customer);
+
+            // Push inmediato al servidor (soft delete)
+            if (_syncService != null)
+                _ = Task.Run(() => _syncService.PushCustomerAsync(customer));
+
             return true;
         }
 

@@ -62,7 +62,7 @@
         </Border>
 
         <!-- Search Box -->
-        <Grid Grid.Row="1" Margin="15,10" ColumnDefinitions="*,Auto">
+        <Grid Grid.Row="1" Margin="15,10" ColumnDefinitions="*,Auto,Auto,Auto">
             <TextBox x:Name="SearchBox"
                      Grid.Column="0"
                      Text="{Binding SearchTerm}"
@@ -73,6 +73,29 @@
                     Command="{Binding SearchCommand}"
                     Classes="action-button"
                     Margin="10,0,0,0"/>
+            <Button Grid.Column="2"
+                    Classes="action-button"
+                    Command="{Binding CreateNewCommand}"
+                    Background="#4CAF50"
+                    Margin="8,0,0,0"
+                    MinWidth="125">
+                <StackPanel Orientation="Horizontal" Spacing="5">
+                    <TextBlock Text="F5"/>
+                    <TextBlock Text="Nuevo"/>
+                </StackPanel>
+            </Button>
+            <Button Grid.Column="3"
+                    Classes="action-button"
+                    Command="{Binding EditCustomerCommand}"
+                    IsEnabled="{Binding HasSelectedCustomer}"
+                    Background="#2196F3"
+                    Margin="8,0,0,0"
+                    MinWidth="125">
+                <StackPanel Orientation="Horizontal" Spacing="5">
+                    <TextBlock Text="F6"/>
+                    <TextBlock Text="Editar"/>
+                </StackPanel>
+            </Button>
         </Grid>
 
         <!-- DataGrid -->
@@ -113,7 +136,7 @@
 
         <!-- Buttons -->
         <Border Grid.Row="4" Background="#2D2D2D" Padding="10">
-            <Grid ColumnDefinitions="Auto,Auto,*,Auto,Auto,Auto">
+            <Grid ColumnDefinitions="Auto,Auto,*,Auto,Auto">
                 <Button Grid.Column="0"
                         Classes="action-button"
                         Command="{Binding ViewCreditsCommand}"
@@ -140,16 +163,6 @@
                 </Button>
                 <Button Grid.Column="3"
                         Classes="action-button"
-                        Command="{Binding CreateNewCommand}"
-                        Background="#FF9800"
-                        HorizontalAlignment="Center">
-                    <StackPanel Orientation="Horizontal" Spacing="5">
-                        <TextBlock Text="F5"/>
-                        <TextBlock Text="Alta Rápida"/>
-                    </StackPanel>
-                </Button>
-                <Button Grid.Column="4"
-                        Classes="action-button"
                         Command="{Binding ExportToExcelCommand}"
                         Background="#2E7D32"
                         HorizontalAlignment="Center">
@@ -158,7 +171,7 @@
                         <TextBlock Text="Exportar Excel"/>
                     </StackPanel>
                 </Button>
-                <Button Grid.Column="5"
+                <Button Grid.Column="4"
                         Content="Cancelar (Esc)"
                         Command="{Binding CancelCommand}"
                         Classes="action-button"

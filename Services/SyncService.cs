@@ -136,6 +136,7 @@ namespace CasaCejaRemake.Services
         {
             var results = new List<SyncResult>();
 
+            results.Add(await PushCustomersAsync(ct));
             results.Add(await PushSalesAsync(ct));
             results.Add(await PushCashClosesAsync(ct));
             results.Add(await PushCreditsAsync(ct));
@@ -146,6 +147,46 @@ namespace CasaCejaRemake.Services
             results.Add(await PushStockOutputsAsync(ct));
 
             return results;
+        }
+
+        private async Task<SyncResult> PushCustomersAsync(CancellationToken ct)
+        {
+            try
+            {
+                var all = await _customerRepo.GetAllAsync();
+                var pending = all.Where(c => c.SyncStatus == 1).ToList();
+
+                if (pending.Count == 0)
+                    return SyncResult.Ok("customers");
+
+                int accepted = 0;
+                int rejected = 0;
+
+                foreach (var customer in pending)
+                {
+                    if (ct.IsCancellationRequested)
+                        break;
+
+                    var pushed = await PushCustomerAsync(customer, ct);
+                    if (pushed)
+                        accepted++;
+                    else
+                        rejected++;
+                }
+
+                return new SyncResult
+                {
+                    Success = true,
+                    Entity = "customers",
+                    RecordsPushed = accepted,
+                    RecordsRejected = rejected,
+                };
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[SyncService] Error Push customers: {ex.Message}");
+                return SyncResult.Fail("customers", ex.Message);
+            }
         }
         private async Task<SyncResult> PushSalesAsync(CancellationToken ct)
         {
@@ -248,7 +289,7 @@ namespace CasaCejaRemake.Services
                     GetSyncStatus(x) == 1 && 
                     x.CloseDate > x.OpeningDate.AddSeconds(1)  // Solo cortes cerrados
                 ).ToList();
-                
+
                 if (pending.Count == 0)
                     return SyncResult.Ok("cash-closes");
 
@@ -800,6 +841,81 @@ namespace CasaCejaRemake.Services
         {
             return typeof(T).GetProperty("Folio")?.GetValue(entity)?.ToString();
         }
+
+        /// Push inmediato de un cliente al servidor — se llama al crear o modificar un cliente.
+        /// No es batch — es una operación individual en tiempo real.
+        public async Task<bool> PushCustomerAsync(Customer customer, CancellationToken ct = default)
+        {
+            try
+            {
+                if (!await _apiClient.IsServerAvailableAsync())
+                {
+                    Console.WriteLine("[SyncService] PushCustomer omitido — sin conexión");
+                    return false;
+                }
+
+                var folio = $"CUST-{customer.Id}-{DateTimeOffset.UtcNow.ToUnixTimeSeconds()}";
+
+                var dto = new CustomerPushDto
+                {
+                    Folio           = folio,
+                    Id              = customer.Id,
+                    Name            = customer.Name,
+                    Rfc             = customer.Rfc ?? string.Empty,
+                    Street          = customer.Street ?? string.Empty,
+                    ExteriorNumber  = customer.ExteriorNumber ?? string.Empty,
+                    InteriorNumber  = customer.InteriorNumber,
+                    Neighborhood    = customer.Neighborhood ?? string.Empty,
+                    PostalCode      = customer.PostalCode ?? string.Empty,
+                    City            = customer.City ?? string.Empty,
+                    Email           = customer.Email ?? string.Empty,
+                    Phone           = customer.Phone,
+                    Active          = customer.Active,
+                };
+
+                var body     = new { records = new[] { dto } };
+                var response = await _apiClient.PostAsync<CustomerPushResponse>(
+                    "/api/v1/sync/push/customers", body, ct);
+
+                if (response?.Data?.Accepted.Count > 0)
+                {
+                    var accepted = response.Data.Accepted[0];
+
+                    // Si el servidor asignó un id diferente al local, actualizar
+                    if (accepted.ServerId > 0 && accepted.ServerId != customer.Id)
+                    {
+                        Console.WriteLine($"[SyncService] Actualizando id local {customer.Id} → servidor {accepted.ServerId}");
+
+                        // Borrar el registro local con id temporal
+                        await _customerRepo.DeleteAsync(customer);
+
+                        // Insertar respetando el id del servidor usando repositorio
+                        customer.Id         = accepted.ServerId;
+                        customer.SyncStatus = 2;
+                        customer.LastSync   = DateTime.Now;
+                        await _customerRepo.AddWithExplicitIdAsync(customer);
+
+                        Console.WriteLine($"[SyncService] Cliente '{customer.Name}' guardado con id servidor: {accepted.ServerId}");
+                    }
+                    else
+                    {
+                        SetSyncStatus(customer, 2);
+                        SetLastSync(customer, DateTime.Now);
+                        await _customerRepo.UpdateAsync(customer);
+                    }
+
+                    Console.WriteLine($"[SyncService] Cliente '{customer.Name}' enviado ✅ (id servidor: {accepted.ServerId})");
+                    return true;
+                }
+
+                Console.WriteLine("[SyncService] Cliente rechazado por el servidor");
+                return false;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[SyncService] Error PushCustomer: {ex.Message}");
+                return false;
+            }
+        }
     }
-    
 }

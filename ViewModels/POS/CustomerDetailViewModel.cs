@@ -66,11 +66,17 @@ namespace CasaCejaRemake.ViewModels.POS
         [ObservableProperty]
         private bool _isLoading;
 
+        [ObservableProperty]
+        private bool _isDeleting;
+
         public event EventHandler? ViewCreditsRequested;
         public event EventHandler? ViewLayawaysRequested;
+        public event EventHandler<Customer>? DeleteRequested;
+        public event EventHandler<Customer>? CustomerDeleted;
         public event EventHandler? CloseRequested;
 
         public Customer? Customer => _customer;
+        public bool CanDelete => _customer != null && !_isLoading && !_isDeleting;
 
         public CustomerDetailViewModel(
             CustomerService customerService,
@@ -92,6 +98,7 @@ namespace CasaCejaRemake.ViewModels.POS
                 _customer = await _customerService.GetByIdAsync(customerId);
                 if (_customer == null)
                 {
+                    DeleteCustomerCommand.NotifyCanExecuteChanged();
                     return;
                 }
 
@@ -104,6 +111,7 @@ namespace CasaCejaRemake.ViewModels.POS
                 CustomerCity = string.IsNullOrWhiteSpace(_customer.City) ? "No especificado" : _customer.City;
                 CustomerNotes = "Sin notas"; // Customer no tiene campo Notes
                 CreatedAt = _customer.CreatedAt;
+                DeleteCustomerCommand.NotifyCanExecuteChanged();
 
                 // Cargar créditos
                 var credits = await _creditService.GetPendingByCustomerAsync(customerId);
@@ -146,7 +154,18 @@ namespace CasaCejaRemake.ViewModels.POS
             finally
             {
                 IsLoading = false;
+                DeleteCustomerCommand.NotifyCanExecuteChanged();
             }
+        }
+
+        partial void OnIsLoadingChanged(bool value)
+        {
+            DeleteCustomerCommand.NotifyCanExecuteChanged();
+        }
+
+        partial void OnIsDeletingChanged(bool value)
+        {
+            DeleteCustomerCommand.NotifyCanExecuteChanged();
         }
 
         [RelayCommand]
@@ -159,6 +178,43 @@ namespace CasaCejaRemake.ViewModels.POS
         private void ViewLayaways()
         {
             ViewLayawaysRequested?.Invoke(this, EventArgs.Empty);
+        }
+
+        [RelayCommand(CanExecute = nameof(CanDelete))]
+        private void DeleteCustomer()
+        {
+            if (_customer == null)
+                return;
+
+            DeleteRequested?.Invoke(this, _customer);
+        }
+
+        public async Task<bool> ConfirmDeleteAsync()
+        {
+            if (_customer == null)
+                return false;
+
+            try
+            {
+                IsDeleting = true;
+
+                var deleted = await _customerService.DeactivateAsync(_customer.Id);
+                if (!deleted)
+                    return false;
+
+                _customer.Active = false;
+                CustomerDeleted?.Invoke(this, _customer);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[CustomerDetailVM] Error al eliminar cliente: {ex.Message}");
+                return false;
+            }
+            finally
+            {
+                IsDeleting = false;
+            }
         }
 
         [RelayCommand]
@@ -176,6 +232,12 @@ namespace CasaCejaRemake.ViewModels.POS
                     break;
                 case "F2":
                     ViewLayaways();
+                    break;
+                case "F9":
+                    if (DeleteCustomerCommand.CanExecute(null))
+                    {
+                        DeleteCustomerCommand.Execute(null);
+                    }
                     break;
                 case "ESCAPE":
                     Close();

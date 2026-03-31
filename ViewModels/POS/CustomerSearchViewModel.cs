@@ -31,6 +31,7 @@ namespace CasaCejaRemake.ViewModels.POS
         public ObservableCollection<Customer> Customers { get; } = new();
 
         public event EventHandler<Customer>? CustomerSelected;
+        public event EventHandler<Customer>? EditRequested;
         public event EventHandler? CreateNewRequested;
         public event EventHandler<(Customer customer, bool isCreditsMode)>? ViewCustomerCreditsLayaways;
         public event EventHandler? Cancelled;
@@ -49,6 +50,7 @@ namespace CasaCejaRemake.ViewModels.POS
             ViewCreditsCommand.NotifyCanExecuteChanged();
             ViewLayawaysCommand.NotifyCanExecuteChanged();
             SelectCustomerCommand.NotifyCanExecuteChanged();
+            EditCustomerCommand.NotifyCanExecuteChanged();
         }
 
         partial void OnShowActionButtonsChanged(bool value)
@@ -60,6 +62,11 @@ namespace CasaCejaRemake.ViewModels.POS
         public async Task InitializeAsync()
         {
             // Cargar clientes iniciales
+            await SearchAsync();
+        }
+
+        public async Task RefreshAsync()
+        {
             await SearchAsync();
         }
 
@@ -136,6 +143,18 @@ namespace CasaCejaRemake.ViewModels.POS
         private void CreateNew()
         {
             CreateNewRequested?.Invoke(this, EventArgs.Empty);
+        }
+
+        [RelayCommand(CanExecute = nameof(HasSelectedCustomer))]
+        private void EditCustomer()
+        {
+            if (SelectedCustomer == null)
+            {
+                StatusMessage = "Seleccione un cliente";
+                return;
+            }
+
+            EditRequested?.Invoke(this, SelectedCustomer);
         }
 
         [RelayCommand]

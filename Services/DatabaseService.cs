@@ -251,6 +251,18 @@ namespace CasaCejaRemake.Data
             return await _database.InsertAsync(entity);
         }
 
+        /// <summary>
+        /// Inserta o reemplaza un registro usando el ID que ya trae la entidad.
+        /// A diferencia de InsertAsync, respeta el ID explícito aunque sea AutoIncrement.
+        /// </summary>
+        public async Task<int> InsertOrReplaceAsync<T>(T entity)
+        {
+            if (_database == null)
+                throw new InvalidOperationException("Database not initialized");
+
+            return await _database.InsertOrReplaceAsync(entity);
+        }
+
         
         /// Inserta múltiples registros
         

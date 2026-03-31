@@ -6,7 +6,7 @@
         mc:Ignorable="d" d:DesignWidth="550" d:DesignHeight="350"
         x:Class="CasaCejaRemake.Views.POS.QuickCustomerView"
         x:DataType="vm:QuickCustomerViewModel"
-        Title="Alta de Cliente"
+        Title="{Binding FormTitle}"
         Width="550" Height="350"
         WindowStartupLocation="CenterOwner"
         CanResize="False"
@@ -35,7 +35,7 @@
     <Grid RowDefinitions="Auto,*,Auto,Auto">
         <!-- Header -->
         <Border Grid.Row="0" Background="#2D2D2D" Padding="15">
-            <TextBlock Text="ALTA DE CLIENTE"
+            <TextBlock Text="{Binding HeaderTitle}"
                        FontSize="18"
                        FontWeight="Bold"
                        Foreground="White"
@@ -118,7 +118,7 @@
                         IsEnabled="{Binding !IsSaving}">
                     <StackPanel Orientation="Horizontal" Spacing="5">
                         <TextBlock Text="F5"/>
-                        <TextBlock Text="Guardar"/>
+                        <TextBlock Text="{Binding SaveButtonText}"/>
                     </StackPanel>
                 </Button>
                 <Button Grid.Column="1"

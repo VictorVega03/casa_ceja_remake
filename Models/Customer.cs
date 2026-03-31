@@ -17,35 +17,34 @@ namespace CasaCejaRemake.Models
 
         [Column("rfc")]
         [MaxLength(13)]
-        public string Rfc { get; set; } = string.Empty;      
+        public string? Rfc { get; set; }      
 
         [Column("street")]
         [MaxLength(255)]
-        public string Street { get; set; } = string.Empty;
+        public string? Street { get; set; }
 
         [Column("exterior_number")]
         [MaxLength(20)]
-        public string ExteriorNumber { get; set; } = string.Empty;
-
+        public string? ExteriorNumber { get; set; }
         [Column("interior_number")]
         [MaxLength(20)]
         public string? InteriorNumber { get; set; }
 
         [Column("neighborhood")]
         [MaxLength(100)]
-        public string Neighborhood { get; set; } = string.Empty;
+        public string? Neighborhood { get; set; }
 
         [Column("postal_code")]
         [MaxLength(10)]
-        public string PostalCode { get; set; } = string.Empty;
+        public string? PostalCode { get; set; }
 
         [Column("city")]
         [MaxLength(100)]
-        public string City { get; set; } = string.Empty;
+        public string? City { get; set; }
 
         [Column("email")]
         [MaxLength(100)]
-        public string Email { get; set; } = string.Empty;
+        public string? Email { get; set; }
 
         [Column("phone")]
         [MaxLength(20)]
@@ -68,7 +67,7 @@ namespace CasaCejaRemake.Models
 
          // ========== PROPIEDADES CALCULADAS ==========
         [Ignore]
-        public string FullAddress => string.IsNullOrWhiteSpace(Street) ? 
+        public string? FullAddress => string.IsNullOrWhiteSpace(Street) ? 
             City : $"{Street} {ExteriorNumber}{(string.IsNullOrWhiteSpace(InteriorNumber) ? 
             "" : $" Int. {InteriorNumber}")}, {Neighborhood}, {City}";
 

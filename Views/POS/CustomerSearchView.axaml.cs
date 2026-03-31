@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
@@ -35,6 +36,7 @@ namespace CasaCejaRemake.Views.POS
             {
                 _viewModel.CustomerSelected += OnCustomerSelected;
                 _viewModel.CreateNewRequested += OnCreateNewRequested;
+                _viewModel.EditRequested += OnEditRequested;
                 _viewModel.ViewCustomerCreditsLayaways += OnViewCustomerCreditsLayaways;
                 _viewModel.Cancelled += OnCancelled;
                 _viewModel.ExportRequested += OnExportRequested;
@@ -74,6 +76,11 @@ namespace CasaCejaRemake.Views.POS
         {
             Tag = "CreateNew";
             Close();
+        }
+
+        private async void OnEditRequested(object? sender, Customer customer)
+        {
+            await ShowEditCustomerDialogAsync(customer);
         }
 
         private async void OnViewCustomerCreditsLayaways(object? sender, (Customer customer, bool isCreditsMode) e)
@@ -118,6 +125,33 @@ namespace CasaCejaRemake.Views.POS
             await creditsLayawaysView.ShowDialog(this);
             
             // Cuando regrese aquí, dar focus al SearchBox
+            SearchBox?.Focus();
+        }
+
+        private async System.Threading.Tasks.Task ShowEditCustomerDialogAsync(Customer customer)
+        {
+            var app = (Avalonia.Application.Current as App);
+            var customerService = app?.GetCustomerService();
+
+            if (customerService == null)
+            {
+                return;
+            }
+
+            var quickView = new QuickCustomerView();
+            var quickViewModel = new QuickCustomerViewModel(customerService);
+            quickViewModel.LoadForEdit(customer);
+            quickView.DataContext = quickViewModel;
+
+            await quickView.ShowDialog(this);
+
+            if (quickView.Tag is Customer updatedCustomer && _viewModel != null)
+            {
+                await _viewModel.RefreshAsync();
+                _viewModel.SelectedCustomer = _viewModel.Customers.FirstOrDefault(c => c.Id == updatedCustomer.Id);
+                _viewModel.StatusMessage = $"Cliente actualizado: {updatedCustomer.Name}";
+            }
+
             SearchBox?.Focus();
         }
 
@@ -171,6 +205,16 @@ namespace CasaCejaRemake.Views.POS
                     return;
                 }
 
+                if (e.Key == Key.F6)
+                {
+                    if (vm.EditCustomerCommand.CanExecute(null))
+                    {
+                        vm.EditCustomerCommand.Execute(null);
+                    }
+                    e.Handled = true;
+                    return;
+                }
+
                 if (e.Key == Key.F8)
                 {
                     vm.ExportToExcelCommand.Execute(null);
@@ -195,6 +239,7 @@ namespace CasaCejaRemake.Views.POS
             {
                 _viewModel.CustomerSelected -= OnCustomerSelected;
                 _viewModel.CreateNewRequested -= OnCreateNewRequested;
+                _viewModel.EditRequested -= OnEditRequested;
                 _viewModel.ViewCustomerCreditsLayaways -= OnViewCustomerCreditsLayaways;
                 _viewModel.Cancelled -= OnCancelled;
                 _viewModel.ExportRequested -= OnExportRequested;

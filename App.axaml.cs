@@ -140,7 +140,7 @@ namespace CasaCejaRemake
                     branchRepo, categoryRepo, unitRepo, userRepo,
                     ticketService, pricingService, FolioService, ConfigService);
 
-                _customerService = new CustomerService(customerRepo);
+                _customerService = new CustomerService(customerRepo, SyncService);
 
                 _creditService = new CreditService(
                     creditRepo, creditProductRepo, creditPaymentRepo,

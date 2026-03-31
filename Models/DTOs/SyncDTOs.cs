@@ -152,4 +152,66 @@ namespace CasaCejaRemake.Models.DTOs
         [JsonPropertyName("name")]
         public string Name { get; set; } = string.Empty;
     }
+
+    /// DTO para Push de cliente.
+    public class CustomerPushDto
+    {
+        [JsonPropertyName("folio")]
+        public string Folio { get; set; } = string.Empty;
+
+        [JsonPropertyName("id")]
+        public int Id { get; set; }
+
+        [JsonPropertyName("name")]
+        public string Name { get; set; } = string.Empty;
+
+        [JsonPropertyName("rfc")]
+        public string Rfc { get; set; } = string.Empty;
+
+        [JsonPropertyName("street")]
+        public string Street { get; set; } = string.Empty;
+
+        [JsonPropertyName("exterior_number")]
+        public string ExteriorNumber { get; set; } = string.Empty;
+
+        [JsonPropertyName("interior_number")]
+        public string? InteriorNumber { get; set; }
+
+        [JsonPropertyName("neighborhood")]
+        public string Neighborhood { get; set; } = string.Empty;
+
+        [JsonPropertyName("postal_code")]
+        public string PostalCode { get; set; } = string.Empty;
+
+        [JsonPropertyName("city")]
+        public string City { get; set; } = string.Empty;
+
+        [JsonPropertyName("email")]
+        public string Email { get; set; } = string.Empty;
+
+        [JsonPropertyName("phone")]
+        public string Phone { get; set; } = string.Empty;
+
+        [JsonPropertyName("active")]
+        public bool Active { get; set; } = true;
+    }
+
+    /// Respuesta de push de clientes con folio e id asignado por servidor.
+    public class CustomerPushResponse
+    {
+        [JsonPropertyName("accepted")]
+        public List<CustomerPushAccepted> Accepted { get; set; } = new();
+
+        [JsonPropertyName("rejected")]
+        public List<RejectedRecord> Rejected { get; set; } = new();
+    }
+
+    public class CustomerPushAccepted
+    {
+        [JsonPropertyName("folio")]
+        public string Folio { get; set; } = string.Empty;
+
+        [JsonPropertyName("server_id")]
+        public int ServerId { get; set; }
+    }
 }
