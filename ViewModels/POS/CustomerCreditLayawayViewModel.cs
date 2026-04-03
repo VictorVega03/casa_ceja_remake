@@ -175,15 +175,25 @@ namespace CasaCejaRemake.ViewModels.POS
 
         private async Task LoadCreditsAsync()
         {
-            // Obtener los datos primero
             var credits = await _creditService.GetPendingByCustomerAsync(_customer!.Id);
-            
-            // Limpiar y agregar todos de una vez para evitar múltiples notificaciones
-            Credits.Clear();
+
+            // Actualizar status de vencidos antes de mostrar
             foreach (var credit in credits)
             {
-                Credits.Add(credit);
+                Console.WriteLine($"[DEBUG] Crédito {credit.Folio} status={credit.Status} DueDate={credit.DueDate} IsOverdue={credit.IsOverdue} DateTime.Now={DateTime.Now}");
+                if (credit.Status == 1 && credit.IsOverdue)
+                {
+                    Console.WriteLine($"[DEBUG] Actualizando status vencido: {credit.Folio}");
+                    await _creditService.UpdateStatusAsync(credit.Id);
+                }
             }
+
+            // Recargar después de actualizar estados
+            credits = await _creditService.GetPendingByCustomerAsync(_customer!.Id);
+
+            Credits.Clear();
+            foreach (var credit in credits)
+                Credits.Add(credit);
 
             StatusMessage = $"{Credits.Count} credito(s) encontrado(s)";
             NotifyComputedProperties();
@@ -191,15 +201,21 @@ namespace CasaCejaRemake.ViewModels.POS
 
         private async Task LoadLayawaysAsync()
         {
-            // Obtener los datos primero
             var layaways = await _layawayService.GetPendingByCustomerAsync(_customer!.Id);
-            
-            // Limpiar y agregar todos de una vez para evitar múltiples notificaciones
-            Layaways.Clear();
+
+            // Actualizar status de vencidos antes de mostrar
             foreach (var layaway in layaways)
             {
-                Layaways.Add(layaway);
+                if (layaway.Status == 1 && layaway.IsExpired)
+                    await _layawayService.UpdateStatusAsync(layaway.Id);
             }
+
+            // Recargar después de actualizar estados
+            layaways = await _layawayService.GetPendingByCustomerAsync(_customer!.Id);
+
+            Layaways.Clear();
+            foreach (var layaway in layaways)
+                Layaways.Add(layaway);
 
             StatusMessage = $"{Layaways.Count} apartado(s) encontrado(s)";
             NotifyComputedProperties();

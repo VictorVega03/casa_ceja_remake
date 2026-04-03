@@ -582,7 +582,7 @@ namespace CasaCejaRemake.Views.POS
 
         private async Task<bool> ShowAddPaymentToCredit(Credit credit)
         {
-            var customer = await _customerService.GetByIdAsync(credit.CustomerId);
+            var customer = await _customerService.GetByIdAsync(credit.CustomerId ?? 0);
             if (customer == null)
             {
                 ShowMessageDialog("Error", "No se encontró el cliente");

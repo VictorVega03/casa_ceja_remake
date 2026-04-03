@@ -69,4 +69,31 @@ namespace CasaCejaRemake.Models.DTOs
         [JsonPropertyName("pricing_data")]
         public byte[]? PricingData { get; set; }
     }
+
+    public class CreditPaymentPushDto
+    {
+        [JsonPropertyName("folio")]
+        public string Folio { get; set; } = string.Empty;
+
+        [JsonPropertyName("credit_folio")]
+        public string CreditFolio { get; set; } = string.Empty;
+
+        [JsonPropertyName("user_id")]
+        public int UserId { get; set; }
+
+        [JsonPropertyName("amount_paid")]
+        public decimal AmountPaid { get; set; }
+
+        [JsonPropertyName("payment_method")]
+        public string PaymentMethod { get; set; } = string.Empty;
+
+        [JsonPropertyName("payment_date")]
+        public DateTime PaymentDate { get; set; }
+
+        [JsonPropertyName("cash_close_folio")]
+        public string CashCloseFolio { get; set; } = string.Empty;
+
+        [JsonPropertyName("notes")]
+        public string? Notes { get; set; }
+    }
 }

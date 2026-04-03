@@ -140,7 +140,7 @@ namespace CasaCejaRemake.ViewModels.POS
                     return;
                 }
 
-                _customer = await _customerService.GetByIdAsync(_credit.CustomerId);
+                _customer = await _customerService.GetByIdAsync(_credit.CustomerId ?? 0);
                 
                 // Cargar información básica
                 Folio = _credit.Folio;

@@ -22,7 +22,7 @@ namespace CasaCejaRemake.Models
         // ========== RELACIONES ==========
         [Column("customer_id")]
         [Indexed(Name = "IX_Credits_Customer")]
-        public int CustomerId { get; set; }
+        public int? CustomerId { get; set; }
 
         [Column("branch_id")]
         [Indexed(Name = "IX_Credits_Branch")]

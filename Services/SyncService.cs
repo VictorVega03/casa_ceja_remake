@@ -116,8 +116,8 @@ namespace CasaCejaRemake.Services
         // Operaciones por sucursal — también en paralelo
         var operationTasks = new[]
         {
-            PullAsync("credits",          since, _creditRepo,         ct, $"&branch_id={branchId}"),
-            PullAsync("credit-payments",  since, _creditPaymentRepo,  ct, $"&branch_id={branchId}"),
+            PullCreditsAsync(since, branchId, ct),
+            PullCreditPaymentsAsync(since, branchId, ct),
             PullAsync("layaways",         since, _layawayRepo,        ct, $"&branch_id={branchId}"),
             PullAsync("layaway-payments", since, _layawayPaymentRepo, ct, $"&branch_id={branchId}"),
         };
@@ -140,7 +140,7 @@ namespace CasaCejaRemake.Services
             results.Add(await PushSalesAsync(ct));
             results.Add(await PushCashClosesAsync(ct));
             results.Add(await PushCreditsAsync(ct));
-            results.Add(await PushAsync("credit-payments",  _creditPaymentRepo,  ct));
+            results.Add(await PushCreditPaymentsAsync(ct));
             results.Add(await PushLayawaysAsync(ct));
             results.Add(await PushAsync("layaway-payments", _layawayPaymentRepo, ct));
             results.Add(await PushStockEntriesAsync(ct));
@@ -359,7 +359,7 @@ namespace CasaCejaRemake.Services
                     Folio        = c.Folio,
                     BranchId     = c.BranchId,
                     UserId       = c.UserId,
-                    CustomerId   = c.CustomerId,
+                    CustomerId   = c.CustomerId ?? 0,
                     Total        = c.Total,
                     TotalPaid    = c.TotalPaid,
                     MonthsToPay  = c.MonthsToPay,
@@ -388,6 +388,91 @@ namespace CasaCejaRemake.Services
             {
                 Console.WriteLine($"[SyncService] Error Push credits: {ex.Message}");
                 return SyncResult.Fail("credits", ex.Message);
+            }
+        }
+
+        private async Task<SyncResult> PushCreditPaymentsAsync(CancellationToken ct)
+        {
+            try
+            {
+                var all     = await _creditPaymentRepo.GetAllAsync();
+                var pending = all.Where(x => GetSyncStatus(x) == 1).ToList();
+
+                if (pending.Count == 0)
+                    return SyncResult.Ok("credit-payments");
+
+                // Necesitamos el folio del crédito — cargar todos los créditos locales
+                var allCredits = await _creditRepo.GetAllAsync();
+                var branchId   = _configService.AppConfig.CurrentBranchId ?? 0;
+
+                var dtos = pending.Select(p =>
+                {
+                    var credit = allCredits.FirstOrDefault(c => c.Id == p.CreditId);
+                    return new CreditPaymentPushDto
+                    {
+                        Folio           = p.Folio,
+                        CreditFolio     = credit?.Folio ?? string.Empty,
+                        UserId          = p.UserId,
+                        AmountPaid      = p.AmountPaid,
+                        PaymentMethod   = p.PaymentMethod,
+                        PaymentDate     = p.PaymentDate,
+                        CashCloseFolio  = p.CashCloseFolio,
+                        Notes           = p.Notes,
+                    };
+                }).ToList();
+
+                // Filtrar los que no tienen folio de crédito (error de datos)
+                var valid   = dtos.Where(d => !string.IsNullOrEmpty(d.CreditFolio)).ToList();
+                var invalid = dtos.Where(d => string.IsNullOrEmpty(d.CreditFolio)).ToList();
+
+                if (invalid.Count > 0)
+                    Console.WriteLine($"[SyncService] {invalid.Count} abonos sin folio de crédito — omitidos");
+
+                if (valid.Count == 0)
+                    return SyncResult.Ok("credit-payments");
+
+                int accepted = 0;
+                int rejected = 0;
+
+                const int batchSize = 100;
+                for (int i = 0; i < valid.Count; i += batchSize)
+                {
+                    var batch    = valid.GetRange(i, Math.Min(batchSize, valid.Count - i));
+                    var body     = new { branch_id = branchId, records = batch };
+                    var response = await _apiClient.PostAsync<PushResponse>(
+                        "/api/v1/sync/push/credit-payments", body, ct);
+
+                    if (response?.Data == null) continue;
+
+                    foreach (var payment in pending)
+                    {
+                        if (response.Data.Accepted.Contains(payment.Folio))
+                        {
+                            SetSyncStatus(payment, 2);
+                            SetLastSync(payment, DateTime.Now);
+                            await _creditPaymentRepo.UpdateAsync(payment);
+                        }
+                    }
+
+                    accepted += response.Data.Accepted.Count;
+                    rejected += response.Data.Rejected.Count;
+
+                    foreach (var r in response.Data.Rejected)
+                        Console.WriteLine($"[SyncService] Rechazado credit-payments folio={r.Folio}: {r.Reason}");
+                }
+
+                return new SyncResult
+                {
+                    Success         = true,
+                    Entity          = "credit-payments",
+                    RecordsPushed   = accepted,
+                    RecordsRejected = rejected,
+                };
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[SyncService] Error Push credit-payments: {ex.Message}");
+                return SyncResult.Fail("credit-payments", ex.Message);
             }
         }
 
@@ -669,6 +754,94 @@ namespace CasaCejaRemake.Services
             {
                 Console.WriteLine($"[SyncService] Error Pull users: {ex.Message}");
                 return SyncResult.Fail("users", ex.Message);
+            }
+        }
+
+        private async Task<SyncResult> PullCreditsAsync(long since, int branchId, CancellationToken ct)
+        {
+            int totalPulled = 0;
+            int page        = 1;
+            Console.WriteLine($"[SyncService] Iniciando Pull credits since={since}");
+
+            try
+            {
+                while (true)
+                {
+                    var endpoint = $"/api/v1/sync/pull/credits?since={since}&page={page}&branch_id={branchId}";
+                    var response = await _apiClient.GetAsync<PullResponse<Credit>>(endpoint, ct);
+
+                    if (response?.IsSuccess != true || response.Data == null) break;
+
+                    var pullData = response.Data;
+                    Console.WriteLine($"[SyncService] Pull credits page={page} count={pullData.Data.Count}");
+
+                    if (pullData.Data.Count == 0) break;
+
+                    foreach (var serverCredit in pullData.Data)
+                    {
+                        SetSyncStatus(serverCredit, 2);
+                        var existing = await _creditRepo.FirstOrDefaultAsync(c => c.Id == serverCredit.Id);
+                        if (existing != null)
+                            await _creditRepo.UpdateAsync(serverCredit);
+                        else
+                            await _creditRepo.AddWithExplicitIdAsync(serverCredit);
+                    }
+
+                    totalPulled += pullData.Count;
+                    if (!pullData.HasMorePages) break;
+                    page++;
+                }
+
+                return SyncResult.Ok("credits", pulled: totalPulled);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[SyncService] Error Pull credits: {ex.Message}");
+                return SyncResult.Fail("credits", ex.Message);
+            }
+        }
+
+        private async Task<SyncResult> PullCreditPaymentsAsync(long since, int branchId, CancellationToken ct)
+        {
+            int totalPulled = 0;
+            int page        = 1;
+            Console.WriteLine($"[SyncService] Iniciando Pull credit-payments since={since}");
+
+            try
+            {
+                while (true)
+                {
+                    var endpoint = $"/api/v1/sync/pull/credit-payments?since={since}&page={page}&branch_id={branchId}";
+                    var response = await _apiClient.GetAsync<PullResponse<CreditPayment>>(endpoint, ct);
+
+                    if (response?.IsSuccess != true || response.Data == null) break;
+
+                    var pullData = response.Data;
+                    Console.WriteLine($"[SyncService] Pull credit-payments page={page} count={pullData.Data.Count}");
+
+                    if (pullData.Data.Count == 0) break;
+
+                    foreach (var serverPayment in pullData.Data)
+                    {
+                        SetSyncStatus(serverPayment, 2);
+                        var existing = await _creditPaymentRepo.FirstOrDefaultAsync(p => p.Id == serverPayment.Id);
+                        if (existing != null)
+                            await _creditPaymentRepo.UpdateAsync(serverPayment);
+                        else
+                            await _creditPaymentRepo.AddWithExplicitIdAsync(serverPayment);
+                    }
+
+                    totalPulled += pullData.Count;
+                    if (!pullData.HasMorePages) break;
+                    page++;
+                }
+
+                return SyncResult.Ok("credit-payments", pulled: totalPulled);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[SyncService] Error Pull credit-payments: {ex.Message}");
+                return SyncResult.Fail("credit-payments", ex.Message);
             }
         }
 

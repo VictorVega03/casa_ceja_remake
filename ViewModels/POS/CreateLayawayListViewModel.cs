@@ -137,12 +137,20 @@ namespace CasaCejaRemake.ViewModels.POS
 
                 if (FilterType == ListFilterType.All || FilterType == ListFilterType.Credits)
                 {
+                    // Cargar pendientes para actualizar vencidos antes de aplicar filtro
+                    var allPendingCredits = await _creditService.SearchAsync(null, (int)ListFilterStatus.Pending, _branchId);
+                    foreach (var credit in allPendingCredits)
+                    {
+                        if (credit.Status == 1 && credit.IsOverdue)
+                            await _creditService.UpdateStatusAsync(credit.Id);
+                    }
+
                     int? statusFilter = FilterStatus == ListFilterStatus.All ? null : (int)FilterStatus;
                     var credits = await _creditService.SearchAsync(null, statusFilter, _branchId);
 
                     foreach (var credit in credits)
                     {
-                        var customer = await _customerService.GetByIdAsync(credit.CustomerId);
+                        var customer = await _customerService.GetByIdAsync(credit.CustomerId ?? 0);
                         _allItems.Add(new CreditLayawayListItemWrapper
                         {
                             Item = credit,
@@ -154,6 +162,14 @@ namespace CasaCejaRemake.ViewModels.POS
 
                 if (FilterType == ListFilterType.All || FilterType == ListFilterType.Layaways)
                 {
+                    // Cargar pendientes para actualizar vencidos antes de aplicar filtro
+                    var allPendingLayaways = await _layawayService.SearchAsync(null, (int)ListFilterStatus.Pending, _branchId);
+                    foreach (var layaway in allPendingLayaways)
+                    {
+                        if (layaway.Status == 1 && layaway.IsExpired)
+                            await _layawayService.UpdateStatusAsync(layaway.Id);
+                    }
+
                     int? statusFilter = FilterStatus == ListFilterStatus.All ? null : (int)FilterStatus;
                     var layaways = await _layawayService.SearchAsync(null, statusFilter, _branchId);
 

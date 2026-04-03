@@ -338,7 +338,7 @@ namespace CasaCejaRemake.Views.POS
             if (creditService == null || customerService == null || authService == null)
                 return false;
 
-            var customer = await customerService.GetByIdAsync(credit.CustomerId);
+            var customer = await customerService.GetByIdAsync(credit.CustomerId ?? 0);
             if (customer == null)
             {
                 await DialogHelper.ShowMessageDialog(this, "Error", "No se encontró el cliente");

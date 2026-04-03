@@ -333,14 +333,22 @@ namespace CasaCejaRemake.Services
         {
             var credit = await _creditRepository.GetByIdAsync(creditId);
             if (credit == null) return;
+            if (credit.Status == 2 || credit.Status == 4) return; // ya pagado o cancelado
 
-            if (credit.Status != 1) return;
+            int newStatus = -1;
 
-            if (credit.IsOverdue)
+            if (credit.RemainingBalance <= 0)
+                newStatus = 2; // Pagado — tiene prioridad
+            else if (credit.IsOverdue)
+                newStatus = 3; // Vencido
+
+            if (newStatus > 0 && newStatus != credit.Status)
             {
-                credit.Status = 3;
+                credit.Status = newStatus;
                 credit.UpdatedAt = DateTime.Now;
+                credit.SyncStatus = 1; // marcar para Push
                 await _creditRepository.UpdateAsync(credit);
+                Console.WriteLine($"[CreditService] Crédito {credit.Folio} → status={newStatus}");
             }
         }
 
