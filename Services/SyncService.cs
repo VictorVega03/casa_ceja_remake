@@ -118,8 +118,8 @@ namespace CasaCejaRemake.Services
         {
             PullCreditsAsync(since, branchId, ct),
             PullCreditPaymentsAsync(since, branchId, ct),
-            PullAsync("layaways",         since, _layawayRepo,        ct, $"&branch_id={branchId}"),
-            PullAsync("layaway-payments", since, _layawayPaymentRepo, ct, $"&branch_id={branchId}"),
+            PullLayawaysAsync(since, branchId, ct),
+            PullLayawayPaymentsAsync(since, branchId, ct),
         };
 
         var operationResults = await Task.WhenAll(operationTasks);
@@ -780,11 +780,21 @@ namespace CasaCejaRemake.Services
                     foreach (var serverCredit in pullData.Data)
                     {
                         SetSyncStatus(serverCredit, 2);
-                        var existing = await _creditRepo.FirstOrDefaultAsync(c => c.Id == serverCredit.Id);
+
+                        // Buscar por Folio (índice único) — el id local puede diferir del servidor
+                        var existing = await _creditRepo.FirstOrDefaultAsync(c => c.Folio == serverCredit.Folio);
                         if (existing != null)
-                            await _creditRepo.UpdateAsync(serverCredit);
+                        {
+                            // Solo actualizar campos que pueden cambiar desde el servidor
+                            existing.Status     = serverCredit.Status;
+                            existing.TotalPaid  = serverCredit.TotalPaid;
+                            existing.SyncStatus = 2;
+                            await _creditRepo.UpdateAsync(existing);
+                        }
                         else
+                        {
                             await _creditRepo.AddWithExplicitIdAsync(serverCredit);
+                        }
                     }
 
                     totalPulled += pullData.Count;
@@ -824,11 +834,18 @@ namespace CasaCejaRemake.Services
                     foreach (var serverPayment in pullData.Data)
                     {
                         SetSyncStatus(serverPayment, 2);
-                        var existing = await _creditPaymentRepo.FirstOrDefaultAsync(p => p.Id == serverPayment.Id);
+
+                        // Buscar por Folio — los abonos no cambian una vez creados
+                        var existing = await _creditPaymentRepo.FirstOrDefaultAsync(p => p.Folio == serverPayment.Folio);
                         if (existing != null)
-                            await _creditPaymentRepo.UpdateAsync(serverPayment);
+                        {
+                            existing.SyncStatus = 2;
+                            await _creditPaymentRepo.UpdateAsync(existing);
+                        }
                         else
+                        {
                             await _creditPaymentRepo.AddWithExplicitIdAsync(serverPayment);
+                        }
                     }
 
                     totalPulled += pullData.Count;
@@ -842,6 +859,108 @@ namespace CasaCejaRemake.Services
             {
                 Console.WriteLine($"[SyncService] Error Pull credit-payments: {ex.Message}");
                 return SyncResult.Fail("credit-payments", ex.Message);
+            }
+        }
+
+        private async Task<SyncResult> PullLayawaysAsync(long since, int branchId, CancellationToken ct)
+        {
+            int totalPulled = 0;
+            int page        = 1;
+            Console.WriteLine($"[SyncService] Iniciando Pull layaways since={since}");
+
+            try
+            {
+                while (true)
+                {
+                    var endpoint = $"/api/v1/sync/pull/layaways?since={since}&page={page}&branch_id={branchId}";
+                    var response = await _apiClient.GetAsync<PullResponse<Layaway>>(endpoint, ct);
+
+                    if (response?.IsSuccess != true || response.Data == null) break;
+
+                    var pullData = response.Data;
+                    Console.WriteLine($"[SyncService] Pull layaways page={page} count={pullData.Data.Count}");
+
+                    if (pullData.Data.Count == 0) break;
+
+                    foreach (var serverLayaway in pullData.Data)
+                    {
+                        SetSyncStatus(serverLayaway, 2);
+
+                        var existing = await _layawayRepo.FirstOrDefaultAsync(l => l.Folio == serverLayaway.Folio);
+                        if (existing != null)
+                        {
+                            existing.Status     = serverLayaway.Status;
+                            existing.TotalPaid  = serverLayaway.TotalPaid;
+                            existing.SyncStatus = 2;
+                            await _layawayRepo.UpdateAsync(existing);
+                        }
+                        else
+                        {
+                            await _layawayRepo.AddWithExplicitIdAsync(serverLayaway);
+                        }
+                    }
+
+                    totalPulled += pullData.Count;
+                    if (!pullData.HasMorePages) break;
+                    page++;
+                }
+
+                return SyncResult.Ok("layaways", pulled: totalPulled);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[SyncService] Error Pull layaways: {ex.Message}");
+                return SyncResult.Fail("layaways", ex.Message);
+            }
+        }
+
+        private async Task<SyncResult> PullLayawayPaymentsAsync(long since, int branchId, CancellationToken ct)
+        {
+            int totalPulled = 0;
+            int page        = 1;
+            Console.WriteLine($"[SyncService] Iniciando Pull layaway-payments since={since}");
+
+            try
+            {
+                while (true)
+                {
+                    var endpoint = $"/api/v1/sync/pull/layaway-payments?since={since}&page={page}&branch_id={branchId}";
+                    var response = await _apiClient.GetAsync<PullResponse<LayawayPayment>>(endpoint, ct);
+
+                    if (response?.IsSuccess != true || response.Data == null) break;
+
+                    var pullData = response.Data;
+                    Console.WriteLine($"[SyncService] Pull layaway-payments page={page} count={pullData.Data.Count}");
+
+                    if (pullData.Data.Count == 0) break;
+
+                    foreach (var serverPayment in pullData.Data)
+                    {
+                        SetSyncStatus(serverPayment, 2);
+
+                        var existing = await _layawayPaymentRepo.FirstOrDefaultAsync(p => p.Folio == serverPayment.Folio);
+                        if (existing != null)
+                        {
+                            existing.SyncStatus = 2;
+                            await _layawayPaymentRepo.UpdateAsync(existing);
+                        }
+                        else
+                        {
+                            await _layawayPaymentRepo.AddWithExplicitIdAsync(serverPayment);
+                        }
+                    }
+
+                    totalPulled += pullData.Count;
+                    if (!pullData.HasMorePages) break;
+                    page++;
+                }
+
+                return SyncResult.Ok("layaway-payments", pulled: totalPulled);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[SyncService] Error Pull layaway-payments: {ex.Message}");
+                return SyncResult.Fail("layaway-payments", ex.Message);
             }
         }
 
