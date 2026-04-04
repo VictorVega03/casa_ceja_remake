@@ -327,11 +327,11 @@ namespace CasaCejaRemake.Services
             if (layaway.Status != 1)
                 return false;
 
-            layaway.Status = 2; // Delivered
+            layaway.Status = 2;
             layaway.DeliveryDate = DateTime.Now;
             layaway.DeliveryUserId = deliveryUserId;
             layaway.UpdatedAt = DateTime.Now;
-
+            layaway.SyncStatus = 1; // marcar para Push
             await _layawayRepository.UpdateAsync(layaway);
             return true;
         }
@@ -341,13 +341,22 @@ namespace CasaCejaRemake.Services
             var layaway = await _layawayRepository.GetByIdAsync(layawayId);
             if (layaway == null) return;
 
-            if (layaway.Status != 1) return;
+            if (layaway.Status == 2 || layaway.Status == 4) return; // ya entregado o cancelado
 
-            if (layaway.IsExpired)
+            int newStatus = -1;
+
+            if (layaway.RemainingBalance <= 0)
+                newStatus = 2; // Pagado/Entregado — tiene prioridad
+            else if (layaway.IsExpired)
+                newStatus = 3; // Vencido
+
+            if (newStatus > 0 && newStatus != layaway.Status)
             {
-                layaway.Status = 3;
+                layaway.Status = newStatus;
                 layaway.UpdatedAt = DateTime.Now;
+                layaway.SyncStatus = 1; // marcar para Push
                 await _layawayRepository.UpdateAsync(layaway);
+                Console.WriteLine($"[LayawayService] Apartado {layaway.Folio} → status={newStatus}");
             }
         }
 

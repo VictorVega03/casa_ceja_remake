@@ -146,7 +146,7 @@ namespace CasaCejaRemake.Services
             results.Add(await PushCreditsAsync(ct));
             results.Add(await PushCreditPaymentsAsync(ct));
             results.Add(await PushLayawaysAsync(ct));
-            results.Add(await PushAsync("layaway-payments", _layawayPaymentRepo, ct));
+            results.Add(await PushLayawayPaymentsAsync(ct));
             results.Add(await PushStockEntriesAsync(ct));
             results.Add(await PushStockOutputsAsync(ct));
 
@@ -477,6 +477,89 @@ namespace CasaCejaRemake.Services
             {
                 Console.WriteLine($"[SyncService] Error Push credit-payments: {ex.Message}");
                 return SyncResult.Fail("credit-payments", ex.Message);
+            }
+        }
+
+        private async Task<SyncResult> PushLayawayPaymentsAsync(CancellationToken ct)
+        {
+            try
+            {
+                var all     = await _layawayPaymentRepo.GetAllAsync();
+                var pending = all.Where(x => GetSyncStatus(x) == 1).ToList();
+
+                if (pending.Count == 0)
+                    return SyncResult.Ok("layaway-payments");
+
+                var allLayaways = await _layawayRepo.GetAllAsync();
+                var branchId    = _configService.AppConfig.CurrentBranchId ?? 0;
+
+                var dtos = pending.Select(p =>
+                {
+                    var layaway = allLayaways.FirstOrDefault(l => l.Id == p.LayawayId);
+                    return new LayawayPaymentPushDto
+                    {
+                        Folio          = p.Folio,
+                        LayawayFolio   = layaway?.Folio ?? string.Empty,
+                        UserId         = p.UserId,
+                        AmountPaid     = p.AmountPaid,
+                        PaymentMethod  = p.PaymentMethod,
+                        PaymentDate    = p.PaymentDate,
+                        CashCloseFolio = p.CashCloseFolio,
+                        Notes          = p.Notes,
+                    };
+                }).ToList();
+
+                var valid   = dtos.Where(d => !string.IsNullOrEmpty(d.LayawayFolio)).ToList();
+                var invalid = dtos.Where(d => string.IsNullOrEmpty(d.LayawayFolio)).ToList();
+
+                if (invalid.Count > 0)
+                    Console.WriteLine($"[SyncService] {invalid.Count} abonos de apartado sin folio — omitidos");
+
+                if (valid.Count == 0)
+                    return SyncResult.Ok("layaway-payments");
+
+                int accepted = 0;
+                int rejected = 0;
+
+                const int batchSize = 100;
+                for (int i = 0; i < valid.Count; i += batchSize)
+                {
+                    var batch    = valid.GetRange(i, Math.Min(batchSize, valid.Count - i));
+                    var body     = new { branch_id = branchId, records = batch };
+                    var response = await _apiClient.PostAsync<PushResponse>(
+                        "/api/v1/sync/push/layaway-payments", body, ct);
+
+                    if (response?.Data == null) continue;
+
+                    foreach (var payment in pending)
+                    {
+                        if (response.Data.Accepted.Contains(payment.Folio))
+                        {
+                            SetSyncStatus(payment, 2);
+                            SetLastSync(payment, DateTime.Now);
+                            await _layawayPaymentRepo.UpdateAsync(payment);
+                        }
+                    }
+
+                    accepted += response.Data.Accepted.Count;
+                    rejected += response.Data.Rejected.Count;
+
+                    foreach (var r in response.Data.Rejected)
+                        Console.WriteLine($"[SyncService] Rechazado layaway-payments folio={r.Folio}: {r.Reason}");
+                }
+
+                return new SyncResult
+                {
+                    Success         = true,
+                    Entity          = "layaway-payments",
+                    RecordsPushed   = accepted,
+                    RecordsRejected = rejected,
+                };
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[SyncService] Error Push layaway-payments: {ex.Message}");
+                return SyncResult.Fail("layaway-payments", ex.Message);
             }
         }
 
