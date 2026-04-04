@@ -765,14 +765,15 @@ namespace CasaCejaRemake.Services
         {
             int totalPulled = 0;
             int page        = 1;
-            Console.WriteLine($"[SyncService] Iniciando Pull credits since={since}");
+            var creditProductRepo = new BaseRepository<CreditProduct>(_databaseService);
+            Console.WriteLine($"[SyncService] Iniciando Pull credits since={since} branch={branchId}");
 
             try
             {
                 while (true)
                 {
                     var endpoint = $"/api/v1/sync/pull/credits?since={since}&page={page}&branch_id={branchId}";
-                    var response = await _apiClient.GetAsync<PullResponse<Credit>>(endpoint, ct);
+                    var response = await _apiClient.GetAsync<PullResponse<CreditPullDto>>(endpoint, ct);
 
                     if (response?.IsSuccess != true || response.Data == null) break;
 
@@ -781,23 +782,58 @@ namespace CasaCejaRemake.Services
 
                     if (pullData.Data.Count == 0) break;
 
-                    foreach (var serverCredit in pullData.Data)
+                    foreach (var dto in pullData.Data)
                     {
-                        SetSyncStatus(serverCredit, 2);
-
-                        // Buscar por Folio (índice único) — el id local puede diferir del servidor
-                        var existing = await _creditRepo.FirstOrDefaultAsync(c => c.Folio == serverCredit.Folio);
+                        var existing = await _creditRepo.FirstOrDefaultAsync(c => c.Folio == dto.Folio);
                         if (existing != null)
                         {
-                            // Solo actualizar campos que pueden cambiar desde el servidor
-                            existing.Status     = serverCredit.Status;
-                            existing.TotalPaid  = serverCredit.TotalPaid;
+                            // Crédito ya existe localmente — solo actualizar campos mutables
+                            existing.Status    = dto.Status;
+                            existing.TotalPaid = dto.TotalPaid;
                             existing.SyncStatus = 2;
                             await _creditRepo.UpdateAsync(existing);
                         }
                         else
                         {
-                            await _creditRepo.AddWithExplicitIdAsync(serverCredit);
+                            // Crédito nuevo de otra caja — guardar cabecera
+                            var credit = new Credit
+                            {
+                                Folio        = dto.Folio,
+                                CustomerId   = dto.CustomerId,
+                                BranchId     = dto.BranchId,
+                                UserId       = dto.UserId,
+                                Total        = dto.Total,
+                                TotalPaid    = dto.TotalPaid,
+                                MonthsToPay  = dto.MonthsToPay,
+                                CreditDate   = dto.CreditDate,
+                                DueDate      = dto.DueDate,
+                                Status       = dto.Status,
+                                Notes        = dto.Notes,
+                                TicketData   = dto.TicketData,
+                                SyncStatus   = 2,
+                            };
+
+                            // AddAsync hace INSERT simple — SQLite auto-asigna id local
+                            // (NO usar AddWithExplicitIdAsync — causaría id=0 y destruiría registros previos)
+                            await _creditRepo.AddAsync(credit);
+                            // Ahora credit.Id tiene el id local recién asignado por SQLite
+
+                            // Guardar productos con el ID LOCAL del crédito
+                            foreach (var prod in dto.Products)
+                            {
+                                var cp = new CreditProduct
+                                {
+                                    CreditId    = credit.Id, // ID LOCAL, no el del servidor
+                                    ProductId   = prod.ProductId,
+                                    Barcode     = prod.Barcode,
+                                    ProductName = prod.ProductName,
+                                    Quantity    = prod.Quantity,
+                                    UnitPrice   = prod.UnitPrice,
+                                    LineTotal   = prod.LineTotal,
+                                    PricingData = prod.PricingData,
+                                };
+                                await creditProductRepo.AddAsync(cp);
+                            }
                         }
                     }
 
@@ -806,6 +842,7 @@ namespace CasaCejaRemake.Services
                     page++;
                 }
 
+                Console.WriteLine($"[SyncService] Pull credits completado: {totalPulled} registros");
                 return SyncResult.Ok("credits", pulled: totalPulled);
             }
             catch (Exception ex)
@@ -819,14 +856,14 @@ namespace CasaCejaRemake.Services
         {
             int totalPulled = 0;
             int page        = 1;
-            Console.WriteLine($"[SyncService] Iniciando Pull credit-payments since={since}");
+            Console.WriteLine($"[SyncService] Iniciando Pull credit-payments since={since} branch={branchId}");
 
             try
             {
                 while (true)
                 {
                     var endpoint = $"/api/v1/sync/pull/credit-payments?since={since}&page={page}&branch_id={branchId}";
-                    var response = await _apiClient.GetAsync<PullResponse<CreditPayment>>(endpoint, ct);
+                    var response = await _apiClient.GetAsync<PullResponse<CreditPaymentPullDto>>(endpoint, ct);
 
                     if (response?.IsSuccess != true || response.Data == null) break;
 
@@ -835,12 +872,9 @@ namespace CasaCejaRemake.Services
 
                     if (pullData.Data.Count == 0) break;
 
-                    foreach (var serverPayment in pullData.Data)
+                    foreach (var dto in pullData.Data)
                     {
-                        SetSyncStatus(serverPayment, 2);
-
-                        // Buscar por Folio — los abonos no cambian una vez creados
-                        var existing = await _creditPaymentRepo.FirstOrDefaultAsync(p => p.Folio == serverPayment.Folio);
+                        var existing = await _creditPaymentRepo.FirstOrDefaultAsync(p => p.Folio == dto.Folio);
                         if (existing != null)
                         {
                             existing.SyncStatus = 2;
@@ -848,7 +882,33 @@ namespace CasaCejaRemake.Services
                         }
                         else
                         {
-                            await _creditPaymentRepo.AddWithExplicitIdAsync(serverPayment);
+                            // Resolver credit_id LOCAL usando el folio del crédito
+                            if (string.IsNullOrEmpty(dto.CreditFolio))
+                            {
+                                Console.WriteLine($"[SyncService] Abono {dto.Folio} sin credit_folio — omitido");
+                                continue;
+                            }
+
+                            var localCredit = await _creditRepo.FirstOrDefaultAsync(c => c.Folio == dto.CreditFolio);
+                            if (localCredit == null)
+                            {
+                                Console.WriteLine($"[SyncService] Abono {dto.Folio}: crédito '{dto.CreditFolio}' no encontrado localmente — omitido");
+                                continue;
+                            }
+
+                            var payment = new CreditPayment
+                            {
+                                Folio          = dto.Folio,
+                                CreditId       = localCredit.Id, // ID LOCAL correcto
+                                UserId         = dto.UserId,
+                                AmountPaid     = dto.AmountPaid,
+                                PaymentMethod  = dto.PaymentMethod,
+                                PaymentDate    = dto.PaymentDate,
+                                CashCloseFolio = dto.CashCloseFolio,
+                                Notes          = dto.Notes,
+                                SyncStatus     = 2,
+                            };
+                            await _creditPaymentRepo.AddAsync(payment);
                         }
                     }
 
@@ -857,6 +917,7 @@ namespace CasaCejaRemake.Services
                     page++;
                 }
 
+                Console.WriteLine($"[SyncService] Pull credit-payments completado: {totalPulled} registros");
                 return SyncResult.Ok("credit-payments", pulled: totalPulled);
             }
             catch (Exception ex)
@@ -870,14 +931,15 @@ namespace CasaCejaRemake.Services
         {
             int totalPulled = 0;
             int page        = 1;
-            Console.WriteLine($"[SyncService] Iniciando Pull layaways since={since}");
+            var layawayProductRepo = new BaseRepository<LayawayProduct>(_databaseService);
+            Console.WriteLine($"[SyncService] Iniciando Pull layaways since={since} branch={branchId}");
 
             try
             {
                 while (true)
                 {
                     var endpoint = $"/api/v1/sync/pull/layaways?since={since}&page={page}&branch_id={branchId}";
-                    var response = await _apiClient.GetAsync<PullResponse<Layaway>>(endpoint, ct);
+                    var response = await _apiClient.GetAsync<PullResponse<LayawayPullDto>>(endpoint, ct);
 
                     if (response?.IsSuccess != true || response.Data == null) break;
 
@@ -886,21 +948,53 @@ namespace CasaCejaRemake.Services
 
                     if (pullData.Data.Count == 0) break;
 
-                    foreach (var serverLayaway in pullData.Data)
+                    foreach (var dto in pullData.Data)
                     {
-                        SetSyncStatus(serverLayaway, 2);
-
-                        var existing = await _layawayRepo.FirstOrDefaultAsync(l => l.Folio == serverLayaway.Folio);
+                        var existing = await _layawayRepo.FirstOrDefaultAsync(l => l.Folio == dto.Folio);
                         if (existing != null)
                         {
-                            existing.Status     = serverLayaway.Status;
-                            existing.TotalPaid  = serverLayaway.TotalPaid;
+                            existing.Status    = dto.Status;
+                            existing.TotalPaid = dto.TotalPaid;
                             existing.SyncStatus = 2;
                             await _layawayRepo.UpdateAsync(existing);
                         }
                         else
                         {
-                            await _layawayRepo.AddWithExplicitIdAsync(serverLayaway);
+                            var layaway = new Layaway
+                            {
+                                Folio          = dto.Folio,
+                                CustomerId     = dto.CustomerId,
+                                BranchId       = dto.BranchId,
+                                UserId         = dto.UserId,
+                                DeliveryUserId = dto.DeliveryUserId,
+                                Total          = dto.Total,
+                                TotalPaid      = dto.TotalPaid,
+                                LayawayDate    = dto.LayawayDate,
+                                PickupDate     = dto.PickupDate,
+                                DeliveryDate   = dto.DeliveryDate,
+                                Status         = dto.Status,
+                                Notes          = dto.Notes,
+                                TicketData     = dto.TicketData,
+                                SyncStatus     = 2,
+                            };
+
+                            await _layawayRepo.AddAsync(layaway);
+
+                            foreach (var prod in dto.Products)
+                            {
+                                var lp = new LayawayProduct
+                                {
+                                    LayawayId   = layaway.Id, // ID LOCAL
+                                    ProductId   = prod.ProductId,
+                                    Barcode     = prod.Barcode,
+                                    ProductName = prod.ProductName,
+                                    Quantity    = prod.Quantity,
+                                    UnitPrice   = prod.UnitPrice,
+                                    LineTotal   = prod.LineTotal,
+                                    PricingData = prod.PricingData,
+                                };
+                                await layawayProductRepo.AddAsync(lp);
+                            }
                         }
                     }
 
@@ -909,6 +1003,7 @@ namespace CasaCejaRemake.Services
                     page++;
                 }
 
+                Console.WriteLine($"[SyncService] Pull layaways completado: {totalPulled} registros");
                 return SyncResult.Ok("layaways", pulled: totalPulled);
             }
             catch (Exception ex)
@@ -922,14 +1017,14 @@ namespace CasaCejaRemake.Services
         {
             int totalPulled = 0;
             int page        = 1;
-            Console.WriteLine($"[SyncService] Iniciando Pull layaway-payments since={since}");
+            Console.WriteLine($"[SyncService] Iniciando Pull layaway-payments since={since} branch={branchId}");
 
             try
             {
                 while (true)
                 {
                     var endpoint = $"/api/v1/sync/pull/layaway-payments?since={since}&page={page}&branch_id={branchId}";
-                    var response = await _apiClient.GetAsync<PullResponse<LayawayPayment>>(endpoint, ct);
+                    var response = await _apiClient.GetAsync<PullResponse<LayawayPaymentPullDto>>(endpoint, ct);
 
                     if (response?.IsSuccess != true || response.Data == null) break;
 
@@ -938,11 +1033,9 @@ namespace CasaCejaRemake.Services
 
                     if (pullData.Data.Count == 0) break;
 
-                    foreach (var serverPayment in pullData.Data)
+                    foreach (var dto in pullData.Data)
                     {
-                        SetSyncStatus(serverPayment, 2);
-
-                        var existing = await _layawayPaymentRepo.FirstOrDefaultAsync(p => p.Folio == serverPayment.Folio);
+                        var existing = await _layawayPaymentRepo.FirstOrDefaultAsync(p => p.Folio == dto.Folio);
                         if (existing != null)
                         {
                             existing.SyncStatus = 2;
@@ -950,7 +1043,32 @@ namespace CasaCejaRemake.Services
                         }
                         else
                         {
-                            await _layawayPaymentRepo.AddWithExplicitIdAsync(serverPayment);
+                            if (string.IsNullOrEmpty(dto.LayawayFolio))
+                            {
+                                Console.WriteLine($"[SyncService] Abono {dto.Folio} sin layaway_folio — omitido");
+                                continue;
+                            }
+
+                            var localLayaway = await _layawayRepo.FirstOrDefaultAsync(l => l.Folio == dto.LayawayFolio);
+                            if (localLayaway == null)
+                            {
+                                Console.WriteLine($"[SyncService] Abono {dto.Folio}: apartado '{dto.LayawayFolio}' no encontrado localmente — omitido");
+                                continue;
+                            }
+
+                            var payment = new LayawayPayment
+                            {
+                                Folio          = dto.Folio,
+                                LayawayId      = localLayaway.Id, // ID LOCAL correcto
+                                UserId         = dto.UserId,
+                                AmountPaid     = dto.AmountPaid,
+                                PaymentMethod  = dto.PaymentMethod,
+                                PaymentDate    = dto.PaymentDate,
+                                CashCloseFolio = dto.CashCloseFolio,
+                                Notes          = dto.Notes,
+                                SyncStatus     = 2,
+                            };
+                            await _layawayPaymentRepo.AddAsync(payment);
                         }
                     }
 
@@ -959,6 +1077,7 @@ namespace CasaCejaRemake.Services
                     page++;
                 }
 
+                Console.WriteLine($"[SyncService] Pull layaway-payments completado: {totalPulled} registros");
                 return SyncResult.Ok("layaway-payments", pulled: totalPulled);
             }
             catch (Exception ex)
