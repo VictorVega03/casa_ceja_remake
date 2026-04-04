@@ -94,9 +94,13 @@ namespace CasaCejaRemake.Services
 
     public async Task<List<SyncResult>> PullAllAsync(CancellationToken ct = default)
     {
-        var since    = _configService.AppConfig.LastSyncTimestamp;
         var branchId = _configService.AppConfig.CurrentBranchId ?? 0;
         var results  = new List<SyncResult>();
+
+        // Si la BD local está vacía (reinstalación o BD borrada),
+        // forzar since=0 para Pull completo ignorando el timestamp guardado en config.json
+        var productCount = await _productRepo.CountAsync();
+        var since = productCount == 0 ? 0 : _configService.AppConfig.LastSyncTimestamp;
 
         // Catálogos globales — corren en paralelo
         var catalogTasks = new[]

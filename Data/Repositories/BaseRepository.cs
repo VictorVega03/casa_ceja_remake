@@ -256,7 +256,8 @@ public virtual async Task<int> UpsertAsync(T entity)
         {
             SetCreatedAt(entity);
             SetUpdatedAt(entity);
-            return await _databaseService.InsertAsync(entity);
+            // InsertOrReplaceAsync respeta el ID aunque el modelo tenga [AutoIncrement]
+            return await _databaseService.InsertOrReplaceAsync(entity);
         }
     }
     catch (Exception ex)
