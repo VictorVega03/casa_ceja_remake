@@ -103,7 +103,7 @@ namespace CasaCejaRemake.ViewModels.Shared
                                  ?? Branches.FirstOrDefault();
                 _originalBranchId = appConfig.CurrentBranchId ?? 0;
 
-                var printers = _printService.GetAvailablePrinters();
+                var printers = await Task.Run(() => _printService.GetAvailablePrinters());
                 AvailablePrinters = new ObservableCollection<string>(printers);
 
                 var posConfig = _configService.PosTerminalConfig;

@@ -618,7 +618,7 @@ namespace CasaCejaRemake.Views.POS
             });
         }
 
-        private async void OnRequestShowSearchProduct(object? sender, EventArgs e)
+        private async void OnRequestShowSearchProduct(object? sender, string? initialSearchTerm)
         {
             var searchView = new SearchProductView();
             var saleService = ((App)Application.Current!).GetSaleService();
@@ -626,6 +626,14 @@ namespace CasaCejaRemake.Views.POS
             if (saleService != null)
             {
                 var searchViewModel = new SearchProductViewModel(saleService);
+
+                // Si viene con un término inicial (producto no encontrado), pre-llenarlo
+                // ANTES de InitializeAsync para que la búsqueda inicial use ese texto
+                if (!string.IsNullOrEmpty(initialSearchTerm))
+                {
+                    searchViewModel.SearchTerm = initialSearchTerm;
+                }
+
                 await searchViewModel.InitializeAsync();
                 searchView.DataContext = searchViewModel;
 

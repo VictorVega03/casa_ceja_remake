@@ -4,15 +4,16 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:vm="using:CasaCejaRemake.ViewModels.Shared"
         mc:Ignorable="d"
-        d:DesignWidth="600" d:DesignHeight="560"
+        d:DesignWidth="600" d:DesignHeight="700"
         x:Class="CasaCejaRemake.Views.Shared.AppConfigView"
         x:DataType="vm:AppConfigViewModel"
         Title="Configuración General"
-        Width="600"
-        SizeToContent="Height"
-        MaxHeight="800"
+        Width="620"
+        Height="700"
+        MinHeight="480"
+        MaxHeight="900"
         WindowStartupLocation="CenterOwner"
-        CanResize="False"
+        CanResize="True"
         Focusable="True"
         Background="#1E1E1E">
 
@@ -71,6 +72,7 @@
         </Style>
     </Window.Styles>
 
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
     <StackPanel>
 
         <!-- ===== HEADER ===== -->
@@ -342,4 +344,5 @@
             </Grid>
         </Border>
     </StackPanel>
+    </ScrollViewer>
 </Window>
