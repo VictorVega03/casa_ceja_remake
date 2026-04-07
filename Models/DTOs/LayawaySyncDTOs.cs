@@ -101,6 +101,7 @@ namespace CasaCejaRemake.Models.DTOs
         [JsonPropertyName("delivery_date")] public DateTime? DeliveryDate { get; set; }
         [JsonPropertyName("status")] public int Status { get; set; }
         [JsonPropertyName("notes")] public string? Notes { get; set; }
+        [JsonPropertyName("cash_close_folio")] public string CashCloseFolio { get; set; } = string.Empty;
         [JsonPropertyName("ticket_data")] public byte[]? TicketData { get; set; }
         [JsonPropertyName("products")] public List<LayawayProductPullDto> Products { get; set; } = new();
     }

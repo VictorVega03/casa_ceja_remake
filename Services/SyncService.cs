@@ -881,19 +881,20 @@ namespace CasaCejaRemake.Services
                             // Crédito nuevo de otra caja — guardar cabecera
                             var credit = new Credit
                             {
-                                Folio        = dto.Folio,
-                                CustomerId   = dto.CustomerId,
-                                BranchId     = dto.BranchId,
-                                UserId       = dto.UserId,
-                                Total        = dto.Total,
-                                TotalPaid    = dto.TotalPaid,
-                                MonthsToPay  = dto.MonthsToPay,
-                                CreditDate   = dto.CreditDate,
-                                DueDate      = dto.DueDate,
-                                Status       = dto.Status,
-                                Notes        = dto.Notes,
-                                TicketData   = dto.TicketData,
-                                SyncStatus   = 2,
+                                Folio          = dto.Folio,
+                                CustomerId     = dto.CustomerId,
+                                BranchId       = dto.BranchId,
+                                UserId         = dto.UserId,
+                                Total          = dto.Total,
+                                TotalPaid      = dto.TotalPaid,
+                                MonthsToPay    = dto.MonthsToPay,
+                                CreditDate     = dto.CreditDate,
+                                DueDate        = dto.DueDate,
+                                Status         = dto.Status,
+                                Notes          = dto.Notes,
+                                CashCloseFolio = dto.CashCloseFolio,
+                                TicketData     = dto.TicketData,
+                                SyncStatus     = 2,
                             };
 
                             // AddAsync hace INSERT simple — SQLite auto-asigna id local
@@ -1056,6 +1057,7 @@ namespace CasaCejaRemake.Services
                                 DeliveryDate   = dto.DeliveryDate,
                                 Status         = dto.Status,
                                 Notes          = dto.Notes,
+                                CashCloseFolio = dto.CashCloseFolio,
                                 TicketData     = dto.TicketData,
                                 SyncStatus     = 2,
                             };
