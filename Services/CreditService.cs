@@ -169,6 +169,12 @@ namespace CasaCejaRemake.Services
             return credits.OrderByDescending(c => c.CreditDate).ToList();
         }
 
+        public async Task<List<Credit>> GetAllByCustomerAsync(int customerId)
+        {
+            var credits = await _creditRepository.FindAsync(c => c.CustomerId == customerId);
+            return credits.OrderByDescending(c => c.CreditDate).ToList();
+        }
+
         public async Task<List<Credit>> GetPendingByBranchAsync(int branchId)
         {
             var credits = await _creditRepository.GetPendingByBranchAsync(branchId);

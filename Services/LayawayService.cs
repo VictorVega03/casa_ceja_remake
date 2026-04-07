@@ -166,6 +166,12 @@ namespace CasaCejaRemake.Services
             return layaways.OrderByDescending(l => l.LayawayDate).ToList();
         }
 
+        public async Task<List<Layaway>> GetAllByCustomerAsync(int customerId)
+        {
+            var layaways = await _layawayRepository.FindAsync(l => l.CustomerId == customerId);
+            return layaways.OrderByDescending(l => l.LayawayDate).ToList();
+        }
+
         public async Task<List<Layaway>> GetPendingByBranchAsync(int branchId)
         {
             var layaways = await _layawayRepository.GetPendingByBranchAsync(branchId);

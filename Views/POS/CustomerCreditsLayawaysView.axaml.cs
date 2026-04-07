@@ -411,21 +411,17 @@ namespace CasaCejaRemake.Views.POS
                         await DialogHelper.ShowTicketDialog(this, layaway.Folio, ticketText);
                     }
 
-                    // Apartado completado, preguntar si desea entregar
-                    var shouldDeliver = await ShowConfirmDeliverDialog();
-                    if (shouldDeliver)
+                    // Apartado completado — entregar automáticamente sin confirmar
+                    try
                     {
-                        try
-                        {
-                            var userId = authService.CurrentUser?.Id ?? 1;
-                            await layawayService.MarkAsDeliveredAsync(updatedLayaway.Id, userId);
-                            await DialogHelper.ShowMessageDialog(this, "Éxito", "Apartado entregado correctamente");
-                            return (true, true);
-                        }
-                        catch (Exception ex)
-                        {
-                            await DialogHelper.ShowMessageDialog(this, "Error", $"Error al entregar apartado: {ex.Message}");
-                        }
+                        var userId = authService.CurrentUser?.Id ?? 1;
+                        await layawayService.MarkAsDeliveredAsync(updatedLayaway.Id, userId);
+                        await DialogHelper.ShowMessageDialog(this, "Éxito", "Apartado entregado correctamente");
+                        return (true, true);
+                    }
+                    catch (Exception ex)
+                    {
+                        await DialogHelper.ShowMessageDialog(this, "Error", $"Error al entregar apartado: {ex.Message}");
                     }
                 }
                 
@@ -490,18 +486,15 @@ namespace CasaCejaRemake.Views.POS
                 var shortcuts = new Dictionary<Key, Action>
                 {
                     { Key.Escape, Close },
-                    { Key.Enter, () => _viewModel.AddPaymentCommand.Execute(null) }
+                    { Key.Enter, () => _viewModel.AddPaymentCommand.Execute(null) },
+                    { Key.F4, () => _viewModel.SetFilterCommand.Execute("0") },
+                    { Key.F5, () => _viewModel.SetFilterCommand.Execute("1") },
+                    { Key.F6, () => _viewModel.SetFilterCommand.Execute("2") },
+                    { Key.F7, () => _viewModel.SetFilterCommand.Execute("3") },
                 };
 
                 if (KeyboardShortcutHelper.HandleShortcut(e, shortcuts))
                 {
-                    return;
-                }
-
-                if (e.Key == Key.F6 && !_viewModel.IsCreditsMode)
-                {
-                    _viewModel.DeliverCommand.Execute(null);
-                    e.Handled = true;
                     return;
                 }
             }

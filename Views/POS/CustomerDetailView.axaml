@@ -242,7 +242,7 @@
                         FontSize="12">
                     <StackPanel Orientation="Horizontal" Spacing="5">
                         <TextBlock Text="F9"/>
-                        <TextBlock Text="Eliminar (Soft Delete)"/>
+                        <TextBlock Text="Eliminar"/>
                     </StackPanel>
                 </Button>
 
