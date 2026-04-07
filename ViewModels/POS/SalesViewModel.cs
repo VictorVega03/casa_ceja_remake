@@ -572,7 +572,8 @@ namespace CasaCejaRemake.ViewModels.POS
                     _branchId,
                     _cartService.CalculatedGeneralDiscount,
                     _cartService.GeneralDiscountPercent,
-                    _cartService.IsGeneralDiscountPercentage);
+                    _cartService.IsGeneralDiscountPercentage,
+                    CashCloseFolio);
 
                 if (result.Success)
                 {
