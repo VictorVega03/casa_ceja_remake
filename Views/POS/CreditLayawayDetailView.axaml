@@ -284,13 +284,7 @@
                 <Button Content="Imprimir (F7)"
                         Classes="action"
                         Command="{Binding PrintCommand}"/>
-                
-                <Button Content="Entregar (F6)"
-                        Classes="action"
-                        Command="{Binding DeliverCommand}"
-                        IsVisible="{Binding !IsCredit}"
-                        IsEnabled="{Binding CanDeliver}"/>
-                
+
                 <Button Content="Abonar (F5)"
                         Classes="action primary"
                         Command="{Binding AddPaymentCommand}"

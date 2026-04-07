@@ -181,6 +181,7 @@
                 <DataGridTextColumn Header="TOTAL" Binding="{Binding Total, StringFormat='{}{0:C2}'}" Width="130"/>
                 <DataGridTextColumn Header="DESCUENTO" Binding="{Binding Discount, StringFormat='{}{0:C2}'}" Width="120"/>
                 <DataGridTextColumn Header="USUARIO" Binding="{Binding UserName}" Width="180"/>
+                <DataGridTextColumn Header="FOLIO CORTE" Binding="{Binding CashCloseFolio}" Width="160"/>
                 <DataGridTextColumn Header="MÉTODO DE PAGO" Binding="{Binding PaymentSummary}" Width="*"/>
             </DataGrid.Columns>
         </DataGrid>

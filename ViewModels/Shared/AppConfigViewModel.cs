@@ -103,7 +103,7 @@ namespace CasaCejaRemake.ViewModels.Shared
                 _originalBranchId = appConfig.BranchId;
 
                 // 3. Cargar impresoras del sistema
-                var printers = _printService.GetAvailablePrinters();
+                var printers = await Task.Run(() => _printService.GetAvailablePrinters());
                 AvailablePrinters = new ObservableCollection<string>(printers);
 
                 // 4. Aplicar configuración de impresora guardada

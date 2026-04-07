@@ -88,7 +88,8 @@ namespace CasaCejaRemake.Services
             int branchId,
             decimal generalDiscount = 0,
             decimal generalDiscountPercent = 0,
-            bool isGeneralDiscountPercentage = true)
+            bool isGeneralDiscountPercentage = true,
+            string cashCloseFolio = "")
         {
             if (items == null || items.Count == 0)
             {
@@ -165,7 +166,8 @@ namespace CasaCejaRemake.Services
                     BranchId = branchId,
                     TicketData = ticketCompressed,
                     SyncStatus = 1,
-                    SaleDate = DateTime.Now
+                    SaleDate = DateTime.Now,
+                    CashCloseFolio = cashCloseFolio
                 };
 
                 Console.WriteLine($"[SalesService] Guardando venta con {items.Count} productos");
@@ -225,7 +227,8 @@ namespace CasaCejaRemake.Services
             int branchId,
             decimal generalDiscount = 0,
             decimal generalDiscountPercent = 0,
-            bool isGeneralDiscountPercentage = true)
+            bool isGeneralDiscountPercentage = true,
+            string cashCloseFolio = "")
         {
             if (items == null || items.Count == 0)
             {
@@ -299,7 +302,8 @@ namespace CasaCejaRemake.Services
                     BranchId = branchId,
                     TicketData = ticketCompressed,
                     SyncStatus = 1,
-                    SaleDate = DateTime.Now
+                    SaleDate = DateTime.Now,
+                    CashCloseFolio = cashCloseFolio
                 };
 
                 Console.WriteLine($"[SalesService.MixedPayment] Guardando venta con {items.Count} productos");

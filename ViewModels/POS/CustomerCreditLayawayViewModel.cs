@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
@@ -30,9 +31,18 @@ namespace CasaCejaRemake.ViewModels.POS
         [ObservableProperty]
         private string _modeTitle = "Mis Creditos";
 
+        // 0=Todos, 1=Pendientes, 2=Pagados, 3=Vencidos
+        [ObservableProperty]
+        private int _selectedStatusFilter = 0;
+
         [ObservableProperty]
         private Credit? _selectedCredit;
 
+        // Raw unfiltered data
+        private List<Credit> _allCredits = new();
+        private List<Layaway> _allLayaways = new();
+
+        // Filtered collections shown in DataGrids
         public ObservableCollection<Credit> Credits { get; } = new();
 
         [ObservableProperty]
@@ -40,7 +50,6 @@ namespace CasaCejaRemake.ViewModels.POS
 
         public ObservableCollection<Layaway> Layaways { get; } = new();
 
-        // Estado
         [ObservableProperty]
         private bool _isLoading;
 
@@ -55,43 +64,73 @@ namespace CasaCejaRemake.ViewModels.POS
         public event EventHandler? CloseRequested;
         public event EventHandler? Cancelled;
 
-        // Computed properties for view binding
+        // Computed properties
         public string WindowTitle => IsCreditsMode ? "Creditos del Cliente" : "Apartados del Cliente";
         public string HeaderTitle => IsCreditsMode ? "MIS CREDITOS" : "MIS APARTADOS";
         public string HeaderColor => IsCreditsMode ? "#4CAF50" : "#2196F3";
-        
-        // Counts
+
+        // Counts based on ALL records (for badge counters on filter buttons)
+        public int TotalAllCount => IsCreditsMode ? _allCredits.Count : _allLayaways.Count;
+        public int TotalPendingCount => IsCreditsMode
+            ? _allCredits.Count(c => c.Status == 1)
+            : _allLayaways.Count(l => l.Status == 1);
+        public int TotalPaidCount => IsCreditsMode
+            ? _allCredits.Count(c => c.Status == 2)
+            : _allLayaways.Count(l => l.Status == 2);
+        public int TotalOverdueCount => IsCreditsMode
+            ? _allCredits.Count(c => c.Status == 3)
+            : _allLayaways.Count(l => l.Status == 3);
+
+        // Summary card counts (from filtered view)
         public int ItemCount => IsCreditsMode ? Credits.Count : Layaways.Count;
-        public int PendingCount => IsCreditsMode 
-            ? Credits.Count(c => c.Status == 1 || c.Status == 3) 
+        public int PendingCount => IsCreditsMode
+            ? Credits.Count(c => c.Status == 1 || c.Status == 3)
             : Layaways.Count(l => l.Status == 1 || l.Status == 3);
-        public int PaidCount => IsCreditsMode 
-            ? Credits.Count(c => c.Status == 2) 
+        public int PaidCount => IsCreditsMode
+            ? Credits.Count(c => c.Status == 2)
             : Layaways.Count(l => l.Status == 2);
-        
-        // Totals
-        public decimal TotalPending => IsCreditsMode 
-            ? Credits.Where(c => c.Status == 1 || c.Status == 3).Sum(c => c.RemainingBalance)
-            : Layaways.Where(l => l.Status == 1 || l.Status == 3).Sum(l => l.RemainingBalance);
-        
-        public decimal TotalDebt => IsCreditsMode 
+
+        // Totals (from filtered view)
+        public decimal TotalPending => IsCreditsMode
+            ? _allCredits.Where(c => c.Status == 1).Sum(c => c.RemainingBalance)
+            : _allLayaways.Where(l => l.Status == 1).Sum(l => l.RemainingBalance);
+
+        public decimal TotalDebt => IsCreditsMode
             ? Credits.Sum(c => c.Total)
             : Layaways.Sum(l => l.Total);
-        
-        public decimal TotalPaidSum => IsCreditsMode 
+
+        public decimal TotalPaidSum => IsCreditsMode
             ? Credits.Sum(c => c.TotalPaid)
             : Layaways.Sum(l => l.TotalPaid);
-        
+
         public decimal TotalPendingBalance => TotalDebt - TotalPaidSum;
-        
-        // Selection state
+
         public bool HasSelection => IsCreditsMode ? SelectedCredit != null : SelectedLayaway != null;
-        public bool CanAddPayment => IsCreditsMode 
-            ? (SelectedCredit?.CanAddPayment() ?? false) 
+        public bool CanAddPayment => IsCreditsMode
+            ? (SelectedCredit?.CanAddPayment() ?? false)
             : (SelectedLayaway?.CanAddPayment() ?? false);
         public bool CanDeliver => !IsCreditsMode && (SelectedLayaway?.CanDeliver ?? false);
-        
+
         public int TotalRecords => IsCreditsMode ? Credits.Count : Layaways.Count;
+
+        // Active filter states for button highlighting
+        public bool FilterAllActive => SelectedStatusFilter == 0;
+        public bool FilterPendingActive => SelectedStatusFilter == 1;
+        public bool FilterPaidActive => SelectedStatusFilter == 2;
+        public bool FilterOverdueActive => SelectedStatusFilter == 3;
+
+        // Filter button background colors
+        public string FilterAllBg => SelectedStatusFilter == 0 ? "#4CAF50" : "#2D2D2D";
+        public string FilterPendingBg => SelectedStatusFilter == 1 ? "#FF9800" : "#2D2D2D";
+        public string FilterPaidBg => SelectedStatusFilter == 2 ? "#2196F3" : "#2D2D2D";
+        public string FilterOverdueBg => SelectedStatusFilter == 3 ? "#F44336" : "#2D2D2D";
+
+        // Filter button text colors
+        public string FilterAllFg => SelectedStatusFilter == 0 ? "White" : "#AAAAAA";
+        public string FilterPendingFg => SelectedStatusFilter == 1 ? "White" : "#AAAAAA";
+        public string FilterPaidFg => SelectedStatusFilter == 2 ? "White" : "#AAAAAA";
+        public string FilterOverdueFg => SelectedStatusFilter == 3 ? "White" : "#AAAAAA";
+
 
         public CustomerCreditsLayawaysViewModel(
             CreditService creditService,
@@ -130,14 +169,24 @@ namespace CasaCejaRemake.ViewModels.POS
             OnPropertyChanged(nameof(WindowTitle));
             OnPropertyChanged(nameof(HeaderTitle));
             OnPropertyChanged(nameof(HeaderColor));
-            OnPropertyChanged(nameof(ItemCount));
-            OnPropertyChanged(nameof(PendingCount));
-            OnPropertyChanged(nameof(PaidCount));
-            OnPropertyChanged(nameof(TotalPending));
-            OnPropertyChanged(nameof(TotalRecords));
-            OnPropertyChanged(nameof(HasSelection));
-            OnPropertyChanged(nameof(CanAddPayment));
-            OnPropertyChanged(nameof(CanDeliver));
+            NotifyComputedProperties();
+        }
+
+        partial void OnSelectedStatusFilterChanged(int value)
+        {
+            OnPropertyChanged(nameof(FilterAllActive));
+            OnPropertyChanged(nameof(FilterPendingActive));
+            OnPropertyChanged(nameof(FilterPaidActive));
+            OnPropertyChanged(nameof(FilterOverdueActive));
+            OnPropertyChanged(nameof(FilterAllBg));
+            OnPropertyChanged(nameof(FilterPendingBg));
+            OnPropertyChanged(nameof(FilterPaidBg));
+            OnPropertyChanged(nameof(FilterOverdueBg));
+            OnPropertyChanged(nameof(FilterAllFg));
+            OnPropertyChanged(nameof(FilterPendingFg));
+            OnPropertyChanged(nameof(FilterPaidFg));
+            OnPropertyChanged(nameof(FilterOverdueFg));
+            ApplyFilter();
         }
 
         public async Task InitializeAsync()
@@ -155,13 +204,9 @@ namespace CasaCejaRemake.ViewModels.POS
                 IsLoading = true;
 
                 if (IsCreditsMode)
-                {
                     await LoadCreditsAsync();
-                }
                 else
-                {
                     await LoadLayawaysAsync();
-                }
             }
             catch (Exception ex)
             {
@@ -173,35 +218,76 @@ namespace CasaCejaRemake.ViewModels.POS
             }
         }
 
+        [RelayCommand]
+        private void SetFilter(string? status)
+        {
+            if (int.TryParse(status, out var parsed))
+                SelectedStatusFilter = parsed;
+        }
+
         private async Task LoadCreditsAsync()
         {
-            // Obtener los datos primero
-            var credits = await _creditService.GetPendingByCustomerAsync(_customer!.Id);
-            
-            // Limpiar y agregar todos de una vez para evitar múltiples notificaciones
-            Credits.Clear();
-            foreach (var credit in credits)
-            {
-                Credits.Add(credit);
-            }
+            var all = await _creditService.GetAllByCustomerAsync(_customer!.Id);
 
-            StatusMessage = $"{Credits.Count} credito(s) encontrado(s)";
+            // Actualizar status de vencidos
+            foreach (var credit in all.Where(c => c.Status == 1 && c.IsOverdue))
+                await _creditService.UpdateStatusAsync(credit.Id);
+
+            // Recargar después de actualizar estados
+            _allCredits = await _creditService.GetAllByCustomerAsync(_customer!.Id);
+
+            ApplyFilter();
+            StatusMessage = $"{Credits.Count} credito(s) mostrado(s) de {_allCredits.Count} total";
             NotifyComputedProperties();
         }
 
         private async Task LoadLayawaysAsync()
         {
-            // Obtener los datos primero
-            var layaways = await _layawayService.GetPendingByCustomerAsync(_customer!.Id);
-            
-            // Limpiar y agregar todos de una vez para evitar múltiples notificaciones
-            Layaways.Clear();
-            foreach (var layaway in layaways)
+            var all = await _layawayService.GetAllByCustomerAsync(_customer!.Id);
+
+            // Actualizar status de vencidos
+            foreach (var layaway in all.Where(l => l.Status == 1 && l.IsExpired))
+                await _layawayService.UpdateStatusAsync(layaway.Id);
+
+            // Recargar después de actualizar estados
+            _allLayaways = await _layawayService.GetAllByCustomerAsync(_customer!.Id);
+
+            ApplyFilter();
+            StatusMessage = $"{Layaways.Count} apartado(s) mostrado(s) de {_allLayaways.Count} total";
+            NotifyComputedProperties();
+        }
+
+        private void ApplyFilter()
+        {
+            if (IsCreditsMode)
             {
-                Layaways.Add(layaway);
+                var filtered = SelectedStatusFilter switch
+                {
+                    1 => _allCredits.Where(c => c.Status == 1).ToList(),
+                    2 => _allCredits.Where(c => c.Status == 2).ToList(),
+                    3 => _allCredits.Where(c => c.Status == 3).ToList(),
+                    _ => _allCredits
+                };
+
+                Credits.Clear();
+                foreach (var c in filtered)
+                    Credits.Add(c);
+            }
+            else
+            {
+                var filtered = SelectedStatusFilter switch
+                {
+                    1 => _allLayaways.Where(l => l.Status == 1).ToList(),
+                    2 => _allLayaways.Where(l => l.Status == 2).ToList(),
+                    3 => _allLayaways.Where(l => l.Status == 3).ToList(),
+                    _ => _allLayaways
+                };
+
+                Layaways.Clear();
+                foreach (var l in filtered)
+                    Layaways.Add(l);
             }
 
-            StatusMessage = $"{Layaways.Count} apartado(s) encontrado(s)";
             NotifyComputedProperties();
         }
 
@@ -210,6 +296,10 @@ namespace CasaCejaRemake.ViewModels.POS
             OnPropertyChanged(nameof(ItemCount));
             OnPropertyChanged(nameof(PendingCount));
             OnPropertyChanged(nameof(PaidCount));
+            OnPropertyChanged(nameof(TotalAllCount));
+            OnPropertyChanged(nameof(TotalPendingCount));
+            OnPropertyChanged(nameof(TotalPaidCount));
+            OnPropertyChanged(nameof(TotalOverdueCount));
             OnPropertyChanged(nameof(TotalPending));
             OnPropertyChanged(nameof(TotalDebt));
             OnPropertyChanged(nameof(TotalPaidSum));
@@ -231,12 +321,6 @@ namespace CasaCejaRemake.ViewModels.POS
                     return;
                 }
 
-                if (!SelectedCredit.CanAddPayment())
-                {
-                    StatusMessage = "Este credito no acepta mas pagos";
-                    return;
-                }
-
                 AddPaymentToCredit?.Invoke(this, SelectedCredit);
             }
             else
@@ -244,12 +328,6 @@ namespace CasaCejaRemake.ViewModels.POS
                 if (SelectedLayaway == null)
                 {
                     StatusMessage = "Seleccione un apartado";
-                    return;
-                }
-
-                if (!SelectedLayaway.CanAddPayment())
-                {
-                    StatusMessage = "Este apartado no acepta mas pagos";
                     return;
                 }
 
@@ -324,9 +402,6 @@ namespace CasaCejaRemake.ViewModels.POS
             {
                 case "ENTER":
                     AddPayment();
-                    break;
-                case "F6":
-                    if (!IsCreditsMode) Deliver();
                     break;
                 case "ESCAPE":
                     Cancel();

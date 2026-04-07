@@ -86,7 +86,7 @@ namespace CasaCejaRemake.ViewModels.POS
         public ObservableCollection<CartItem> Items => _cartService.Items;
 
         public event EventHandler? RequestFocusBarcode;
-        public event EventHandler? RequestShowSearchProduct;
+        public event EventHandler<string?>? RequestShowSearchProduct;
         public event EventHandler? RequestShowPayment;
         public event EventHandler? RequestShowModifyQuantity;
         public event EventHandler? RequestShowCreditsLayaways;
@@ -208,6 +208,19 @@ namespace CasaCejaRemake.ViewModels.POS
             RequestFocusBarcode?.Invoke(this, EventArgs.Empty);
         }
 
+        /// <summary>
+        /// Convierte el barcode a mayusculas automaticamente.
+        /// </summary>
+        partial void OnBarcodeChanged(string value)
+        {
+            if (!string.IsNullOrEmpty(value))
+            {
+                var upper = value.ToUpperInvariant();
+                if (upper != value)
+                    Barcode = upper;
+            }
+        }
+
         [RelayCommand]
         private async Task SearchByCode()
         {
@@ -225,8 +238,10 @@ namespace CasaCejaRemake.ViewModels.POS
 
                 if (product == null)
                 {
-                    ShowMessage?.Invoke(this, $"Producto no encontrado: {Barcode}");
+                    // Si no hay coincidencia, abrir el catálogo con el código ingresado ya en el campo de búsqueda
+                    var searchTerm = Barcode;
                     Barcode = string.Empty;
+                    RequestShowSearchProduct?.Invoke(this, searchTerm);
                     return;
                 }
 
@@ -395,7 +410,7 @@ namespace CasaCejaRemake.ViewModels.POS
         [RelayCommand]
         private void SearchProduct()
         {
-            RequestShowSearchProduct?.Invoke(this, EventArgs.Empty);
+            RequestShowSearchProduct?.Invoke(this, null);
         }
 
         public async Task AddProductFromSearchAsync(Product product, int quantity)
@@ -557,7 +572,8 @@ namespace CasaCejaRemake.ViewModels.POS
                     _branchId,
                     _cartService.CalculatedGeneralDiscount,
                     _cartService.GeneralDiscountPercent,
-                    _cartService.IsGeneralDiscountPercentage);
+                    _cartService.IsGeneralDiscountPercentage,
+                    CashCloseFolio);
 
                 if (result.Success)
                 {

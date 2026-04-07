@@ -4,12 +4,12 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:vm="using:CasaCejaRemake.ViewModels.POS"
-        mc:Ignorable="d" d:DesignWidth="850" d:DesignHeight="600"
+        mc:Ignorable="d" d:DesignWidth="850" d:DesignHeight="640"
         x:Class="CasaCejaRemake.Views.POS.CustomerCreditsLayawaysView"
         x:CompileBindings="False"
         x:DataType="vm:CustomerCreditsLayawaysViewModel"
         Title="{Binding WindowTitle}"
-        Width="850" Height="600"
+        Width="850" Height="640"
         WindowStartupLocation="CenterOwner"
         CanResize="False"
         ShowInTaskbar="False"
@@ -52,6 +52,25 @@
         <Style Selector="Button.action:disabled">
             <Setter Property="Opacity" Value="0.4"/>
         </Style>
+        <Style Selector="Button.filter">
+            <Setter Property="Background" Value="#2D2D2D"/>
+            <Setter Property="Foreground" Value="#AAAAAA"/>
+            <Setter Property="Padding" Value="12,6"/>
+            <Setter Property="Margin" Value="0,0,8,0"/>
+            <Setter Property="CornerRadius" Value="20"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="BorderBrush" Value="#3D3D3D"/>
+            <Setter Property="BorderThickness" Value="1"/>
+        </Style>
+        <Style Selector="Button.filter:pointerover">
+            <Setter Property="Background" Value="#3D3D3D"/>
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+        <Style Selector="Button.filter.active">
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+        </Style>
         <Style Selector="Border.info-card">
             <Setter Property="Background" Value="#252525"/>
             <Setter Property="CornerRadius" Value="8"/>
@@ -61,7 +80,7 @@
         </Style>
     </Window.Styles>
 
-    <Grid RowDefinitions="Auto,Auto,Auto,*,Auto" Margin="15">
+    <Grid RowDefinitions="Auto,Auto,Auto,Auto,*,Auto" Margin="15">
         <!-- Header con información del cliente -->
         <Border Grid.Row="0" Background="{Binding HeaderColor}" Padding="20" CornerRadius="8" Margin="0,0,0,15">
             <Grid ColumnDefinitions="*,Auto">
@@ -112,7 +131,7 @@
         </Border>
 
         <!-- Estadísticas en tarjetas -->
-        <Grid Grid.Row="1" ColumnDefinitions="*,*,*" Margin="0,0,0,15">
+        <Grid Grid.Row="1" ColumnDefinitions="*,*,*" Margin="0,0,0,12">
             <!-- Total -->
             <Border Grid.Column="0" Classes="info-card" Margin="0,0,6,0">
                 <StackPanel Spacing="8">
@@ -121,9 +140,9 @@
                                FontSize="11" 
                                FontWeight="Bold"
                                HorizontalAlignment="Center"/>
-                    <TextBlock Text="{Binding ItemCount}" 
-                               Foreground="White" 
-                               FontSize="24" 
+                    <TextBlock Text="{Binding TotalAllCount}"
+                               Foreground="White"
+                               FontSize="24"
                                FontWeight="Bold"
                                HorizontalAlignment="Center"/>
                     <TextBlock Text="registros" 
@@ -141,9 +160,9 @@
                                FontSize="11" 
                                FontWeight="Bold"
                                HorizontalAlignment="Center"/>
-                    <TextBlock Text="{Binding PendingCount}" 
-                               Foreground="#FF9800" 
-                               FontSize="24" 
+                    <TextBlock Text="{Binding TotalPendingCount}"
+                               Foreground="#FF9800"
+                               FontSize="24"
                                FontWeight="Bold"
                                HorizontalAlignment="Center"/>
                     <TextBlock Text="activos" 
@@ -161,9 +180,9 @@
                                FontSize="11" 
                                FontWeight="Bold"
                                HorizontalAlignment="Center"/>
-                    <TextBlock Text="{Binding PaidCount}" 
-                               Foreground="#4CAF50" 
-                               FontSize="24" 
+                    <TextBlock Text="{Binding TotalPaidCount}"
+                               Foreground="#4CAF50"
+                               FontSize="24"
                                FontWeight="Bold"
                                HorizontalAlignment="Center"/>
                     <TextBlock Text="liquidados" 
@@ -174,11 +193,74 @@
             </Border>
         </Grid>
 
-        <!-- Separador -->
-        <Border Grid.Row="2" Height="1" Background="#3D3D3D" Margin="0,0,0,15"/>
+        <!-- Filtros de estado -->
+        <Border Grid.Row="2" Background="#252525" Padding="12,8" CornerRadius="8" Margin="0,0,0,12">
+            <StackPanel Orientation="Horizontal" Spacing="0">
+                <TextBlock Text="Filtrar:"
+                           Foreground="#888888"
+                           FontSize="13"
+                           VerticalAlignment="Center"
+                           Margin="0,0,12,0"/>
+                <!-- F4 Todos -->
+                <Button Classes="filter"
+                        Command="{Binding SetFilterCommand}"
+                        CommandParameter="0"
+                        Background="{Binding FilterAllBg}">
+                    <StackPanel Orientation="Horizontal" Spacing="5">
+                        <TextBlock Text="F4" FontSize="11" Opacity="0.7" FontWeight="Bold" Foreground="{Binding FilterAllFg}"/>
+                        <TextBlock Text="Todos" Foreground="{Binding FilterAllFg}"/>
+                        <Border Background="#00000030" Padding="5,1" CornerRadius="10">
+                            <TextBlock Text="{Binding TotalAllCount}" FontSize="11" Foreground="White"/>
+                        </Border>
+                    </StackPanel>
+                </Button>
+                <!-- F5 Pendientes -->
+                <Button Classes="filter"
+                        Command="{Binding SetFilterCommand}"
+                        CommandParameter="1"
+                        Background="{Binding FilterPendingBg}">
+                    <StackPanel Orientation="Horizontal" Spacing="5">
+                        <TextBlock Text="F5" FontSize="11" Opacity="0.7" FontWeight="Bold" Foreground="{Binding FilterPendingFg}"/>
+                        <TextBlock Text="Pendientes" Foreground="{Binding FilterPendingFg}"/>
+                        <Border Background="#00000030" Padding="5,1" CornerRadius="10">
+                            <TextBlock Text="{Binding TotalPendingCount}" FontSize="11" Foreground="White"/>
+                        </Border>
+                    </StackPanel>
+                </Button>
+                <!-- F6 Pagados -->
+                <Button Classes="filter"
+                        Command="{Binding SetFilterCommand}"
+                        CommandParameter="2"
+                        Background="{Binding FilterPaidBg}">
+                    <StackPanel Orientation="Horizontal" Spacing="5">
+                        <TextBlock Text="F6" FontSize="11" Opacity="0.7" FontWeight="Bold" Foreground="{Binding FilterPaidFg}"/>
+                        <TextBlock Text="Pagados" Foreground="{Binding FilterPaidFg}"/>
+                        <Border Background="#00000030" Padding="5,1" CornerRadius="10">
+                            <TextBlock Text="{Binding TotalPaidCount}" FontSize="11" Foreground="White"/>
+                        </Border>
+                    </StackPanel>
+                </Button>
+                <!-- F7 Vencidos -->
+                <Button Classes="filter"
+                        Command="{Binding SetFilterCommand}"
+                        CommandParameter="3"
+                        Background="{Binding FilterOverdueBg}">
+                    <StackPanel Orientation="Horizontal" Spacing="5">
+                        <TextBlock Text="F7" FontSize="11" Opacity="0.7" FontWeight="Bold" Foreground="{Binding FilterOverdueFg}"/>
+                        <TextBlock Text="Vencidos" Foreground="{Binding FilterOverdueFg}"/>
+                        <Border Background="#00000030" Padding="5,1" CornerRadius="10">
+                            <TextBlock Text="{Binding TotalOverdueCount}" FontSize="11" Foreground="White"/>
+                        </Border>
+                    </StackPanel>
+                </Button>
+            </StackPanel>
+        </Border>
+
+        <!-- Separator -->
+        <Border Grid.Row="3" Height="1" Background="#3D3D3D" Margin="0,0,0,10"/>
 
         <!-- Credits DataGrid (visible when IsCreditsMode) -->
-        <DataGrid Grid.Row="3"
+        <DataGrid Grid.Row="4"
                   x:Name="CreditsDataGrid"
                   ItemsSource="{Binding Credits}"
                   SelectedItem="{Binding SelectedCredit, Mode=TwoWay}"
@@ -198,7 +280,7 @@
         </DataGrid>
 
         <!-- Layaways DataGrid (visible when NOT IsCreditsMode) -->
-        <DataGrid Grid.Row="3"
+        <DataGrid Grid.Row="4"
                   x:Name="LayawaysDataGrid"
                   ItemsSource="{Binding Layaways}"
                   SelectedItem="{Binding SelectedLayaway, Mode=TwoWay}"
@@ -213,12 +295,11 @@
                 <DataGridTextColumn Header="SALDO" Binding="{Binding RemainingBalance, StringFormat='{}{0:C2}', Mode=OneWay}" Width="110"/>
                 <DataGridTextColumn Header="ENTREGA" Binding="{Binding PickupDate, StringFormat='{}{0:dd/MM/yyyy}', Mode=OneWay}" Width="100"/>
                 <DataGridTextColumn Header="ESTADO" Binding="{Binding StatusName, Mode=OneWay}" Width="*"/>
-                <DataGridTextColumn Header="LISTO" Binding="{Binding CanDeliver, Mode=OneWay}" Width="70"/>
             </DataGrid.Columns>
         </DataGrid>
 
         <!-- Buttons -->
-        <Border Grid.Row="4" Background="#2D2D2D" Padding="15" CornerRadius="8" Margin="0,15,0,0">
+        <Border Grid.Row="5" Background="#2D2D2D" Padding="15" CornerRadius="8" Margin="0,15,0,0">
             <Grid ColumnDefinitions="*,Auto,Auto,Auto,Auto,*">
                 <!-- Select Button -->
                 <Button Grid.Column="1"

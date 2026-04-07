@@ -29,6 +29,18 @@ namespace CasaCejaRemake.ViewModels.POS
         private string _street = string.Empty;
 
         [ObservableProperty]
+        private string _exteriorNumber = string.Empty;
+
+        [ObservableProperty]
+        private string _interiorNumber = string.Empty;
+
+        [ObservableProperty]
+        private string _neighborhood = string.Empty;
+
+        [ObservableProperty]
+        private string _postalCode = string.Empty;
+
+        [ObservableProperty]
         private string _city = string.Empty;
 
         // Estado
@@ -101,6 +113,10 @@ namespace CasaCejaRemake.ViewModels.POS
                     Email = Email?.Trim() ?? string.Empty,
                     Rfc = Rfc?.Trim() ?? string.Empty,
                     Street = Street?.Trim() ?? string.Empty,
+                    ExteriorNumber = ExteriorNumber?.Trim() ?? string.Empty,
+                    InteriorNumber = InteriorNumber?.Trim() ?? string.Empty,
+                    Neighborhood = Neighborhood?.Trim() ?? string.Empty,
+                    PostalCode = PostalCode?.Trim() ?? string.Empty,
                     City = City?.Trim() ?? string.Empty,
                     Active = true
                 };
@@ -158,6 +174,10 @@ namespace CasaCejaRemake.ViewModels.POS
             Email = string.Empty;
             Rfc = string.Empty;
             Street = string.Empty;
+            ExteriorNumber = string.Empty;
+            InteriorNumber = string.Empty;
+            Neighborhood = string.Empty;
+            PostalCode = string.Empty;
             City = string.Empty;
             ClearError();
         }

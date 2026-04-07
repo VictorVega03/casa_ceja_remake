@@ -24,7 +24,8 @@ namespace CasaCejaRemake.ViewModels.POS
         public decimal Total => Sale.Total;
         public decimal Discount => Sale.Discount;
         public string PaymentSummary => Sale.PaymentSummary;
-        
+        public string CashCloseFolio => Sale.CashCloseFolio;
+
         public string FormattedDate => Sale.SaleDate.ToString("dd/MM/yyyy HH:mm");
     }
 

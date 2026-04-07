@@ -14,23 +14,21 @@ namespace CasaCejaRemake.Data.Repositories
         /// Obtiene el corte de caja "abierto" para una sucursal.
         /// Un corte está abierto cuando CloseDate <= OpeningDate.AddSeconds(1)
         /// (convención usada en CashCloseService: se crea con CloseDate == OpeningDate).
-        /// Se filtra por la fecha de hoy para evitar cortes históricos sin cerrar.
+        ///
+        /// Solo el corte MÁS RECIENTE puede estar abierto. Si el más reciente ya fue
+        /// cerrado, se devuelve null aunque existan cortes históricos sin cerrar
+        /// (datos huérfanos de pruebas o días anteriores). Esto permite que un corte
+        /// abierto persista varios días sin forzar uno nuevo al cambiar la fecha.
         /// </summary>
         public async Task<Models.CashClose?> GetOpenByBranchAsync(int branchId)
         {
-            var today = DateTime.Now.Date;
-            var todayEnd = today.AddDays(1);
+            var allForBranch = await FindAsync(c => c.BranchId == branchId);
+            if (!allForBranch.Any()) return null;
 
-            // Traer cortes del día actual de la sucursal (filtro simple, compatible con sqlite-net-pcl)
-            var todayCloses = await FindAsync(c =>
-                c.BranchId == branchId &&
-                c.OpeningDate >= today &&
-                c.OpeningDate < todayEnd);
+            // Solo el corte más reciente puede considerarse abierto
+            var mostRecent = allForBranch.OrderByDescending(c => c.OpeningDate).First();
 
-            // Determinar cuál está "abierto" (CloseDate no ha avanzado más allá de OpeningDate)
-            return todayCloses
-                .OrderByDescending(c => c.OpeningDate)
-                .FirstOrDefault(c => c.CloseDate <= c.OpeningDate.AddSeconds(1));
+            return mostRecent.CloseDate <= mostRecent.OpeningDate.AddSeconds(1) ? mostRecent : null;
         }
 
         /// <summary>

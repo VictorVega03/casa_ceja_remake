@@ -636,20 +636,16 @@ namespace CasaCejaRemake.Views.POS
                 var updatedLayaway = await _layawayService.GetByIdAsync(layaway.Id);
                 if (updatedLayaway != null && updatedLayaway.RemainingBalance <= 0 && balanceBefore > 0)
                 {
-                    // Apartado completado, preguntar si desea entregar
-                    var shouldDeliver = await ShowConfirmDeliverDialog();
-                    if (shouldDeliver)
+                    // Apartado completado — entregar automáticamente sin confirmar
+                    try
                     {
-                        try
-                        {
-                            var userId = _authService?.CurrentUser?.Id ?? 1;
-                            await _layawayService.MarkAsDeliveredAsync(updatedLayaway.Id, userId);
-                            return (true, true);
-                        }
-                        catch (Exception ex)
-                        {
-                            ShowMessageDialog("Error", $"Error al entregar apartado: {ex.Message}");
-                        }
+                        var userId = _authService?.CurrentUser?.Id ?? 1;
+                        await _layawayService.MarkAsDeliveredAsync(updatedLayaway.Id, userId);
+                        return (true, true);
+                    }
+                    catch (Exception ex)
+                    {
+                        ShowMessageDialog("Error", $"Error al entregar apartado: {ex.Message}");
                     }
                 }
                 
