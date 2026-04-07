@@ -174,6 +174,10 @@ namespace CasaCejaRemake.ViewModels.POS
                 IsProcessing = true;
                 ClearError();
 
+                var cashCloseService = (Avalonia.Application.Current as App)?.GetCashCloseService();
+                var openCash = await cashCloseService!.GetOpenCashAsync(_branchId);
+                var cashCloseFolio = openCash?.Folio ?? string.Empty;
+
                 var (success, layaway, error) = await _layawayService.CreateLayawayAsync(
                     CartItems.ToList(),
                     _customer.Id,
@@ -182,7 +186,8 @@ namespace CasaCejaRemake.ViewModels.POS
                     PaymentMethod,
                     _authService.CurrentUser?.Id ?? 0,
                     _branchId,
-                    string.IsNullOrWhiteSpace(Notes) ? null : Notes);
+                    string.IsNullOrWhiteSpace(Notes) ? null : Notes,
+                    cashCloseFolio);
 
                 if (success && layaway != null)
                 {

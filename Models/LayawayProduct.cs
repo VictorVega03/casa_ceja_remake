@@ -39,14 +39,6 @@ namespace CasaCejaRemake.Models
         [Column("line_total")]
         public decimal LineTotal { get; set; }
 
-        // ========== PRICING DATA (JSON COMPRIMIDO) ==========
-        // Contiene información completa de precios al momento del apartado:
-        // - precio_menudeo, precio_mayoreo, precio_especial, precio_vendedor
-        // - descuento aplicado, categoría con descuento
-        // - iva, precio base sin iva, etc.
-        [Column("pricing_data")]
-        public byte[]? PricingData { get; set; }
-
         // ========== TIMESTAMP ==========
         [Column("created_at")]
         public DateTime CreatedAt { get; set; } = DateTime.Now;

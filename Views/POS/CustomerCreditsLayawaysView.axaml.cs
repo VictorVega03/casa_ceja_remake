@@ -34,24 +34,35 @@ namespace CasaCejaRemake.Views.POS
 
             if (_viewModel != null)
             {
-                _viewModel.CloseRequested += OnCloseRequested;
-                _viewModel.AddPaymentToCredit += OnAddPaymentToCredit;
+                // Desuscribir primero para evitar handlers duplicados
+                _viewModel.CloseRequested      -= OnCloseRequested;
+                _viewModel.AddPaymentToCredit  -= OnAddPaymentToCredit;
+                _viewModel.AddPaymentToLayaway -= OnAddPaymentToLayaway;
+                _viewModel.DeliverLayaway      -= OnDeliverLayaway;
+                _viewModel.PrintCredit         -= OnPrintCredit;
+                _viewModel.PrintLayaway         -= OnPrintLayaway;
+
+                // Ahora suscribir
+                _viewModel.CloseRequested      += OnCloseRequested;
+                _viewModel.AddPaymentToCredit  += OnAddPaymentToCredit;
                 _viewModel.AddPaymentToLayaway += OnAddPaymentToLayaway;
-                _viewModel.DeliverLayaway += OnDeliverLayaway;
-                _viewModel.PrintCredit += OnPrintCredit;
-                _viewModel.PrintLayaway += OnPrintLayaway;
+                _viewModel.DeliverLayaway      += OnDeliverLayaway;
+                _viewModel.PrintCredit         += OnPrintCredit;
+                _viewModel.PrintLayaway         += OnPrintLayaway;
             }
 
             // Configurar handler para Enter en ambos DataGrids
             var creditsGrid = this.FindControl<DataGrid>("CreditsDataGrid");
             if (creditsGrid != null)
             {
+                creditsGrid.RemoveHandler(KeyDownEvent, DataGrid_PreviewKeyDown);
                 creditsGrid.AddHandler(KeyDownEvent, DataGrid_PreviewKeyDown, Avalonia.Interactivity.RoutingStrategies.Tunnel);
             }
 
             var layawaysGrid = this.FindControl<DataGrid>("LayawaysDataGrid");
             if (layawaysGrid != null)
             {
+                layawaysGrid.RemoveHandler(KeyDownEvent, DataGrid_PreviewKeyDown);
                 layawaysGrid.AddHandler(KeyDownEvent, DataGrid_PreviewKeyDown, Avalonia.Interactivity.RoutingStrategies.Tunnel);
             }
         }
@@ -334,8 +345,9 @@ namespace CasaCejaRemake.Views.POS
             var creditService = app.GetCreditService();
             var customerService = app.GetCustomerService();
             var authService = app.GetAuthService();
+            var cashCloseService = app.GetCashCloseService();
 
-            if (creditService == null || customerService == null || authService == null)
+            if (creditService == null || customerService == null || authService == null || cashCloseService == null)
                 return false;
 
             var customer = await customerService.GetByIdAsync(credit.CustomerId ?? 0);
@@ -349,7 +361,8 @@ namespace CasaCejaRemake.Views.POS
             var addPaymentViewModel = new AddPaymentViewModel(
                 creditService,
                 null!,
-                authService);
+                authService,
+                cashCloseService);
 
             await addPaymentViewModel.InitializeForCreditAsync(credit.Id, customer);
             addPaymentView.DataContext = addPaymentViewModel;
@@ -372,8 +385,9 @@ namespace CasaCejaRemake.Views.POS
             var layawayService = app.GetLayawayService();
             var customerService = app.GetCustomerService();
             var authService = app.GetAuthService();
+            var cashCloseService = app.GetCashCloseService();
 
-            if (layawayService == null || customerService == null || authService == null)
+            if (layawayService == null || customerService == null || authService == null || cashCloseService == null)
                 return (false, false);
 
             var customer = await customerService.GetByIdAsync(layaway.CustomerId);
@@ -389,7 +403,8 @@ namespace CasaCejaRemake.Views.POS
             var addPaymentViewModel = new AddPaymentViewModel(
                 null!,
                 layawayService,
-                authService);
+                authService,
+                cashCloseService);
 
             await addPaymentViewModel.InitializeForLayawayAsync(layaway.Id, customer);
             addPaymentView.DataContext = addPaymentViewModel;

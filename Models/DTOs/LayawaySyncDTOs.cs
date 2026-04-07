@@ -42,6 +42,9 @@ namespace CasaCejaRemake.Models.DTOs
         [JsonPropertyName("notes")]
         public string? Notes { get; set; }
 
+        [JsonPropertyName("cash_close_folio")]
+        public string CashCloseFolio { get; set; } = string.Empty;
+
         [JsonPropertyName("ticket_data")]
         public byte[]? TicketData { get; set; }
 
@@ -68,9 +71,6 @@ namespace CasaCejaRemake.Models.DTOs
 
         [JsonPropertyName("line_total")]
         public decimal LineTotal { get; set; }
-
-        [JsonPropertyName("pricing_data")]
-        public byte[]? PricingData { get; set; }
     }
 
     public class LayawayPaymentPushDto
@@ -113,7 +113,6 @@ namespace CasaCejaRemake.Models.DTOs
         [JsonPropertyName("quantity")] public int Quantity { get; set; }
         [JsonPropertyName("unit_price")] public decimal UnitPrice { get; set; }
         [JsonPropertyName("line_total")] public decimal LineTotal { get; set; }
-        [JsonPropertyName("pricing_data")] public byte[]? PricingData { get; set; }
     }
 
     public class LayawayPaymentPullDto

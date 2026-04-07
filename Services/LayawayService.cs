@@ -48,7 +48,8 @@ namespace CasaCejaRemake.Services
             PaymentMethod paymentMethod,
             int userId,
             int branchId,
-            string? notes)
+            string? notes,
+            string cashCloseFolio = "")
         {
             if (items == null || !items.Any())
                 return (false, null, "No hay productos para crear el apartado.");
@@ -95,6 +96,7 @@ namespace CasaCejaRemake.Services
                     DeliveryDate = null,
                     Status = 1, // Pending
                     Notes = notes,
+                    CashCloseFolio = cashCloseFolio,
                     SyncStatus = 1
                 };
 
@@ -111,14 +113,13 @@ namespace CasaCejaRemake.Services
                         ProductName = item.ProductName,
                         Quantity = item.Quantity,
                         UnitPrice = item.FinalUnitPrice,
-                        LineTotal = item.LineTotal,
-                        PricingData = item.PricingData
+                        LineTotal = item.LineTotal
                     };
 
                     await _layawayProductRepository.AddAsync(layawayProduct);
                 }
 
-                await AddPaymentInternalAsync(layaway, initialPayment, paymentMethod, userId, "Abono inicial");
+                await AddPaymentInternalAsync(layaway, initialPayment, paymentMethod, userId, "Abono inicial", cashCloseFolio);
 
                 var updatedLayaway = await _layawayRepository.GetByIdAsync(layawayId);
                 if (updatedLayaway == null)
@@ -214,7 +215,9 @@ namespace CasaCejaRemake.Services
             return payments.OrderByDescending(p => p.PaymentDate).ToList();
         }
 
-        public async Task<bool> AddPaymentAsync(int layawayId, decimal amount, PaymentMethod method, int userId, string? notes)
+        public async Task<bool> AddPaymentAsync(
+            int layawayId, decimal amount, PaymentMethod method,
+            int userId, string? notes, string cashCloseFolio = "")
         {
             var layaway = await _layawayRepository.GetByIdAsync(layawayId);
             if (layaway == null) return false;
@@ -228,11 +231,13 @@ namespace CasaCejaRemake.Services
 
             if (amount <= 0) return false;
 
-            return await AddPaymentInternalAsync(layaway, amount, method, userId, notes);
+            return await AddPaymentInternalAsync(layaway, amount, method, userId, notes, cashCloseFolio);
         }
 
         /// <summary>Agrega un abono con pagos mixtos (múltiples métodos de pago)</summary>
-        public async Task<bool> AddPaymentWithMixedAsync(int layawayId, decimal amount, string paymentJson, int userId, string? notes)
+        public async Task<bool> AddPaymentWithMixedAsync(
+            int layawayId, decimal amount, string paymentJson,
+            int userId, string? notes, string cashCloseFolio = "")
         {
             var layaway = await _layawayRepository.GetByIdAsync(layawayId);
             if (layaway == null) return false;
@@ -260,7 +265,7 @@ namespace CasaCejaRemake.Services
                     AmountPaid = amount,
                     PaymentMethod = paymentJson,
                     PaymentDate = DateTime.Now,
-                    CashCloseFolio = string.Empty,
+                    CashCloseFolio = cashCloseFolio,
                     Notes = notes,
                     SyncStatus = 1
                 };
@@ -279,7 +284,9 @@ namespace CasaCejaRemake.Services
             }
         }
 
-        private async Task<bool> AddPaymentInternalAsync(Layaway layaway, decimal amount, PaymentMethod method, int userId, string? notes)
+        private async Task<bool> AddPaymentInternalAsync(
+            Layaway layaway, decimal amount, PaymentMethod method,
+            int userId, string? notes, string cashCloseFolio = "")
         {
             try
             {
@@ -303,7 +310,7 @@ namespace CasaCejaRemake.Services
                     AmountPaid = amount,
                     PaymentMethod = paymentJson,
                     PaymentDate = DateTime.Now,
-                    CashCloseFolio = string.Empty,
+                    CashCloseFolio = cashCloseFolio,
                     Notes = notes,
                     SyncStatus = 1
                 };

@@ -589,11 +589,19 @@ namespace CasaCejaRemake.Views.POS
                 return false;
             }
 
+            var cashCloseService = (Avalonia.Application.Current as App)?.GetCashCloseService();
+            if (cashCloseService == null)
+            {
+                ShowMessageDialog("Error", "No se encontró el servicio de corte de caja");
+                return false;
+            }
+
             var addPaymentView = new AddPaymentView();
             var addPaymentViewModel = new AddPaymentViewModel(
                 _creditService,
                 null!,
-                _authService);
+                _authService,
+                cashCloseService);
 
             await addPaymentViewModel.InitializeForCreditAsync(credit.Id, customer);
             addPaymentView.DataContext = addPaymentViewModel;
@@ -617,13 +625,21 @@ namespace CasaCejaRemake.Views.POS
                 return (false, false);
             }
 
+            var cashCloseService = (Avalonia.Application.Current as App)?.GetCashCloseService();
+            if (cashCloseService == null)
+            {
+                ShowMessageDialog("Error", "No se encontró el servicio de corte de caja");
+                return (false, false);
+            }
+
             var balanceBefore = layaway.RemainingBalance;
             
             var addPaymentView = new AddPaymentView();
             var addPaymentViewModel = new AddPaymentViewModel(
                 null!,
                 _layawayService,
-                _authService);
+                _authService,
+                cashCloseService);
 
             await addPaymentViewModel.InitializeForLayawayAsync(layaway.Id, customer);
             addPaymentView.DataContext = addPaymentViewModel;

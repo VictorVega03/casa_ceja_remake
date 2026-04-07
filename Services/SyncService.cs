@@ -371,6 +371,7 @@ namespace CasaCejaRemake.Services
                     DueDate      = c.DueDate,
                     Status       = c.Status,
                     Notes        = c.Notes,
+                    CashCloseFolio = c.CashCloseFolio,
                     TicketData   = c.TicketData,
                     Products     = allProducts
                         .Where(p => p.CreditId == c.Id)
@@ -381,8 +382,7 @@ namespace CasaCejaRemake.Services
                             ProductName = p.ProductName,
                             Quantity    = p.Quantity,
                             UnitPrice   = p.UnitPrice,
-                            LineTotal   = p.LineTotal,
-                            PricingData = p.PricingData,
+                                LineTotal   = p.LineTotal,
                         }).ToList()
                 }).ToList();
 
@@ -591,6 +591,7 @@ namespace CasaCejaRemake.Services
                     DeliveryDate    = l.DeliveryDate,
                     Status          = l.Status,
                     Notes           = l.Notes,
+                    CashCloseFolio  = l.CashCloseFolio,
                     TicketData      = l.TicketData,
                     Products        = allProducts
                         .Where(p => p.LayawayId == l.Id)
@@ -601,8 +602,7 @@ namespace CasaCejaRemake.Services
                             ProductName = p.ProductName,
                             Quantity    = p.Quantity,
                             UnitPrice   = p.UnitPrice,
-                            LineTotal   = p.LineTotal,
-                            PricingData = p.PricingData,
+                                LineTotal   = p.LineTotal,
                         }).ToList()
                 }).ToList();
 
@@ -913,7 +913,6 @@ namespace CasaCejaRemake.Services
                                     Quantity    = prod.Quantity,
                                     UnitPrice   = prod.UnitPrice,
                                     LineTotal   = prod.LineTotal,
-                                    PricingData = prod.PricingData,
                                 };
                                 await creditProductRepo.AddAsync(cp);
                             }
@@ -1074,7 +1073,6 @@ namespace CasaCejaRemake.Services
                                     Quantity    = prod.Quantity,
                                     UnitPrice   = prod.UnitPrice,
                                     LineTotal   = prod.LineTotal,
-                                    PricingData = prod.PricingData,
                                 };
                                 await layawayProductRepo.AddAsync(lp);
                             }

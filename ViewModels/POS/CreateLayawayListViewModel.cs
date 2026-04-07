@@ -74,6 +74,8 @@ namespace CasaCejaRemake.ViewModels.POS
         private readonly CustomerService _customerService;
         private readonly int _branchId;
         private ObservableCollection<CreditLayawayListItemWrapper> _allItems = new();
+        private bool _isLoadingData = false;
+        private bool _suppressFilterReload = false;
 
         [ObservableProperty]
         private ListFilterType _filterType = ListFilterType.All;
@@ -130,6 +132,9 @@ namespace CasaCejaRemake.ViewModels.POS
         [RelayCommand]
         private async Task LoadDataAsync()
         {
+            if (_isLoadingData) return;
+
+            _isLoadingData = true;
             try
             {
                 IsLoading = true;
@@ -201,6 +206,7 @@ namespace CasaCejaRemake.ViewModels.POS
             finally
             {
                 IsLoading = false;
+                _isLoadingData = false;
             }
         }
 
@@ -235,12 +241,14 @@ namespace CasaCejaRemake.ViewModels.POS
 
         partial void OnFilterTypeChanged(ListFilterType value)
         {
+            if (_suppressFilterReload) return;
             _ = LoadDataAsync();
             OnPropertyChanged(nameof(FilterDescription));
         }
 
         partial void OnFilterStatusChanged(ListFilterStatus value)
         {
+            if (_suppressFilterReload) return;
             _ = LoadDataAsync();
             OnPropertyChanged(nameof(FilterDescription));
         }
@@ -253,6 +261,8 @@ namespace CasaCejaRemake.ViewModels.POS
         [RelayCommand]
         private void SetFilter(string filter)
         {
+            _suppressFilterReload = true;
+
             switch (filter.ToUpper())
             {
                 case "ALL":
@@ -277,6 +287,9 @@ namespace CasaCejaRemake.ViewModels.POS
                     FilterStatus = ListFilterStatus.Overdue;
                     break;
             }
+
+            _suppressFilterReload = false;
+            _ = LoadDataAsync();
         }
 
         [RelayCommand]

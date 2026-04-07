@@ -124,7 +124,8 @@ namespace CasaCejaRemake
 
                 FolioService = new FolioService(
                     cashCloseRepo, saleRepo, creditRepo,
-                    layawayRepo, creditPaymentRepo, layawayPaymentRepo);
+                    layawayRepo, creditPaymentRepo, layawayPaymentRepo,
+                    DatabaseService);
 
                 FileHelper.EnsureDirectoriesExist();
 

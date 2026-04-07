@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using CasaCejaRemake.Data;
 using CasaCejaRemake.Data.Repositories;
 using CasaCejaRemake.Models;
 
@@ -31,6 +32,7 @@ namespace CasaCejaRemake.Services
         private readonly LayawayRepository _layawayRepository;
         private readonly BaseRepository<CreditPayment> _creditPaymentRepository;
         private readonly BaseRepository<LayawayPayment> _layawayPaymentRepository;
+        private readonly DatabaseService _databaseService;
 
         private static readonly SemaphoreSlim _lock = new SemaphoreSlim(1, 1);
 
@@ -40,7 +42,8 @@ namespace CasaCejaRemake.Services
             CreditRepository creditRepository,
             LayawayRepository layawayRepository,
             BaseRepository<CreditPayment> creditPaymentRepository,
-            BaseRepository<LayawayPayment> layawayPaymentRepository)
+            BaseRepository<LayawayPayment> layawayPaymentRepository,
+            DatabaseService databaseService)
         {
             _cashCloseRepository = cashCloseRepository ?? throw new ArgumentNullException(nameof(cashCloseRepository));
             _saleRepository = saleRepository ?? throw new ArgumentNullException(nameof(saleRepository));
@@ -48,6 +51,7 @@ namespace CasaCejaRemake.Services
             _layawayRepository = layawayRepository ?? throw new ArgumentNullException(nameof(layawayRepository));
             _creditPaymentRepository = creditPaymentRepository ?? throw new ArgumentNullException(nameof(creditPaymentRepository));
             _layawayPaymentRepository = layawayPaymentRepository ?? throw new ArgumentNullException(nameof(layawayPaymentRepository));
+            _databaseService = databaseService ?? throw new ArgumentNullException(nameof(databaseService));
         }
 
         /// <summary>Genera un folio único para venta.</summary>
@@ -137,10 +141,12 @@ namespace CasaCejaRemake.Services
                 var nuevoSecuencial = ultimoSecuencial + 1;
                 var folio = $"{sucursalId:D2}{cajaId:D2}{ahora:ddMMyyyy}{tipo}{nuevoSecuencial:D4}";
 
-                if (await ExisteFolioAsync(folio))
+                // Sin recursión — incrementar hasta encontrar uno libre
+                while (await ExisteFolioAsync(folio))
                 {
-                    Console.WriteLine($"[FolioService] Folio duplicado detectado: {folio}. Reintentando...");
-                    return await GenerarFolioAsync(sucursalId, cajaId, tipo);
+                    Console.WriteLine($"[FolioService] Folio duplicado detectado: {folio}. Incrementando...");
+                    nuevoSecuencial++;
+                    folio = $"{sucursalId:D2}{cajaId:D2}{ahora:ddMMyyyy}{tipo}{nuevoSecuencial:D4}";
                 }
 
                 Console.WriteLine($"[FolioService] Folio generado: {folio}");
@@ -163,63 +169,36 @@ namespace CasaCejaRemake.Services
                 var prefijo = $"{sucursalId:D2}{cajaId:D2}{fechaInicio:ddMMyyyy}{tipo}";
                 Console.WriteLine($"[FolioService] Buscando último secuencial con prefijo: {prefijo}");
 
-                List<string> foliosEncontrados = new List<string>();
+                string tabla = tipo switch
+                {
+                    'V' => "sales",
+                    'A' => "layaways",
+                    'C' => "credits",
+                    'X' => "cash_closes",
+                    _   => null!
+                };
+
+                int max = 0;
 
                 if (tipo == 'P')
                 {
-                    var allCreditPayments = await _creditPaymentRepository.FindAsync(p =>
-                        p.PaymentDate >= fechaInicio && p.PaymentDate < fechaFin);
-                    var allLayawayPayments = await _layawayPaymentRepository.FindAsync(p =>
-                        p.PaymentDate >= fechaInicio && p.PaymentDate < fechaFin);
+                    // Abonos están en dos tablas — tomar el MAX de ambas
+                    var sql = $"SELECT MAX(CAST(SUBSTR(folio, 14, 4) AS INTEGER)) FROM credit_payments WHERE folio LIKE ?";
+                    var maxCredits = await _databaseService.ExecuteScalarAsync<int>(sql, $"{prefijo}%");
 
-                    foliosEncontrados.AddRange(allCreditPayments
-                        .Where(p => p.Folio.StartsWith(prefijo) && p.Folio.Length == 17)
-                        .Select(p => p.Folio));
-                    foliosEncontrados.AddRange(allLayawayPayments
-                        .Where(p => p.Folio.StartsWith(prefijo) && p.Folio.Length == 17)
-                        .Select(p => p.Folio));
+                    sql = $"SELECT MAX(CAST(SUBSTR(folio, 14, 4) AS INTEGER)) FROM layaway_payments WHERE folio LIKE ?";
+                    var maxLayaways = await _databaseService.ExecuteScalarAsync<int>(sql, $"{prefijo}%");
+
+                    max = Math.Max(maxCredits, maxLayaways);
                 }
-                else if (tipo == 'V')
+                else
                 {
-                    var all = await _saleRepository.FindAsync(s =>
-                        s.SaleDate >= fechaInicio && s.SaleDate < fechaFin);
-                    foliosEncontrados.AddRange(all
-                        .Where(s => s.Folio.StartsWith(prefijo) && s.Folio.Length == 17)
-                        .Select(s => s.Folio));
-                }
-                else if (tipo == 'A')
-                {
-                    var all = await _layawayRepository.FindAsync(l =>
-                        l.LayawayDate >= fechaInicio && l.LayawayDate < fechaFin);
-                    foliosEncontrados.AddRange(all
-                        .Where(l => l.Folio.StartsWith(prefijo) && l.Folio.Length == 17)
-                        .Select(l => l.Folio));
-                }
-                else if (tipo == 'C')
-                {
-                    var all = await _creditRepository.FindAsync(c =>
-                        c.CreditDate >= fechaInicio && c.CreditDate < fechaFin);
-                    foliosEncontrados.AddRange(all
-                        .Where(c => c.Folio.StartsWith(prefijo) && c.Folio.Length == 17)
-                        .Select(c => c.Folio));
+                    var sql = $"SELECT MAX(CAST(SUBSTR(folio, 14, 4) AS INTEGER)) FROM {tabla} WHERE folio LIKE ?";
+                    max = await _databaseService.ExecuteScalarAsync<int>(sql, $"{prefijo}%");
                 }
 
-                if (!foliosEncontrados.Any())
-                {
-                    Console.WriteLine($"[FolioService] No se encontraron folios con prefijo {prefijo}");
-                    return 0;
-                }
-
-                var maxSecuencial = foliosEncontrados
-                    .Select(folio =>
-                    {
-                        var secStr = folio.Substring(13, 4);
-                        return int.TryParse(secStr, out var sec) ? sec : 0;
-                    })
-                    .Max();
-
-                Console.WriteLine($"[FolioService] Último secuencial encontrado: {maxSecuencial} (de {foliosEncontrados.Count} folios)");
-                return maxSecuencial;
+                Console.WriteLine($"[FolioService] Último secuencial encontrado: {max}");
+                return max;
             }
             catch (Exception ex)
             {

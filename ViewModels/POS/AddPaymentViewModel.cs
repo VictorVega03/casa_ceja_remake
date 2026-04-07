@@ -51,6 +51,7 @@ namespace CasaCejaRemake.ViewModels.POS
         private readonly CreditService _creditService;
         private readonly LayawayService _layawayService;
         private readonly AuthService _authService;
+        private readonly CashCloseService _cashCloseService;
 
         // Info del credito/apartado
         [ObservableProperty]
@@ -193,11 +194,13 @@ namespace CasaCejaRemake.ViewModels.POS
         public AddPaymentViewModel(
             CreditService creditService,
             LayawayService layawayService,
-            AuthService authService)
+            AuthService authService,
+            CashCloseService cashCloseService)
         {
             _creditService = creditService;
             _layawayService = layawayService;
             _authService = authService;
+            _cashCloseService = cashCloseService;
         }
 
         public async Task InitializeForCreditAsync(int creditId, Customer customer)
@@ -410,6 +413,10 @@ namespace CasaCejaRemake.ViewModels.POS
 
                 bool success;
 
+                var branchId = (Avalonia.Application.Current as App)?.GetAuthService()?.CurrentBranchId ?? 0;
+                var openCash = await _cashCloseService.GetOpenCashAsync(branchId);
+                var cashCloseFolio = openCash?.Folio ?? string.Empty;
+
                 if (_isCredit)
                 {
                     success = await _creditService.AddPaymentWithMixedAsync(
@@ -417,7 +424,8 @@ namespace CasaCejaRemake.ViewModels.POS
                         amountToSave,
                         paymentJson,
                         _authService.CurrentUser?.Id ?? 0,
-                        string.IsNullOrWhiteSpace(Notes) ? null : Notes);
+                        string.IsNullOrWhiteSpace(Notes) ? null : Notes,
+                        cashCloseFolio);
                 }
                 else
                 {
@@ -426,7 +434,8 @@ namespace CasaCejaRemake.ViewModels.POS
                         amountToSave,
                         paymentJson,
                         _authService.CurrentUser?.Id ?? 0,
-                        string.IsNullOrWhiteSpace(Notes) ? null : Notes);
+                        string.IsNullOrWhiteSpace(Notes) ? null : Notes,
+                        cashCloseFolio);
                 }
 
                 if (success)
