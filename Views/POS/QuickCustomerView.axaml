@@ -3,13 +3,14 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:vm="using:CasaCejaRemake.ViewModels.POS"
-        mc:Ignorable="d" d:DesignWidth="550" d:DesignHeight="350"
+        mc:Ignorable="d" d:DesignWidth="620" d:DesignHeight="560"
         x:Class="CasaCejaRemake.Views.POS.QuickCustomerView"
         x:DataType="vm:QuickCustomerViewModel"
         Title="{Binding FormTitle}"
-        Width="550" Height="350"
+        Width="620" MinWidth="480"
+        Height="560" MinHeight="480"
         WindowStartupLocation="CenterOwner"
-        CanResize="False"
+        CanResize="True"
         ShowInTaskbar="False"
         Focusable="True"
         Background="#1E1E1E">
@@ -19,104 +20,157 @@
             <Setter Property="Background" Value="#2D2D2D"/>
             <Setter Property="Foreground" Value="White"/>
             <Setter Property="BorderBrush" Value="#3D3D3D"/>
-            <Setter Property="Padding" Value="10"/>
-            <Setter Property="Margin" Value="0,3"/>
+            <Setter Property="Padding" Value="8,6"/>
+            <Setter Property="Margin" Value="0,2,0,4"/>
+            <Setter Property="FontSize" Value="13"/>
         </Style>
         <Style Selector="TextBlock.label">
             <Setter Property="Foreground" Value="#AAAAAA"/>
-            <Setter Property="FontSize" Value="12"/>
-            <Setter Property="Margin" Value="0,5,0,2"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="Margin" Value="0,4,0,2"/>
         </Style>
         <Style Selector="TextBlock.required">
             <Setter Property="Foreground" Value="#FF5252"/>
         </Style>
+        <Style Selector="TextBlock.section">
+            <Setter Property="Foreground" Value="#7E8CF7"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Margin" Value="0,10,0,4"/>
+        </Style>
     </Window.Styles>
 
     <Grid RowDefinitions="Auto,*,Auto,Auto">
+
         <!-- Header -->
-        <Border Grid.Row="0" Background="#2D2D2D" Padding="15">
+        <Border Grid.Row="0" Background="#2D2D2D" Padding="15,12">
             <TextBlock Text="{Binding HeaderTitle}"
-                       FontSize="18"
+                       FontSize="16"
                        FontWeight="Bold"
                        Foreground="White"
                        HorizontalAlignment="Center"/>
         </Border>
 
-        <!-- Form - Grid de 2 columnas -->
-        <ScrollViewer Grid.Row="1" Margin="20,10">
-            <Grid ColumnDefinitions="*,20,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto">
-                
-                <!-- Fila 1: Nombre y Teléfono -->
-                <StackPanel Grid.Row="0" Grid.Column="0">
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="Nombre" Classes="label"/>
-                        <TextBlock Text=" *" Classes="label required"/>
-                    </StackPanel>
-                    <TextBox x:Name="NameBox"
-                             Text="{Binding Name}"
-                             Watermark="Nombre completo"/>
-                </StackPanel>
-                
-                <StackPanel Grid.Row="0" Grid.Column="2">
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="Teléfono" Classes="label"/>
-                        <TextBlock Text=" *" Classes="label required"/>
-                    </StackPanel>
-                    <TextBox Text="{Binding Phone}"
-                             Watermark="10 dígitos"/>
-                </StackPanel>
+        <!-- Form -->
+        <ScrollViewer Grid.Row="1" Padding="20,8,20,8"
+                      HorizontalScrollBarVisibility="Disabled"
+                      VerticalScrollBarVisibility="Auto">
+            <StackPanel Spacing="0">
 
-                <!-- Fila 2: Email y RFC -->
-                <StackPanel Grid.Row="1" Grid.Column="0">
-                    <TextBlock Text="Email" Classes="label"/>
-                    <TextBox Text="{Binding Email}"
-                             Watermark="correo@ejemplo.com"/>
-                </StackPanel>
-                
-                <StackPanel Grid.Row="1" Grid.Column="2">
-                    <TextBlock Text="RFC" Classes="label"/>
-                    <TextBox Text="{Binding Rfc}"
-                             Watermark="RFC (opcional)"/>
-                </StackPanel>
+                <!-- ── Datos generales ── -->
+                <TextBlock Text="DATOS GENERALES" Classes="section"/>
+                <Grid ColumnDefinitions="*,12,*">
+                    <!-- Nombre -->
+                    <StackPanel Grid.Column="0">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="Nombre" Classes="label"/>
+                            <TextBlock Text=" *" Classes="label required"/>
+                        </StackPanel>
+                        <TextBox x:Name="NameBox"
+                                 Text="{Binding Name}"
+                                 Watermark="Nombre completo"/>
+                    </StackPanel>
+                    <!-- Teléfono -->
+                    <StackPanel Grid.Column="2">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="Teléfono" Classes="label"/>
+                            <TextBlock Text=" *" Classes="label required"/>
+                        </StackPanel>
+                        <TextBox Text="{Binding Phone}"
+                                 Watermark="10 dígitos"/>
+                    </StackPanel>
+                </Grid>
 
-                <!-- Fila 3: Calle y Ciudad -->
-                <StackPanel Grid.Row="2" Grid.Column="0">
-                    <TextBlock Text="Calle" Classes="label"/>
-                    <TextBox Text="{Binding Street}"
-                             Watermark="Dirección"/>
-                </StackPanel>
-                
-                <StackPanel Grid.Row="2" Grid.Column="2">
+                <Grid ColumnDefinitions="*,12,*" Margin="0,0,0,0">
+                    <!-- Email -->
+                    <StackPanel Grid.Column="0">
+                        <TextBlock Text="Email" Classes="label"/>
+                        <TextBox Text="{Binding Email}"
+                                 Watermark="correo@ejemplo.com"/>
+                    </StackPanel>
+                    <!-- RFC -->
+                    <StackPanel Grid.Column="2">
+                        <TextBlock Text="RFC" Classes="label"/>
+                        <TextBox Text="{Binding Rfc}"
+                                 MaxLength="13"
+                                 Watermark="RFC (opcional)"/>
+                    </StackPanel>
+                </Grid>
+
+                <!-- ── Dirección ── -->
+                <TextBlock Text="DIRECCIÓN" Classes="section"/>
+                <Grid ColumnDefinitions="*,12,80,12,80">
+                    <!-- Calle -->
+                    <StackPanel Grid.Column="0">
+                        <TextBlock Text="Calle" Classes="label"/>
+                        <TextBox Text="{Binding Street}"
+                                 Watermark="Nombre de la calle"/>
+                    </StackPanel>
+                    <!-- No. Exterior -->
+                    <StackPanel Grid.Column="2">
+                        <TextBlock Text="No. Ext." Classes="label"/>
+                        <TextBox Text="{Binding ExteriorNumber}"
+                                 MaxLength="20"
+                                 Watermark="100"/>
+                    </StackPanel>
+                    <!-- No. Interior -->
+                    <StackPanel Grid.Column="4">
+                        <TextBlock Text="No. Int." Classes="label"/>
+                        <TextBox Text="{Binding InteriorNumber}"
+                                 MaxLength="20"
+                                 Watermark="A"/>
+                    </StackPanel>
+                </Grid>
+
+                <Grid ColumnDefinitions="*,12,120" Margin="0,0,0,0">
+                    <!-- Colonia -->
+                    <StackPanel Grid.Column="0">
+                        <TextBlock Text="Colonia" Classes="label"/>
+                        <TextBox Text="{Binding Neighborhood}"
+                                 Watermark="Nombre de la colonia"/>
+                    </StackPanel>
+                    <!-- Código Postal -->
+                    <StackPanel Grid.Column="2">
+                        <TextBlock Text="C.P." Classes="label"/>
+                        <TextBox Text="{Binding PostalCode}"
+                                 MaxLength="10"
+                                 Watermark="00000"/>
+                    </StackPanel>
+                </Grid>
+
+                <StackPanel Margin="0,0,0,4">
                     <TextBlock Text="Ciudad" Classes="label"/>
                     <TextBox Text="{Binding City}"
-                             Watermark="Ciudad"/>
+                             Watermark="Ciudad o municipio"/>
                 </StackPanel>
-            </Grid>
+
+            </StackPanel>
         </ScrollViewer>
 
-        <!-- Error Message -->
-        <Border Grid.Row="2" 
-                Margin="20,5"
+        <!-- Error -->
+        <Border Grid.Row="2"
+                Margin="20,4"
                 IsVisible="{Binding HasError}"
                 Background="#FF5252"
-                CornerRadius="5"
-                Padding="10">
+                CornerRadius="4"
+                Padding="10,8">
             <TextBlock Text="{Binding ErrorMessage}"
                        Foreground="White"
+                       FontSize="12"
                        TextWrapping="Wrap"/>
         </Border>
 
-        <!-- Buttons -->
-        <Border Grid.Row="3" Background="#2D2D2D" Padding="10">
+        <!-- Botones -->
+        <Border Grid.Row="3" Background="#2D2D2D" Padding="15,10">
             <Grid ColumnDefinitions="*,*">
                 <Button Grid.Column="0"
                         Command="{Binding SaveCommand}"
                         Background="#4CAF50"
                         Foreground="White"
-                        Padding="20,10"
+                        Padding="20,9"
                         HorizontalAlignment="Center"
                         IsEnabled="{Binding !IsSaving}">
-                    <StackPanel Orientation="Horizontal" Spacing="5">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
                         <TextBlock Text="F5"/>
                         <TextBlock Text="{Binding SaveButtonText}"/>
                     </StackPanel>
@@ -126,9 +180,10 @@
                         Command="{Binding CancelCommand}"
                         Background="#555555"
                         Foreground="White"
-                        Padding="20,10"
+                        Padding="20,9"
                         HorizontalAlignment="Center"/>
             </Grid>
         </Border>
+
     </Grid>
 </Window>
