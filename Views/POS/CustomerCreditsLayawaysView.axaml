@@ -196,61 +196,73 @@
         <!-- Filtros de estado -->
         <Border Grid.Row="2" Background="#252525" Padding="12,8" CornerRadius="8" Margin="0,0,0,12">
             <StackPanel Orientation="Horizontal" Spacing="0">
-                <TextBlock Text="Filtrar:" 
-                           Foreground="#888888" 
+                <TextBlock Text="Filtrar:"
+                           Foreground="#888888"
                            FontSize="13"
                            VerticalAlignment="Center"
                            Margin="0,0,12,0"/>
                 <!-- F4 Todos -->
                 <Button Classes="filter"
                         Command="{Binding SetFilterCommand}"
-                        CommandParameter="0"
-                        Background="{Binding FilterAllBg}">
-                    <StackPanel Orientation="Horizontal" Spacing="5">
-                        <TextBlock Text="F4" FontSize="11" Opacity="0.7" FontWeight="Bold" Foreground="{Binding FilterAllFg}"/>
-                        <TextBlock Text="Todos" Foreground="{Binding FilterAllFg}"/>
-                        <Border Background="#00000030" Padding="5,1" CornerRadius="10">
-                            <TextBlock Text="{Binding TotalAllCount}" FontSize="11" Foreground="White"/>
-                        </Border>
+                        CommandParameter="0">
+                    <StackPanel Spacing="2">
+                        <StackPanel Orientation="Horizontal" Spacing="5">
+                            <TextBlock Text="F4" FontSize="11" Opacity="0.7" FontWeight="Bold" Foreground="White"/>
+                            <TextBlock Text="Todos" Foreground="White"/>
+                            <Border Background="#00000030" Padding="5,1" CornerRadius="10">
+                                <TextBlock Text="{Binding TotalAllCount}" FontSize="11" Foreground="White"/>
+                            </Border>
+                        </StackPanel>
+                        <Border Height="3" CornerRadius="2" Background="#888888" IsVisible="{Binding FilterAllActive}"/>
+                        <Border Height="3" CornerRadius="2" Background="Transparent" IsVisible="{Binding !FilterAllActive}"/>
                     </StackPanel>
                 </Button>
                 <!-- F5 Pendientes -->
                 <Button Classes="filter"
                         Command="{Binding SetFilterCommand}"
-                        CommandParameter="1"
-                        Background="{Binding FilterPendingBg}">
-                    <StackPanel Orientation="Horizontal" Spacing="5">
-                        <TextBlock Text="F5" FontSize="11" Opacity="0.7" FontWeight="Bold" Foreground="{Binding FilterPendingFg}"/>
-                        <TextBlock Text="Pendientes" Foreground="{Binding FilterPendingFg}"/>
-                        <Border Background="#00000030" Padding="5,1" CornerRadius="10">
-                            <TextBlock Text="{Binding TotalPendingCount}" FontSize="11" Foreground="White"/>
-                        </Border>
+                        CommandParameter="1">
+                    <StackPanel Spacing="2">
+                        <StackPanel Orientation="Horizontal" Spacing="5">
+                            <TextBlock Text="F5" FontSize="11" Opacity="0.7" FontWeight="Bold" Foreground="White"/>
+                            <TextBlock Text="Pendientes" Foreground="White"/>
+                            <Border Background="#00000030" Padding="5,1" CornerRadius="10">
+                                <TextBlock Text="{Binding TotalPendingCount}" FontSize="11" Foreground="White"/>
+                            </Border>
+                        </StackPanel>
+                        <Border Height="3" CornerRadius="2" Background="#FF9800" IsVisible="{Binding FilterPendingActive}"/>
+                        <Border Height="3" CornerRadius="2" Background="Transparent" IsVisible="{Binding !FilterPendingActive}"/>
                     </StackPanel>
                 </Button>
                 <!-- F6 Pagados -->
                 <Button Classes="filter"
                         Command="{Binding SetFilterCommand}"
-                        CommandParameter="2"
-                        Background="{Binding FilterPaidBg}">
-                    <StackPanel Orientation="Horizontal" Spacing="5">
-                        <TextBlock Text="F6" FontSize="11" Opacity="0.7" FontWeight="Bold" Foreground="{Binding FilterPaidFg}"/>
-                        <TextBlock Text="Pagados" Foreground="{Binding FilterPaidFg}"/>
-                        <Border Background="#00000030" Padding="5,1" CornerRadius="10">
-                            <TextBlock Text="{Binding TotalPaidCount}" FontSize="11" Foreground="White"/>
-                        </Border>
+                        CommandParameter="2">
+                    <StackPanel Spacing="2">
+                        <StackPanel Orientation="Horizontal" Spacing="5">
+                            <TextBlock Text="F6" FontSize="11" Opacity="0.7" FontWeight="Bold" Foreground="White"/>
+                            <TextBlock Text="Pagados" Foreground="White"/>
+                            <Border Background="#00000030" Padding="5,1" CornerRadius="10">
+                                <TextBlock Text="{Binding TotalPaidCount}" FontSize="11" Foreground="White"/>
+                            </Border>
+                        </StackPanel>
+                        <Border Height="3" CornerRadius="2" Background="#00BCD4" IsVisible="{Binding FilterPaidActive}"/>
+                        <Border Height="3" CornerRadius="2" Background="Transparent" IsVisible="{Binding !FilterPaidActive}"/>
                     </StackPanel>
                 </Button>
                 <!-- F7 Vencidos -->
                 <Button Classes="filter"
                         Command="{Binding SetFilterCommand}"
-                        CommandParameter="3"
-                        Background="{Binding FilterOverdueBg}">
-                    <StackPanel Orientation="Horizontal" Spacing="5">
-                        <TextBlock Text="F7" FontSize="11" Opacity="0.7" FontWeight="Bold" Foreground="{Binding FilterOverdueFg}"/>
-                        <TextBlock Text="Vencidos" Foreground="{Binding FilterOverdueFg}"/>
-                        <Border Background="#00000030" Padding="5,1" CornerRadius="10">
-                            <TextBlock Text="{Binding TotalOverdueCount}" FontSize="11" Foreground="White"/>
-                        </Border>
+                        CommandParameter="3">
+                    <StackPanel Spacing="2">
+                        <StackPanel Orientation="Horizontal" Spacing="5">
+                            <TextBlock Text="F7" FontSize="11" Opacity="0.7" FontWeight="Bold" Foreground="White"/>
+                            <TextBlock Text="Vencidos" Foreground="White"/>
+                            <Border Background="#00000030" Padding="5,1" CornerRadius="10">
+                                <TextBlock Text="{Binding TotalOverdueCount}" FontSize="11" Foreground="White"/>
+                            </Border>
+                        </StackPanel>
+                        <Border Height="3" CornerRadius="2" Background="#F44336" IsVisible="{Binding FilterOverdueActive}"/>
+                        <Border Height="3" CornerRadius="2" Background="Transparent" IsVisible="{Binding !FilterOverdueActive}"/>
                     </StackPanel>
                 </Button>
             </StackPanel>

@@ -102,19 +102,22 @@
                 <Grid Grid.Row="1" ColumnDefinitions="Auto,*,Auto">
                     <!-- Filter Type -->
                     <StackPanel Grid.Column="0" Orientation="Horizontal">
-                        <TextBlock Text="Tipo:" 
-                                   Foreground="#AAAAAA" 
+                        <TextBlock Text="Tipo:"
+                                   Foreground="#AAAAAA"
                                    VerticalAlignment="Center"
                                    Margin="0,0,10,0"/>
-                        <Button Content="F1 Todos"
+                        <Button x:Name="BtnFilterAll"
+                                Content="F1 Todos"
                                 Command="{Binding SetFilterCommand}"
                                 CommandParameter="ALL"
                                 Classes="filter"/>
-                        <Button Content="F2 Créditos"
+                        <Button x:Name="BtnFilterCredits"
+                                Content="F2 Créditos"
                                 Command="{Binding SetFilterCommand}"
                                 CommandParameter="CREDITS"
                                 Classes="filter"/>
-                        <Button Content="F3 Apartados"
+                        <Button x:Name="BtnFilterLayaways"
+                                Content="F3 Apartados"
                                 Command="{Binding SetFilterCommand}"
                                 CommandParameter="LAYAWAYS"
                                 Classes="filter"/>
@@ -122,19 +125,22 @@
 
                     <!-- Filter Status -->
                     <StackPanel Grid.Column="2" Orientation="Horizontal">
-                        <TextBlock Text="Estado:" 
-                                   Foreground="#AAAAAA" 
+                        <TextBlock Text="Estado:"
+                                   Foreground="#AAAAAA"
                                    VerticalAlignment="Center"
                                    Margin="0,0,10,0"/>
-                        <Button Content="F4 Pendiente"
+                        <Button x:Name="BtnFilterPending"
+                                Content="F4 Pendiente"
                                 Command="{Binding SetFilterCommand}"
                                 CommandParameter="PENDING"
                                 Classes="filter"/>
-                        <Button Content="F5 Pagado"
+                        <Button x:Name="BtnFilterPaid"
+                                Content="F5 Pagado"
                                 Command="{Binding SetFilterCommand}"
                                 CommandParameter="PAID"
                                 Classes="filter"/>
-                        <Button Content="F6 Vencidos"
+                        <Button x:Name="BtnFilterOverdue"
+                                Content="F6 Vencidos"
                                 Command="{Binding SetFilterCommand}"
                                 CommandParameter="OVERDUE"
                                 Classes="filter"/>

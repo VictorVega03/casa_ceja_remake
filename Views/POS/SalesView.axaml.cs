@@ -1231,6 +1231,7 @@ namespace CasaCejaRemake.Views.POS
 
         /// <summary>
         /// Muestra el diálogo de historial de ventas.
+        /// Carga automáticamente las ventas del corte activo (si hay uno abierto).
         /// </summary>
         private async void ShowSalesHistoryDialogAsync()
         {
@@ -1250,9 +1251,21 @@ namespace CasaCejaRemake.Views.POS
                 _viewModel?.BranchId ?? 1);
 
             historyView.DataContext = historyViewModel;
-            
-            // Cargar datos antes de mostrar
-            await historyViewModel.InitializeAsync();
+
+            // Intentar obtener el corte activo para mostrar sus ventas por defecto
+            DateTime? openingDate = null;
+            try
+            {
+                var cashCloseService = app.GetCashCloseService();
+                if (cashCloseService != null)
+                {
+                    var openCash = await cashCloseService.GetOpenCashAsync(_viewModel?.BranchId ?? 1);
+                    openingDate = openCash?.OpeningDate;
+                }
+            }
+            catch { /* Si falla, arranca vacío */ }
+
+            await historyViewModel.InitializeAsync(openingDate, DateTime.Now);
 
             _hasOpenDialog = true;
             await historyView.ShowDialog(this);

@@ -113,13 +113,17 @@ namespace CasaCejaRemake.ViewModels.POS
 
         public int TotalRecords => IsCreditsMode ? Credits.Count : Layaways.Count;
 
-        // Active filter states for button highlighting
+        // ── Indicadores activos de tipo (Créditos / Apartados) ──────────────
+        public bool FilterCreditsActive => IsCreditsMode;
+        public bool FilterLayawaysActive => !IsCreditsMode;
+
+        // ── Indicadores activos de estado ────────────────────────────────────
         public bool FilterAllActive => SelectedStatusFilter == 0;
         public bool FilterPendingActive => SelectedStatusFilter == 1;
         public bool FilterPaidActive => SelectedStatusFilter == 2;
         public bool FilterOverdueActive => SelectedStatusFilter == 3;
 
-        // Filter button background colors
+        // Filter button background colors (kept for backwards-compat, indicator bars used in AXAML)
         public string FilterAllBg => SelectedStatusFilter == 0 ? "#4CAF50" : "#2D2D2D";
         public string FilterPendingBg => SelectedStatusFilter == 1 ? "#FF9800" : "#2D2D2D";
         public string FilterPaidBg => SelectedStatusFilter == 2 ? "#2196F3" : "#2D2D2D";
@@ -169,6 +173,8 @@ namespace CasaCejaRemake.ViewModels.POS
             OnPropertyChanged(nameof(WindowTitle));
             OnPropertyChanged(nameof(HeaderTitle));
             OnPropertyChanged(nameof(HeaderColor));
+            OnPropertyChanged(nameof(FilterCreditsActive));
+            OnPropertyChanged(nameof(FilterLayawaysActive));
             NotifyComputedProperties();
         }
 
@@ -223,6 +229,20 @@ namespace CasaCejaRemake.ViewModels.POS
         {
             if (int.TryParse(status, out var parsed))
                 SelectedStatusFilter = parsed;
+        }
+
+        /// <summary>Cambia entre modo Créditos y Apartados.</summary>
+        [RelayCommand]
+        private async Task SetMode(string? mode)
+        {
+            if (mode == null) return;
+            var wantsCredits = mode == "credits";
+            if (IsCreditsMode == wantsCredits) return;
+
+            IsCreditsMode = wantsCredits;
+            ModeTitle = wantsCredits ? "Mis Creditos" : "Mis Apartados";
+            SelectedStatusFilter = 0; // Reiniciar filtro de estado al cambiar de tipo
+            await LoadDataCommand.ExecuteAsync(null);
         }
 
         private async Task LoadCreditsAsync()

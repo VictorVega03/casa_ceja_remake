@@ -150,11 +150,22 @@
                 <!-- Quick Actions -->
                 <Grid Grid.Row="1" ColumnDefinitions="Auto,*,Auto">
                     <StackPanel Grid.Column="0" Orientation="Horizontal">
-                        <TextBlock Text="Acciones:" 
-                                   Foreground="#AAAAAA" 
+                        <TextBlock Text="Acciones:"
+                                   Foreground="#AAAAAA"
                                    VerticalAlignment="Center"
                                    Margin="0,0,10,0"/>
-                        <Button Content="F6 Limpiar Filtros"
+                        <Button Content="F3 Ventas del Corte"
+                                Command="{Binding ShowCorteCommand}"
+                                IsVisible="{Binding HasCashCloseFilter}"
+                                Classes="filter"
+                                Background="#1565C0"
+                                Foreground="White"/>
+                        <Button Content="F4 Mostrar Todas"
+                                Command="{Binding ShowAllCommand}"
+                                Classes="filter"
+                                Background="#4CAF50"
+                                Foreground="White"/>
+                        <Button Content="F6 Limpiar"
                                 Command="{Binding ClearFiltersCommand}"
                                 Classes="filter"/>
                         <Button Content="F7 Buscar"
@@ -166,6 +177,24 @@
             </Grid>
         </Border>
 
+        <!-- Estado vacío -->
+        <Border Grid.Row="2"
+                IsVisible="{Binding ShowEmptyState}"
+                VerticalAlignment="Center"
+                HorizontalAlignment="Center">
+            <StackPanel Spacing="12" HorizontalAlignment="Center">
+                <TextBlock Text="Sin ventas para mostrar"
+                           Foreground="#888888"
+                           FontSize="18"
+                           FontWeight="SemiBold"
+                           HorizontalAlignment="Center"/>
+                <TextBlock Text="Aplique filtros de fecha o haga clic en 'Mostrar Todas'"
+                           Foreground="#555555"
+                           FontSize="14"
+                           HorizontalAlignment="Center"/>
+            </StackPanel>
+        </Border>
+
         <!-- DataGrid -->
         <DataGrid x:Name="DataGridItems"
                   Grid.Row="2"
@@ -174,6 +203,7 @@
                   AutoGenerateColumns="False"
                   IsReadOnly="True"
                   Margin="10"
+                  IsVisible="{Binding !ShowEmptyState}"
                   SelectionMode="Single">
             <DataGrid.Columns>
                 <DataGridTextColumn Header="FOLIO" Binding="{Binding Folio}" Width="180"/>

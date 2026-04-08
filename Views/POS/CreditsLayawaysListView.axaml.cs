@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.Media;
 using CasaCejaRemake.ViewModels.POS;
 using casa_ceja_remake.Helpers;
 
@@ -28,18 +30,22 @@ namespace CasaCejaRemake.Views.POS
         private void OnLoaded(object? sender, RoutedEventArgs e)
         {
             _viewModel = DataContext as CreditsLayawaysListViewModel;
-            
+
             if (_viewModel != null)
             {
                 _viewModel.CloseRequested += OnCloseRequested;
                 _viewModel.ItemSelected += OnItemSelected;
                 _viewModel.ExportRequested += OnExportRequested;
-                
+
+                // Escuchar cambios de filtro para actualizar colores de botones
+                _viewModel.PropertyChanged += OnViewModelPropertyChanged;
+
                 // Seleccionar primer item automáticamente si hay items
                 if (_viewModel.Items.Count > 0)
-                {
                     _viewModel.SelectedItem = _viewModel.Items[0];
-                }
+
+                // Aplicar colores iniciales
+                UpdateFilterButtonColors();
             }
             
             // Configurar el TextBox de búsqueda
@@ -58,6 +64,47 @@ namespace CasaCejaRemake.Views.POS
                 // Usar PreviewKeyDown (Tunneling) para interceptar Enter ANTES del DataGrid
                 dataGrid.AddHandler(KeyDownEvent, DataGrid_PreviewKeyDown, Avalonia.Interactivity.RoutingStrategies.Tunnel);
             }
+        }
+
+        private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(CreditsLayawaysListViewModel.FilterType) ||
+                e.PropertyName == nameof(CreditsLayawaysListViewModel.FilterStatus))
+            {
+                UpdateFilterButtonColors();
+            }
+        }
+
+        private static readonly IBrush ColorInactive  = new SolidColorBrush(Color.Parse("#3D3D3D"));
+        private static readonly IBrush ColorTodos     = new SolidColorBrush(Color.Parse("#666666"));
+        private static readonly IBrush ColorCredits   = new SolidColorBrush(Color.Parse("#4CAF50"));
+        private static readonly IBrush ColorLayaways  = new SolidColorBrush(Color.Parse("#2196F3"));
+        private static readonly IBrush ColorPending   = new SolidColorBrush(Color.Parse("#FF9800"));
+        private static readonly IBrush ColorPaid      = new SolidColorBrush(Color.Parse("#00BCD4"));
+        private static readonly IBrush ColorOverdue   = new SolidColorBrush(Color.Parse("#F44336"));
+
+        private void UpdateFilterButtonColors()
+        {
+            if (_viewModel == null) return;
+
+            var ft = _viewModel.FilterType;
+            var fs = _viewModel.FilterStatus;
+
+            // Tipo
+            SetButtonBg("BtnFilterAll",      ft == ListFilterType.All      ? ColorTodos    : ColorInactive);
+            SetButtonBg("BtnFilterCredits",  ft == ListFilterType.Credits  ? ColorCredits  : ColorInactive);
+            SetButtonBg("BtnFilterLayaways", ft == ListFilterType.Layaways ? ColorLayaways : ColorInactive);
+
+            // Estado
+            SetButtonBg("BtnFilterPending",  fs == ListFilterStatus.Pending ? ColorPending  : ColorInactive);
+            SetButtonBg("BtnFilterPaid",     fs == ListFilterStatus.Paid    ? ColorPaid     : ColorInactive);
+            SetButtonBg("BtnFilterOverdue",  fs == ListFilterStatus.Overdue ? ColorOverdue  : ColorInactive);
+        }
+
+        private void SetButtonBg(string name, IBrush brush)
+        {
+            var btn = this.FindControl<Button>(name);
+            if (btn != null) btn.Background = brush;
         }
 
         private void OnCloseRequested(object? sender, EventArgs e)
@@ -132,6 +179,7 @@ namespace CasaCejaRemake.Views.POS
                 _viewModel.CloseRequested -= OnCloseRequested;
                 _viewModel.ItemSelected -= OnItemSelected;
                 _viewModel.ExportRequested -= OnExportRequested;
+                _viewModel.PropertyChanged -= OnViewModelPropertyChanged;
             }
             base.OnClosed(e);
         }

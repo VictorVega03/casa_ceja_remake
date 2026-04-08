@@ -71,30 +71,37 @@ namespace CasaCejaRemake.Views.POS
             }
         }
 
-        private void OnCloseCompleted(object? sender, CashClose cashClose)
+        private async void OnCloseCompleted(object? sender, CashClose cashClose)
         {
             // Generar ticket de corte
-            GenerateCashCloseTicket(cashClose);
-            
+            await GenerateCashCloseTicketAsync(cashClose);
+
             // Guardar el ticket y el resultado
-            Tag = new CashCloseDialogResult 
-            { 
-                CashClose = cashClose, 
-                TicketText = _ticketText 
+            Tag = new CashCloseDialogResult
+            {
+                CashClose = cashClose,
+                TicketText = _ticketText
             };
             Close();
         }
 
-        private void GenerateCashCloseTicket(CashClose cashClose)
+        private async System.Threading.Tasks.Task GenerateCashCloseTicketAsync(CashClose cashClose)
         {
             try
             {
                 var ticketService = new TicketService();
-                
+
+                // Obtener nombre y dirección de la sucursal desde la base de datos
+                var app = Avalonia.Application.Current as App;
+                var branch = app != null ? await app.GetCurrentBranchAsync() : null;
+                var configService = app?.GetConfigService();
+                var branchName = branch?.Name ?? configService?.AppConfig.CurrentBranchName ?? string.Empty;
+                var branchAddress = branch?.Address ?? string.Empty;
+
                 // Parsear gastos e ingresos del JSON
                 var expenses = new List<(string Concept, decimal Amount)>();
                 var incomes = new List<(string Concept, decimal Amount)>();
-                
+
                 if (!string.IsNullOrEmpty(cashClose.Expenses) && cashClose.Expenses != "[]")
                 {
                     try
@@ -107,7 +114,7 @@ namespace CasaCejaRemake.Views.POS
                     }
                     catch { }
                 }
-                
+
                 if (!string.IsNullOrEmpty(cashClose.Income) && cashClose.Income != "[]")
                 {
                     try
@@ -120,13 +127,13 @@ namespace CasaCejaRemake.Views.POS
                     }
                     catch { }
                 }
-                
+
                 decimal totalExpenses = expenses.Sum(e => e.Amount);
                 decimal totalIncome = incomes.Sum(i => i.Amount);
-                
+
                 _ticketText = ticketService.GenerateCashCloseTicketText(
-                    branchName: "Casa Ceja", // TODO: Obtener de configuración
-                    branchAddress: "",
+                    branchName: branchName,
+                    branchAddress: branchAddress,
                     branchPhone: "",
                     folio: cashClose.Folio,
                     userName: _viewModel?.UserName ?? "Usuario",

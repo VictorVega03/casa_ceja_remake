@@ -60,10 +60,19 @@ namespace CasaCejaRemake.ViewModels.POS
 
         private const int PageSize = 50;
 
+        // Rango de fechas del corte activo (null si no hay corte)
+        private DateTime? _cashCloseFrom;
+        private DateTime? _cashCloseTo;
+
         /// <summary>
         /// Expone el servicio de ventas para uso en vistas hijas.
         /// </summary>
         public SalesService SalesService => _salesService;
+
+        /// <summary>
+        /// Verdadero si se abrió con un corte activo (permite volver al filtro del corte).
+        /// </summary>
+        public bool HasCashCloseFilter => _cashCloseFrom.HasValue;
 
         [ObservableProperty]
         private SaleListItemWrapper? _selectedItem;
@@ -97,6 +106,7 @@ namespace CasaCejaRemake.ViewModels.POS
         public bool HasSelectedItem => SelectedItem != null;
         public bool CanGoBack => CurrentPage > 1;
         public bool CanGoForward => CurrentPage < TotalPages;
+        public bool ShowEmptyState => !IsLoading && Items.Count == 0;
 
         public event EventHandler<SaleListItemWrapper>? ItemSelected;
         public event EventHandler<(Sale Sale, string TicketText)>? ReprintRequested;
@@ -112,14 +122,31 @@ namespace CasaCejaRemake.ViewModels.POS
             _ticketService = ticketService;
             _branchId = branchId;
 
-            // Filtros por defecto: hoy
-            _filterDateTo = DateTime.Today;
-            _filterDateFrom = DateTime.Today.AddDays(-30);
+            // Arrancar sin filtros para que la tabla esté vacía al abrir
+            _filterDateFrom = null;
+            _filterDateTo = null;
         }
 
-        public async Task InitializeAsync()
+        /// <summary>
+        /// Inicializa la vista. Si se proporcionan fechas del corte actual, carga
+        /// automáticamente las ventas de ese período. Si no, la tabla arranca vacía.
+        /// </summary>
+        public async Task InitializeAsync(DateTime? cashCloseFrom = null, DateTime? cashCloseTo = null)
         {
-            await LoadDataAsync();
+            if (cashCloseFrom.HasValue)
+            {
+                _cashCloseFrom = cashCloseFrom;
+                _cashCloseTo = cashCloseTo ?? DateTime.Now;
+                OnPropertyChanged(nameof(HasCashCloseFilter));
+
+                FilterDateFrom = _cashCloseFrom;
+                FilterDateTo = _cashCloseTo;
+                await LoadDataAsync();
+            }
+            else
+            {
+                OnPropertyChanged(nameof(ShowEmptyState));
+            }
         }
 
         [RelayCommand]
@@ -128,6 +155,7 @@ namespace CasaCejaRemake.ViewModels.POS
             try
             {
                 IsLoading = true;
+                OnPropertyChanged(nameof(ShowEmptyState));
                 Items.Clear();
 
                 // Obtener conteo total para paginación
@@ -167,6 +195,7 @@ namespace CasaCejaRemake.ViewModels.POS
                 UpdateStatus();
                 OnPropertyChanged(nameof(CanGoBack));
                 OnPropertyChanged(nameof(CanGoForward));
+                OnPropertyChanged(nameof(ShowEmptyState));
             }
             catch (Exception ex)
             {
@@ -211,14 +240,51 @@ namespace CasaCejaRemake.ViewModels.POS
             await LoadDataAsync();
         }
 
+        /// <summary>Carga todas las ventas de los últimos 30 días.</summary>
         [RelayCommand]
-        private async Task ClearFilters()
+        private async Task ShowAll()
         {
             FilterDateFrom = DateTime.Today.AddDays(-30);
             FilterDateTo = DateTime.Today;
             SearchText = string.Empty;
             CurrentPage = 1;
             await LoadDataAsync();
+        }
+
+        /// <summary>Vuelve al filtro del corte activo.</summary>
+        [RelayCommand]
+        private async Task ShowCorte()
+        {
+            if (!_cashCloseFrom.HasValue) return;
+            FilterDateFrom = _cashCloseFrom;
+            FilterDateTo = _cashCloseTo;
+            SearchText = string.Empty;
+            CurrentPage = 1;
+            await LoadDataAsync();
+        }
+
+        [RelayCommand]
+        private async Task ClearFilters()
+        {
+            // Si hay un corte activo, volver a él en lugar de quedar vacío
+            if (_cashCloseFrom.HasValue)
+            {
+                await ShowCorte();
+                return;
+            }
+
+            FilterDateFrom = null;
+            FilterDateTo = null;
+            SearchText = string.Empty;
+            CurrentPage = 1;
+            Items.Clear();
+            TotalCount = 0;
+            TotalPages = 1;
+            UpdateStatus();
+            OnPropertyChanged(nameof(ShowEmptyState));
+            OnPropertyChanged(nameof(CanGoBack));
+            OnPropertyChanged(nameof(CanGoForward));
+            await Task.CompletedTask;
         }
 
         [RelayCommand]

@@ -70,6 +70,8 @@ namespace CasaCejaRemake.Views.POS
             var shortcuts = new Dictionary<Key, Action>
             {
                 { Key.Escape, () => Close() },
+                { Key.F3, () => _viewModel.ShowCorteCommand.Execute(null) },
+                { Key.F4, () => _viewModel.ShowAllCommand.Execute(null) },
                 { Key.F5, () => _viewModel.ApplyFiltersCommand.Execute(null) },
                 { Key.F6, () => _viewModel.ClearFiltersCommand.Execute(null) },
                 { Key.F7, () => _viewModel.ExecuteSearchCommand.Execute(null) },
