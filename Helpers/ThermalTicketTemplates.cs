@@ -353,7 +353,7 @@ namespace CasaCejaRemake.Helpers
             lines.Add(sep);
 
             // ── Sección 3: Desglose efectivo ──────────────────────────────────
-            decimal efectivoDirecto = totalCash - creditCash - layawayCash;
+            decimal efectivoDirecto = totalCash; // Efectivo de ventas directas (creditCash y layawayCash son flujos separados)
             lines.Add(FormatAmountLine("EFECTIVO DE CREDITOS:", creditCash, lineWidth));
             lines.Add(FormatAmountLine("EFECTIVO DE APARTADOS", layawayCash, lineWidth));
             lines.Add(FormatAmountLine("EFECTIVO DIRECTO:", efectivoDirecto, lineWidth));

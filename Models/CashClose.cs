@@ -130,11 +130,12 @@ namespace CasaCejaRemake.Models
                                         TotalChecks + TotalTransfers;
 
         /// <summary>
-        /// Efectivo Total que pasó por la caja (para cálculos de arqueo).
-        /// = Fondo + Efectivo Directo + Efectivo Abonos + Ingresos - Gastos
+        /// Efectivo Total que debería haber físicamente en caja al momento del corte.
+        /// Usa ExpectedCash (guardado en DB al cerrar) que ya incluye fondo + ventas efectivo
+        /// + abonos + ingresos - gastos.
         /// </summary>
         [Ignore]
-        public decimal EfectivoTotal => OpeningCash + TotalCash + LayawayCash + CreditCash;
+        public decimal EfectivoTotal => ExpectedCash;
 
         /// <summary>
         /// Indica si hay sobrante de efectivo.

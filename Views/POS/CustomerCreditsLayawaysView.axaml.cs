@@ -431,12 +431,12 @@ namespace CasaCejaRemake.Views.POS
                     {
                         var userId = authService.CurrentUser?.Id ?? 1;
                         await layawayService.MarkAsDeliveredAsync(updatedLayaway.Id, userId);
-                        await DialogHelper.ShowMessageDialog(this, "Éxito", "Apartado entregado correctamente");
+                        await DialogHelper.ShowMessageDialog(this, "Éxito", "Apartado completado correctamente");
                         return (true, true);
                     }
                     catch (Exception ex)
                     {
-                        await DialogHelper.ShowMessageDialog(this, "Error", $"Error al entregar apartado: {ex.Message}");
+                        await DialogHelper.ShowMessageDialog(this, "Error", $"Error al completar apartado: {ex.Message}");
                     }
                 }
                 
@@ -474,12 +474,12 @@ namespace CasaCejaRemake.Views.POS
                 {
                     var userId = authService.CurrentUser?.Id ?? 1;
                     await layawayService.MarkAsDeliveredAsync(layaway.Id, userId);
-                    await DialogHelper.ShowMessageDialog(this, "Éxito", "Apartado entregado correctamente");
+                    await DialogHelper.ShowMessageDialog(this, "Éxito", "Apartado completado correctamente");
                     return true;
                 }
                 catch (Exception ex)
                 {
-                    await DialogHelper.ShowMessageDialog(this, "Error", $"Error al entregar apartado: {ex.Message}");
+                    await DialogHelper.ShowMessageDialog(this, "Error", $"Error al completar apartado: {ex.Message}");
                     return false;
                 }
             }

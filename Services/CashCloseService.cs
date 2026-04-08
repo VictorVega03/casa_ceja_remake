@@ -265,24 +265,35 @@ namespace CasaCejaRemake.Services
         }
 
         /// <summary>
-        /// Extrae el monto en efectivo de un PaymentMethod (puede ser JSON o string simple)
+        /// Extrae el monto en efectivo de un PaymentMethod (puede ser JSON o string simple).
+        /// Siempre limita el resultado a totalAmount (AmountPaid) para no inflar el efectivo
+        /// cuando el cliente paga de más y se le da cambio.
         /// </summary>
         private decimal ExtractCashFromPaymentMethod(string paymentMethod, decimal totalAmount)
         {
             if (string.IsNullOrEmpty(paymentMethod))
                 return 0;
 
-            if (paymentMethod == "Efectivo")
+            // Fallback: pago simple guardado como string plano (datos legados)
+            if (paymentMethod.Equals("Efectivo", StringComparison.OrdinalIgnoreCase))
                 return totalAmount;
 
-            if (paymentMethod.StartsWith("{"))
+            if (paymentMethod.TrimStart().StartsWith("{"))
             {
                 try
                 {
                     var payments = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, decimal>>(paymentMethod);
-                    if (payments != null && payments.TryGetValue("efectivo", out decimal cash))
+                    if (payments != null)
                     {
-                        return cash;
+                        // Búsqueda case-insensitive para mayor robustez
+                        foreach (var kvp in payments)
+                        {
+                            if (kvp.Key.Equals("efectivo", StringComparison.OrdinalIgnoreCase))
+                            {
+                                // Limitar al AmountPaid para no contar el cambio devuelto
+                                return Math.Min(kvp.Value, totalAmount);
+                            }
+                        }
                     }
                 }
                 catch

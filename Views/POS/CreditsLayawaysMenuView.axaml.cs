@@ -576,7 +576,7 @@ namespace CasaCejaRemake.Views.POS
             }
             else if (layawayDelivered)
             {
-                ShowMessageDialog("Éxito", "Apartado entregado correctamente");
+                ShowMessageDialog("Éxito", "Apartado completado correctamente");
             }
         }
 
@@ -661,7 +661,7 @@ namespace CasaCejaRemake.Views.POS
                     }
                     catch (Exception ex)
                     {
-                        ShowMessageDialog("Error", $"Error al entregar apartado: {ex.Message}");
+                        ShowMessageDialog("Error", $"Error al completar apartado: {ex.Message}");
                     }
                 }
                 
@@ -733,7 +733,7 @@ namespace CasaCejaRemake.Views.POS
                 }
                 catch (Exception ex)
                 {
-                    ShowMessageDialog("Error", $"Error al entregar apartado: {ex.Message}");
+                    ShowMessageDialog("Error", $"Error al completar apartado: {ex.Message}");
                 }
             };
 
