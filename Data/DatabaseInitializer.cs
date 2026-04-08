@@ -67,55 +67,15 @@ namespace CasaCejaRemake.Data
         }
 
         /// <summary>
-        /// Lee el updated_at más reciente de los productos recién insertados
-        /// y lo guarda como LastSyncTimestamp. Así el primer Pull del login
-        /// solo descarga productos modificados DESPUÉS de que se generó el script.
+        /// Al recrear BD desde script, fuerza LastSyncTimestamp=0
+        /// para que el siguiente Pull sea completo.
         /// </summary>
         private async Task SetLastSyncFromScriptDataAsync()
         {
             try
             {
-                // Ya cargamos ConfigService antes de llamar a InitializeDefaultDataAsync
-                // así que podemos usarlo directamente
-                if (_configService.AppConfig.LastSyncTimestamp > 0)
-                {
-                    Console.WriteLine("ℹ️  LastSyncTimestamp ya tiene valor — no se sobreescribe");
-                    return;
-                }
-
-                // Obtener el updated_at más reciente de los productos del script
-                var products = await _databaseService.Table<Product>().ToListAsync();
-                if (products.Count == 0)
-                {
-                    Console.WriteLine("⚠️  No se encontraron productos para establecer timestamp");
-                    return;
-                }
-
-                // Buscar el updated_at más reciente
-                DateTime maxUpdatedAt = DateTime.MinValue;
-                foreach (var p in products)
-                {
-                    if (p.UpdatedAt > maxUpdatedAt)
-                        maxUpdatedAt = p.UpdatedAt;
-                }
-
-                // Si el updated_at más reciente es anterior al año 2000,
-                // el script no tenía fechas válidas — usar "hace 7 días" como fallback
-                if (maxUpdatedAt < new DateTime(2000, 1, 1))
-                {
-                    Console.WriteLine("⚠️  updated_at del script inválido — usando fallback de 7 días");
-                    maxUpdatedAt = DateTime.UtcNow.AddDays(-7);
-                }
-
-                // Convertir a Unix timestamp UTC
-                var unixTimestamp = new DateTimeOffset(maxUpdatedAt, TimeSpan.Zero).ToUnixTimeSeconds();
-
-                await _configService.UpdateAppConfigAsync(config =>
-                {
-                    config.LastSyncTimestamp = unixTimestamp;
-                });
-
-                Console.WriteLine($"✅ LastSyncTimestamp establecido desde script: {unixTimestamp} ({maxUpdatedAt:dd/MM/yyyy HH:mm:ss})");
+                Console.WriteLine("🔄 BD recreada desde script — reseteando LastSyncTimestamp a 0 para Pull completo");
+                await _configService.UpdateAppConfigAsync(c => c.LastSyncTimestamp = 0);
             }
             catch (Exception ex)
             {
