@@ -47,6 +47,26 @@ namespace CasaCejaRemake.Models
         [MaxLength(500)]
         public string? Notes { get; set; }
 
+        // ========== CONFIRMACIÓN ==========
+        /// <summary>
+        /// Estado del traspaso: PENDING (enviado), CONFIRMED (recibido), CANCELLED
+        /// </summary>
+        [Column("status")]
+        [MaxLength(20)]
+        public string Status { get; set; } = "PENDING";
+
+        /// <summary>
+        /// ID del usuario que confirmó la recepción en la sucursal destino.
+        /// </summary>
+        [Column("confirmed_by_user_id")]
+        public int? ConfirmedByUserId { get; set; }
+
+        /// <summary>
+        /// Fecha/hora en que se confirmó la recepción.
+        /// </summary>
+        [Column("confirmed_at")]
+        public DateTime? ConfirmedAt { get; set; }
+
         // ========== TIMESTAMPS ==========
         [Column("created_at")]
         public DateTime CreatedAt { get; set; } = DateTime.Now;

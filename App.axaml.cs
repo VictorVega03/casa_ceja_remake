@@ -10,7 +10,9 @@ using CasaCejaRemake.Helpers;
 using CasaCejaRemake.Services;
 using CasaCejaRemake.ViewModels.Shared;
 using CasaCejaRemake.ViewModels.POS;
+using CasaCejaRemake.ViewModels.Inventory;
 using CasaCejaRemake.Views.Shared;using casa_ceja_remake.Helpers;using CasaCejaRemake.Views.POS;
+using CasaCejaRemake.Views.Inventory;
 
 namespace CasaCejaRemake
 {
@@ -468,38 +470,116 @@ namespace CasaCejaRemake
 
 
         /// <summary>
-        /// Muestra el modulo de Inventario (placeholder).
+        /// Muestra el módulo de Inventario.
         /// </summary>
-        private void ShowInventory(Window? windowToClose = null)
+        private async void ShowInventory(Window? windowToClose = null)
         {
             if (ApplicationLifetime is not IClassicDesktopStyleApplicationLifetime desktop) return;
+            if (AuthService == null || ApiClient == null) return;
 
-            var placeholderWindow = new Window
+            Console.WriteLine("[App] ShowInventory() llamado");
+
+            // Obtener sucursal actual
+            var currentBranchId = AuthService.CurrentBranchId;
+            var currentBranchName = "Sucursal";
+            try
             {
-                Title = "Inventario - Proximamente",
-                Width = 400,
-                Height = 200,
-                WindowStartupLocation = WindowStartupLocation.CenterScreen,
-                Background = Avalonia.Media.Brushes.DimGray,
-                Content = new TextBlock
+                var branchRepo = new BaseRepository<Models.Branch>(DatabaseService!);
+                var branch = await branchRepo.GetByIdAsync(currentBranchId);
+                currentBranchName = branch?.Name ?? $"Sucursal #{currentBranchId}";
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[App] Advertencia al obtener nombre de sucursal: {ex.Message}");
+            }
+
+            var viewModel = new InventoryMainViewModel(
+                AuthService, ApiClient, currentBranchId, currentBranchName);
+
+            var inventoryView = new InventoryMainView
+            {
+                DataContext = viewModel
+            };
+
+            // ── Suscribir eventos de navegación ──
+
+            viewModel.CatalogSelected += (s, e) =>
+            {
+                Console.WriteLine("[App] Catálogo seleccionado — Próximamente");
+                // TODO: Fase 2 — ShowCatalog(inventoryView);
+            };
+
+            viewModel.CategoriesSelected += (s, e) =>
+            {
+                Console.WriteLine("[App] Categorías seleccionada — Próximamente");
+                // TODO: Fase 3 — ShowCatalogsManagement(inventoryView);
+            };
+
+            viewModel.EntriesSelected += (s, e) =>
+            {
+                Console.WriteLine("[App] Entradas seleccionada — Próximamente");
+                // TODO: Fase 4 — ShowEntry(inventoryView);
+            };
+
+            viewModel.OutputsSelected += (s, e) =>
+            {
+                Console.WriteLine("[App] Salidas seleccionada — Próximamente");
+                // TODO: Fase 5 — ShowOutput(inventoryView);
+            };
+
+            viewModel.ConfirmEntrySelected += (s, e) =>
+            {
+                Console.WriteLine("[App] Confirmar Entrada seleccionada — Próximamente");
+                // TODO: Fase 6 — ShowConfirmEntry(inventoryView);
+            };
+
+            viewModel.HistorySelected += (s, e) =>
+            {
+                Console.WriteLine("[App] Historial seleccionado — Próximamente");
+                // TODO: Fase 7 — ShowHistory(inventoryView);
+            };
+
+            viewModel.BackToModuleSelector += (s, e) =>
+            {
+                Console.WriteLine("[App] Volver al selector de módulos desde Inventario");
+                inventoryView.Tag = "module_selector";
+                inventoryView.Close();
+            };
+
+            viewModel.LogoutRequested += (s, e) =>
+            {
+                Console.WriteLine("[App] Logout desde Inventario");
+                inventoryView.Tag = "logout";
+                inventoryView.Close();
+            };
+
+            inventoryView.Closed += (sender, args) =>
+            {
+                Console.WriteLine($"[App] InventoryMainView cerrada. Tag = {inventoryView.Tag}");
+                if (inventoryView.Tag is string result)
                 {
-                    Text = "Modulo de Inventario\n\nProximamente",
-                    Foreground = Avalonia.Media.Brushes.White,
-                    FontSize = 18,
-                    HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
-                    VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
-                    TextAlignment = Avalonia.Media.TextAlignment.Center
+                    if (result == "module_selector")
+                    {
+                        ShowModuleSelector();
+                    }
+                    else if (result == "logout")
+                    {
+                        AuthService?.Logout();
+                        ShowLogin();
+                    }
+                }
+                else
+                {
+                    // Cerrado sin tag (botón X), volver al selector
+                    ShowModuleSelector();
                 }
             };
 
-            placeholderWindow.Closed += (s, e) =>
-            {
-                ShowModuleSelector();
-            };
-
-            desktop.MainWindow = placeholderWindow;
-            placeholderWindow.Show();
+            desktop.MainWindow = inventoryView;
+            inventoryView.Show();
             windowToClose?.Close();
+
+            Console.WriteLine("[App] InventoryMainView mostrada correctamente");
         }
 
         /// <summary>

@@ -162,6 +162,7 @@ namespace CasaCejaRemake.Data
                 transaction.CreateTable<EntryProduct>();
                 transaction.CreateTable<StockOutput>();
                 transaction.CreateTable<OutputProduct>();
+                transaction.CreateTable<ProductStock>();
 
                 // Otras tablas
                 transaction.CreateTable<CashClose>();
@@ -201,6 +202,7 @@ namespace CasaCejaRemake.Data
             await _database.CreateTableAsync<EntryProduct>();
             await _database.CreateTableAsync<StockOutput>();
             await _database.CreateTableAsync<OutputProduct>();
+            await _database.CreateTableAsync<ProductStock>();
             await _database.CreateTableAsync<CashClose>();
             await _database.CreateTableAsync<CashMovement>();
 

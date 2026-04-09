@@ -1,26 +1,18 @@
-<!-- ============================================================ -->
-<!-- ARCHIVO: Views/Shared/ModuleSelectorView.axaml -->
-<!-- INSTRUCCIONES: -->
-<!-- 1. Copia TODO este contenido -->
-<!-- 2. Pégalo en: Views/Shared/ModuleSelectorView.axaml -->
-<!-- 3. Guarda el archivo -->
-<!-- (Este archivo NO requiere cambios adicionales) -->
-<!-- ============================================================ -->
-
+<!-- ModuleSelectorView.axaml — Dark Mode -->
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:vm="using:CasaCejaRemake.ViewModels.Shared"
         xmlns:helpers="using:CasaCejaRemake.Helpers"
-        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="500"
+        mc:Ignorable="d" d:DesignWidth="900" d:DesignHeight="560"
         x:Class="CasaCejaRemake.Views.Shared.ModuleSelectorView"
         x:DataType="vm:ModuleSelectorViewModel"
         Title="Casa Ceja - Seleccionar Módulo"
-        Width="800" Height="500"
+        Width="900" Height="560"
         WindowStartupLocation="CenterScreen"
         CanResize="False"
-        Background="#F5F5F5">
+        Background="#1A1A2E">
 
     <Window.Resources>
         <helpers:BoolToOpacityConverter x:Key="BoolToOpacityConverter" />
@@ -32,26 +24,22 @@
         </Style>
     </Window.Styles>
 
-    <!-- HOTKEYS -->
     <Window.KeyBindings>
-        <!-- ESC no hace logout: el usuario debe usar el botón Cerrar Sesión explícitamente -->
+        <!-- ESC no hace logout -->
     </Window.KeyBindings>
 
-    <!-- LAYOUT PRINCIPAL -->
     <Grid>
         <Grid.RowDefinitions>
-            <!-- Row 0: Header -->
             <RowDefinition Height="Auto" />
-            <!-- Row 1: Content -->
             <RowDefinition Height="*" />
-            <!-- Row 2: Footer -->
-            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <!-- HEADER -->
+        <!-- ==================== HEADER ==================== -->
         <Border Grid.Row="0"
-                Background="#2196F3"
-                Padding="20,12">
+                Background="#252B45"
+                BorderBrush="#3A446E"
+                BorderThickness="0,0,0,1"
+                Padding="24,14">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
@@ -60,122 +48,98 @@
 
                 <StackPanel Grid.Column="0" Orientation="Vertical" VerticalAlignment="Center">
                     <TextBlock Text="SELECCIONE UN MÓDULO"
-                               FontSize="24"
+                               FontSize="20"
                                FontWeight="Bold"
-                               Foreground="White" />
+                               Foreground="#E7ECF8" />
                     <TextBlock Text="{Binding WelcomeMessage}"
-                               FontSize="14"
-                               Foreground="White"
-                               Opacity="0.9"
-                               Margin="0,5,0,0" />
+                               FontSize="13"
+                               Foreground="#9098B5"
+                               Margin="0,4,0,0" />
                 </StackPanel>
 
-                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
-                    <!-- Botón de Abrir Carpeta de Documentos -->
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+
+                    <!-- Abrir carpeta de documentos -->
                     <Button Command="{Binding OpenDocumentsFolderCommand}"
-                            Width="36"
-                            Height="36"
-                            Background="#FFC107"
-                            Foreground="White"
+                            Width="36" Height="36"
+                            Background="#2D3555"
                             BorderThickness="0"
-                            CornerRadius="3"
-                            VerticalAlignment="Center"
+                            CornerRadius="4"
                             ToolTip.Tip="Abrir carpeta de documentos">
-                        <!-- Ícono de carpeta usando Path -->
-                        <Path Fill="White"
-                              Width="18"
-                              Height="18"
-                              Stretch="Uniform"
+                        <Path Fill="#FFC107" Width="18" Height="18" Stretch="Uniform"
                               Data="M10,4H4C2.89,4,2,4.89,2,6v12c0,1.1,0.89,2,2,2h16c1.1,0,2-0.9,2-2V8c0-1.1-0.9-2-2-2h-8L10,4z" />
                         <Button.Styles>
                             <Style Selector="Button:pointerover">
-                                <Setter Property="Background" Value="#FFB300" />
+                                <Setter Property="Background" Value="#3D4870" />
                             </Style>
                         </Button.Styles>
                     </Button>
 
-                    <!-- Botón de Abrir Carpeta de Base de Datos -->
+                    <!-- Abrir carpeta de base de datos -->
                     <Button Command="{Binding OpenDbFolderCommand}"
-                            Width="36"
-                            Height="36"
-                            Background="#9C27B0"
-                            Foreground="White"
+                            Width="36" Height="36"
+                            Background="#2D3555"
                             BorderThickness="0"
-                            CornerRadius="3"
-                            VerticalAlignment="Center"
+                            CornerRadius="4"
                             ToolTip.Tip="Abrir carpeta de base de datos (desarrollo)">
-                        <!-- Ícono de base de datos (cilindro) -->
-                        <Path Fill="White"
-                              Width="18"
-                              Height="18"
-                              Stretch="Uniform"
+                        <Path Fill="#CE93D8" Width="18" Height="18" Stretch="Uniform"
                               Data="M12,3C7.58,3 4,4.79 4,7C4,9.21 7.58,11 12,11C16.42,11 20,9.21 20,7C20,4.79 16.42,3 12,3M4,9V12C4,14.21 7.58,16 12,16C16.42,16 20,14.21 20,12V9C20,11.21 16.42,13 12,13C7.58,13 4,11.21 4,9M4,14V17C4,19.21 7.58,21 12,21C16.42,21 20,19.21 20,17V14C20,16.21 16.42,18 12,18C7.58,18 4,16.21 4,14Z" />
                         <Button.Styles>
                             <Style Selector="Button:pointerover">
-                                <Setter Property="Background" Value="#BA68C8" />
+                                <Setter Property="Background" Value="#3D4870" />
                             </Style>
                         </Button.Styles>
                     </Button>
 
-                    <!-- Botón de Cerrar Sesión - ROJO -->
+                    <!-- Separador visual -->
+                    <Border Width="1" Height="24" Background="#3A446E" VerticalAlignment="Center" Margin="4,0" />
+
+                    <!-- Cerrar Sesión -->
                     <Button Command="{Binding LogoutCommand}"
                             FontSize="13"
                             Height="36"
-                            Padding="18,0"
-                            Background="#D32F2F"
+                            Padding="16,0"
+                            Background="#C62828"
                             Foreground="White"
                             BorderThickness="0"
-                            CornerRadius="3"
-                            ToolTip.Tip="Cerrar sesión (ESC)">
+                            CornerRadius="4"
+                            ToolTip.Tip="Cerrar sesión">
                         <TextBlock Text="Cerrar Sesión" VerticalAlignment="Center"/>
                         <Button.Styles>
                             <Style Selector="Button:pointerover">
-                                <Setter Property="Background" Value="#C62828" />
-                            </Style>
-                        </Button.Styles>
-                    </Button>
-                    
-                    <!-- Botón de Salir - Icono On/Off transparente -->
-                    <Button Command="{Binding ExitCommand}"
-                            Width="36"
-                            Height="36"
-                            Background="Transparent"
-                            BorderThickness="0"
-                            CornerRadius="3"
-                            VerticalAlignment="Center"
-                            ToolTip.Tip="Salir de la aplicación">
-                        <!-- Ícono de Power/On-Off -->
-                        <Path Fill="White"
-                              Width="20"
-                              Height="20"
-                              Stretch="Uniform"
-                              Data="M13,3h-2v10h2V3z M17.83,5.17l-1.42,1.42C17.99,7.86,19,9.81,19,12c0,3.87-3.13,7-7,7s-7-3.13-7-7 c0-2.19,1.01-4.14,2.58-5.42L6.17,5.17C4.23,6.82,3,9.26,3,12c0,4.97,4.03,9,9,9s9-4.03,9-9C21,9.26,19.77,6.82,17.83,5.17z" />
-                        <Button.Styles>
-                            <Style Selector="Button:pointerover">
-                                <Setter Property="Background" Value="#33FFFFFF" />
+                                <Setter Property="Background" Value="#B71C1C" />
                             </Style>
                         </Button.Styles>
                     </Button>
 
-                    <!-- Botón de Configuración - Transparente -->
+                    <!-- Configuración -->
                     <Button Command="{Binding OpenConfigCommand}"
-                            Width="36"
-                            Height="36"
-                            Background="Transparent"
-                            Foreground="White"
+                            Width="36" Height="36"
+                            Background="#2D3555"
                             BorderThickness="0"
-                            CornerRadius="3"
-                            VerticalAlignment="Center"
+                            CornerRadius="4"
                             ToolTip.Tip="Configuración">
-                        <!-- Ícono de engrane usando Path -->
-                        <Path Fill="White"
-                              Width="20"
-                              Height="20"
-                              Stretch="Uniform"
-                              Data="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.07-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.74,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.07,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.47-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z" />
+                        <Path Fill="#BDBDBD" Width="18" Height="18" Stretch="Uniform"
+                              Data="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.07-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.74,8.87C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.07,0.94l-2.03,1.58c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.47-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z" />
                         <Button.Styles>
                             <Style Selector="Button:pointerover">
-                                <Setter Property="Background" Value="#33FFFFFF" />
+                                <Setter Property="Background" Value="#3D4870" />
+                            </Style>
+                        </Button.Styles>
+                    </Button>
+
+                    <!-- Salir de la app -->
+                    <Button Command="{Binding ExitCommand}"
+                            Width="36" Height="36"
+                            Background="#3A3A3A"
+                            BorderThickness="0"
+                            CornerRadius="4"
+                            ToolTip.Tip="Salir de la aplicación">
+                        <Path Fill="#EF9A9A" Width="18" Height="18" Stretch="Uniform"
+                              Data="M13,3h-2v10h2V3z M17.83,5.17l-1.42,1.42C17.99,7.86,19,9.81,19,12c0,3.87-3.13,7-7,7s-7-3.13-7-7c0-2.19,1.01-4.14,2.58-5.42L6.17,5.17C4.23,6.82,3,9.26,3,12c0,4.97,4.03,9,9,9s9-4.03,9-9C21,9.26,19.77,6.82,17.83,5.17z" />
+                        <Button.Styles>
+                            <Style Selector="Button:pointerover">
+                                <Setter Property="Background" Value="#3D4870" />
                             </Style>
                         </Button.Styles>
                     </Button>
@@ -183,41 +147,37 @@
             </Grid>
         </Border>
 
-        <!-- MÓDULOS -->
-        <!-- Estrategia: Los 3 cards son idénticos en estructura.
-             En módulos bloqueados, el círculo intercambia su contenido:
-             - Admin ve el emoji normal
-             - Cajero ve el candado SVG DENTRO del mismo círculo
-             Sin overlays, sin capas flotantes. Simple y alineado. -->
-        <Grid Grid.Row="1" Margin="40,30">
+        <!-- ==================== CARDS DE MÓDULOS ==================== -->
+        <Grid Grid.Row="1" Margin="50,35">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="20" />
+                <ColumnDefinition Width="24" />
                 <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="20" />
+                <ColumnDefinition Width="24" />
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
 
-            <!-- ==================== MÓDULO 1: PUNTO DE VENTA ==================== -->
+            <!-- ====== MÓDULO 1: PUNTO DE VENTA ====== -->
             <Button Grid.Column="0"
                     Command="{Binding OpenPOSCommand}"
                     VerticalAlignment="Stretch"
                     HorizontalAlignment="Stretch"
-                    Background="White"
-                    BorderBrush="#CCCCCC"
-                    BorderThickness="2"
+                    Background="#252B45"
+                    BorderBrush="#3A446E"
+                    BorderThickness="1"
                     CornerRadius="12"
                     Padding="20,30">
                 <Button.Effect>
-                    <DropShadowEffect Color="#000000" Opacity="0.15" BlurRadius="12" OffsetX="0" OffsetY="2"/>
+                    <DropShadowEffect Color="#000000" Opacity="0.4" BlurRadius="16" OffsetX="0" OffsetY="4"/>
                 </Button.Effect>
                 <Button.Styles>
                     <Style Selector="Button:pointerover">
+                        <Setter Property="Background" Value="#2D3555" />
                         <Setter Property="BorderBrush" Value="#4CAF50" />
-                        <Setter Property="BorderThickness" Value="3" />
+                        <Setter Property="BorderThickness" Value="2" />
                     </Style>
                 </Button.Styles>
-                <StackPanel Spacing="12" HorizontalAlignment="Center" VerticalAlignment="Center">
+                <StackPanel Spacing="14" HorizontalAlignment="Center" VerticalAlignment="Center">
                     <Border Width="110" Height="110"
                             Background="#4CAF50"
                             CornerRadius="55"
@@ -228,37 +188,37 @@
                                    VerticalAlignment="Center" />
                     </Border>
                     <TextBlock Text="PUNTO DE VENTA"
-                               FontSize="17"
+                               FontSize="16"
                                FontWeight="Bold"
-                               Foreground="#333333"
+                               Foreground="#E7ECF8"
                                HorizontalAlignment="Center"
                                TextWrapping="Wrap"
                                TextAlignment="Center" />
-                    <TextBlock Text="Realizar ventas, cobros, créditos y apartados"
+                    <TextBlock Text="Ventas, cobros, créditos y apartados"
                                FontSize="11"
-                               Foreground="#666666"
+                               Foreground="#6B7394"
                                HorizontalAlignment="Center"
                                TextWrapping="Wrap"
                                TextAlignment="Center" />
                 </StackPanel>
             </Button>
 
-            <!-- ==================== MÓDULO 2: INVENTARIO ==================== -->
+            <!-- ====== MÓDULO 2: INVENTARIO ====== -->
             <Button Grid.Column="2"
                     Command="{Binding OpenInventoryCommand}"
                     IsEnabled="{Binding IsAdmin}"
                     VerticalAlignment="Stretch"
                     HorizontalAlignment="Stretch"
-                    BorderBrush="#CCCCCC"
-                    BorderThickness="2"
+                    BorderBrush="#3A446E"
+                    BorderThickness="1"
                     CornerRadius="12"
                     Padding="20,30">
                 <Button.Styles>
                     <Style Selector="Button">
-                        <Setter Property="Background" Value="White" />
+                        <Setter Property="Background" Value="#252B45" />
                     </Style>
                     <Style Selector="Button[IsEnabled=false]">
-                        <Setter Property="Background" Value="#E8E8E8" />
+                        <Setter Property="Background" Value="#1A2035" />
                         <Setter Property="Opacity" Value="1" />
                         <Setter Property="Cursor" Value="Arrow" />
                     </Style>
@@ -266,19 +226,20 @@
                         <Setter Property="Background" Value="Transparent" />
                     </Style>
                     <Style Selector="Button[IsEnabled=true]:pointerover">
-                        <Setter Property="BorderBrush" Value="#FF9800" />
-                        <Setter Property="BorderThickness" Value="3" />
+                        <Setter Property="Background" Value="#2D3555" />
+                        <Setter Property="BorderBrush" Value="#1565C0" />
+                        <Setter Property="BorderThickness" Value="2" />
                     </Style>
                 </Button.Styles>
                 <Button.Effect>
-                    <DropShadowEffect Color="#000000" Opacity="0.15" BlurRadius="12" OffsetX="0" OffsetY="2"/>
+                    <DropShadowEffect Color="#000000" Opacity="0.35" BlurRadius="16" OffsetX="0" OffsetY="4"/>
                 </Button.Effect>
-                <StackPanel Spacing="12" HorizontalAlignment="Center" VerticalAlignment="Center">
+                <StackPanel Spacing="14" HorizontalAlignment="Center" VerticalAlignment="Center">
                     <Border Width="110" Height="110"
                             CornerRadius="55"
                             HorizontalAlignment="Center">
                         <Border.Background>
-                            <SolidColorBrush Color="#FF9800" Opacity="{Binding IsAdmin, Converter={StaticResource BoolToOpacityConverter}}" />
+                            <SolidColorBrush Color="#1565C0" Opacity="{Binding IsAdmin, Converter={StaticResource BoolToOpacityConverter}}" />
                         </Border.Background>
                         <Panel>
                             <TextBlock Text="📦"
@@ -286,9 +247,8 @@
                                        HorizontalAlignment="Center"
                                        VerticalAlignment="Center"
                                        IsVisible="{Binding IsAdmin}" />
-                            <Path Fill="White"
-                                  Width="45"
-                                  Height="45"
+                            <Path Fill="#555555"
+                                  Width="45" Height="45"
                                   Stretch="Uniform"
                                   HorizontalAlignment="Center"
                                   VerticalAlignment="Center"
@@ -297,37 +257,37 @@
                         </Panel>
                     </Border>
                     <TextBlock Text="INVENTARIO"
-                               FontSize="17"
+                               FontSize="16"
                                FontWeight="Bold"
-                               Foreground="#333333"
+                               Foreground="#E7ECF8"
                                HorizontalAlignment="Center"
                                TextWrapping="Wrap"
                                TextAlignment="Center" />
                     <TextBlock Text="Entradas, salidas y control de existencias"
                                FontSize="11"
-                               Foreground="#666666"
+                               Foreground="#6B7394"
                                HorizontalAlignment="Center"
                                TextWrapping="Wrap"
                                TextAlignment="Center" />
                 </StackPanel>
             </Button>
 
-            <!-- ==================== MÓDULO 3: ADMINISTRADOR ==================== -->
+            <!-- ====== MÓDULO 3: ADMINISTRADOR ====== -->
             <Button Grid.Column="4"
                     Command="{Binding OpenAdminCommand}"
                     IsEnabled="{Binding IsAdmin}"
                     VerticalAlignment="Stretch"
                     HorizontalAlignment="Stretch"
-                    BorderBrush="#CCCCCC"
-                    BorderThickness="2"
+                    BorderBrush="#3A446E"
+                    BorderThickness="1"
                     CornerRadius="12"
                     Padding="20,30">
                 <Button.Styles>
                     <Style Selector="Button">
-                        <Setter Property="Background" Value="White" />
+                        <Setter Property="Background" Value="#252B45" />
                     </Style>
                     <Style Selector="Button[IsEnabled=false]">
-                        <Setter Property="Background" Value="#E8E8E8" />
+                        <Setter Property="Background" Value="#1A2035" />
                         <Setter Property="Opacity" Value="1" />
                         <Setter Property="Cursor" Value="Arrow" />
                     </Style>
@@ -335,19 +295,20 @@
                         <Setter Property="Background" Value="Transparent" />
                     </Style>
                     <Style Selector="Button[IsEnabled=true]:pointerover">
-                        <Setter Property="BorderBrush" Value="#2196F3" />
-                        <Setter Property="BorderThickness" Value="3" />
+                        <Setter Property="Background" Value="#2D3555" />
+                        <Setter Property="BorderBrush" Value="#42A5F5" />
+                        <Setter Property="BorderThickness" Value="2" />
                     </Style>
                 </Button.Styles>
                 <Button.Effect>
-                    <DropShadowEffect Color="#000000" Opacity="0.15" BlurRadius="12" OffsetX="0" OffsetY="2"/>
+                    <DropShadowEffect Color="#000000" Opacity="0.35" BlurRadius="16" OffsetX="0" OffsetY="4"/>
                 </Button.Effect>
-                <StackPanel Spacing="12" HorizontalAlignment="Center" VerticalAlignment="Center">
+                <StackPanel Spacing="14" HorizontalAlignment="Center" VerticalAlignment="Center">
                     <Border Width="110" Height="110"
                             CornerRadius="55"
                             HorizontalAlignment="Center">
                         <Border.Background>
-                            <SolidColorBrush Color="#2196F3" Opacity="{Binding IsAdmin, Converter={StaticResource BoolToOpacityConverter}}" />
+                            <SolidColorBrush Color="#1976D2" Opacity="{Binding IsAdmin, Converter={StaticResource BoolToOpacityConverter}}" />
                         </Border.Background>
                         <Panel>
                             <TextBlock Text="⚙️"
@@ -355,9 +316,8 @@
                                        HorizontalAlignment="Center"
                                        VerticalAlignment="Center"
                                        IsVisible="{Binding IsAdmin}" />
-                            <Path Fill="White"
-                                  Width="45"
-                                  Height="45"
+                            <Path Fill="#555555"
+                                  Width="45" Height="45"
                                   Stretch="Uniform"
                                   HorizontalAlignment="Center"
                                   VerticalAlignment="Center"
@@ -366,20 +326,20 @@
                         </Panel>
                     </Border>
                     <TextBlock Text="ADMINISTRADOR"
-                               FontSize="17"
+                               FontSize="16"
                                FontWeight="Bold"
-                               Foreground="#333333"
+                               Foreground="#E7ECF8"
                                HorizontalAlignment="Center"
                                TextWrapping="Wrap"
                                TextAlignment="Center" />
                     <TextBlock Text="Productos, categorías, usuarios y configuración"
                                FontSize="11"
-                               Foreground="#666666"
+                               Foreground="#6B7394"
                                HorizontalAlignment="Center"
                                TextWrapping="Wrap"
                                TextAlignment="Center" />
                 </StackPanel>
             </Button>
-        </Grid>       
+        </Grid>
     </Grid>
 </Window>
