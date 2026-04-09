@@ -31,8 +31,8 @@
 
         <!-- ==================== HEADER ==================== -->
         <Border Grid.Row="0"
-                Background="#2D2D2D"
-                BorderBrush="#3A3A3A"
+                Background="#1976D2"
+                BorderBrush="#1565C0"
                 BorderThickness="0,0,0,1"
                 Padding="24,14">
             <Grid>
@@ -49,23 +49,23 @@
                                Foreground="#FFFFFF" />
                     <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,5,0,0">
                         <!-- Pin de sucursal -->
-                        <Path Fill="#1E88E5" Width="12" Height="12" Stretch="Uniform" VerticalAlignment="Center"
+                        <Path Fill="#BBDEFB" Width="12" Height="12" Stretch="Uniform" VerticalAlignment="Center"
                               Data="M12,2C8.13,2,5,5.13,5,9c0,5.25,7,13,7,13s7-7.75,7-13C19,5.13,15.87,2,12,2z M12,11.5c-1.38,0-2.5-1.12-2.5-2.5s1.12-2.5,2.5-2.5s2.5,1.12,2.5,2.5S13.38,11.5,12,11.5z" />
                         <TextBlock Text="{Binding BranchName}"
                                    FontSize="13"
-                                   Foreground="#BDBDBD"
+                                   Foreground="#E3F2FD"
                                    VerticalAlignment="Center" />
                         <TextBlock Text="·"
                                    FontSize="13"
-                                   Foreground="#555555"
+                                   Foreground="#BBDEFB"
                                    VerticalAlignment="Center"
                                    Margin="2,0" />
                         <!-- Icono usuario -->
-                        <Path Fill="#1E88E5" Width="12" Height="12" Stretch="Uniform" VerticalAlignment="Center"
+                        <Path Fill="#BBDEFB" Width="12" Height="12" Stretch="Uniform" VerticalAlignment="Center"
                               Data="M12,12c2.21,0,4-1.79,4-4s-1.79-4-4-4S8,5.79,8,8,9.79,12,12,12z M12,14c-2.67,0-8,1.34-8,4v2h16v-2C20,15.34,14.67,14,12,14z" />
                         <TextBlock Text="{Binding UserName}"
                                    FontSize="13"
-                                   Foreground="#BDBDBD"
+                                   Foreground="#E3F2FD"
                                    VerticalAlignment="Center" />
                     </StackPanel>
                 </StackPanel>
@@ -91,7 +91,7 @@
                         </StackPanel>
                         <Button.Styles>
                             <Style Selector="Button:pointerover">
-                                <Setter Property="Background" Value="#1976D2" />
+                                <Setter Property="Background" Value="#0D47A1" />
                             </Style>
                         </Button.Styles>
                     </Button>
@@ -101,15 +101,15 @@
                             FontSize="13"
                             Height="36"
                             Padding="18,0"
-                            Background="#3A3A3A"
-                            Foreground="#E0E0E0"
+                            Background="#1565C0"
+                            Foreground="#FFFFFF"
                             BorderThickness="0"
                             CornerRadius="4"
                             ToolTip.Tip="Volver al selector de módulos">
                         <TextBlock Text="← Módulos" VerticalAlignment="Center"/>
                         <Button.Styles>
                             <Style Selector="Button:pointerover">
-                                <Setter Property="Background" Value="#4A4A4A" />
+                                <Setter Property="Background" Value="#0D47A1" />
                             </Style>
                         </Button.Styles>
                     </Button>
@@ -184,28 +184,28 @@
                     Command="{Binding OpenEntriesCommand}"
                     IsEnabled="{Binding IsOnline}"
                     VerticalAlignment="Stretch" HorizontalAlignment="Stretch"
-                    BorderBrush="#3A3A3A" BorderThickness="1"
+                    BorderBrush="#BBBBBB" BorderThickness="1"
                     CornerRadius="12" Padding="20,25">
                 <Button.Styles>
                     <Style Selector="Button">
-                        <Setter Property="Background" Value="#252525" />
+                        <Setter Property="Background" Value="#D8D8D8" />
                     </Style>
                     <Style Selector="Button[IsEnabled=false]">
-                        <Setter Property="Background" Value="#1E1E1E" />
-                        <Setter Property="Opacity" Value="1" />
+                        <Setter Property="Background" Value="#D8D8D8" />
+                        <Setter Property="Opacity" Value="0.6" />
                         <Setter Property="Cursor" Value="Arrow" />
                     </Style>
                     <Style Selector="Button:pointerover /template/ ContentPresenter">
-                        <Setter Property="Background" Value="Transparent" />
+                        <Setter Property="Background" Value="#C4C4C4" />
                     </Style>
                     <Style Selector="Button[IsEnabled=true]:pointerover">
-                        <Setter Property="Background" Value="#2E2E2E" />
+                        <Setter Property="Background" Value="#C4C4C4" />
                         <Setter Property="BorderBrush" Value="#43A047" />
                         <Setter Property="BorderThickness" Value="2" />
                     </Style>
                 </Button.Styles>
                 <Button.Effect>
-                    <DropShadowEffect Color="#000000" Opacity="0.4" BlurRadius="16" OffsetX="0" OffsetY="4"/>
+                    <DropShadowEffect Color="#000000" Opacity="0.12" BlurRadius="12" OffsetX="0" OffsetY="3"/>
                 </Button.Effect>
                 <StackPanel Spacing="12" HorizontalAlignment="Center" VerticalAlignment="Center">
                     <Border Width="90" Height="90" CornerRadius="45" HorizontalAlignment="Center">
@@ -215,14 +215,14 @@
                         <Panel>
                             <TextBlock Text="📥" FontSize="42" HorizontalAlignment="Center" VerticalAlignment="Center"
                                        IsVisible="{Binding IsOnline}" />
-                            <Path Fill="#444444" Width="38" Height="38" Stretch="Uniform"
+                            <Path Fill="#9E9E9E" Width="38" Height="38" Stretch="Uniform"
                                   HorizontalAlignment="Center" VerticalAlignment="Center"
                                   IsVisible="{Binding !IsOnline}"
                                   Data="M18,8h-1V6c0-2.76-2.24-5-5-5S7,3.24,7,6v2H6c-1.1,0-2,0.9-2,2v10c0,1.1,0.9,2,2,2h12c1.1,0,2-0.9,2-2V10C20,8.9,19.1,8,18,8z M12,17c-1.1,0-2-0.9-2-2s0.9-2,2-2s2,0.9,2,2S13.1,17,12,17z M15.1,8H8.9V6c0-1.71,1.39-3.1,3.1-3.1s3.1,1.39,3.1,3.1V8z" />
                         </Panel>
                     </Border>
                     <TextBlock Text="ENTRADA DE MERCANCÍA" FontSize="14" FontWeight="Bold"
-                               Foreground="#F5F5F5" HorizontalAlignment="Center"
+                               Foreground="#212121" HorizontalAlignment="Center"
                                TextWrapping="Wrap" TextAlignment="Center" />
                     <TextBlock Text="Registrar productos recibidos" FontSize="11"
                                Foreground="#757575" HorizontalAlignment="Center"
@@ -235,28 +235,28 @@
                     Command="{Binding OpenOutputsCommand}"
                     IsEnabled="{Binding IsOnline}"
                     VerticalAlignment="Stretch" HorizontalAlignment="Stretch"
-                    BorderBrush="#3A3A3A" BorderThickness="1"
+                    BorderBrush="#BBBBBB" BorderThickness="1"
                     CornerRadius="12" Padding="20,25">
                 <Button.Styles>
                     <Style Selector="Button">
-                        <Setter Property="Background" Value="#252525" />
+                        <Setter Property="Background" Value="#D8D8D8" />
                     </Style>
                     <Style Selector="Button[IsEnabled=false]">
-                        <Setter Property="Background" Value="#1E1E1E" />
-                        <Setter Property="Opacity" Value="1" />
+                        <Setter Property="Background" Value="#D8D8D8" />
+                        <Setter Property="Opacity" Value="0.6" />
                         <Setter Property="Cursor" Value="Arrow" />
                     </Style>
                     <Style Selector="Button:pointerover /template/ ContentPresenter">
-                        <Setter Property="Background" Value="Transparent" />
+                        <Setter Property="Background" Value="#C4C4C4" />
                     </Style>
                     <Style Selector="Button[IsEnabled=true]:pointerover">
-                        <Setter Property="Background" Value="#2E2E2E" />
+                        <Setter Property="Background" Value="#C4C4C4" />
                         <Setter Property="BorderBrush" Value="#E53935" />
                         <Setter Property="BorderThickness" Value="2" />
                     </Style>
                 </Button.Styles>
                 <Button.Effect>
-                    <DropShadowEffect Color="#000000" Opacity="0.4" BlurRadius="16" OffsetX="0" OffsetY="4"/>
+                    <DropShadowEffect Color="#000000" Opacity="0.12" BlurRadius="12" OffsetX="0" OffsetY="3"/>
                 </Button.Effect>
                 <StackPanel Spacing="12" HorizontalAlignment="Center" VerticalAlignment="Center">
                     <Border Width="90" Height="90" CornerRadius="45" HorizontalAlignment="Center">
@@ -266,14 +266,14 @@
                         <Panel>
                             <TextBlock Text="📤" FontSize="42" HorizontalAlignment="Center" VerticalAlignment="Center"
                                        IsVisible="{Binding IsOnline}" />
-                            <Path Fill="#444444" Width="38" Height="38" Stretch="Uniform"
+                            <Path Fill="#9E9E9E" Width="38" Height="38" Stretch="Uniform"
                                   HorizontalAlignment="Center" VerticalAlignment="Center"
                                   IsVisible="{Binding !IsOnline}"
                                   Data="M18,8h-1V6c0-2.76-2.24-5-5-5S7,3.24,7,6v2H6c-1.1,0-2,0.9-2,2v10c0,1.1,0.9,2,2,2h12c1.1,0,2-0.9,2-2V10C20,8.9,19.1,8,18,8z M12,17c-1.1,0-2-0.9-2-2s0.9-2,2-2s2,0.9,2,2S13.1,17,12,17z M15.1,8H8.9V6c0-1.71,1.39-3.1,3.1-3.1s3.1,1.39,3.1,3.1V8z" />
                         </Panel>
                     </Border>
                     <TextBlock Text="SALIDA / TRASPASO" FontSize="14" FontWeight="Bold"
-                               Foreground="#F5F5F5" HorizontalAlignment="Center"
+                               Foreground="#212121" HorizontalAlignment="Center"
                                TextWrapping="Wrap" TextAlignment="Center" />
                     <TextBlock Text="Enviar productos a otra sucursal" FontSize="11"
                                Foreground="#757575" HorizontalAlignment="Center"
@@ -286,28 +286,28 @@
                     Command="{Binding OpenConfirmEntryCommand}"
                     IsEnabled="{Binding IsOnline}"
                     VerticalAlignment="Stretch" HorizontalAlignment="Stretch"
-                    BorderBrush="#3A3A3A" BorderThickness="1"
+                    BorderBrush="#BBBBBB" BorderThickness="1"
                     CornerRadius="12" Padding="20,25">
                 <Button.Styles>
                     <Style Selector="Button">
-                        <Setter Property="Background" Value="#252525" />
+                        <Setter Property="Background" Value="#D8D8D8" />
                     </Style>
                     <Style Selector="Button[IsEnabled=false]">
-                        <Setter Property="Background" Value="#1E1E1E" />
-                        <Setter Property="Opacity" Value="1" />
+                        <Setter Property="Background" Value="#D8D8D8" />
+                        <Setter Property="Opacity" Value="0.6" />
                         <Setter Property="Cursor" Value="Arrow" />
                     </Style>
                     <Style Selector="Button:pointerover /template/ ContentPresenter">
-                        <Setter Property="Background" Value="Transparent" />
+                        <Setter Property="Background" Value="#C4C4C4" />
                     </Style>
                     <Style Selector="Button[IsEnabled=true]:pointerover">
-                        <Setter Property="Background" Value="#2E2E2E" />
+                        <Setter Property="Background" Value="#C4C4C4" />
                         <Setter Property="BorderBrush" Value="#00897B" />
                         <Setter Property="BorderThickness" Value="2" />
                     </Style>
                 </Button.Styles>
                 <Button.Effect>
-                    <DropShadowEffect Color="#000000" Opacity="0.4" BlurRadius="16" OffsetX="0" OffsetY="4"/>
+                    <DropShadowEffect Color="#000000" Opacity="0.12" BlurRadius="12" OffsetX="0" OffsetY="3"/>
                 </Button.Effect>
                 <StackPanel Spacing="12" HorizontalAlignment="Center" VerticalAlignment="Center">
                     <Border Width="90" Height="90" CornerRadius="45" HorizontalAlignment="Center">
@@ -317,14 +317,14 @@
                         <Panel>
                             <TextBlock Text="✅" FontSize="42" HorizontalAlignment="Center" VerticalAlignment="Center"
                                        IsVisible="{Binding IsOnline}" />
-                            <Path Fill="#444444" Width="38" Height="38" Stretch="Uniform"
+                            <Path Fill="#9E9E9E" Width="38" Height="38" Stretch="Uniform"
                                   HorizontalAlignment="Center" VerticalAlignment="Center"
                                   IsVisible="{Binding !IsOnline}"
                                   Data="M18,8h-1V6c0-2.76-2.24-5-5-5S7,3.24,7,6v2H6c-1.1,0-2,0.9-2,2v10c0,1.1,0.9,2,2,2h12c1.1,0,2-0.9,2-2V10C20,8.9,19.1,8,18,8z M12,17c-1.1,0-2-0.9-2-2s0.9-2,2-2s2,0.9,2,2S13.1,17,12,17z M15.1,8H8.9V6c0-1.71,1.39-3.1,3.1-3.1s3.1,1.39,3.1,3.1V8z" />
                         </Panel>
                     </Border>
                     <TextBlock Text="CONFIRMAR ENTRADA" FontSize="14" FontWeight="Bold"
-                               Foreground="#F5F5F5" HorizontalAlignment="Center"
+                               Foreground="#212121" HorizontalAlignment="Center"
                                TextWrapping="Wrap" TextAlignment="Center" />
                     <TextBlock Text="Validar mercancía recibida" FontSize="11"
                                Foreground="#757575" HorizontalAlignment="Center"
@@ -336,25 +336,28 @@
             <Button Grid.Row="2" Grid.Column="0"
                     Command="{Binding OpenCatalogCommand}"
                     VerticalAlignment="Stretch" HorizontalAlignment="Stretch"
-                    Background="#252525"
-                    BorderBrush="#3A3A3A" BorderThickness="1"
+                    Background="#D8D8D8"
+                    BorderBrush="#BBBBBB" BorderThickness="1"
                     CornerRadius="12" Padding="20,25">
                 <Button.Styles>
                     <Style Selector="Button:pointerover">
-                        <Setter Property="Background" Value="#2E2E2E" />
+                        <Setter Property="Background" Value="#C4C4C4" />
                         <Setter Property="BorderBrush" Value="#1565C0" />
                         <Setter Property="BorderThickness" Value="2" />
                     </Style>
+                    <Style Selector="Button:pointerover /template/ ContentPresenter">
+                        <Setter Property="Background" Value="#C4C4C4" />
+                    </Style>
                 </Button.Styles>
                 <Button.Effect>
-                    <DropShadowEffect Color="#000000" Opacity="0.4" BlurRadius="16" OffsetX="0" OffsetY="4"/>
+                    <DropShadowEffect Color="#000000" Opacity="0.12" BlurRadius="12" OffsetX="0" OffsetY="3"/>
                 </Button.Effect>
                 <StackPanel Spacing="12" HorizontalAlignment="Center" VerticalAlignment="Center">
                     <Border Width="90" Height="90" Background="#1565C0" CornerRadius="45" HorizontalAlignment="Center">
                         <TextBlock Text="📋" FontSize="42" HorizontalAlignment="Center" VerticalAlignment="Center" />
                     </Border>
                     <TextBlock Text="CATÁLOGO DE PRODUCTOS" FontSize="14" FontWeight="Bold"
-                               Foreground="#F5F5F5" HorizontalAlignment="Center"
+                               Foreground="#212121" HorizontalAlignment="Center"
                                TextWrapping="Wrap" TextAlignment="Center" />
                     <TextBlock Text="Alta, consulta y edición" FontSize="11"
                                Foreground="#757575" HorizontalAlignment="Center"
@@ -366,25 +369,28 @@
             <Button Grid.Row="2" Grid.Column="2"
                     Command="{Binding OpenCategoriesCommand}"
                     VerticalAlignment="Stretch" HorizontalAlignment="Stretch"
-                    Background="#252525"
-                    BorderBrush="#3A3A3A" BorderThickness="1"
+                    Background="#D8D8D8"
+                    BorderBrush="#BBBBBB" BorderThickness="1"
                     CornerRadius="12" Padding="20,25">
                 <Button.Styles>
                     <Style Selector="Button:pointerover">
-                        <Setter Property="Background" Value="#2E2E2E" />
+                        <Setter Property="Background" Value="#C4C4C4" />
                         <Setter Property="BorderBrush" Value="#7B1FA2" />
                         <Setter Property="BorderThickness" Value="2" />
                     </Style>
+                    <Style Selector="Button:pointerover /template/ ContentPresenter">
+                        <Setter Property="Background" Value="#C4C4C4" />
+                    </Style>
                 </Button.Styles>
                 <Button.Effect>
-                    <DropShadowEffect Color="#000000" Opacity="0.4" BlurRadius="16" OffsetX="0" OffsetY="4"/>
+                    <DropShadowEffect Color="#000000" Opacity="0.12" BlurRadius="12" OffsetX="0" OffsetY="3"/>
                 </Button.Effect>
                 <StackPanel Spacing="12" HorizontalAlignment="Center" VerticalAlignment="Center">
                     <Border Width="90" Height="90" Background="#6A1B9A" CornerRadius="45" HorizontalAlignment="Center">
                         <TextBlock Text="🏷️" FontSize="42" HorizontalAlignment="Center" VerticalAlignment="Center" />
                     </Border>
                     <TextBlock Text="CATEGORÍAS Y MEDIDAS" FontSize="14" FontWeight="Bold"
-                               Foreground="#F5F5F5" HorizontalAlignment="Center"
+                               Foreground="#212121" HorizontalAlignment="Center"
                                TextWrapping="Wrap" TextAlignment="Center" />
                     <TextBlock Text="Categorías, unidades y proveedores" FontSize="11"
                                Foreground="#757575" HorizontalAlignment="Center"
@@ -396,25 +402,28 @@
             <Button Grid.Row="2" Grid.Column="4"
                     Command="{Binding OpenHistoryCommand}"
                     VerticalAlignment="Stretch" HorizontalAlignment="Stretch"
-                    Background="#252525"
-                    BorderBrush="#3A3A3A" BorderThickness="1"
+                    Background="#D8D8D8"
+                    BorderBrush="#BBBBBB" BorderThickness="1"
                     CornerRadius="12" Padding="20,25">
                 <Button.Styles>
                     <Style Selector="Button:pointerover">
-                        <Setter Property="Background" Value="#2E2E2E" />
+                        <Setter Property="Background" Value="#C4C4C4" />
                         <Setter Property="BorderBrush" Value="#546E7A" />
                         <Setter Property="BorderThickness" Value="2" />
                     </Style>
+                    <Style Selector="Button:pointerover /template/ ContentPresenter">
+                        <Setter Property="Background" Value="#C4C4C4" />
+                    </Style>
                 </Button.Styles>
                 <Button.Effect>
-                    <DropShadowEffect Color="#000000" Opacity="0.4" BlurRadius="16" OffsetX="0" OffsetY="4"/>
+                    <DropShadowEffect Color="#000000" Opacity="0.12" BlurRadius="12" OffsetX="0" OffsetY="3"/>
                 </Button.Effect>
                 <StackPanel Spacing="12" HorizontalAlignment="Center" VerticalAlignment="Center">
                     <Border Width="90" Height="90" Background="#37474F" CornerRadius="45" HorizontalAlignment="Center">
                         <TextBlock Text="📊" FontSize="42" HorizontalAlignment="Center" VerticalAlignment="Center" />
                     </Border>
                     <TextBlock Text="HISTORIAL" FontSize="14" FontWeight="Bold"
-                               Foreground="#F5F5F5" HorizontalAlignment="Center"
+                               Foreground="#212121" HorizontalAlignment="Center"
                                TextWrapping="Wrap" TextAlignment="Center" />
                     <TextBlock Text="Entradas y salidas pasadas" FontSize="11"
                                Foreground="#757575" HorizontalAlignment="Center"
