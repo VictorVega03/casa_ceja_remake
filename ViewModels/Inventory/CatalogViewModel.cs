@@ -59,6 +59,7 @@ namespace CasaCejaRemake.ViewModels.Inventory
 
         public event EventHandler? GoBackRequested;
         public event EventHandler<Product?>? ProductFormRequested;
+        public event EventHandler<Product>? ProductDetailRequested;
 
         public int CurrentBranchId { get; }
 
@@ -201,6 +202,16 @@ namespace CasaCejaRemake.ViewModels.Inventory
         private void CreateProduct()
         {
             ProductFormRequested?.Invoke(this, null);
+        }
+
+        public void RequestProductForm(Product? product)
+        {
+            ProductFormRequested?.Invoke(this, product);
+        }
+
+        public void RequestProductDetail(Product product)
+        {
+            ProductDetailRequested?.Invoke(this, product);
         }
 
         [RelayCommand]

@@ -70,7 +70,7 @@
                     <Button Command="{Binding GoBackCommand}"
                             Background="Transparent"
                             BorderThickness="0"
-                            ToolTip.Tip="Volver al Menú Principal">
+                            ToolTip.Tip="Volver al Menú Principal (Esc)">
                         <StackPanel Orientation="Horizontal" Spacing="5">
                             <TextBlock Text="←" FontSize="18" Foreground="#1E88E5" VerticalAlignment="Center"/>
                             <TextBlock Text="Catálogo" FontSize="20" FontWeight="Bold" Foreground="#FFFFFF" VerticalAlignment="Center"/>
@@ -117,8 +117,9 @@
                             Foreground="White"
                             Padding="12,6"
                             CornerRadius="4"
-                            VerticalAlignment="Center">
-                        <TextBlock Text="Buscar" />
+                            VerticalAlignment="Center"
+                            ToolTip.Tip="Atajo: F5">
+                        <TextBlock Text="Buscar (F5)" />
                     </Button>
 
                     <Button Command="{Binding ClearSearchCommand}"
@@ -126,8 +127,9 @@
                             Foreground="White"
                             Padding="12,6"
                             CornerRadius="4"
-                            VerticalAlignment="Center">
-                        <TextBlock Text="Limpiar" />
+                            VerticalAlignment="Center"
+                            ToolTip.Tip="Atajo: F4">
+                        <TextBlock Text="Limpiar (F4)" />
                     </Button>
                 </StackPanel>
 
@@ -137,10 +139,11 @@
                             Foreground="White"
                             Padding="15,8"
                             CornerRadius="4"
-                            FontWeight="Bold">
+                            FontWeight="Bold"
+                            ToolTip.Tip="Atajo: F2">
                         <StackPanel Orientation="Horizontal" Spacing="5">
                             <TextBlock Text="+" FontSize="16" />
-                            <TextBlock Text="Nuevo Producto" VerticalAlignment="Center" />
+                            <TextBlock Text="Nuevo Producto (F2)" VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
                 </StackPanel>

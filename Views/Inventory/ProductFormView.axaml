@@ -67,12 +67,12 @@
                     <!-- Código -->
                     <StackPanel Grid.Column="0">
                         <TextBlock Text="CÓDIGO DE BARRAS *" Classes="label" />
-                        <TextBox Text="{Binding Barcode}" Watermark="Ej. 123456789" />
+                        <TextBox Text="{Binding Barcode}" Watermark="Ej. 123456789" TextChanged="NoSpecialCharsTextBox_TextChanged" />
                     </StackPanel>
                     <!-- Nombre -->
                     <StackPanel Grid.Column="2">
                         <TextBlock Text="NOMBRE DEL PRODUCTO *" Classes="label" />
-                        <TextBox Text="{Binding Name}" Watermark="Ej. Tornillo de pulgada" />
+                        <TextBox Text="{Binding Name}" Watermark="Ej. Tornillo de pulgada" TextChanged="NoSpecialCharsTextBox_TextChanged" />
                     </StackPanel>
                 </Grid>
 
@@ -109,7 +109,7 @@
 
                 <StackPanel>
                     <TextBlock Text="PRESENTACIÓN" Classes="label" />
-                    <TextBox Text="{Binding Presentation}" Watermark="Ej. Caja con 10pz" />
+                    <TextBox Text="{Binding Presentation}" Watermark="Ej. Caja con 10pz" TextChanged="NoSpecialCharsTextBox_TextChanged" />
                 </StackPanel>
 
                 <Separator Background="#3A3A3A" Margin="0,10" />
@@ -121,31 +121,31 @@
                     <!-- Precio Menudeo -->
                     <StackPanel Grid.Column="0">
                         <TextBlock Text="PRECIO AL PÚBLICO (MENUDEO) *" Classes="label" />
-                        <TextBox Text="{Binding PriceRetail}" />
+                        <TextBox Text="{Binding PriceRetail}" TextChanged="DecimalTextBox_TextChanged" />
                     </StackPanel>
                     
                     <!-- Precios Mayoreo -->
                     <StackPanel Grid.Column="2">
                         <TextBlock Text="PRECIO MAYOREO" Classes="label" />
-                        <TextBox Text="{Binding PriceWholesale}" />
+                        <TextBox Text="{Binding PriceWholesale}" TextChanged="DecimalTextBox_TextChanged" />
                     </StackPanel>
                 </Grid>
 
                 <Grid ColumnDefinitions="*,20,*">
                     <StackPanel Grid.Column="0">
                         <TextBlock Text="CANTIDAD PARA MAYOREO" Classes="label" />
-                        <TextBox Text="{Binding WholesaleQuantity}" />
+                        <TextBox Text="{Binding WholesaleQuantity}" TextChanged="IntTextBox_TextChanged" />
                     </StackPanel>
                     
                     <!-- Precios Especiales -->
                     <StackPanel Grid.Column="2" Spacing="10">
                         <StackPanel>
                             <TextBlock Text="PRECIO ESPECIAL (MAYORISTAS)" Classes="label" />
-                            <TextBox Text="{Binding PriceSpecial}" />
+                            <TextBox Text="{Binding PriceSpecial}" TextChanged="DecimalTextBox_TextChanged" />
                         </StackPanel>
                         <StackPanel>
                             <TextBlock Text="PRECIO DE DISTRIBUIDOR" Classes="label" />
-                            <TextBox Text="{Binding PriceDealer}" />
+                            <TextBox Text="{Binding PriceDealer}" TextChanged="DecimalTextBox_TextChanged" />
                         </StackPanel>
                     </StackPanel>
                 </Grid>
@@ -156,7 +156,7 @@
                 
                 <StackPanel>
                     <TextBlock Text="CANTIDAD EN EXISTENCIA" Classes="label" />
-                    <TextBox Text="{Binding InitialQuantity}" Watermark="Ej. 10" />
+                    <TextBox Text="{Binding InitialQuantity}" Watermark="Ej. 10" TextChanged="IntTextBox_TextChanged" />
                 </StackPanel>
                 <TextBlock Text="{Binding StatusMessage}" Foreground="#EF5350" FontWeight="SemiBold" TextWrapping="Wrap" />
                     </StackPanel>

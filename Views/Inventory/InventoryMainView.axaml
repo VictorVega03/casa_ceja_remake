@@ -101,13 +101,13 @@
                     <Button Command="{Binding ExitCommand}"
                             FontSize="13"
                             Height="36"
-                            Padding="25,0"
+                            Padding="15,0"
                             Background="#C62828"
                             Foreground="White"
                             BorderThickness="0"
                             CornerRadius="4"
-                            ToolTip.Tip="Salir del sistema">
-                        <TextBlock Text="Salir" VerticalAlignment="Center" FontWeight="Bold"/>
+                            ToolTip.Tip="Salir de Inventario">
+                        <TextBlock Text="Salir de Inventario" VerticalAlignment="Center" FontWeight="Bold"/>
                         <Button.Styles>
                             <Style Selector="Button:pointerover">
                                 <Setter Property="Background" Value="#B71C1C" />

@@ -627,6 +627,22 @@ namespace CasaCejaRemake
                 // As it is a child window
                 formView.ShowDialog(catalogView);
             };
+
+            viewModel.ProductDetailRequested += (s, product) =>
+            {
+                var detailViewModel = new ViewModels.Inventory.ProductDetailViewModel(product);
+                var detailView = new Views.Inventory.ProductDetailView
+                {
+                    DataContext = detailViewModel
+                };
+
+                detailViewModel.CloseRequested += (sender, args) =>
+                {
+                    detailView.Close();
+                };
+
+                detailView.ShowDialog(catalogView);
+            };
             catalogView.Closed += (sender, args) =>
             {
                 // Si no tiene tag, se cerró con la 'X' o Cmd+Q -> dejar que se cierre la app.
