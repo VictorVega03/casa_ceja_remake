@@ -273,6 +273,85 @@ public static class DialogHelper
         await tcs.Task;
     }
 
+    public static async Task<string?> ShowInputDialog(Window parentWindow, string title, string prompt, string defaultValue = "")
+    {
+        var dialog = new Window
+        {
+            Title = title,
+            Width = 400,
+            Height = 210,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner,
+            CanResize = false,
+            Background = new SolidColorBrush(Color.Parse("#232323"))
+        };
+
+        var panel = new StackPanel { Margin = new Avalonia.Thickness(24, 20, 24, 20), Spacing = 14 };
+
+        panel.Children.Add(new TextBlock
+        {
+            Text = prompt,
+            FontSize = 14,
+            Foreground = new SolidColorBrush(Colors.White),
+            TextWrapping = Avalonia.Media.TextWrapping.Wrap
+        });
+
+        var textBox = new TextBox
+        {
+            Text = defaultValue,
+            Background = new SolidColorBrush(Color.Parse("#2E2E2E")),
+            Foreground = new SolidColorBrush(Colors.White),
+            BorderBrush = new SolidColorBrush(Color.Parse("#555")),
+            CaretBrush = new SolidColorBrush(Colors.White),
+            Padding = new Avalonia.Thickness(10, 7),
+            FontSize = 14,
+            CornerRadius = new Avalonia.CornerRadius(4)
+        };
+        panel.Children.Add(textBox);
+
+        var buttonsPanel = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            HorizontalAlignment = HorizontalAlignment.Right,
+            Spacing = 10
+        };
+
+        var cancelButton = new Button
+        {
+            Content = "Cancelar (Esc)",
+            Padding = new Avalonia.Thickness(16, 7),
+            Background = new SolidColorBrush(Color.Parse("#3A3A3A")),
+            Foreground = new SolidColorBrush(Colors.White),
+            CornerRadius = new Avalonia.CornerRadius(4)
+        };
+        cancelButton.Click += (s, e) => { dialog.Tag = null; dialog.Close(); };
+
+        var okButton = new Button
+        {
+            Content = "Guardar (Enter)",
+            Padding = new Avalonia.Thickness(16, 7),
+            Background = new SolidColorBrush(Color.Parse("#2E7D32")),
+            Foreground = new SolidColorBrush(Colors.White),
+            CornerRadius = new Avalonia.CornerRadius(4)
+        };
+        okButton.Click += (s, e) => { dialog.Tag = textBox.Text; dialog.Close(); };
+
+        buttonsPanel.Children.Add(cancelButton);
+        buttonsPanel.Children.Add(okButton);
+        panel.Children.Add(buttonsPanel);
+
+        dialog.KeyDown += (s, e) =>
+        {
+            if (e.Key == Avalonia.Input.Key.Enter) { dialog.Tag = textBox.Text; dialog.Close(); e.Handled = true; }
+            else if (e.Key == Avalonia.Input.Key.Escape) { dialog.Tag = null; dialog.Close(); e.Handled = true; }
+        };
+
+        dialog.Content = panel;
+        dialog.Opened += (s, e) => { textBox.Focus(); textBox.SelectAll(); };
+
+        await dialog.ShowDialog(parentWindow);
+        return dialog.Tag as string;
+    }
+
     public static async Task<bool> ShowConfirmDialog(Window parentWindow, string title, string message)
     {
         var dialog = new Window

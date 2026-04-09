@@ -1,0 +1,240 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:CasaCejaRemake.ViewModels.Inventory"
+        x:Class="CasaCejaRemake.Views.Inventory.CatalogsManagementView"
+        x:DataType="vm:CatalogsManagementViewModel"
+        x:CompileBindings="False"
+        Title="Categorías y Medidas"
+        Width="660" Height="520"
+        MinWidth="500" MinHeight="400"
+        WindowStartupLocation="CenterOwner"
+        CanResize="True"
+        Background="#1A1A1A">
+
+    <Window.Styles>
+        <Style Selector="Button.add">
+            <Setter Property="Background" Value="#2E7D32"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Padding" Value="16,8"/>
+            <Setter Property="CornerRadius" Value="5"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+        <Style Selector="Button.add:pointerover">
+            <Setter Property="Background" Value="#388E3C"/>
+        </Style>
+        <Style Selector="Button.edit-btn">
+            <Setter Property="Background" Value="#1565C0"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Padding" Value="20,8"/>
+            <Setter Property="CornerRadius" Value="5"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+        <Style Selector="Button.edit-btn:pointerover">
+            <Setter Property="Background" Value="#1976D2"/>
+        </Style>
+        <Style Selector="Button.edit-btn:disabled">
+            <Setter Property="Background" Value="#162A3E"/>
+            <Setter Property="Foreground" Value="#444"/>
+        </Style>
+        <Style Selector="Button.danger">
+            <Setter Property="Background" Value="#B71C1C"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Padding" Value="20,8"/>
+            <Setter Property="CornerRadius" Value="5"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+        <Style Selector="Button.danger:pointerover">
+            <Setter Property="Background" Value="#C62828"/>
+        </Style>
+        <Style Selector="Button.danger:disabled">
+            <Setter Property="Background" Value="#2A1010"/>
+            <Setter Property="Foreground" Value="#444"/>
+        </Style>
+        <Style Selector="Button.close-x">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="#888"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="8,4"/>
+            <Setter Property="FontSize" Value="18"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+        <Style Selector="Button.close-x:pointerover">
+            <Setter Property="Background" Value="#2E2E2E"/>
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+        <Style Selector="TabItem">
+            <Setter Property="Foreground" Value="#888"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="Padding" Value="20,10"/>
+        </Style>
+        <Style Selector="TabItem:selected">
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+        </Style>
+        <Style Selector="DataGrid">
+            <Setter Property="Background" Value="#1E1E1E"/>
+            <Setter Property="RowBackground" Value="#1E1E1E"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderBrush" Value="#2E2E2E"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="GridLinesVisibility" Value="Horizontal"/>
+            <Setter Property="HorizontalGridLinesBrush" Value="#2A2A2A"/>
+            <Setter Property="RowHeight" Value="44"/>
+        </Style>
+        <Style Selector="DataGridColumnHeader">
+            <Setter Property="Background" Value="#242424"/>
+            <Setter Property="Foreground" Value="#999"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Padding" Value="14,10"/>
+        </Style>
+        <Style Selector="DataGridCell">
+            <Setter Property="Padding" Value="14,0"/>
+            <Setter Property="Foreground" Value="#E0E0E0"/>
+            <Setter Property="FontSize" Value="14"/>
+        </Style>
+    </Window.Styles>
+
+    <Grid RowDefinitions="Auto,*">
+
+        <!-- Header -->
+        <Border Grid.Row="0" Background="#212121" BorderBrush="#2E2E2E" BorderThickness="0,0,0,1" Padding="24,14,16,14">
+            <Grid ColumnDefinitions="Auto,*,Auto">
+                <!-- Title -->
+                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="14" VerticalAlignment="Center">
+                    <Border Width="4" Height="22" CornerRadius="2" Background="#FF9800"/>
+                    <TextBlock Text="Categorías y Medidas" FontSize="17" FontWeight="Bold" Foreground="White" VerticalAlignment="Center"/>
+                </StackPanel>
+                <!-- Close button -->
+                <Button Grid.Column="2" Classes="close-x"
+                        Command="{Binding CloseCommand}"
+                        CornerRadius="4"
+                        ToolTip.Tip="Cerrar (Esc)">
+                    ✕
+                </Button>
+            </Grid>
+        </Border>
+
+        <!-- Tab content -->
+        <TabControl Grid.Row="1" Background="Transparent" BorderThickness="0">
+
+            <!-- ═══ CATEGORÍAS ═══ -->
+            <TabItem>
+                <TabItem.Header>
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <TextBlock Text="Categorías"/>
+                        <Border CornerRadius="10" Padding="6,1" Background="#1565C0" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding Categories.Count}" FontSize="11" FontWeight="Bold" Foreground="White"/>
+                        </Border>
+                    </StackPanel>
+                </TabItem.Header>
+
+                <Grid RowDefinitions="Auto,*,Auto" Margin="20,14,20,16">
+
+                    <!-- Add button row -->
+                    <Grid Grid.Row="0" Margin="0,0,0,12">
+                        <Button Classes="add" HorizontalAlignment="Right"
+                                Click="OnAddCategoryClick">
+                            + Agregar categoría
+                        </Button>
+                    </Grid>
+
+                    <!-- DataGrid -->
+                    <DataGrid Grid.Row="1"
+                              ItemsSource="{Binding Categories}"
+                              SelectedItem="{Binding SelectedCategory}"
+                              AutoGenerateColumns="False"
+                              CanUserReorderColumns="False"
+                              CanUserResizeColumns="False"
+                              CanUserSortColumns="True"
+                              IsReadOnly="True"
+                              SelectionMode="Single">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="NOMBRE DE CATEGORÍA" Binding="{Binding Name}" Width="*"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+
+                    <!-- Action bar -->
+                    <Grid Grid.Row="2" ColumnDefinitions="*,Auto,Auto" Margin="0,12,0,0">
+                        <TextBlock Grid.Column="0"
+                                   Text="Selecciona un elemento para editar o eliminar"
+                                   FontSize="12" Foreground="#555" VerticalAlignment="Center"/>
+                        <Button Grid.Column="1" Classes="edit-btn"
+                                Click="OnEditCategoryClick"
+                                IsEnabled="{Binding SelectedCategory, Converter={x:Static ObjectConverters.IsNotNull}}"
+                                Margin="0,0,10,0">
+                            Editar
+                        </Button>
+                        <Button Grid.Column="2" Classes="danger"
+                                Click="OnDeleteCategoryClick"
+                                IsEnabled="{Binding SelectedCategory, Converter={x:Static ObjectConverters.IsNotNull}}">
+                            Eliminar
+                        </Button>
+                    </Grid>
+                </Grid>
+            </TabItem>
+
+            <!-- ═══ UNIDADES DE MEDIDA ═══ -->
+            <TabItem>
+                <TabItem.Header>
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <TextBlock Text="Unidades de Medida"/>
+                        <Border CornerRadius="10" Padding="6,1" Background="#6A1B9A" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding Units.Count}" FontSize="11" FontWeight="Bold" Foreground="White"/>
+                        </Border>
+                    </StackPanel>
+                </TabItem.Header>
+
+                <Grid RowDefinitions="Auto,*,Auto" Margin="20,14,20,16">
+
+                    <!-- Add button row -->
+                    <Grid Grid.Row="0" Margin="0,0,0,12">
+                        <Button Classes="add" HorizontalAlignment="Right"
+                                Click="OnAddUnitClick">
+                            + Agregar unidad
+                        </Button>
+                    </Grid>
+
+                    <!-- DataGrid -->
+                    <DataGrid Grid.Row="1"
+                              ItemsSource="{Binding Units}"
+                              SelectedItem="{Binding SelectedUnit}"
+                              AutoGenerateColumns="False"
+                              CanUserReorderColumns="False"
+                              CanUserResizeColumns="False"
+                              CanUserSortColumns="True"
+                              IsReadOnly="True"
+                              SelectionMode="Single">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="NOMBRE DE UNIDAD" Binding="{Binding Name}" Width="*"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+
+                    <!-- Action bar -->
+                    <Grid Grid.Row="2" ColumnDefinitions="*,Auto,Auto" Margin="0,12,0,0">
+                        <TextBlock Grid.Column="0"
+                                   Text="Selecciona un elemento para editar o eliminar"
+                                   FontSize="12" Foreground="#555" VerticalAlignment="Center"/>
+                        <Button Grid.Column="1" Classes="edit-btn"
+                                Click="OnEditUnitClick"
+                                IsEnabled="{Binding SelectedUnit, Converter={x:Static ObjectConverters.IsNotNull}}"
+                                Margin="0,0,10,0">
+                            Editar
+                        </Button>
+                        <Button Grid.Column="2" Classes="danger"
+                                Click="OnDeleteUnitClick"
+                                IsEnabled="{Binding SelectedUnit, Converter={x:Static ObjectConverters.IsNotNull}}">
+                            Eliminar
+                        </Button>
+                    </Grid>
+                </Grid>
+            </TabItem>
+        </TabControl>
+    </Grid>
+</Window>

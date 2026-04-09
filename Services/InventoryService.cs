@@ -12,17 +12,35 @@ namespace CasaCejaRemake.Services
         private readonly BaseRepository<Category> _categoryRepository;
         private readonly BaseRepository<Unit> _unitRepository;
         private readonly BaseRepository<ProductStock> _productStockRepository;
+        private readonly BaseRepository<StockEntry> _entryRepo;
+        private readonly BaseRepository<StockOutput> _outputRepo;
+        private readonly BaseRepository<EntryProduct> _entryProductRepo;
+        private readonly BaseRepository<OutputProduct> _outputProductRepo;
+        private readonly BaseRepository<Supplier> _supplierRepo;
+        private readonly BaseRepository<Branch> _branchRepo;
 
         public InventoryService(
             ProductRepository productRepository,
             BaseRepository<Category> categoryRepository,
             BaseRepository<Unit> unitRepository,
-            BaseRepository<ProductStock> productStockRepository)
+            BaseRepository<ProductStock> productStockRepository,
+            BaseRepository<StockEntry> entryRepo,
+            BaseRepository<StockOutput> outputRepo,
+            BaseRepository<EntryProduct> entryProductRepo,
+            BaseRepository<OutputProduct> outputProductRepo,
+            BaseRepository<Supplier> supplierRepo,
+            BaseRepository<Branch> branchRepo)
         {
             _productRepository = productRepository;
             _categoryRepository = categoryRepository;
             _unitRepository = unitRepository;
             _productStockRepository = productStockRepository;
+            _entryRepo = entryRepo;
+            _outputRepo = outputRepo;
+            _entryProductRepo = entryProductRepo;
+            _outputProductRepo = outputProductRepo;
+            _supplierRepo = supplierRepo;
+            _branchRepo = branchRepo;
         }
 
         // ============================
@@ -94,6 +112,62 @@ namespace CasaCejaRemake.Services
             return await _unitRepository.GetAllAsync();
         }
 
+        public async Task<int> SaveCategoryAsync(Category category)
+        {
+            category.UpdatedAt = DateTime.Now;
+            category.SyncStatus = 1;
+
+            if (category.Id == 0)
+            {
+                category.CreatedAt = DateTime.Now;
+                return await _categoryRepository.AddAsync(category);
+            }
+            else
+            {
+                return await _categoryRepository.UpdateAsync(category);
+            }
+        }
+
+        public async Task<bool> DeleteCategoryAsync(int id)
+        {
+            var category = await _categoryRepository.GetByIdAsync(id);
+            if (category == null) return false;
+
+            // Optional: verify if used in products
+            var products = await _productRepository.FindAsync(p => p.CategoryId == id);
+            if (products.Count > 0) return false;
+
+            return await _categoryRepository.DeleteAsync(category) > 0;
+        }
+
+        public async Task<int> SaveUnitAsync(Unit unit)
+        {
+            unit.UpdatedAt = DateTime.Now;
+            unit.SyncStatus = 1;
+
+            if (unit.Id == 0)
+            {
+                unit.CreatedAt = DateTime.Now;
+                return await _unitRepository.AddAsync(unit);
+            }
+            else
+            {
+                return await _unitRepository.UpdateAsync(unit);
+            }
+        }
+
+        public async Task<bool> DeleteUnitAsync(int id)
+        {
+            var unit = await _unitRepository.GetByIdAsync(id);
+            if (unit == null) return false;
+
+            // Optional: verify if used in products
+            var products = await _productRepository.FindAsync(p => p.UnitId == id);
+            if (products.Count > 0) return false;
+
+            return await _unitRepository.DeleteAsync(unit) > 0;
+        }
+
         // ============================
         // STOCK POR SUCURSAL
         // ============================
@@ -124,6 +198,45 @@ namespace CasaCejaRemake.Services
                 };
                 await _productStockRepository.AddAsync(stock);
             }
+        }
+
+        // ============================
+        // HISTORIAL Y DETALLES
+        // ============================
+        public async Task<List<StockEntry>> GetEntriesAsync(int branchId, DateTime startDate, DateTime endDate)
+        {
+            var endOfDay = endDate.Date.AddDays(1).AddSeconds(-1);
+            return await _entryRepo.FindAsync(x => x.BranchId == branchId && x.EntryDate >= startDate.Date && x.EntryDate <= endOfDay);
+        }
+
+        public async Task<List<StockOutput>> GetOutputsAsync(int branchId, DateTime startDate, DateTime endDate)
+        {
+            var endOfDay = endDate.Date.AddDays(1).AddSeconds(-1);
+            return await _outputRepo.FindAsync(x => x.OriginBranchId == branchId && x.OutputDate >= startDate.Date && x.OutputDate <= endOfDay);
+        }
+
+        public async Task<List<EntryProduct>> GetEntryProductsAsync(int entryId)
+        {
+            return await _entryProductRepo.FindAsync(x => x.EntryId == entryId);
+        }
+
+        public async Task<List<OutputProduct>> GetOutputProductsAsync(int outputId)
+        {
+            return await _outputProductRepo.FindAsync(x => x.OutputId == outputId);
+        }
+
+        public async Task<string> GetSupplierNameAsync(int supplierId)
+        {
+            if (supplierId <= 0) return "Desconocido";
+            var s = await _supplierRepo.GetByIdAsync(supplierId);
+            return s?.Name ?? "Desconocido";
+        }
+
+        public async Task<string> GetBranchNameAsync(int branchId)
+        {
+            if (branchId <= 0) return "Desconocido";
+            var b = await _branchRepo.GetByIdAsync(branchId);
+            return b?.Name ?? "Desconocido";
         }
     }
 }

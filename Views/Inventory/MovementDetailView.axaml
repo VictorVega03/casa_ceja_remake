@@ -1,0 +1,51 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:CasaCejaRemake.ViewModels.Inventory"
+        x:Class="CasaCejaRemake.Views.Inventory.MovementDetailView"
+        x:DataType="vm:MovementDetailViewModel"
+        Title="Detalle de Movimiento"
+        Width="700" Height="500"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False"
+        Background="#1C1C1C">
+    
+    <Grid RowDefinitions="Auto,*,Auto">
+        <!-- Header -->
+        <Border Grid.Row="0" Background="#2D2D2D" BorderBrush="#3A3A3A" BorderThickness="0,0,0,1" Padding="20">
+            <StackPanel>
+                <TextBlock Text="{Binding Title}" FontSize="20" FontWeight="Bold" Foreground="White" Margin="0,0,0,5" />
+                <TextBlock Text="{Binding Subtitle}" FontSize="14" Foreground="#BDBDBD" />
+            </StackPanel>
+        </Border>
+
+        <!-- Product List -->
+        <DataGrid Grid.Row="1" ItemsSource="{Binding Products}" Margin="20"
+                  AutoGenerateColumns="False" CanUserReorderColumns="False" CanUserResizeColumns="True" CanUserSortColumns="True"
+                  IsReadOnly="True" GridLinesVisibility="All" Background="#252525" RowBackground="#252525"
+                  BorderBrush="#424242" BorderThickness="1" SelectionMode="Single">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Código" Binding="{Binding Barcode}" Width="150" />
+                <DataGridTextColumn Header="Nombre" Binding="{Binding Name}" Width="*" />
+                <DataGridTextColumn Header="Cantidad" Binding="{Binding Quantity}" Width="100" />
+                <DataGridTextColumn Header="Costo Unit." Binding="{Binding UnitCost, StringFormat={}{0:C}}" Width="120" />
+                <DataGridTextColumn Header="Total Línea" Binding="{Binding Total, StringFormat={}{0:C}}" Width="120" />
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <!-- Footer -->
+        <Border Grid.Row="2" Background="#2D2D2D" BorderBrush="#3A3A3A" BorderThickness="0,1,0,0" Padding="20">
+            <Grid ColumnDefinitions="*,Auto">
+                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                    <TextBlock Text="Total Movimiento:" FontSize="16" Foreground="#BDBDBD" />
+                    <TextBlock Text="{Binding TotalAmount, StringFormat={}{0:C}}" FontSize="20" FontWeight="Bold" Foreground="#4CAF50" />
+                </StackPanel>
+                <Button Grid.Column="1" Command="{Binding CloseCommand}"
+                        Background="#424242" Foreground="White"
+                        Padding="30,10" CornerRadius="4" FontWeight="Bold"
+                        ToolTip.Tip="Cerrar (Esc)">
+                    <TextBlock Text="Cerrar" />
+                </Button>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>

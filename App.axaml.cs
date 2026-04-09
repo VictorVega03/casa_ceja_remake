@@ -163,8 +163,15 @@ namespace CasaCejaRemake
                     FolioService, ConfigService);
 
                 var productStockRepo = new BaseRepository<Models.ProductStock>(DatabaseService);
+                var entryRepo = new BaseRepository<Models.StockEntry>(DatabaseService);
+                var outputRepo = new BaseRepository<Models.StockOutput>(DatabaseService);
+                var entryProductRepo = new BaseRepository<Models.EntryProduct>(DatabaseService);
+                var outputProductRepo = new BaseRepository<Models.OutputProduct>(DatabaseService);
+                var supplierRepo = new BaseRepository<Models.Supplier>(DatabaseService);
+
                 _inventoryService = new InventoryService(
-                    productRepo, categoryRepo, unitRepo, productStockRepo);
+                    productRepo, categoryRepo, unitRepo, productStockRepo,
+                    entryRepo, outputRepo, entryProductRepo, outputProductRepo, supplierRepo, branchRepo);
 
                 Console.WriteLine("[App] Servicios inicializados correctamente");
             }
@@ -519,8 +526,19 @@ namespace CasaCejaRemake
 
             viewModel.CategoriesSelected += (s, e) =>
             {
-                Console.WriteLine("[App] Categorías seleccionada — Próximamente");
-                // TODO: Fase 3 — ShowCatalogsManagement(inventoryView);
+                Console.WriteLine("[App] Abriendo Gestión de Categorías");
+                var catalogsViewModel = new ViewModels.Inventory.CatalogsManagementViewModel(_inventoryService!);
+                var catalogsView = new Views.Inventory.CatalogsManagementView
+                {
+                    DataContext = catalogsViewModel
+                };
+
+                catalogsViewModel.CloseRequested += (sender, args) =>
+                {
+                    catalogsView.Close();
+                };
+
+                catalogsView.ShowDialog(inventoryView);
             };
 
             viewModel.EntriesSelected += (s, e) =>
@@ -543,8 +561,9 @@ namespace CasaCejaRemake
 
             viewModel.HistorySelected += (s, e) =>
             {
-                Console.WriteLine("[App] Historial seleccionado — Próximamente");
-                // TODO: Fase 7 — ShowHistory(inventoryView);
+                Console.WriteLine("[App] Historial seleccionado");
+                inventoryView.Tag = "history";
+                ShowHistory(inventoryView);
             };
 
             viewModel.ExitRequested += (s, e) =>
@@ -650,6 +669,47 @@ namespace CasaCejaRemake
 
             desktop.MainWindow = catalogView;
             catalogView.Show();
+            windowToClose?.Close();
+        }
+
+        private async void ShowHistory(Window? windowToClose = null)
+        {
+            if (ApplicationLifetime is not IClassicDesktopStyleApplicationLifetime desktop) return;
+            if (_inventoryService == null) return;
+
+            var branchId = AuthService?.CurrentUser?.BranchId ?? 0;
+            var viewModel = new ViewModels.Inventory.HistoryViewModel(_inventoryService, branchId);
+            
+            var historyView = new Views.Inventory.HistoryView
+            {
+                DataContext = viewModel
+            };
+
+            viewModel.GoBackRequested += (s, e) =>
+            {
+                historyView.Tag = "inventory";
+                ShowInventory(historyView);
+            };
+
+            viewModel.MovementDetailRequested += (s, historyItem) =>
+            {
+                var detailVM = new ViewModels.Inventory.MovementDetailViewModel(_inventoryService!, historyItem);
+                var detailView = new Views.Inventory.MovementDetailView
+                {
+                    DataContext = detailVM
+                };
+
+                detailVM.CloseRequested += (s2, a2) => detailView.Close();
+                detailView.ShowDialog(historyView);
+            };
+
+            historyView.Closed += (sender, args) =>
+            {
+                // Cerrado vía X
+            };
+
+            desktop.MainWindow = historyView;
+            historyView.Show();
             windowToClose?.Close();
         }
 
