@@ -21,8 +21,8 @@ namespace CasaCejaRemake.ViewModels.Inventory
         public event EventHandler? CatalogSelected;
         public event EventHandler? CategoriesSelected;
         public event EventHandler? HistorySelected;
-        public event EventHandler? BackToModuleSelector;
-        public event EventHandler? LogoutRequested;
+        public event EventHandler? ExitRequested;
+        public event EventHandler? RequestExitConfirmation;
 
         // ========== PROPIEDADES ==========
 
@@ -102,15 +102,14 @@ namespace CasaCejaRemake.ViewModels.Inventory
         }
 
         [RelayCommand]
-        private void GoBack()
+        private void Exit()
         {
-            BackToModuleSelector?.Invoke(this, EventArgs.Empty);
+            RequestExitConfirmation?.Invoke(this, EventArgs.Empty);
         }
 
-        [RelayCommand]
-        private void Logout()
+        public void ConfirmExit()
         {
-            LogoutRequested?.Invoke(this, EventArgs.Empty);
+            ExitRequested?.Invoke(this, EventArgs.Empty);
         }
 
         [RelayCommand]

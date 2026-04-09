@@ -97,34 +97,17 @@
                     </Button>
 
                     <!-- Volver a Selector de Módulos -->
-                    <Button Command="{Binding GoBackCommand}"
+                    <!-- Salir -->
+                    <Button Command="{Binding ExitCommand}"
                             FontSize="13"
                             Height="36"
-                            Padding="18,0"
-                            Background="#1565C0"
-                            Foreground="#FFFFFF"
-                            BorderThickness="0"
-                            CornerRadius="4"
-                            ToolTip.Tip="Volver al selector de módulos">
-                        <TextBlock Text="← Módulos" VerticalAlignment="Center"/>
-                        <Button.Styles>
-                            <Style Selector="Button:pointerover">
-                                <Setter Property="Background" Value="#0D47A1" />
-                            </Style>
-                        </Button.Styles>
-                    </Button>
-
-                    <!-- Cerrar Sesión -->
-                    <Button Command="{Binding LogoutCommand}"
-                            FontSize="13"
-                            Height="36"
-                            Padding="18,0"
+                            Padding="25,0"
                             Background="#C62828"
                             Foreground="White"
                             BorderThickness="0"
                             CornerRadius="4"
-                            ToolTip.Tip="Cerrar sesión">
-                        <TextBlock Text="Cerrar Sesión" VerticalAlignment="Center"/>
+                            ToolTip.Tip="Salir del sistema">
+                        <TextBlock Text="Salir" VerticalAlignment="Center" FontWeight="Bold"/>
                         <Button.Styles>
                             <Style Selector="Button:pointerover">
                                 <Setter Property="Background" Value="#B71C1C" />
@@ -359,7 +342,7 @@
                     <TextBlock Text="CATÁLOGO DE PRODUCTOS" FontSize="14" FontWeight="Bold"
                                Foreground="#212121" HorizontalAlignment="Center"
                                TextWrapping="Wrap" TextAlignment="Center" />
-                    <TextBlock Text="Alta, consulta y edición" FontSize="11"
+                    <TextBlock Text="Consultar productos y Crear nuevos" FontSize="11"
                                Foreground="#757575" HorizontalAlignment="Center"
                                TextWrapping="Wrap" TextAlignment="Center" />
                 </StackPanel>
@@ -392,7 +375,7 @@
                     <TextBlock Text="CATEGORÍAS Y MEDIDAS" FontSize="14" FontWeight="Bold"
                                Foreground="#212121" HorizontalAlignment="Center"
                                TextWrapping="Wrap" TextAlignment="Center" />
-                    <TextBlock Text="Categorías, unidades y proveedores" FontSize="11"
+                    <TextBlock Text="Agregar o modificar categorias y medidas" FontSize="11"
                                Foreground="#757575" HorizontalAlignment="Center"
                                TextWrapping="Wrap" TextAlignment="Center" />
                 </StackPanel>
@@ -425,7 +408,7 @@
                     <TextBlock Text="HISTORIAL" FontSize="14" FontWeight="Bold"
                                Foreground="#212121" HorizontalAlignment="Center"
                                TextWrapping="Wrap" TextAlignment="Center" />
-                    <TextBlock Text="Entradas y salidas pasadas" FontSize="11"
+                    <TextBlock Text="Historial de entradas y salidas" FontSize="11"
                                Foreground="#757575" HorizontalAlignment="Center"
                                TextWrapping="Wrap" TextAlignment="Center" />
                 </StackPanel>

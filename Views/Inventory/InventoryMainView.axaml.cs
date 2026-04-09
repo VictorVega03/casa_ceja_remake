@@ -21,6 +21,16 @@ namespace CasaCejaRemake.Views.Inventory
         {
             if (DataContext is InventoryMainViewModel viewModel)
             {
+                viewModel.RequestExitConfirmation += async (s, args) =>
+                {
+                    // Minimal confirmation dialog logic
+                    var result = await casa_ceja_remake.Helpers.DialogHelper.ShowConfirmDialog(this, "¿Volver a Módulos?", "¿Estás seguro de que deseas salir del inventario y volver al selector de módulos?");
+                    if (result)
+                    {
+                        viewModel.ConfirmExit();
+                    }
+                };
+
                 await viewModel.CheckConnectivityCommand.ExecuteAsync(null);
             }
         }

@@ -38,6 +38,9 @@ namespace CasaCejaRemake
         private CustomerService? _customerService;
         private CashCloseService? _cashCloseService;
         private TicketService? _ticketService;
+        
+        // Servicios de Inventario
+        private InventoryService? _inventoryService;
 
         // Referencia a la ventana de login actual (para evitar duplicados)
         private LoginView? _currentLoginView;
@@ -158,6 +161,10 @@ namespace CasaCejaRemake
                     saleRepo, creditRepo, layawayRepo,
                     layawayPaymentRepo, creditPaymentRepo,
                     FolioService, ConfigService);
+
+                var productStockRepo = new BaseRepository<Models.ProductStock>(DatabaseService);
+                _inventoryService = new InventoryService(
+                    productRepo, categoryRepo, unitRepo, productStockRepo);
 
                 Console.WriteLine("[App] Servicios inicializados correctamente");
             }
@@ -505,8 +512,9 @@ namespace CasaCejaRemake
 
             viewModel.CatalogSelected += (s, e) =>
             {
-                Console.WriteLine("[App] Catálogo seleccionado — Próximamente");
-                // TODO: Fase 2 — ShowCatalog(inventoryView);
+                Console.WriteLine("[App] Catálogo seleccionado");
+                inventoryView.Tag = "catalog";
+                ShowCatalog(inventoryView);
             };
 
             viewModel.CategoriesSelected += (s, e) =>
@@ -539,17 +547,10 @@ namespace CasaCejaRemake
                 // TODO: Fase 7 — ShowHistory(inventoryView);
             };
 
-            viewModel.BackToModuleSelector += (s, e) =>
+            viewModel.ExitRequested += (s, e) =>
             {
-                Console.WriteLine("[App] Volver al selector de módulos desde Inventario");
+                Console.WriteLine("[App] Regresando a selector de módulos desde Inventario");
                 inventoryView.Tag = "module_selector";
-                inventoryView.Close();
-            };
-
-            viewModel.LogoutRequested += (s, e) =>
-            {
-                Console.WriteLine("[App] Logout desde Inventario");
-                inventoryView.Tag = "logout";
                 inventoryView.Close();
             };
 
@@ -570,8 +571,11 @@ namespace CasaCejaRemake
                 }
                 else
                 {
-                    // Cerrado sin tag (botón X), volver al selector
-                    ShowModuleSelector();
+                    // Cerrado sin tag (Botón Salir, botón X o Cmd+Q) -> dejar que se cierre la app
+                    if (desktop.MainWindow == inventoryView || desktop.MainWindow == null)
+                    {
+                        Console.WriteLine("[App] Cerrando aplicación.");
+                    }
                 }
             };
 
@@ -580,6 +584,57 @@ namespace CasaCejaRemake
             windowToClose?.Close();
 
             Console.WriteLine("[App] InventoryMainView mostrada correctamente");
+        }
+
+        private void ShowCatalog(Window? windowToClose = null)
+        {
+            if (ApplicationLifetime is not IClassicDesktopStyleApplicationLifetime desktop) return;
+            if (_inventoryService == null) return;
+
+            var branchId = AuthService?.CurrentUser?.BranchId ?? 0;
+            var viewModel = new ViewModels.Inventory.CatalogViewModel(_inventoryService, branchId);
+            
+            var catalogView = new Views.Inventory.CatalogView
+            {
+                DataContext = viewModel
+            };
+
+            viewModel.GoBackRequested += (s, e) =>
+            {
+                catalogView.Tag = "inventory";
+                ShowInventory(catalogView);
+            };
+
+            viewModel.ProductFormRequested += (s, product) =>
+            {
+                Console.WriteLine("[App] Abriendo ProductFormView");
+                var c = s as ViewModels.Inventory.CatalogViewModel;
+                int bId = c != null ? c.CurrentBranchId : 1;
+                var formViewModel = new ViewModels.Inventory.ProductFormViewModel(_inventoryService, bId, product);
+                var formView = new Views.Inventory.ProductFormView
+                {
+                    DataContext = formViewModel
+                };
+
+                formViewModel.SaveCompleted += (s, e) =>
+                {
+                    formView.Close();
+                    viewModel.RefreshData();
+                };
+
+                // La cancelación se maneja internamente en ProductFormView.axaml.cs con un popup de confirmación.
+
+                // As it is a child window
+                formView.ShowDialog(catalogView);
+            };
+            catalogView.Closed += (sender, args) =>
+            {
+                // Si no tiene tag, se cerró con la 'X' o Cmd+Q -> dejar que se cierre la app.
+            };
+
+            desktop.MainWindow = catalogView;
+            catalogView.Show();
+            windowToClose?.Close();
         }
 
         /// <summary>

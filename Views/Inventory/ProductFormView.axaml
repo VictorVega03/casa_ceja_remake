@@ -1,0 +1,234 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="using:CasaCejaRemake.ViewModels.Inventory"
+        mc:Ignorable="d" d:DesignWidth="700" d:DesignHeight="750"
+        x:Class="CasaCejaRemake.Views.Inventory.ProductFormView"
+        x:DataType="vm:ProductFormViewModel"
+        Title="{Binding Title}"
+        MinWidth="700" MinHeight="600"
+        MaxWidth="1500" MaxHeight="800"
+        SizeToContent="WidthAndHeight"
+        WindowStartupLocation="CenterOwner"
+        CanResize="True"
+        Background="#1C1C1C">
+
+    <Window.Styles>
+        <Style Selector="Button">
+            <Setter Property="Cursor" Value="Hand" />
+        </Style>
+        <Style Selector="TextBox">
+            <Setter Property="Background" Value="#252525" />
+            <Setter Property="Foreground" Value="#F5F5F5" />
+            <Setter Property="BorderBrush" Value="#3A3A3A" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="4" />
+        </Style>
+        <Style Selector="TextBox:focus /template/ Border#PART_BorderElement">
+            <Setter Property="BorderBrush" Value="#1565C0" />
+            <Setter Property="BorderThickness" Value="2" />
+        </Style>
+        <Style Selector="ComboBox">
+            <Setter Property="Background" Value="#252525" />
+            <Setter Property="Foreground" Value="#F5F5F5" />
+            <Setter Property="BorderBrush" Value="#3A3A3A" />
+            <Setter Property="CornerRadius" Value="4" />
+        </Style>
+        <Style Selector="TextBlock.label">
+            <Setter Property="Foreground" Value="#BDBDBD" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Margin" Value="0,0,0,4" />
+        </Style>
+    </Window.Styles>
+
+    <Grid RowDefinitions="Auto,*,Auto">
+
+        <!-- HEADER -->
+        <Border Grid.Row="0" Background="#2D2D2D" BorderBrush="#3A3A3A" BorderThickness="0,0,0,1" Padding="20">
+            <Grid>
+                <TextBlock Text="{Binding Title}" FontSize="20" FontWeight="Bold" Foreground="White" VerticalAlignment="Center" />
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="10" IsVisible="{Binding !IsReadOnlyView}">
+                    <TextBlock Text="Agregar Varios Productos" Foreground="#E0E0E0" VerticalAlignment="Center" />
+                    <ToggleSwitch IsChecked="{Binding IsMultipleMode}" VerticalAlignment="Center" />
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- CONTENT -->
+        <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="20">
+                
+                <!-- FORMULARIO -->
+                <Border Width="550" Padding="20" Background="#212121" CornerRadius="8" BorderBrush="#3A3A3A" BorderThickness="1" Margin="20,20,0,20" IsEnabled="{Binding !IsReadOnlyView}">
+                    <StackPanel Spacing="15">
+                <Grid ColumnDefinitions="*,20,*">
+                    <!-- Código -->
+                    <StackPanel Grid.Column="0">
+                        <TextBlock Text="CÓDIGO DE BARRAS *" Classes="label" />
+                        <TextBox Text="{Binding Barcode}" Watermark="Ej. 123456789" />
+                    </StackPanel>
+                    <!-- Nombre -->
+                    <StackPanel Grid.Column="2">
+                        <TextBlock Text="NOMBRE DEL PRODUCTO *" Classes="label" />
+                        <TextBox Text="{Binding Name}" Watermark="Ej. Tornillo de pulgada" />
+                    </StackPanel>
+                </Grid>
+
+                <Grid ColumnDefinitions="*,20,*">
+                    <!-- Categoría -->
+                    <StackPanel Grid.Column="0">
+                        <TextBlock Text="CATEGORÍA *" Classes="label" />
+                        <ComboBox ItemsSource="{Binding Categories}"
+                                  SelectedValue="{Binding CategoryId}"
+                                  SelectedValueBinding="{Binding Id}"
+                                  HorizontalAlignment="Stretch">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Name}" />
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
+                    </StackPanel>
+                    <!-- Medida -->
+                    <StackPanel Grid.Column="2">
+                        <TextBlock Text="UNIDAD DE MEDIDA *" Classes="label" />
+                        <ComboBox ItemsSource="{Binding Units}"
+                                  SelectedValue="{Binding UnitId}"
+                                  SelectedValueBinding="{Binding Id}"
+                                  HorizontalAlignment="Stretch">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Name}" />
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
+                    </StackPanel>
+                </Grid>
+
+                <StackPanel>
+                    <TextBlock Text="PRESENTACIÓN" Classes="label" />
+                    <TextBox Text="{Binding Presentation}" Watermark="Ej. Caja con 10pz" />
+                </StackPanel>
+
+                <Separator Background="#3A3A3A" Margin="0,10" />
+
+                <!-- Precios -->
+                <TextBlock Text="PRECIOS DE VENTA" Foreground="White" FontWeight="Bold" FontSize="14" />
+                
+                <Grid ColumnDefinitions="*,20,*">
+                    <!-- Precio Menudeo -->
+                    <StackPanel Grid.Column="0">
+                        <TextBlock Text="PRECIO AL PÚBLICO (MENUDEO) *" Classes="label" />
+                        <TextBox Text="{Binding PriceRetail}" />
+                    </StackPanel>
+                    
+                    <!-- Precios Mayoreo -->
+                    <StackPanel Grid.Column="2">
+                        <TextBlock Text="PRECIO MAYOREO" Classes="label" />
+                        <TextBox Text="{Binding PriceWholesale}" />
+                    </StackPanel>
+                </Grid>
+
+                <Grid ColumnDefinitions="*,20,*">
+                    <StackPanel Grid.Column="0">
+                        <TextBlock Text="CANTIDAD PARA MAYOREO" Classes="label" />
+                        <TextBox Text="{Binding WholesaleQuantity}" />
+                    </StackPanel>
+                    
+                    <!-- Precios Especiales -->
+                    <StackPanel Grid.Column="2" Spacing="10">
+                        <StackPanel>
+                            <TextBlock Text="PRECIO ESPECIAL (MAYORISTAS)" Classes="label" />
+                            <TextBox Text="{Binding PriceSpecial}" />
+                        </StackPanel>
+                        <StackPanel>
+                            <TextBlock Text="PRECIO DE DISTRIBUIDOR" Classes="label" />
+                            <TextBox Text="{Binding PriceDealer}" />
+                        </StackPanel>
+                    </StackPanel>
+                </Grid>
+
+                <Separator Background="#3A3A3A" Margin="0,10" />
+                
+                <TextBlock Text="INVENTARIO INICIAL" Foreground="White" FontWeight="Bold" FontSize="14" />
+                
+                <StackPanel>
+                    <TextBlock Text="CANTIDAD EN EXISTENCIA" Classes="label" />
+                    <TextBox Text="{Binding InitialQuantity}" Watermark="Ej. 10" />
+                </StackPanel>
+                <TextBlock Text="{Binding StatusMessage}" Foreground="#EF5350" FontWeight="SemiBold" TextWrapping="Wrap" />
+                    </StackPanel>
+                </Border>
+
+                <!-- LISTA (MODO MÚLTIPLE) -->
+                <Border Width="800" Background="#252525" Margin="0,20,20,20" CornerRadius="8" BorderBrush="#3A3A3A" BorderThickness="1" IsVisible="{Binding IsMultipleMode}">
+                    <Grid RowDefinitions="Auto,*">
+                        <Border Grid.Row="0" Background="#1E1E1E" Padding="15" CornerRadius="8,8,0,0">
+                            <TextBlock Text="Lista de Productos a Enviar" Foreground="White" FontWeight="Bold" />
+                        </Border>
+                        <DataGrid Grid.Row="1" MaxHeight="550" MinHeight="400" ItemsSource="{Binding PendingProducts}" AutoGenerateColumns="False" IsReadOnly="True" Background="Transparent" GridLinesVisibility="Horizontal" HorizontalGridLinesBrush="#3A3A3A" ScrollViewer.HorizontalScrollBarVisibility="Auto" ScrollViewer.VerticalScrollBarVisibility="Auto">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="CÓDIGO" Binding="{Binding Barcode}" Width="120" />
+                                <DataGridTextColumn Header="NOMBRE" Binding="{Binding Name}" Width="150" />
+                                <DataGridTextColumn Header="PRESENTA" Binding="{Binding Presentation}" Width="120" />
+                                <DataGridTextColumn Header="P. VENTA" Binding="{Binding PriceRetail, StringFormat={}{0:C}}" Width="100" />
+                                <DataGridTemplateColumn Header="QUITAR" Width="80">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <Button Command="{Binding $parent[Window].DataContext.RemoveFromListCommand}" CommandParameter="{Binding}" Background="#C62828" Foreground="White" Padding="8,4" CornerRadius="4">
+                                                <TextBlock Text="Quitar" FontSize="11" />
+                                            </Button>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </Grid>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- FOOTER -->
+        <Border Grid.Row="2" Background="#2D2D2D" BorderBrush="#3A3A3A" BorderThickness="0,1,0,0" Padding="20">
+            <StackPanel Orientation="Horizontal" Spacing="15" HorizontalAlignment="Right">
+                <Button Command="{Binding CancelCommand}"
+                        Background="#424242"
+                        Foreground="White"
+                        Padding="20,10"
+                        CornerRadius="4"
+                        ToolTip.Tip="Atajo: Esc">
+                    <Grid>
+                        <TextBlock Text="Cancelar (Esc)" IsVisible="{Binding !IsReadOnlyView}" />
+                        <TextBlock Text="Cerrar (Esc)" IsVisible="{Binding IsReadOnlyView}" />
+                    </Grid>
+                </Button>
+                <Button Command="{Binding AddToListCommand}"
+                        IsVisible="{Binding IsMultipleMode}"
+                        Background="#4CAF50"
+                        Foreground="White"
+                        Padding="20,10"
+                        CornerRadius="4"
+                        FontWeight="Bold"
+                        ToolTip.Tip="Atajo: F2">
+                    <TextBlock Text="Agregar a la Lista (F2)" />
+                </Button>
+                <Button Command="{Binding SaveCommand}"
+                        IsVisible="{Binding !IsReadOnlyView}"
+                        Background="#1565C0"
+                        Foreground="White"
+                        Padding="20,10"
+                        CornerRadius="4"
+                        FontWeight="Bold"
+                        ToolTip.Tip="Atajo: F3">
+                    <Grid>
+                        <TextBlock Text="Guardar Todos (F3)" IsVisible="{Binding IsMultipleMode}" />
+                        <TextBlock Text="Guardar Producto (F3)" IsVisible="{Binding !IsMultipleMode}" />
+                    </Grid>
+                </Button>
+            </StackPanel>
+        </Border>
+
+    </Grid>
+</Window>
