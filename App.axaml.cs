@@ -127,10 +127,14 @@ namespace CasaCejaRemake
                 PrintService = new PrintService(ConfigService);
                 ExportService = new ExportService();
 
+                var productStockRepo = new BaseRepository<Models.ProductStock>(DatabaseService);
+                var entryRepo = new BaseRepository<Models.StockEntry>(DatabaseService);
+                var outputRepo = new BaseRepository<Models.StockOutput>(DatabaseService);
+
                 FolioService = new FolioService(
                     cashCloseRepo, saleRepo, creditRepo,
                     layawayRepo, creditPaymentRepo, layawayPaymentRepo,
-                    DatabaseService);
+                    DatabaseService, entryRepo, outputRepo);
 
                 FileHelper.EnsureDirectoriesExist();
 
@@ -161,10 +165,6 @@ namespace CasaCejaRemake
                     saleRepo, creditRepo, layawayRepo,
                     layawayPaymentRepo, creditPaymentRepo,
                     FolioService, ConfigService);
-
-                var productStockRepo = new BaseRepository<Models.ProductStock>(DatabaseService);
-                var entryRepo = new BaseRepository<Models.StockEntry>(DatabaseService);
-                var outputRepo = new BaseRepository<Models.StockOutput>(DatabaseService);
                 var entryProductRepo = new BaseRepository<Models.EntryProduct>(DatabaseService);
                 var outputProductRepo = new BaseRepository<Models.OutputProduct>(DatabaseService);
                 var supplierRepo = new BaseRepository<Models.Supplier>(DatabaseService);
@@ -543,20 +543,20 @@ namespace CasaCejaRemake
 
             viewModel.EntriesSelected += (s, e) =>
             {
-                Console.WriteLine("[App] Entradas seleccionada — Próximamente");
-                // TODO: Fase 4 — ShowEntry(inventoryView);
+                Console.WriteLine("[App] Abriendo Entrada de Mercancía");
+                ShowEntry(inventoryView);
             };
 
             viewModel.OutputsSelected += (s, e) =>
             {
-                Console.WriteLine("[App] Salidas seleccionada — Próximamente");
-                // TODO: Fase 5 — ShowOutput(inventoryView);
+                Console.WriteLine("[App] Abriendo Salida de Mercancía");
+                ShowOutput(inventoryView);
             };
 
             viewModel.ConfirmEntrySelected += (s, e) =>
             {
-                Console.WriteLine("[App] Confirmar Entrada seleccionada — Próximamente");
-                // TODO: Fase 6 — ShowConfirmEntry(inventoryView);
+                Console.WriteLine("[App] Abriendo Confirmar Entrada");
+                ShowConfirmEntry(inventoryView);
             };
 
             viewModel.HistorySelected += (s, e) =>
@@ -570,6 +570,13 @@ namespace CasaCejaRemake
             {
                 Console.WriteLine("[App] Regresando a selector de módulos desde Inventario");
                 inventoryView.Tag = "module_selector";
+                inventoryView.Close();
+            };
+
+            viewModel.LogoutRequested += (s, e) =>
+            {
+                Console.WriteLine("[App] Cerrando sesión desde Inventario");
+                inventoryView.Tag = "logout";
                 inventoryView.Close();
             };
 
@@ -603,6 +610,139 @@ namespace CasaCejaRemake
             windowToClose?.Close();
 
             Console.WriteLine("[App] InventoryMainView mostrada correctamente");
+        }
+
+        private void ShowEntry(Window? windowToClose = null)
+        {
+            if (ApplicationLifetime is not IClassicDesktopStyleApplicationLifetime desktop) return;
+            if (_inventoryService == null || FolioService == null) return;
+
+            var branchId   = AuthService?.CurrentUser?.BranchId ?? 0;
+            var branchName = "Sucursal";
+            var userId     = AuthService?.CurrentUser?.Id ?? 0;
+
+            // Try to resolve branch name (best-effort, sync version already cached)
+            try
+            {
+                var branchRepo = new Data.Repositories.BaseRepository<Models.Branch>(DatabaseService!);
+                var branch = branchRepo.GetByIdAsync(branchId).GetAwaiter().GetResult();
+                branchName = branch?.Name ?? $"Sucursal #{branchId}";
+            }
+            catch { /* use default */ }
+
+            var viewModel = new ViewModels.Inventory.EntriesViewModel(
+                _inventoryService, FolioService, branchId, branchName, userId);
+
+            var entryView = new Views.Inventory.EntryView
+            {
+                DataContext = viewModel
+            };
+
+            viewModel.GoBackRequested += (s, e) =>
+            {
+                Console.WriteLine("[App] Volviendo a Inventario desde Entrada");
+                entryView.Tag = "inventory";
+                entryView.Close();
+            };
+
+            entryView.Closed += (sender, args) =>
+            {
+                ShowInventory(null);
+            };
+
+            desktop.MainWindow = entryView;
+            entryView.Show();
+            windowToClose?.Close();
+
+            Console.WriteLine("[App] EntryView mostrada");
+        }
+
+        private void ShowOutput(Window? windowToClose = null)
+        {
+            if (ApplicationLifetime is not IClassicDesktopStyleApplicationLifetime desktop) return;
+            if (_inventoryService == null || FolioService == null) return;
+
+            var branchId   = AuthService?.CurrentUser?.BranchId ?? 0;
+            var branchName = "Sucursal";
+            var userId     = AuthService?.CurrentUser?.Id ?? 0;
+
+            try
+            {
+                var branchRepo = new Data.Repositories.BaseRepository<Models.Branch>(DatabaseService!);
+                var branch = branchRepo.GetByIdAsync(branchId).GetAwaiter().GetResult();
+                branchName = branch?.Name ?? $"Sucursal #{branchId}";
+            }
+            catch { /* use default */ }
+
+            var viewModel = new ViewModels.Inventory.OutputsViewModel(
+                _inventoryService, FolioService, branchId, branchName, userId);
+
+            var outputView = new Views.Inventory.OutputView
+            {
+                DataContext = viewModel
+            };
+
+            viewModel.GoBackRequested += (s, e) =>
+            {
+                Console.WriteLine("[App] Volviendo a Inventario desde Salida");
+                outputView.Tag = "inventory";
+                outputView.Close();
+            };
+
+            outputView.Closed += (sender, args) =>
+            {
+                ShowInventory(null);
+            };
+
+            desktop.MainWindow = outputView;
+            outputView.Show();
+            windowToClose?.Close();
+
+            Console.WriteLine("[App] OutputView mostrada");
+        }
+
+        private void ShowConfirmEntry(Window? windowToClose = null)
+        {
+            if (ApplicationLifetime is not IClassicDesktopStyleApplicationLifetime desktop) return;
+            if (_inventoryService == null) return;
+
+            var branchId   = AuthService?.CurrentUser?.BranchId ?? 0;
+            var branchName = "Sucursal";
+            var userId     = AuthService?.CurrentUser?.Id ?? 0;
+
+            try
+            {
+                var branchRepo = new Data.Repositories.BaseRepository<Models.Branch>(DatabaseService!);
+                var branch = branchRepo.GetByIdAsync(branchId).GetAwaiter().GetResult();
+                branchName = branch?.Name ?? $"Sucursal #{branchId}";
+            }
+            catch { /* use default */ }
+
+            var viewModel = new ViewModels.Inventory.ConfirmEntryViewModel(
+                _inventoryService, branchId, branchName, userId);
+
+            var confirmView = new Views.Inventory.ConfirmEntryView
+            {
+                DataContext = viewModel
+            };
+
+            viewModel.GoBackRequested += (s, e) =>
+            {
+                Console.WriteLine("[App] Volviendo a Inventario desde ConfirmEntry");
+                confirmView.Tag = "inventory";
+                confirmView.Close();
+            };
+
+            confirmView.Closed += (sender, args) =>
+            {
+                ShowInventory(null);
+            };
+
+            desktop.MainWindow = confirmView;
+            confirmView.Show();
+            windowToClose?.Close();
+
+            Console.WriteLine("[App] ConfirmEntryView mostrada");
         }
 
         private void ShowCatalog(Window? windowToClose = null)

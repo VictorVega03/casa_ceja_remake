@@ -201,6 +201,68 @@ namespace CasaCejaRemake.Services
         }
 
         // ============================
+        // PROVEEDORES
+        // ============================
+
+        public async Task<List<Supplier>> GetSuppliersAsync()
+        {
+            return await _supplierRepo.FindAsync(s => s.Active);
+        }
+
+        // ============================
+        // CREAR ENTRADA
+        // ============================
+
+        /// <summary>
+        /// Persiste una entrada de mercancía completa y actualiza el stock de la sucursal.
+        /// </summary>
+        public async Task<int> CreateEntryAsync(StockEntry entry, List<EntryProduct> products)
+        {
+            entry.CreatedAt = DateTime.Now;
+            entry.UpdatedAt = DateTime.Now;
+            entry.SyncStatus = 1;
+
+            var entryId = await _entryRepo.AddAsync(entry);
+
+            foreach (var product in products)
+            {
+                product.EntryId = entryId;
+                product.CreatedAt = DateTime.Now;
+                await _entryProductRepo.AddAsync(product);
+            }
+
+            await UpdateStockOnEntryAsync(products, entry.BranchId);
+            return entryId;
+        }
+
+        private async Task UpdateStockOnEntryAsync(List<EntryProduct> products, int branchId)
+        {
+            foreach (var item in products)
+            {
+                var existing = await _productStockRepository.FindAsync(
+                    x => x.ProductId == item.ProductId && x.BranchId == branchId);
+
+                if (existing.Count > 0)
+                {
+                    var stock = existing[0];
+                    stock.Quantity += item.Quantity;
+                    stock.UpdatedAt = DateTime.Now;
+                    await _productStockRepository.UpdateAsync(stock);
+                }
+                else
+                {
+                    await _productStockRepository.AddAsync(new ProductStock
+                    {
+                        ProductId = item.ProductId,
+                        BranchId = branchId,
+                        Quantity = item.Quantity,
+                        UpdatedAt = DateTime.Now
+                    });
+                }
+            }
+        }
+
+        // ============================
         // HISTORIAL Y DETALLES
         // ============================
         public async Task<List<StockEntry>> GetEntriesAsync(int branchId, DateTime startDate, DateTime endDate)
@@ -237,6 +299,82 @@ namespace CasaCejaRemake.Services
             if (branchId <= 0) return "Desconocido";
             var b = await _branchRepo.GetByIdAsync(branchId);
             return b?.Name ?? "Desconocido";
+        }
+
+        public async Task<List<Branch>> GetBranchesAsync()
+        {
+            return await _branchRepo.FindAsync(b => b.Active);
+        }
+
+        // ============================
+        // CREAR SALIDA / TRASPASO
+        // ============================
+
+        /// <summary>
+        /// Persiste una salida de mercancía y descuenta el stock de la sucursal origen.
+        /// </summary>
+        public async Task<int> CreateOutputAsync(StockOutput output, List<OutputProduct> products)
+        {
+            output.CreatedAt = DateTime.Now;
+            output.UpdatedAt = DateTime.Now;
+            output.SyncStatus = 1;
+
+            var outputId = await _outputRepo.AddAsync(output);
+
+            foreach (var product in products)
+            {
+                product.OutputId = outputId;
+                product.CreatedAt = DateTime.Now;
+                await _outputProductRepo.AddAsync(product);
+            }
+
+            await DeductStockOnOutputAsync(products, output.OriginBranchId);
+            return outputId;
+        }
+
+        private async Task DeductStockOnOutputAsync(List<OutputProduct> products, int branchId)
+        {
+            foreach (var item in products)
+            {
+                var existing = await _productStockRepository.FindAsync(
+                    x => x.ProductId == item.ProductId && x.BranchId == branchId);
+
+                if (existing.Count > 0)
+                {
+                    var stock = existing[0];
+                    stock.Quantity = Math.Max(0, stock.Quantity - item.Quantity);
+                    stock.UpdatedAt = DateTime.Now;
+                    await _productStockRepository.UpdateAsync(stock);
+                }
+                // If no stock record exists, nothing to deduct
+            }
+        }
+
+        // ============================
+        // CONFIRMAR ENTRADA
+        // ============================
+
+        /// <summary>
+        /// Devuelve entradas sin confirmar para la sucursal destino.
+        /// </summary>
+        public async Task<List<StockEntry>> GetPendingEntriesAsync(int branchId)
+        {
+            return await _entryRepo.FindAsync(
+                x => x.BranchId == branchId && x.ConfirmedAt == null);
+        }
+
+        /// <summary>
+        /// Marca una entrada como confirmada por el usuario.
+        /// </summary>
+        public async Task ConfirmEntryAsync(int entryId, int confirmedByUserId)
+        {
+            var entry = await _entryRepo.GetByIdAsync(entryId);
+            if (entry == null) return;
+
+            entry.ConfirmedByUserId = confirmedByUserId;
+            entry.ConfirmedAt = DateTime.Now;
+            entry.UpdatedAt = DateTime.Now;
+            await _entryRepo.UpdateAsync(entry);
         }
     }
 }

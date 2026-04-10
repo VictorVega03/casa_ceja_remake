@@ -32,6 +32,8 @@ namespace CasaCejaRemake.Services
         private readonly LayawayRepository _layawayRepository;
         private readonly BaseRepository<CreditPayment> _creditPaymentRepository;
         private readonly BaseRepository<LayawayPayment> _layawayPaymentRepository;
+        private readonly BaseRepository<StockEntry> _entryRepository;
+        private readonly BaseRepository<StockOutput> _outputRepository;
         private readonly DatabaseService _databaseService;
 
         private static readonly SemaphoreSlim _lock = new SemaphoreSlim(1, 1);
@@ -43,7 +45,9 @@ namespace CasaCejaRemake.Services
             LayawayRepository layawayRepository,
             BaseRepository<CreditPayment> creditPaymentRepository,
             BaseRepository<LayawayPayment> layawayPaymentRepository,
-            DatabaseService databaseService)
+            DatabaseService databaseService,
+            BaseRepository<StockEntry>? entryRepository = null,
+            BaseRepository<StockOutput>? outputRepository = null)
         {
             _cashCloseRepository = cashCloseRepository ?? throw new ArgumentNullException(nameof(cashCloseRepository));
             _saleRepository = saleRepository ?? throw new ArgumentNullException(nameof(saleRepository));
@@ -52,6 +56,8 @@ namespace CasaCejaRemake.Services
             _creditPaymentRepository = creditPaymentRepository ?? throw new ArgumentNullException(nameof(creditPaymentRepository));
             _layawayPaymentRepository = layawayPaymentRepository ?? throw new ArgumentNullException(nameof(layawayPaymentRepository));
             _databaseService = databaseService ?? throw new ArgumentNullException(nameof(databaseService));
+            _entryRepository = entryRepository!;
+            _outputRepository = outputRepository!;
         }
 
         /// <summary>Genera un folio único para venta.</summary>
@@ -76,6 +82,18 @@ namespace CasaCejaRemake.Services
         public async Task<string> GenerarFolioPagoAsync(int sucursalId, int cajaId)
         {
             return await GenerarFolioAsync(sucursalId, cajaId, 'P');
+        }
+
+        /// <summary>Genera un folio único para entrada de mercancía.</summary>
+        public async Task<string> GenerarFolioEntradaAsync(int sucursalId)
+        {
+            return await GenerarFolioAsync(sucursalId, 0, 'E');
+        }
+
+        /// <summary>Genera un folio único para salida / traspaso de mercancía.</summary>
+        public async Task<string> GenerarFolioSalidaAsync(int sucursalId)
+        {
+            return await GenerarFolioAsync(sucursalId, 0, 'S');
         }
 
         /// <summary>
@@ -175,6 +193,8 @@ namespace CasaCejaRemake.Services
                     'A' => "layaways",
                     'C' => "credits",
                     'X' => "cash_closes",
+                    'E' => "stock_entries",
+                    'S' => "stock_outputs",
                     _   => null!
                 };
 
@@ -231,6 +251,18 @@ namespace CasaCejaRemake.Services
 
                 var inCashCloses = await _cashCloseRepository.FindAsync(c => c.Folio == folio);
                 if (inCashCloses.Any()) return true;
+
+                if (_entryRepository != null)
+                {
+                    var inEntries = await _entryRepository.FindAsync(e => e.Folio == folio);
+                    if (inEntries.Any()) return true;
+                }
+
+                if (_outputRepository != null)
+                {
+                    var inOutputs = await _outputRepository.FindAsync(o => o.Folio == folio);
+                    if (inOutputs.Any()) return true;
+                }
 
                 return false;
             }

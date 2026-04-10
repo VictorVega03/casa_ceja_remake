@@ -22,7 +22,9 @@ namespace CasaCejaRemake.ViewModels.Inventory
         public event EventHandler? CategoriesSelected;
         public event EventHandler? HistorySelected;
         public event EventHandler? ExitRequested;
+        public event EventHandler? LogoutRequested;
         public event EventHandler? RequestExitConfirmation;
+        public event EventHandler? RequestLogoutConfirmation;
 
         // ========== PROPIEDADES ==========
 
@@ -65,21 +67,21 @@ namespace CasaCejaRemake.ViewModels.Inventory
         [RelayCommand]
         private void OpenEntries()
         {
-            if (!IsOnline) return;
+            // TODO: restaurar check de conectividad: if (!IsOnline) return;
             EntriesSelected?.Invoke(this, EventArgs.Empty);
         }
 
         [RelayCommand]
         private void OpenOutputs()
         {
-            if (!IsOnline) return;
+            // TODO: restaurar check de conectividad: if (!IsOnline) return;
             OutputsSelected?.Invoke(this, EventArgs.Empty);
         }
 
         [RelayCommand]
         private void OpenConfirmEntry()
         {
-            if (!IsOnline) return;
+            // TODO: restaurar check de conectividad: if (!IsOnline) return;
             ConfirmEntrySelected?.Invoke(this, EventArgs.Empty);
         }
 
@@ -110,6 +112,17 @@ namespace CasaCejaRemake.ViewModels.Inventory
         public void ConfirmExit()
         {
             ExitRequested?.Invoke(this, EventArgs.Empty);
+        }
+
+        [RelayCommand]
+        private void Logout()
+        {
+            RequestLogoutConfirmation?.Invoke(this, EventArgs.Empty);
+        }
+
+        public void ConfirmLogout()
+        {
+            LogoutRequested?.Invoke(this, EventArgs.Empty);
         }
 
         [RelayCommand]

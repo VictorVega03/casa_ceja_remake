@@ -1,0 +1,228 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:CasaCejaRemake.ViewModels.Inventory"
+        xmlns:helpers="using:CasaCejaRemake.Helpers"
+        x:Class="CasaCejaRemake.Views.Inventory.ConfirmEntryView"
+        x:DataType="vm:ConfirmEntryViewModel"
+        x:CompileBindings="False"
+        Title="Confirmar Entrada de Mercancía"
+        WindowState="Maximized"
+        WindowStartupLocation="CenterScreen"
+        Background="#141414">
+
+    <Window.Resources>
+        <helpers:BoolToColorConverter x:Key="BoolToColor"/>
+    </Window.Resources>
+
+    <Window.Styles>
+        <Style Selector="TextBlock.label">
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Foreground" Value="#777"/>
+        </Style>
+        <Style Selector="Button.action-confirm">
+            <Setter Property="Background" Value="#1565C0"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Padding" Value="20,8"/>
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+        <Style Selector="Button.action-confirm:pointerover">
+            <Setter Property="Background" Value="#1976D2"/>
+        </Style>
+        <Style Selector="Button.action-confirm:disabled">
+            <Setter Property="Background" Value="#0D2A4A"/>
+            <Setter Property="Foreground" Value="#555"/>
+        </Style>
+        <Style Selector="Button.action-refresh">
+            <Setter Property="Background" Value="#2A2A2A"/>
+            <Setter Property="Foreground" Value="#BDBDBD"/>
+            <Setter Property="Padding" Value="16,8"/>
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+        <Style Selector="Button.action-refresh:pointerover">
+            <Setter Property="Background" Value="#383838"/>
+        </Style>
+        <Style Selector="Button.icon-btn">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="6,4"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+        <Style Selector="Button.icon-btn:pointerover">
+            <Setter Property="Background" Value="#2A2A2A"/>
+        </Style>
+        <Style Selector="DataGrid">
+            <Setter Property="Background" Value="#1A1A1A"/>
+            <Setter Property="RowBackground" Value="#1E1E1E"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderBrush" Value="#2A2A2A"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="GridLinesVisibility" Value="Horizontal"/>
+            <Setter Property="HorizontalGridLinesBrush" Value="#252525"/>
+            <Setter Property="RowHeight" Value="52"/>
+        </Style>
+        <Style Selector="DataGridColumnHeader">
+            <Setter Property="Background" Value="#1A1A1A"/>
+            <Setter Property="Foreground" Value="#888"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Padding" Value="12,8"/>
+        </Style>
+        <Style Selector="DataGridCell">
+            <Setter Property="Padding" Value="12,0"/>
+            <Setter Property="Foreground" Value="#E0E0E0"/>
+            <Setter Property="FontSize" Value="13"/>
+        </Style>
+    </Window.Styles>
+
+    <Grid RowDefinitions="Auto,*,Auto">
+
+        <!-- ═══ HEADER ═══ -->
+        <Border Grid.Row="0" Background="#1C1C1C" BorderBrush="#2A2A2A" BorderThickness="0,0,0,1" Padding="20,13">
+            <Grid ColumnDefinitions="Auto,*,Auto">
+                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
+                    <Button Classes="icon-btn" Command="{Binding GoBackCommand}" ToolTip.Tip="Volver (Esc)" CornerRadius="4">
+                        <TextBlock Text="←" FontSize="18" Foreground="#1976D2" FontWeight="Bold"/>
+                    </Button>
+                    <Border Width="4" Height="20" CornerRadius="2" Background="#1976D2"/>
+                    <TextBlock Text="CONFIRMAR ENTRADA DE MERCANCÍA" FontSize="18" FontWeight="Bold" Foreground="White" VerticalAlignment="Center"/>
+                    <Border Background="#0D2A4A" CornerRadius="4" Padding="8,3" VerticalAlignment="Center"
+                            IsVisible="{Binding HasPending}">
+                        <TextBlock Text="{Binding PendingEntries.Count, StringFormat='{}{0} pendientes'}"
+                                   FontSize="11" FontWeight="Bold" Foreground="#42A5F5"/>
+                    </Border>
+                </StackPanel>
+
+                <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="20" VerticalAlignment="Center">
+                    <StackPanel>
+                        <TextBlock Text="SUCURSAL" Classes="label"/>
+                        <TextBlock Text="{Binding BranchName}" FontSize="13" Foreground="#E0E0E0" FontWeight="SemiBold"/>
+                    </StackPanel>
+                    <Button Classes="action-refresh"
+                            Command="{Binding LoadPendingCommand}"
+                            IsEnabled="{Binding !IsLoading}">
+                        ↻  Actualizar
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- ═══ CONTENT ═══ -->
+        <Grid Grid.Row="1">
+
+            <!-- Spinner cargando -->
+            <Border IsVisible="{Binding IsLoading}" HorizontalAlignment="Center" VerticalAlignment="Center">
+                <TextBlock Text="Cargando entradas pendientes..." FontSize="16" Foreground="#555"/>
+            </Border>
+
+            <!-- Sin pendientes -->
+            <Border IsVisible="{Binding !HasPending}" HorizontalAlignment="Center" VerticalAlignment="Center">
+                <StackPanel Spacing="16" HorizontalAlignment="Center">
+                    <TextBlock Text="✅" FontSize="64" HorizontalAlignment="Center"/>
+                    <TextBlock Text="No hay entradas pendientes de confirmación"
+                               FontSize="18" Foreground="#555" HorizontalAlignment="Center"/>
+                    <TextBlock Text="Todas las entradas de esta sucursal ya fueron confirmadas."
+                               FontSize="13" Foreground="#444" HorizontalAlignment="Center"/>
+                </StackPanel>
+            </Border>
+
+            <!-- Lista de entradas pendientes -->
+            <DataGrid IsVisible="{Binding HasPending}"
+                      ItemsSource="{Binding PendingEntries}"
+                      SelectedItem="{Binding SelectedEntry}"
+                      AutoGenerateColumns="False"
+                      CanUserReorderColumns="False"
+                      CanUserResizeColumns="True"
+                      CanUserSortColumns="False"
+                      IsReadOnly="True"
+                      SelectionMode="Single">
+                <DataGrid.Columns>
+
+                    <!-- Folio -->
+                    <DataGridTextColumn Header="FOLIO" Binding="{Binding Folio}"
+                                        Width="160" IsReadOnly="True"/>
+
+                    <!-- Tipo -->
+                    <DataGridTemplateColumn Header="TIPO" Width="110" IsReadOnly="True">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <Border CornerRadius="4" Padding="8,3" VerticalAlignment="Center" HorizontalAlignment="Left"
+                                        Background="{Binding IsTransfer, Converter={StaticResource BoolToColor},
+                                            ConverterParameter='#1A3A1A|#1A1A3A'}">
+                                    <TextBlock Text="{Binding TypeLabel}" FontSize="11" FontWeight="Bold"
+                                               Foreground="{Binding IsTransfer, Converter={StaticResource BoolToColor},
+                                                   ConverterParameter='#66BB6A|#42A5F5'}"/>
+                                </Border>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+
+                    <!-- Fecha -->
+                    <DataGridTextColumn Header="FECHA" Binding="{Binding DateDisplay}"
+                                        Width="120" IsReadOnly="True"/>
+
+                    <!-- Proveedor / Folio Origen -->
+                    <DataGridTemplateColumn Header="PROVEEDOR / ORIGEN" Width="*" IsReadOnly="True">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <StackPanel VerticalAlignment="Center" Margin="12,0">
+                                    <TextBlock Text="{Binding SupplierName}" FontSize="13" Foreground="#E0E0E0"/>
+                                    <TextBlock Text="{Binding FolioOutput, StringFormat='Folio salida: {0}'}"
+                                               FontSize="11" Foreground="#666"
+                                               IsVisible="{Binding IsTransfer}"/>
+                                </StackPanel>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+
+                    <!-- Total -->
+                    <DataGridTextColumn Header="TOTAL" Binding="{Binding TotalAmount, StringFormat={}{0:C}}"
+                                        Width="130" IsReadOnly="True"/>
+
+                    <!-- Notas -->
+                    <DataGridTemplateColumn Header="NOTAS" Width="200" IsReadOnly="True">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Notes}" FontSize="12" Foreground="#888"
+                                           TextWrapping="Wrap" VerticalAlignment="Center" Margin="12,0"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+
+                    <!-- Acción -->
+                    <DataGridTemplateColumn Header="" Width="160" CanUserResize="False">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <Button Classes="action-confirm"
+                                        Command="{Binding DataContext.ConfirmEntryCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                        CommandParameter="{Binding}"
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"
+                                        Margin="8,0">
+                                    ✓  Confirmar
+                                </Button>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Grid>
+
+        <!-- ═══ FOOTER ═══ -->
+        <Border Grid.Row="2" Background="#1C1C1C" BorderBrush="#2A2A2A" BorderThickness="0,1,0,0" Padding="20,14">
+            <Grid ColumnDefinitions="*,Auto">
+                <TextBlock Grid.Column="0"
+                           Text="Esc: Volver   |   Confirma la entrada para registrar la mercancía como recibida"
+                           FontSize="12" Foreground="#444" VerticalAlignment="Center"/>
+                <Button Grid.Column="1" Classes="action-refresh" Command="{Binding GoBackCommand}">
+                    ← Volver al menú
+                </Button>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>
