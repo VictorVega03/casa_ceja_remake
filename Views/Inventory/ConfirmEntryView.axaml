@@ -123,7 +123,18 @@
             <!-- Sin pendientes -->
             <Border IsVisible="{Binding !HasPending}" HorizontalAlignment="Center" VerticalAlignment="Center">
                 <StackPanel Spacing="16" HorizontalAlignment="Center">
-                    <TextBlock Text="✅" FontSize="64" HorizontalAlignment="Center"/>
+                    <Border Width="106" Height="106" CornerRadius="53" Background="#0D2A1A" BorderBrush="#1E5E3A" BorderThickness="2" HorizontalAlignment="Center">
+                        <Grid>
+                            <Canvas Width="64" Height="64" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <Path Data="M 10 34 L 24 48 L 52 20"
+                                      Stroke="#66BB6A"
+                                      StrokeThickness="7"
+                                      StrokeLineCap="Round"
+                                      Width="64"
+                                      Height="64"/>
+                            </Canvas>
+                        </Grid>
+                    </Border>
                     <TextBlock Text="No hay entradas pendientes de confirmación"
                                FontSize="18" Foreground="#555" HorizontalAlignment="Center"/>
                     <TextBlock Text="Todas las entradas de esta sucursal ya fueron confirmadas."
@@ -215,13 +226,10 @@
 
         <!-- ═══ FOOTER ═══ -->
         <Border Grid.Row="2" Background="#1C1C1C" BorderBrush="#2A2A2A" BorderThickness="0,1,0,0" Padding="20,14">
-            <Grid ColumnDefinitions="*,Auto">
-                <TextBlock Grid.Column="0"
-                           Text="Esc: Volver   |   Confirma la entrada para registrar la mercancía como recibida"
-                           FontSize="12" Foreground="#444" VerticalAlignment="Center"/>
-                <Button Grid.Column="1" Classes="action-refresh" Command="{Binding GoBackCommand}">
-                    ← Volver al menú
-                </Button>
+            <Grid>
+                <TextBlock
+                    Text="Esc: Volver   |   Confirma la entrada para registrar la mercancía como recibida"
+                    FontSize="12" Foreground="#444" VerticalAlignment="Center"/>
             </Grid>
         </Border>
     </Grid>

@@ -147,6 +147,7 @@
 
                     <!-- DataGrid -->
                     <DataGrid Grid.Row="1"
+                              x:Name="CategoryGrid"
                               ItemsSource="{Binding Categories}"
                               SelectedItem="{Binding SelectedCategory}"
                               AutoGenerateColumns="False"
@@ -203,6 +204,7 @@
 
                     <!-- DataGrid -->
                     <DataGrid Grid.Row="1"
+                              x:Name="UnitGrid"
                               ItemsSource="{Binding Units}"
                               SelectedItem="{Binding SelectedUnit}"
                               AutoGenerateColumns="False"

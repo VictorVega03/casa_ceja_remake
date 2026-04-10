@@ -3,67 +3,68 @@ using Avalonia.Input;
 using Avalonia.Interactivity;
 using CasaCejaRemake.ViewModels.Inventory;
 using System;
+using System.Collections.Generic;
 
 namespace CasaCejaRemake.Views.Inventory
 {
     public partial class EntryView : Window
     {
+        private EntriesViewModel? _viewModel;
+
         public EntryView()
         {
             InitializeComponent();
-            this.AddHandler(InputElement.KeyDownEvent, OnPreviewKeyDown, Avalonia.Interactivity.RoutingStrategies.Tunnel);
-            this.Opened += OnOpened;
+            Loaded += OnLoaded;
         }
 
-        private void OnOpened(object? sender, EventArgs e)
+        private void OnLoaded(object? sender, RoutedEventArgs e)
         {
-            if (DataContext is EntriesViewModel vm)
+            _viewModel = DataContext as EntriesViewModel;
+
+            if (_viewModel != null)
             {
-                vm.ShowMessageRequested += async (s, msg) =>
+                _viewModel.ShowMessageRequested += async (s, msg) =>
                 {
                     await casa_ceja_remake.Helpers.DialogHelper.ShowMessageDialog(this, "Aviso", msg);
                 };
             }
-            // Focus search box on open
+
             SearchBox?.Focus();
         }
 
-        private void OnPreviewKeyDown(object? sender, KeyEventArgs e)
+        protected override void OnKeyDown(KeyEventArgs e)
         {
-            if (DataContext is not EntriesViewModel vm) return;
+            if (_viewModel == null)
+            {
+                base.OnKeyDown(e);
+                return;
+            }
 
-            if (e.Key == Key.Escape)
+            var shortcuts = new Dictionary<Key, Action>
             {
-                vm.CancelCommand.Execute(null);
-                e.Handled = true;
-            }
-            else if (e.Key == Key.Enter && SearchBox?.IsFocused == true)
+                { Key.Escape, () => _viewModel.CancelCommand.Execute(null) },
+                { Key.F5, () => _viewModel.SaveEntryCommand.Execute(null) }
+            };
+
+            if (casa_ceja_remake.Helpers.KeyboardShortcutHelper.HandleShortcut(e, shortcuts))
             {
-                // Enter in search box is handled by OnSearchBoxKeyDown
+                return;
             }
-            else if (e.Key == Key.F5)
-            {
-                vm.SaveEntryCommand.Execute(null);
-                e.Handled = true;
-            }
+
+            base.OnKeyDown(e);
         }
 
         private void OnSearchBoxKeyDown(object? sender, KeyEventArgs e)
         {
             if (e.Key == Key.Enter)
             {
-                if (DataContext is EntriesViewModel vm)
-                {
-                    vm.SearchProductCommand.Execute(null);
-                    e.Handled = true;
-                }
+                _viewModel?.SearchProductCommand.Execute(null);
+                e.Handled = true;
             }
         }
 
         private void OnCellEditEnded(object? sender, DataGridCellEditEndedEventArgs e)
         {
-            // LineTotal recalculates automatically via [NotifyPropertyChangedFor]
-            // This handler is kept for potential future use
         }
     }
 }

@@ -11,11 +11,11 @@ namespace CasaCejaRemake.Views.Inventory
         public CatalogsManagementView()
         {
             InitializeComponent();
-            this.AddHandler(InputElement.KeyDownEvent, OnPreviewKeyDown, Avalonia.Interactivity.RoutingStrategies.Tunnel);
-            this.Opened += OnOpened;
+            this.AddHandler(InputElement.KeyDownEvent, OnViewPreviewKeyDown, RoutingStrategies.Tunnel, handledEventsToo: true);
+            Loaded += OnLoaded;
         }
 
-        private void OnOpened(object? sender, System.EventArgs e)
+        private void OnLoaded(object? sender, System.EventArgs e)
         {
             if (DataContext is CatalogsManagementViewModel vm)
             {
@@ -24,21 +24,26 @@ namespace CasaCejaRemake.Views.Inventory
                     await DialogHelper.ShowMessageDialog(this, "Aviso", errorMsg);
                 };
             }
+
+            CategoryGrid?.AddHandler(InputElement.KeyDownEvent, OnViewPreviewKeyDown, RoutingStrategies.Tunnel, handledEventsToo: true);
+            UnitGrid?.AddHandler(InputElement.KeyDownEvent, OnViewPreviewKeyDown, RoutingStrategies.Tunnel, handledEventsToo: true);
         }
 
-        private void OnPreviewKeyDown(object? sender, KeyEventArgs e)
+        private void OnViewPreviewKeyDown(object? sender, KeyEventArgs e)
         {
             if (e.Key == Key.Escape)
             {
-                if (DataContext is CatalogsManagementViewModel vm)
-                {
-                    vm.CloseCommand.Execute(null);
-                    e.Handled = true;
-                }
+                Close();
+                e.Handled = true;
+                return;
+            }
+
+            // Bloquear Enter en todo el diálogo para evitar que se vuelva a abrir.
+            if (e.Key == Key.Enter)
+            {
+                e.Handled = true;
             }
         }
-
-        // ── Categorías ────────────────────────────────────────────────────────
 
         private async void OnAddCategoryClick(object? sender, RoutedEventArgs e)
         {
@@ -85,8 +90,6 @@ namespace CasaCejaRemake.Views.Inventory
             if (confirmed)
                 vm.DeleteCategoryCommand.Execute(vm.SelectedCategory);
         }
-
-        // ── Unidades ──────────────────────────────────────────────────────────
 
         private async void OnAddUnitClick(object? sender, RoutedEventArgs e)
         {

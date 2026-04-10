@@ -341,19 +341,15 @@
                 <TextBlock Grid.Column="0"
                            Text="Esc: Cancelar   |   F5: Guardar salida   |   Los costos son opcionales"
                            FontSize="13" Foreground="#444" VerticalAlignment="Center"/>
-                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="14">
-                    <Button Classes="action-cancel" Command="{Binding CancelCommand}">
-                        Cancelar
-                    </Button>
-                    <Button Classes="action-save"
-                            Command="{Binding SaveOutputCommand}"
-                            IsEnabled="{Binding !IsSaving}">
-                        <StackPanel Orientation="Horizontal" Spacing="10">
-                            <TextBlock Text="Guardando..." IsVisible="{Binding IsSaving}" VerticalAlignment="Center"/>
-                            <TextBlock Text="Guardar Salida (F5)" IsVisible="{Binding !IsSaving}" VerticalAlignment="Center"/>
-                        </StackPanel>
-                    </Button>
-                </StackPanel>
+                <Button Grid.Column="1"
+                        Classes="action-save"
+                        Command="{Binding SaveOutputCommand}"
+                        IsEnabled="{Binding !IsSaving}">
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <TextBlock Text="Guardando..." IsVisible="{Binding IsSaving}" VerticalAlignment="Center"/>
+                        <TextBlock Text="Guardar Salida (F5)" IsVisible="{Binding !IsSaving}" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Button>
             </Grid>
         </Border>
     </Grid>

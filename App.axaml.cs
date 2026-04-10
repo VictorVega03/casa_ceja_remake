@@ -45,6 +45,9 @@ namespace CasaCejaRemake
         // Referencia a la ventana de login actual (para evitar duplicados)
         private LoginView? _currentLoginView;
 
+        // Referencia a la ventana actual del inventario
+        private InventoryMainView? _currentInventoryView;
+
         public override void Initialize()
         {
             AvaloniaXamlLoader.Load(this);
@@ -114,7 +117,6 @@ namespace CasaCejaRemake
                 {
                     var initialBranchId = ConfigService.AppConfig.CurrentBranchId ?? 0;
                     AuthService.SetCurrentBranch(initialBranchId);
-                    Console.WriteLine($"[App] Sucursal inicial sincronizada: {initialBranchId}");
                 }
 
                
@@ -172,12 +174,9 @@ namespace CasaCejaRemake
                 _inventoryService = new InventoryService(
                     productRepo, categoryRepo, unitRepo, productStockRepo,
                     entryRepo, outputRepo, entryProductRepo, outputProductRepo, supplierRepo, branchRepo);
-
-                Console.WriteLine("[App] Servicios inicializados correctamente");
             }
-            catch (Exception ex)
+            catch
             {
-                Console.WriteLine($"[App] Error inicializando servicios: {ex.Message}");
                 throw;
             }
         }
@@ -191,12 +190,9 @@ namespace CasaCejaRemake
             if (ApplicationLifetime is not IClassicDesktopStyleApplicationLifetime desktop) return;
             if (AuthService == null) return;
 
-            Console.WriteLine("[App] ShowLogin() llamado");
-
             // Si ya hay un login abierto, no crear otro
             if (_currentLoginView != null)
             {
-                Console.WriteLine("[App] Login ya existe, activando...");
                 _currentLoginView.Activate();
                 windowToClose?.Close();
                 return;
@@ -215,18 +211,15 @@ namespace CasaCejaRemake
 
             loginView.Closed += (sender, args) =>
             {
-                Console.WriteLine($"[App] LoginView.Closed disparado. Tag = {loginView.Tag}");
                 // Limpiar referencia al cerrar
                 _currentLoginView = null;
 
                 if (loginView.Tag is string result && result == "success")
                 {
-                    Console.WriteLine("[App] Login exitoso, llamando HandleSuccessfulLogin()");
                     HandleSuccessfulLogin();
                 }
                 else
                 {
-                    Console.WriteLine("[App] Login cancelado o sin resultado");
                     // Usuario cancelo, cerrar aplicacion
                     if (desktop.MainWindow == null)
                     {
@@ -235,7 +228,6 @@ namespace CasaCejaRemake
                 }
             };
 
-            Console.WriteLine("[App] Mostrando LoginView...");
             loginView.Show();
             
             // Cerrar la ventana anterior DESPUÉS de mostrar el login
@@ -250,7 +242,6 @@ namespace CasaCejaRemake
         {
             var configBranchId = ConfigService.AppConfig.CurrentBranchId ?? 0;
             AuthService.SetCurrentBranch(configBranchId);
-            Console.WriteLine($"[App] Sucursal sincronizada desde ConfigService: {configBranchId} (Usuario: {AuthService.CurrentUserName})");
         }
 
         // Mostrar pantalla de carga y sincronización
@@ -289,8 +280,6 @@ namespace CasaCejaRemake
             if (ApplicationLifetime is not IClassicDesktopStyleApplicationLifetime desktop) return;
             if (AuthService?.CurrentUser == null) return;
 
-            Console.WriteLine("[App] ShowModuleSelector() llamado");
-
             var selectorViewModel = new ModuleSelectorViewModel(AuthService);
             var selectorView = new ModuleSelectorView
             {
@@ -300,7 +289,6 @@ namespace CasaCejaRemake
             // Suscribirse a eventos - NO cerrar aquí, solo marcar y dejar que ShowPOS maneje todo
             selectorViewModel.POSSelected += (s, e) => 
             {
-                Console.WriteLine("[App] POS seleccionado");
                 selectorView.Tag = "module_selected";
                 // Primero mostrar POS, luego cerrar selector
                 ShowPOS(selectorView);
@@ -308,27 +296,23 @@ namespace CasaCejaRemake
 
             selectorViewModel.InventorySelected += (s, e) =>
             {
-                Console.WriteLine("[App] Inventario seleccionado");
                 selectorView.Tag = "module_selected";
                 ShowInventory(selectorView);
             };
 
             selectorViewModel.AdminSelected += (s, e) =>
             {
-                Console.WriteLine("[App] Admin seleccionado");
                 selectorView.Tag = "module_selected";
                 ShowAdmin(selectorView);
             };
 
             selectorViewModel.ConfigSelected += async (s, e) =>
             {
-                Console.WriteLine("[App] Configuración seleccionada");
                 await ShowAppConfigDialog(selectorView);
             };
 
             selectorViewModel.LogoutRequested += (s, e) =>
             {
-                Console.WriteLine("[App] Logout solicitado");
                 selectorView.Tag = "logout";
                 AuthService?.Logout();
                 // Primero mostrar login, luego cerrar selector
@@ -337,7 +321,6 @@ namespace CasaCejaRemake
 
             selectorViewModel.ExitRequested += (s, e) =>
             {
-                Console.WriteLine("[App] Salida solicitada - Cerrando aplicación");
                 selectorView.Tag = "exit";
                 // Cerrar la aplicación completa
                 desktop.Shutdown();
@@ -345,17 +328,13 @@ namespace CasaCejaRemake
 
             selectorView.Closed += (sender, args) =>
             {
-                Console.WriteLine($"[App] ModuleSelector cerrado. Tag = {selectorView.Tag}");
                 // Si se cerro sin seleccionar módulo ni logout (ej: botón X), hacer logout
                 if (selectorView.Tag == null)
                 {
-                    Console.WriteLine("[App] Cerrado sin selección, haciendo logout");
                     AuthService?.Logout();
                     ShowLogin();
                 }
             };
-
-            Console.WriteLine("[App] Mostrando ModuleSelector");
             desktop.MainWindow = selectorView;
             selectorView.Show();
         }
@@ -363,21 +342,15 @@ namespace CasaCejaRemake
         /// Muestra el modulo POS.
         private async void ShowPOS(Window? windowToClose = null)
         {
-            Console.WriteLine("[App] ShowPOS() llamado");
-            
             if (ApplicationLifetime is not IClassicDesktopStyleApplicationLifetime desktop)
             {
-                Console.WriteLine("[App] ERROR: No hay ApplicationLifetime");
                 return;
             }
             
             if (AuthService == null || _cartService == null || _salesService == null || _cashCloseService == null)
             {
-                Console.WriteLine($"[App] ERROR: Servicios null - Auth:{AuthService != null}, Cart:{_cartService != null}, Sales:{_salesService != null}, CashClose:{_cashCloseService != null}");
                 return;
             }
-
-            Console.WriteLine("[App] Creando SalesViewModel...");
             
             // Obtener sucursal actual desde ConfigService
             var currentBranchId = AuthService.CurrentBranchId;
@@ -396,12 +369,9 @@ namespace CasaCejaRemake
                     await ConfigService.UpdateAppConfigAsync(c => c.CurrentBranchName = branch.Name);
                 }
             }
-            catch (Exception ex)
+            catch
             {
-                Console.WriteLine($"[App] Advertencia al obtener nombre de sucursal: {ex.Message}");
             }
-
-            Console.WriteLine($"[App] Usando sucursal: {currentBranchName} (ID: {currentBranchId})");
             
             // Crear ViewModel con servicios inyectados
             var salesViewModel = new SalesViewModel(
@@ -411,8 +381,6 @@ namespace CasaCejaRemake
                 currentBranchId,
                 currentBranchName);
 
-            Console.WriteLine("[App] Creando SalesView...");
-            
             var salesView = new SalesView
             {
                 DataContext = salesViewModel
@@ -421,9 +389,7 @@ namespace CasaCejaRemake
             // IMPORTANTE: Establecer como MainWindow ANTES de mostrar
             desktop.MainWindow = salesView;
             
-            Console.WriteLine("[App] Mostrando SalesView...");
             salesView.Show();
-            Console.WriteLine("[App] SalesView mostrada correctamente");
             
             // Cerrar la ventana anterior DESPUÉS de mostrar la nueva
             windowToClose?.Close();
@@ -432,8 +398,6 @@ namespace CasaCejaRemake
             var openCash = await _cashCloseService.GetOpenCashAsync(currentBranchId);
             if (openCash == null)
             {
-                Console.WriteLine("[App] No hay caja abierta, mostrando modal de apertura...");
-                
                 var openCashView = new OpenCashView();
                 var openCashViewModel = new OpenCashViewModel(_cashCloseService, AuthService, currentBranchId);
                 openCashView.DataContext = openCashViewModel;
@@ -442,29 +406,21 @@ namespace CasaCejaRemake
 
                 if (openCashView.Tag is Models.CashClose newCash)
                 {
-                    Console.WriteLine($"[App] Caja abierta exitosamente: {newCash.Folio}");
-                    
                     // Recargar folio en el ViewModel
                     salesViewModel?.RefreshCashCloseFolio();
                 }
                 else
                 {
-                    Console.WriteLine("[App] Apertura de caja cancelada, saliendo del POS...");
                     // Usuario canceló, salir del POS
                     salesView.Tag = "exit";
                     salesView.Close();
                     return;
                 }
             }
-            else
-            {
-                Console.WriteLine($"[App] Caja ya abierta: {openCash.Folio}");
-            }
 
             // Manejar salida del POS
             salesView.Closed += (sender, args) =>
             {
-                Console.WriteLine($"[App] SalesView cerrada. Tag = {salesView.Tag}");
                 if (salesView.Tag is string result)
                 {
                     if (result == "module_selector")
@@ -491,8 +447,6 @@ namespace CasaCejaRemake
             if (ApplicationLifetime is not IClassicDesktopStyleApplicationLifetime desktop) return;
             if (AuthService == null || ApiClient == null) return;
 
-            Console.WriteLine("[App] ShowInventory() llamado");
-
             // Obtener sucursal actual
             var currentBranchId = AuthService.CurrentBranchId;
             var currentBranchName = "Sucursal";
@@ -502,9 +456,8 @@ namespace CasaCejaRemake
                 var branch = await branchRepo.GetByIdAsync(currentBranchId);
                 currentBranchName = branch?.Name ?? $"Sucursal #{currentBranchId}";
             }
-            catch (Exception ex)
+            catch
             {
-                Console.WriteLine($"[App] Advertencia al obtener nombre de sucursal: {ex.Message}");
             }
 
             var viewModel = new InventoryMainViewModel(
@@ -519,14 +472,12 @@ namespace CasaCejaRemake
 
             viewModel.CatalogSelected += (s, e) =>
             {
-                Console.WriteLine("[App] Catálogo seleccionado");
                 inventoryView.Tag = "catalog";
                 ShowCatalog(inventoryView);
             };
 
             viewModel.CategoriesSelected += (s, e) =>
             {
-                Console.WriteLine("[App] Abriendo Gestión de Categorías");
                 var catalogsViewModel = new ViewModels.Inventory.CatalogsManagementViewModel(_inventoryService!);
                 var catalogsView = new Views.Inventory.CatalogsManagementView
                 {
@@ -543,47 +494,42 @@ namespace CasaCejaRemake
 
             viewModel.EntriesSelected += (s, e) =>
             {
-                Console.WriteLine("[App] Abriendo Entrada de Mercancía");
                 ShowEntry(inventoryView);
             };
 
             viewModel.OutputsSelected += (s, e) =>
             {
-                Console.WriteLine("[App] Abriendo Salida de Mercancía");
                 ShowOutput(inventoryView);
             };
 
             viewModel.ConfirmEntrySelected += (s, e) =>
             {
-                Console.WriteLine("[App] Abriendo Confirmar Entrada");
                 ShowConfirmEntry(inventoryView);
             };
 
             viewModel.HistorySelected += (s, e) =>
             {
-                Console.WriteLine("[App] Historial seleccionado");
                 inventoryView.Tag = "history";
                 ShowHistory(inventoryView);
             };
 
             viewModel.ExitRequested += (s, e) =>
             {
-                Console.WriteLine("[App] Regresando a selector de módulos desde Inventario");
                 inventoryView.Tag = "module_selector";
                 inventoryView.Close();
             };
 
             viewModel.LogoutRequested += (s, e) =>
             {
-                Console.WriteLine("[App] Cerrando sesión desde Inventario");
                 inventoryView.Tag = "logout";
                 inventoryView.Close();
             };
 
             inventoryView.Closed += (sender, args) =>
             {
-                Console.WriteLine($"[App] InventoryMainView cerrada. Tag = {inventoryView.Tag}");
-                if (inventoryView.Tag is string result)
+                var closingView = sender as InventoryMainView;
+
+                if (closingView?.Tag is string result)
                 {
                     if (result == "module_selector")
                     {
@@ -594,22 +540,18 @@ namespace CasaCejaRemake
                         AuthService?.Logout();
                         ShowLogin();
                     }
-                }
-                else
-                {
-                    // Cerrado sin tag (Botón Salir, botón X o Cmd+Q) -> dejar que se cierre la app
-                    if (desktop.MainWindow == inventoryView || desktop.MainWindow == null)
+                    else if (result == "inventory")
                     {
-                        Console.WriteLine("[App] Cerrando aplicación.");
+                        _currentInventoryView = null;
+                        ShowInventory(closingView);
                     }
                 }
             };
 
+            _currentInventoryView = inventoryView;
             desktop.MainWindow = inventoryView;
             inventoryView.Show();
             windowToClose?.Close();
-
-            Console.WriteLine("[App] InventoryMainView mostrada correctamente");
         }
 
         private async void ShowEntry(Window? windowToClose = null)
@@ -639,21 +581,18 @@ namespace CasaCejaRemake
 
             viewModel.GoBackRequested += (s, e) =>
             {
-                Console.WriteLine("[App] Volviendo a Inventario desde Entrada");
                 entryView.Tag = "inventory";
-                entryView.Close();
+                ShowInventory(entryView);
             };
 
             entryView.Closed += (sender, args) =>
             {
-                ShowInventory(null);
+                // Si no tiene tag, se cerró con la 'X' o Cmd+Q -> dejar que se cierre la app.
             };
 
             desktop.MainWindow = entryView;
             entryView.Show();
             windowToClose?.Close();
-
-            Console.WriteLine("[App] EntryView mostrada");
         }
 
         private async void ShowOutput(Window? windowToClose = null)
@@ -683,21 +622,18 @@ namespace CasaCejaRemake
 
             viewModel.GoBackRequested += (s, e) =>
             {
-                Console.WriteLine("[App] Volviendo a Inventario desde Salida");
                 outputView.Tag = "inventory";
-                outputView.Close();
+                ShowInventory(outputView);
             };
 
             outputView.Closed += (sender, args) =>
             {
-                ShowInventory(null);
+                // Si no tiene tag, se cerró con la 'X' o Cmd+Q -> dejar que se cierre la app.
             };
 
             desktop.MainWindow = outputView;
             outputView.Show();
             windowToClose?.Close();
-
-            Console.WriteLine("[App] OutputView mostrada");
         }
 
         private async void ShowConfirmEntry(Window? windowToClose = null)
@@ -727,21 +663,18 @@ namespace CasaCejaRemake
 
             viewModel.GoBackRequested += (s, e) =>
             {
-                Console.WriteLine("[App] Volviendo a Inventario desde ConfirmEntry");
                 confirmView.Tag = "inventory";
-                confirmView.Close();
+                ShowInventory(confirmView);
             };
 
             confirmView.Closed += (sender, args) =>
             {
-                ShowInventory(null);
+                // Si no tiene tag, se cerró con la 'X' o Cmd+Q -> dejar que se cierre la app.
             };
 
             desktop.MainWindow = confirmView;
             confirmView.Show();
             windowToClose?.Close();
-
-            Console.WriteLine("[App] ConfirmEntryView mostrada");
         }
 
         private void ShowCatalog(Window? windowToClose = null)
@@ -765,7 +698,6 @@ namespace CasaCejaRemake
 
             viewModel.ProductFormRequested += (s, product) =>
             {
-                Console.WriteLine("[App] Abriendo ProductFormView");
                 var formViewModel = new ViewModels.Inventory.ProductFormViewModel(_inventoryService, branchId, product);
                 var formView = new Views.Inventory.ProductFormView
                 {
@@ -896,7 +828,6 @@ namespace CasaCejaRemake
         {
             if (ConfigService == null || AuthService == null || DatabaseService == null || PrintService == null || UserService == null)
             {
-                Console.WriteLine("[App] Servicios no disponibles para configuración");
                 return;
             }
 
@@ -912,8 +843,6 @@ namespace CasaCejaRemake
             // Suscribirse al evento de configuración guardada (cambio de sucursal)
             viewModel.ConfigurationSaved += async (s, e) =>
             {
-                Console.WriteLine("[App] Sucursal cambiada - La aplicación se cerrará automáticamente...");
-                
                 // Mostrar mensaje al usuario SIEMPRE
                 await DialogHelper.ShowMessageDialog(
                     parentWindow!,
@@ -927,7 +856,6 @@ namespace CasaCejaRemake
                 // Cerrar la aplicación COMPLETA
                 if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
                 {
-                    Console.WriteLine("[App] Cerrando aplicación por cambio de sucursal...");
                     desktop.Shutdown();
                 }
             };
@@ -1035,11 +963,9 @@ namespace CasaCejaRemake
         private void OnAppConfigChanged(object? sender, EventArgs e)
         {
             if (ConfigService == null) return;
-            
-            var branchId = ConfigService.AppConfig.CurrentBranchId ?? 0;
-            var branchName = ConfigService.AppConfig.CurrentBranchName ?? string.Empty;
-            
-            Console.WriteLine($"[App] Configuración cambiada - Nueva sucursal: {branchName} (ID: {branchId})");
+
+            _ = ConfigService.AppConfig.CurrentBranchId;
+            _ = ConfigService.AppConfig.CurrentBranchName;
             
             // Nota: El POS necesitará reiniciarse para aplicar cambios de sucursal
             // ya que el ViewModel se inicializa con el BranchId al crearse

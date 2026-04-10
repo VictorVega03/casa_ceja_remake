@@ -333,19 +333,15 @@
                 <TextBlock Grid.Column="0"
                            Text="Esc: Cancelar   |   Los costos unitarios son editables en la tabla"
                            FontSize="13" Foreground="#444" VerticalAlignment="Center"/>
-                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="14">
-                    <Button Classes="action-cancel" Command="{Binding CancelCommand}">
-                        Cancelar
-                    </Button>
-                    <Button Classes="action-save"
-                            Command="{Binding SaveEntryCommand}"
-                            IsEnabled="{Binding !IsSaving}">
-                        <StackPanel Orientation="Horizontal" Spacing="10">
-                            <TextBlock Text="Guardando..." IsVisible="{Binding IsSaving}" VerticalAlignment="Center"/>
-                            <TextBlock Text="Guardar Entrada (F5)" IsVisible="{Binding !IsSaving}" VerticalAlignment="Center"/>
-                        </StackPanel>
-                    </Button>
-                </StackPanel>
+                <Button Grid.Column="1"
+                        Classes="action-save"
+                        Command="{Binding SaveEntryCommand}"
+                        IsEnabled="{Binding !IsSaving}">
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <TextBlock Text="Guardando..." IsVisible="{Binding IsSaving}" VerticalAlignment="Center"/>
+                        <TextBlock Text="Guardar Entrada (F5)" IsVisible="{Binding !IsSaving}" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Button>
             </Grid>
         </Border>
     </Grid>

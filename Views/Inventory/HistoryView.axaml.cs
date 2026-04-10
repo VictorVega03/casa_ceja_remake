@@ -1,35 +1,64 @@
 using Avalonia.Controls;
 using Avalonia.Input;
 using CasaCejaRemake.ViewModels.Inventory;
+using System.Collections.Generic;
 
 namespace CasaCejaRemake.Views.Inventory
 {
     public partial class HistoryView : Window
     {
+        private HistoryViewModel? _viewModel;
+
         public HistoryView()
         {
             InitializeComponent();
-            this.AddHandler(InputElement.KeyDownEvent, OnPreviewKeyDown, Avalonia.Interactivity.RoutingStrategies.Tunnel);
+            Loaded += OnLoaded;
         }
 
-        private void OnPreviewKeyDown(object? sender, KeyEventArgs e)
+        private void OnLoaded(object? sender, System.EventArgs e)
         {
-            if (DataContext is HistoryViewModel vm)
+            _viewModel = DataContext as HistoryViewModel;
+
+            if (HistoryDataGrid != null)
             {
-                if (e.Key == Key.Escape)
-                {
-                    vm.GoBackCommand.Execute(null);
-                    e.Handled = true;
-                }
-                else if (e.Key == Key.Enter)
-                {
-                    if (vm.SelectedItem != null && HistoryDataGrid.IsFocused)
-                    {
-                        vm.RequestDetail(vm.SelectedItem);
-                        e.Handled = true;
-                    }
-                }
+                HistoryDataGrid.AddHandler(KeyDownEvent, DataGrid_PreviewKeyDown, Avalonia.Interactivity.RoutingStrategies.Tunnel);
             }
+        }
+
+        private void DataGrid_PreviewKeyDown(object? sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Enter && _viewModel?.SelectedItem != null)
+            {
+                _viewModel.RequestDetail(_viewModel.SelectedItem);
+                e.Handled = true;
+            }
+        }
+
+        protected override void OnKeyDown(KeyEventArgs e)
+        {
+            if (_viewModel == null)
+            {
+                base.OnKeyDown(e);
+                return;
+            }
+
+            var shortcuts = new Dictionary<Key, System.Action>
+            {
+                { Key.Escape, () => _viewModel.GoBackCommand.Execute(null) },
+                { Key.Enter, () => {
+                    if (_viewModel.SelectedItem != null)
+                    {
+                        _viewModel.RequestDetail(_viewModel.SelectedItem);
+                    }
+                }}
+            };
+
+            if (casa_ceja_remake.Helpers.KeyboardShortcutHelper.HandleShortcut(e, shortcuts))
+            {
+                return;
+            }
+
+            base.OnKeyDown(e);
         }
     }
 }
