@@ -153,14 +153,7 @@ namespace CasaCejaRemake.ViewModels.Inventory
                     p.Barcode.Equals(term, StringComparison.OrdinalIgnoreCase));
                 var product = exact ?? results[0];
 
-                // Check current stock in origin branch
                 var stock = await _inventoryService.GetProductStockAsync(product.Id, _branchId);
-
-                if (stock <= 0)
-                {
-                    SearchError = $"\"{product.Name}\" no tiene stock disponible en esta sucursal.";
-                    return;
-                }
 
                 AddOrIncrementLine(product, stock);
                 SearchTerm = string.Empty;
@@ -180,10 +173,7 @@ namespace CasaCejaRemake.ViewModels.Inventory
             var existing = Lines.FirstOrDefault(l => l.ProductId == product.Id);
             if (existing != null)
             {
-                if (existing.Quantity < existing.CurrentStock)
-                    existing.Quantity++;
-                else
-                    SearchError = $"Ya incluiste todo el stock disponible de \"{product.Name}\" ({existing.CurrentStock} uds.)";
+                existing.Quantity++;
             }
             else
             {
@@ -212,11 +202,7 @@ namespace CasaCejaRemake.ViewModels.Inventory
         private void IncrementQty(OutputLineItem? line)
         {
             if (line == null) return;
-            if (line.Quantity < line.CurrentStock)
-                line.Quantity++;
-            else
-                ShowMessageRequested?.Invoke(this,
-                    $"No puedes superar el stock disponible de {line.CurrentStock} uds. para \"{line.ProductName}\".");
+            line.Quantity++;
         }
 
         [RelayCommand]

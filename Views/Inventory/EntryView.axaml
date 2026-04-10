@@ -1,6 +1,7 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:CasaCejaRemake.ViewModels.Inventory"
+        xmlns:helpers="using:CasaCejaRemake.Helpers"
         x:Class="CasaCejaRemake.Views.Inventory.EntryView"
         x:DataType="vm:EntriesViewModel"
         x:CompileBindings="False"
@@ -9,13 +10,17 @@
         WindowStartupLocation="CenterScreen"
         Background="#141414">
 
+    <Window.Resources>
+        <helpers:DecimalInputConverter x:Key="DecimalInputConverter" />
+    </Window.Resources>
+
     <Window.Styles>
         <!-- Labels -->
         <Style Selector="TextBlock.label">
-            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="FontSize" Value="12"/>
             <Setter Property="FontWeight" Value="Bold"/>
-            <Setter Property="Foreground" Value="#777"/>
-            <Setter Property="Margin" Value="0,0,0,4"/>
+            <Setter Property="Foreground" Value="#888"/>
+            <Setter Property="Margin" Value="0,0,0,6"/>
         </Style>
         <!-- Input fields -->
         <Style Selector="TextBox">
@@ -23,9 +28,9 @@
             <Setter Property="Foreground" Value="White"/>
             <Setter Property="BorderBrush" Value="#3A3A3A"/>
             <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="CornerRadius" Value="5"/>
-            <Setter Property="Padding" Value="10,8"/>
-            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="Padding" Value="14,12"/>
+            <Setter Property="FontSize" Value="15"/>
             <Setter Property="CaretBrush" Value="White"/>
         </Style>
         <Style Selector="TextBox:focus">
@@ -35,8 +40,8 @@
             <Setter Property="Background" Value="#242424"/>
             <Setter Property="Foreground" Value="White"/>
             <Setter Property="BorderBrush" Value="#3A3A3A"/>
-            <Setter Property="FontSize" Value="13"/>
-            <Setter Property="Padding" Value="10,6"/>
+            <Setter Property="FontSize" Value="15"/>
+            <Setter Property="Padding" Value="12,10"/>
         </Style>
         <Style Selector="DatePicker">
             <Setter Property="Background" Value="#242424"/>
@@ -46,9 +51,9 @@
         <Style Selector="Button.action-save">
             <Setter Property="Background" Value="#2E7D32"/>
             <Setter Property="Foreground" Value="White"/>
-            <Setter Property="Padding" Value="28,10"/>
+            <Setter Property="Padding" Value="32,14"/>
             <Setter Property="CornerRadius" Value="6"/>
-            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontSize" Value="15"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="Cursor" Value="Hand"/>
         </Style>
@@ -62,9 +67,9 @@
         <Style Selector="Button.action-cancel">
             <Setter Property="Background" Value="#2A2A2A"/>
             <Setter Property="Foreground" Value="#BDBDBD"/>
-            <Setter Property="Padding" Value="24,10"/>
+            <Setter Property="Padding" Value="28,14"/>
             <Setter Property="CornerRadius" Value="6"/>
-            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontSize" Value="15"/>
             <Setter Property="Cursor" Value="Hand"/>
         </Style>
         <Style Selector="Button.action-cancel:pointerover">
@@ -73,7 +78,7 @@
         <Style Selector="Button.icon-btn">
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Padding" Value="6,4"/>
+            <Setter Property="Padding" Value="8,6"/>
             <Setter Property="Cursor" Value="Hand"/>
         </Style>
         <Style Selector="Button.icon-btn:pointerover">
@@ -83,7 +88,7 @@
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="Foreground" Value="#E53935"/>
             <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Padding" Value="6,2"/>
+            <Setter Property="Padding" Value="8,4"/>
             <Setter Property="Cursor" Value="Hand"/>
         </Style>
         <Style Selector="Button.remove-btn:pointerover">
@@ -98,67 +103,67 @@
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="GridLinesVisibility" Value="Horizontal"/>
             <Setter Property="HorizontalGridLinesBrush" Value="#252525"/>
-            <Setter Property="RowHeight" Value="44"/>
+            <Setter Property="RowHeight" Value="52"/>
         </Style>
         <Style Selector="DataGridColumnHeader">
             <Setter Property="Background" Value="#1A1A1A"/>
             <Setter Property="Foreground" Value="#888"/>
-            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="FontSize" Value="12"/>
             <Setter Property="FontWeight" Value="Bold"/>
-            <Setter Property="Padding" Value="12,8"/>
+            <Setter Property="Padding" Value="14,10"/>
         </Style>
         <Style Selector="DataGridCell">
-            <Setter Property="Padding" Value="12,0"/>
+            <Setter Property="Padding" Value="14,0"/>
             <Setter Property="Foreground" Value="#E0E0E0"/>
-            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontSize" Value="14"/>
         </Style>
     </Window.Styles>
 
     <Grid RowDefinitions="Auto,*,Auto">
 
         <!-- ═══ HEADER ═══ -->
-        <Border Grid.Row="0" Background="#1C1C1C" BorderBrush="#2A2A2A" BorderThickness="0,0,0,1" Padding="20,13">
+        <Border Grid.Row="0" Background="#1C1C1C" BorderBrush="#2A2A2A" BorderThickness="0,0,0,1" Padding="28,18">
             <Grid ColumnDefinitions="Auto,*,Auto">
-                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
+                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="14" VerticalAlignment="Center">
                     <Button Classes="icon-btn" Command="{Binding CancelCommand}" ToolTip.Tip="Cancelar (Esc)" CornerRadius="4">
-                        <TextBlock Text="←" FontSize="18" Foreground="#FF9800" FontWeight="Bold"/>
+                        <TextBlock Text="←" FontSize="20" Foreground="#FF9800" FontWeight="Bold"/>
                     </Button>
-                    <Border Width="4" Height="20" CornerRadius="2" Background="#FF9800"/>
-                    <TextBlock Text="ENTRADA DE MERCANCÍA" FontSize="18" FontWeight="Bold" Foreground="White" VerticalAlignment="Center"/>
-                    <Border Background="#1B3A1D" CornerRadius="4" Padding="8,3" VerticalAlignment="Center"
+                    <Border Width="5" Height="24" CornerRadius="2" Background="#FF9800"/>
+                    <TextBlock Text="ENTRADA DE MERCANCÍA" FontSize="20" FontWeight="Bold" Foreground="White" VerticalAlignment="Center"/>
+                    <Border Background="#1B3A1D" CornerRadius="4" Padding="10,4" VerticalAlignment="Center"
                             IsVisible="{Binding HasLines}">
                         <TextBlock Text="{Binding Lines.Count, StringFormat='{}{0} productos'}"
-                                   FontSize="11" FontWeight="Bold" Foreground="#4CAF50"/>
+                                   FontSize="12" FontWeight="Bold" Foreground="#4CAF50"/>
                     </Border>
                 </StackPanel>
 
                 <!-- Folio/sucursal info -->
-                <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="20" VerticalAlignment="Center">
+                <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="28" VerticalAlignment="Center">
                     <StackPanel>
                         <TextBlock Text="SUCURSAL" Classes="label"/>
-                        <TextBlock Text="{Binding BranchName}" FontSize="13" Foreground="#E0E0E0" FontWeight="SemiBold"/>
+                        <TextBlock Text="{Binding BranchName}" FontSize="15" Foreground="#E0E0E0" FontWeight="SemiBold"/>
                     </StackPanel>
                     <StackPanel>
                         <TextBlock Text="TOTAL ENTRADA" Classes="label"/>
                         <TextBlock Text="{Binding TotalAmount, StringFormat={}{0:C}}"
-                                   FontSize="16" FontWeight="Bold" Foreground="#4CAF50"/>
+                                   FontSize="18" FontWeight="Bold" Foreground="#4CAF50"/>
                     </StackPanel>
                 </StackPanel>
             </Grid>
         </Border>
 
         <!-- ═══ CONTENT ═══ -->
-        <Grid Grid.Row="1" ColumnDefinitions="310,*">
+        <Grid Grid.Row="1" ColumnDefinitions="380,*">
 
             <!-- ─── LEFT: Formulario de encabezado ─── -->
-            <Border Grid.Column="0" Background="#1C1C1C" BorderBrush="#2A2A2A" BorderThickness="0,0,1,0" Padding="20,20">
-                <StackPanel Spacing="16">
+            <Border Grid.Column="0" Background="#1C1C1C" BorderBrush="#2A2A2A" BorderThickness="0,0,1,0" Padding="28,24">
+                <StackPanel Spacing="20">
 
-                    <TextBlock Text="DATOS DE LA ENTRADA" FontSize="11" FontWeight="Bold"
-                               Foreground="#FF9800" LetterSpacing="1" Margin="0,0,0,4"/>
+                    <TextBlock Text="DATOS DE LA ENTRADA" FontSize="12" FontWeight="Bold"
+                               Foreground="#FF9800" LetterSpacing="1" Margin="0,0,0,6"/>
 
                     <!-- Proveedor -->
-                    <StackPanel Spacing="4">
+                    <StackPanel Spacing="6">
                         <TextBlock Text="PROVEEDOR" Classes="label"/>
                         <ComboBox ItemsSource="{Binding Suppliers}"
                                   SelectedItem="{Binding SelectedSupplier}"
@@ -172,36 +177,36 @@
                     </StackPanel>
 
                     <!-- Fecha -->
-                    <StackPanel Spacing="4">
+                    <StackPanel Spacing="6">
                         <TextBlock Text="FECHA DE ENTRADA" Classes="label"/>
                         <DatePicker SelectedDate="{Binding EntryDate}" HorizontalAlignment="Stretch"/>
                     </StackPanel>
 
                     <!-- Notas -->
-                    <StackPanel Spacing="4">
+                    <StackPanel Spacing="6">
                         <TextBlock Text="NOTAS / OBSERVACIONES" Classes="label"/>
                         <TextBox Text="{Binding Notes}"
                                  Watermark="Observaciones opcionales..."
                                  AcceptsReturn="True"
                                  TextWrapping="Wrap"
-                                 Height="100"
+                                 Height="120"
                                  VerticalContentAlignment="Top"/>
                     </StackPanel>
 
                     <!-- Separador -->
-                    <Border Height="1" Background="#2A2A2A" Margin="0,4"/>
+                    <Border Height="1" Background="#2A2A2A" Margin="0,6"/>
 
                     <!-- Resumen -->
-                    <StackPanel Spacing="8">
-                        <TextBlock Text="RESUMEN" FontSize="11" FontWeight="Bold" Foreground="#777" LetterSpacing="1"/>
+                    <StackPanel Spacing="10">
+                        <TextBlock Text="RESUMEN" FontSize="12" FontWeight="Bold" Foreground="#888" LetterSpacing="1"/>
                         <Grid ColumnDefinitions="*,Auto">
-                            <TextBlock Grid.Column="0" Text="Líneas de producto:" FontSize="12" Foreground="#999"/>
-                            <TextBlock Grid.Column="1" Text="{Binding Lines.Count}" FontSize="12" Foreground="White" FontWeight="SemiBold"/>
+                            <TextBlock Grid.Column="0" Text="Líneas de producto:" FontSize="14" Foreground="#999"/>
+                            <TextBlock Grid.Column="1" Text="{Binding Lines.Count}" FontSize="14" Foreground="White" FontWeight="SemiBold"/>
                         </Grid>
                         <Grid ColumnDefinitions="*,Auto">
-                            <TextBlock Grid.Column="0" Text="Total de la entrada:" FontSize="12" Foreground="#999"/>
+                            <TextBlock Grid.Column="0" Text="Total de la entrada:" FontSize="14" Foreground="#999"/>
                             <TextBlock Grid.Column="1" Text="{Binding TotalAmount, StringFormat={}{0:C}}"
-                                       FontSize="13" Foreground="#4CAF50" FontWeight="Bold"/>
+                                       FontSize="15" Foreground="#4CAF50" FontWeight="Bold"/>
                         </Grid>
                     </StackPanel>
                 </StackPanel>
@@ -211,9 +216,9 @@
             <Grid Grid.Column="1" RowDefinitions="Auto,Auto,*">
 
                 <!-- Búsqueda de productos -->
-                <Border Grid.Row="0" Background="#1A1A1A" Padding="20,14" BorderBrush="#2A2A2A" BorderThickness="0,0,0,1">
-                    <StackPanel Spacing="6">
-                        <TextBlock Text="BUSCAR Y AGREGAR PRODUCTO" FontSize="11" FontWeight="Bold"
+                <Border Grid.Row="0" Background="#1A1A1A" Padding="24,18" BorderBrush="#2A2A2A" BorderThickness="0,0,0,1">
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="BUSCAR Y AGREGAR PRODUCTO" FontSize="12" FontWeight="Bold"
                                    Foreground="#FF9800" LetterSpacing="1"/>
                         <Grid ColumnDefinitions="*,Auto">
                             <TextBox Grid.Column="0"
@@ -223,9 +228,9 @@
                                      KeyDown="OnSearchBoxKeyDown"/>
                             <Button Grid.Column="1"
                                     Command="{Binding SearchProductCommand}"
-                                    Margin="10,0,0,0"
+                                    Margin="12,0,0,0"
                                     Background="#FF9800" Foreground="White"
-                                    Padding="18,8" CornerRadius="5"
+                                    Padding="22,10" CornerRadius="6"
                                     FontWeight="SemiBold" Cursor="Hand">
                                 Agregar
                             </Button>
@@ -233,18 +238,18 @@
                         <!-- Error de búsqueda -->
                         <TextBlock Text="{Binding SearchError}"
                                    IsVisible="{Binding SearchError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
-                                   FontSize="12" Foreground="#EF5350" Margin="2,0"/>
+                                   FontSize="13" Foreground="#EF5350" Margin="4,0"/>
                     </StackPanel>
                 </Border>
 
                 <!-- Estado vacío -->
-                <Border Grid.Row="1" IsVisible="{Binding !HasLines}" Background="#141414" Padding="0,40">
-                    <StackPanel HorizontalAlignment="Center" Spacing="12">
-                        <TextBlock Text="📦" FontSize="48" HorizontalAlignment="Center"/>
+                <Border Grid.Row="1" IsVisible="{Binding !HasLines}" Background="#141414" Padding="0,60">
+                    <StackPanel HorizontalAlignment="Center" Spacing="14">
+                        <TextBlock Text="📦" FontSize="56" HorizontalAlignment="Center"/>
                         <TextBlock Text="Aún no hay productos en esta entrada"
-                                   FontSize="15" Foreground="#555" HorizontalAlignment="Center"/>
+                                   FontSize="17" Foreground="#555" HorizontalAlignment="Center"/>
                         <TextBlock Text="Usa el buscador de arriba para agregar productos"
-                                   FontSize="12" Foreground="#444" HorizontalAlignment="Center"/>
+                                   FontSize="14" Foreground="#444" HorizontalAlignment="Center"/>
                     </StackPanel>
                 </Border>
 
@@ -265,29 +270,29 @@
 
                         <!-- Código -->
                         <DataGridTextColumn Header="CÓDIGO" Binding="{Binding Barcode}"
-                                            Width="130" IsReadOnly="True"/>
+                                            Width="150" IsReadOnly="True"/>
 
                         <!-- Nombre -->
                         <DataGridTextColumn Header="PRODUCTO" Binding="{Binding ProductName}"
                                             Width="*" IsReadOnly="True"/>
 
                         <!-- Cantidad (editable) -->
-                        <DataGridTemplateColumn Header="CANTIDAD" Width="130">
+                        <DataGridTemplateColumn Header="CANTIDAD" Width="140">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
-                                    <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center" HorizontalAlignment="Center">
-                                        <Button Classes="icon-btn" CornerRadius="3"
+                                    <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center" HorizontalAlignment="Center">
+                                        <Button Classes="icon-btn" CornerRadius="4"
                                                 Command="{Binding DataContext.DecrementQtyCommand, RelativeSource={RelativeSource AncestorType=Window}}"
                                                 CommandParameter="{Binding}">
-                                            <TextBlock Text="−" FontSize="14" Foreground="#BDBDBD"/>
+                                            <TextBlock Text="−" FontSize="16" Foreground="#BDBDBD"/>
                                         </Button>
-                                        <TextBlock Text="{Binding Quantity}" FontSize="14" FontWeight="SemiBold"
-                                                   Foreground="White" VerticalAlignment="Center" Width="32"
+                                        <TextBlock Text="{Binding Quantity}" FontSize="16" FontWeight="SemiBold"
+                                                   Foreground="White" VerticalAlignment="Center" Width="40"
                                                    TextAlignment="Center"/>
-                                        <Button Classes="icon-btn" CornerRadius="3"
+                                        <Button Classes="icon-btn" CornerRadius="4"
                                                 Command="{Binding DataContext.IncrementQtyCommand, RelativeSource={RelativeSource AncestorType=Window}}"
                                                 CommandParameter="{Binding}">
-                                            <TextBlock Text="+" FontSize="14" Foreground="#BDBDBD"/>
+                                            <TextBlock Text="+" FontSize="16" Foreground="#BDBDBD"/>
                                         </Button>
                                     </StackPanel>
                                 </DataTemplate>
@@ -295,15 +300,16 @@
                         </DataGridTemplateColumn>
 
                         <!-- Costo unitario (editable) -->
-                        <DataGridTextColumn Header="COSTO UNIT." Binding="{Binding UnitCost, StringFormat={}{0:F2}}"
-                                            Width="130"/>
+                        <DataGridTextColumn Header="COSTO UNIT." 
+                                            Binding="{Binding UnitCost, Converter={StaticResource DecimalInputConverter}}"
+                                            Width="150"/>
 
                         <!-- Total línea (readonly) -->
                         <DataGridTextColumn Header="TOTAL LÍNEA" Binding="{Binding LineTotal, StringFormat={}{0:C}}"
-                                            Width="130" IsReadOnly="True"/>
+                                            Width="150" IsReadOnly="True"/>
 
                         <!-- Eliminar -->
-                        <DataGridTemplateColumn Header="" Width="56" CanUserResize="False">
+                        <DataGridTemplateColumn Header="" Width="64" CanUserResize="False">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
                                     <Button Classes="remove-btn"
@@ -311,7 +317,7 @@
                                             CommandParameter="{Binding}"
                                             HorizontalAlignment="Center"
                                             ToolTip.Tip="Quitar producto">
-                                        <TextBlock Text="✕" FontSize="13"/>
+                                        <TextBlock Text="✕" FontSize="15"/>
                                     </Button>
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
@@ -322,19 +328,19 @@
         </Grid>
 
         <!-- ═══ FOOTER ═══ -->
-        <Border Grid.Row="2" Background="#1C1C1C" BorderBrush="#2A2A2A" BorderThickness="0,1,0,0" Padding="20,14">
+        <Border Grid.Row="2" Background="#1C1C1C" BorderBrush="#2A2A2A" BorderThickness="0,1,0,0" Padding="28,18">
             <Grid ColumnDefinitions="*,Auto">
                 <TextBlock Grid.Column="0"
                            Text="Esc: Cancelar   |   Los costos unitarios son editables en la tabla"
-                           FontSize="12" Foreground="#444" VerticalAlignment="Center"/>
-                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="12">
+                           FontSize="13" Foreground="#444" VerticalAlignment="Center"/>
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="14">
                     <Button Classes="action-cancel" Command="{Binding CancelCommand}">
                         Cancelar
                     </Button>
                     <Button Classes="action-save"
                             Command="{Binding SaveEntryCommand}"
                             IsEnabled="{Binding !IsSaving}">
-                        <StackPanel Orientation="Horizontal" Spacing="8">
+                        <StackPanel Orientation="Horizontal" Spacing="10">
                             <TextBlock Text="Guardando..." IsVisible="{Binding IsSaving}" VerticalAlignment="Center"/>
                             <TextBlock Text="Guardar Entrada (F5)" IsVisible="{Binding !IsSaving}" VerticalAlignment="Center"/>
                         </StackPanel>

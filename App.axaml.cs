@@ -533,7 +533,7 @@ namespace CasaCejaRemake
                     DataContext = catalogsViewModel
                 };
 
-                catalogsViewModel.CloseRequested += (sender, args) =>
+                catalogsViewModel.GoBackRequested += (sender, args) =>
                 {
                     catalogsView.Close();
                 };
@@ -612,20 +612,19 @@ namespace CasaCejaRemake
             Console.WriteLine("[App] InventoryMainView mostrada correctamente");
         }
 
-        private void ShowEntry(Window? windowToClose = null)
+        private async void ShowEntry(Window? windowToClose = null)
         {
             if (ApplicationLifetime is not IClassicDesktopStyleApplicationLifetime desktop) return;
             if (_inventoryService == null || FolioService == null) return;
 
-            var branchId   = AuthService?.CurrentUser?.BranchId ?? 0;
+            var branchId   = AuthService.CurrentBranchId;
             var branchName = "Sucursal";
             var userId     = AuthService?.CurrentUser?.Id ?? 0;
 
-            // Try to resolve branch name (best-effort, sync version already cached)
             try
             {
                 var branchRepo = new Data.Repositories.BaseRepository<Models.Branch>(DatabaseService!);
-                var branch = branchRepo.GetByIdAsync(branchId).GetAwaiter().GetResult();
+                var branch = await branchRepo.GetByIdAsync(branchId);
                 branchName = branch?.Name ?? $"Sucursal #{branchId}";
             }
             catch { /* use default */ }
@@ -657,19 +656,19 @@ namespace CasaCejaRemake
             Console.WriteLine("[App] EntryView mostrada");
         }
 
-        private void ShowOutput(Window? windowToClose = null)
+        private async void ShowOutput(Window? windowToClose = null)
         {
             if (ApplicationLifetime is not IClassicDesktopStyleApplicationLifetime desktop) return;
             if (_inventoryService == null || FolioService == null) return;
 
-            var branchId   = AuthService?.CurrentUser?.BranchId ?? 0;
+            var branchId   = AuthService.CurrentBranchId;
             var branchName = "Sucursal";
             var userId     = AuthService?.CurrentUser?.Id ?? 0;
 
             try
             {
                 var branchRepo = new Data.Repositories.BaseRepository<Models.Branch>(DatabaseService!);
-                var branch = branchRepo.GetByIdAsync(branchId).GetAwaiter().GetResult();
+                var branch = await branchRepo.GetByIdAsync(branchId);
                 branchName = branch?.Name ?? $"Sucursal #{branchId}";
             }
             catch { /* use default */ }
@@ -701,19 +700,19 @@ namespace CasaCejaRemake
             Console.WriteLine("[App] OutputView mostrada");
         }
 
-        private void ShowConfirmEntry(Window? windowToClose = null)
+        private async void ShowConfirmEntry(Window? windowToClose = null)
         {
             if (ApplicationLifetime is not IClassicDesktopStyleApplicationLifetime desktop) return;
             if (_inventoryService == null) return;
 
-            var branchId   = AuthService?.CurrentUser?.BranchId ?? 0;
+            var branchId   = AuthService.CurrentBranchId;
             var branchName = "Sucursal";
             var userId     = AuthService?.CurrentUser?.Id ?? 0;
 
             try
             {
                 var branchRepo = new Data.Repositories.BaseRepository<Models.Branch>(DatabaseService!);
-                var branch = branchRepo.GetByIdAsync(branchId).GetAwaiter().GetResult();
+                var branch = await branchRepo.GetByIdAsync(branchId);
                 branchName = branch?.Name ?? $"Sucursal #{branchId}";
             }
             catch { /* use default */ }

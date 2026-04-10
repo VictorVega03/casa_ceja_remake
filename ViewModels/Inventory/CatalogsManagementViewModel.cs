@@ -13,6 +13,7 @@ namespace CasaCejaRemake.ViewModels.Inventory
     {
         private readonly InventoryService _inventoryService;
 
+        public event EventHandler? GoBackRequested;
         public event EventHandler? CloseRequested;
         public event EventHandler<string>? ShowErrorRequested;
 
@@ -132,7 +133,7 @@ namespace CasaCejaRemake.ViewModels.Inventory
         [RelayCommand]
         private void Close()
         {
-            CloseRequested?.Invoke(this, EventArgs.Empty);
+            GoBackRequested?.Invoke(this, EventArgs.Empty);
         }
     }
 }

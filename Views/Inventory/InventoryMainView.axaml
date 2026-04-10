@@ -123,7 +123,7 @@
             <StackPanel Orientation="Horizontal" Spacing="10" HorizontalAlignment="Center">
                 <Path Fill="#EF9A9A" Width="15" Height="15" Stretch="Uniform"
                       Data="M1,21h22L12,2 1,21z M13,18h-2v-2h2v2z M13,14h-2v-4h2v4z" />
-                <TextBlock Text="Sin conexión — Entradas, Salidas y Confirmaciones están deshabilitadas. Use el botón 'Reintentar conexión' en la barra superior."
+                <TextBlock Text="Sin conexión — Usando modo local. Algunas funciones pueden estar limitadas."
                            Foreground="#FFCDD2"
                            FontSize="12"
                            VerticalAlignment="Center" />
@@ -162,7 +162,6 @@
             <!-- ===== CARD 1: ENTRADA ===== -->
             <Button Grid.Row="0" Grid.Column="0"
                     Command="{Binding OpenEntriesCommand}"
-                    IsEnabled="{Binding IsOnline}"
                     VerticalAlignment="Stretch" HorizontalAlignment="Stretch"
                     BorderBrush="#BBBBBB" BorderThickness="1"
                     CornerRadius="12" Padding="20,25">
@@ -213,7 +212,6 @@
             <!-- ===== CARD 2: SALIDA / TRASPASO ===== -->
             <Button Grid.Row="0" Grid.Column="2"
                     Command="{Binding OpenOutputsCommand}"
-                    IsEnabled="{Binding IsOnline}"
                     VerticalAlignment="Stretch" HorizontalAlignment="Stretch"
                     BorderBrush="#BBBBBB" BorderThickness="1"
                     CornerRadius="12" Padding="20,25">
@@ -264,7 +262,6 @@
             <!-- ===== CARD 3: CONFIRMAR ENTRADA ===== -->
             <Button Grid.Row="0" Grid.Column="4"
                     Command="{Binding OpenConfirmEntryCommand}"
-                    IsEnabled="{Binding IsOnline}"
                     VerticalAlignment="Stretch" HorizontalAlignment="Stretch"
                     BorderBrush="#BBBBBB" BorderThickness="1"
                     CornerRadius="12" Padding="20,25">
