@@ -122,7 +122,11 @@
         </Border>
 
         <!-- Tab content -->
-        <TabControl Grid.Row="1" Background="Transparent" BorderThickness="0">
+        <TabControl Grid.Row="1"
+                x:Name="SectionsTabControl"
+                Background="Transparent"
+                BorderThickness="0"
+                SelectionChanged="OnSectionsTabSelectionChanged">
 
             <!-- ═══ CATEGORÍAS ═══ -->
             <TabItem>

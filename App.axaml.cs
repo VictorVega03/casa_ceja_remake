@@ -48,6 +48,9 @@ namespace CasaCejaRemake
         // Referencia a la ventana actual del inventario
         private InventoryMainView? _currentInventoryView;
 
+        // Referencia al diálogo de categorías/medidas para evitar múltiples instancias
+        private Views.Inventory.CatalogsManagementView? _currentCatalogsManagementView;
+
         public override void Initialize()
         {
             AvaloniaXamlLoader.Load(this);
@@ -478,15 +481,28 @@ namespace CasaCejaRemake
 
             viewModel.CategoriesSelected += (s, e) =>
             {
+                if (_currentCatalogsManagementView != null)
+                {
+                    _currentCatalogsManagementView.Activate();
+                    return;
+                }
+
                 var catalogsViewModel = new ViewModels.Inventory.CatalogsManagementViewModel(_inventoryService!);
                 var catalogsView = new Views.Inventory.CatalogsManagementView
                 {
                     DataContext = catalogsViewModel
                 };
 
+                _currentCatalogsManagementView = catalogsView;
+
                 catalogsViewModel.GoBackRequested += (sender, args) =>
                 {
                     catalogsView.Close();
+                };
+
+                catalogsView.Closed += (sender, args) =>
+                {
+                    _currentCatalogsManagementView = null;
                 };
 
                 catalogsView.ShowDialog(inventoryView);
