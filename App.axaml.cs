@@ -766,9 +766,7 @@ namespace CasaCejaRemake
             viewModel.ProductFormRequested += (s, product) =>
             {
                 Console.WriteLine("[App] Abriendo ProductFormView");
-                var c = s as ViewModels.Inventory.CatalogViewModel;
-                int bId = c != null ? c.CurrentBranchId : 1;
-                var formViewModel = new ViewModels.Inventory.ProductFormViewModel(_inventoryService, bId, product);
+                var formViewModel = new ViewModels.Inventory.ProductFormViewModel(_inventoryService, branchId, product);
                 var formView = new Views.Inventory.ProductFormView
                 {
                     DataContext = formViewModel

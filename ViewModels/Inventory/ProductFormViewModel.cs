@@ -8,6 +8,20 @@ using CasaCejaRemake.Services;
 
 namespace CasaCejaRemake.ViewModels.Inventory
 {
+    /// <summary>
+    /// Producto pendiente en modo captura múltiple, con su cantidad inicial de stock.
+    /// </summary>
+    public class PendingProductEntry
+    {
+        public Product Product { get; set; } = new();
+        public int InitialQty { get; set; }
+
+        public string Barcode => Product.Barcode;
+        public string Name => Product.Name;
+        public string Presentation => Product.Presentation;
+        public decimal PriceRetail => Product.PriceRetail;
+    }
+
     public partial class ProductFormViewModel : ViewModelBase
     {
         private readonly InventoryService _inventoryService;
@@ -66,7 +80,7 @@ namespace CasaCejaRemake.ViewModels.Inventory
 
         public ObservableCollection<Category> Categories { get; } = new();
         public ObservableCollection<Unit> Units { get; } = new();
-        public ObservableCollection<Product> PendingProducts { get; } = new();
+        public ObservableCollection<PendingProductEntry> PendingProducts { get; } = new();
 
         public event EventHandler? SaveCompleted;
         public event EventHandler? CancelRequested;
@@ -82,10 +96,7 @@ namespace CasaCejaRemake.ViewModels.Inventory
             if (product != null)
             {
                 _product = product;
-                Title = "Detalles del Producto";
-                IsReadOnlyView = true;
-                
-                // Copy properties
+                Title = "Editar Producto";
                 Barcode = _product.Barcode;
                 Name = _product.Name;
                 CategoryId = _product.CategoryId;
@@ -110,7 +121,6 @@ namespace CasaCejaRemake.ViewModels.Inventory
 
         private async Task InitializeAsync()
         {
-            // Load Categories and Units
             var categories = await _inventoryService.GetCategoriesAsync();
             Categories.Clear();
             foreach (var c in categories) Categories.Add(c);
@@ -125,8 +135,13 @@ namespace CasaCejaRemake.ViewModels.Inventory
         {
             if (!await ValidateCurrentProductAsync()) return;
 
+            int.TryParse(InitialQuantity, out var initialQty);
             var p = CreateProductFromForm();
-            PendingProducts.Add(p);
+            PendingProducts.Add(new PendingProductEntry
+            {
+                Product = p,
+                InitialQty = initialQty
+            });
             ClearForm();
             StatusMessage = $"Añadido a la lista de pendientes ({PendingProducts.Count} productos).";
         }
@@ -151,7 +166,6 @@ namespace CasaCejaRemake.ViewModels.Inventory
                 return false;
             }
 
-            // Mismo código en la DB
             bool isUnique = await _inventoryService.IsBarcodeUniqueAsync(Barcode, _product.Id);
             if (!isUnique)
             {
@@ -159,7 +173,6 @@ namespace CasaCejaRemake.ViewModels.Inventory
                 return false;
             }
 
-            // Validar que el código no exista en la lista actual de pendientes
             foreach (var existing in PendingProducts)
             {
                 if (existing.Barcode == Barcode)
@@ -182,13 +195,13 @@ namespace CasaCejaRemake.ViewModels.Inventory
                 CategoryId = CategoryId,
                 UnitId = UnitId,
                 Presentation = Presentation,
-                Iva = 16.0m, // IVA FIJO 16%
+                Iva = 16.0m,
                 PriceRetail = decimal.TryParse(PriceRetail, out var pr) ? pr : 0,
                 PriceWholesale = decimal.TryParse(PriceWholesale, out var pw) ? pw : 0,
                 WholesaleQuantity = int.TryParse(WholesaleQuantity, out var wq) ? wq : 1,
                 PriceSpecial = decimal.TryParse(PriceSpecial, out var ps) ? ps : 0,
                 PriceDealer = decimal.TryParse(PriceDealer, out var pd) ? pd : 0,
-                Active = true // SIEMPRE ACTIVO AUNQUE SE ELIMINE SEGÚN REQUERIMIENTOS
+                Active = true
             };
         }
 
@@ -203,15 +216,14 @@ namespace CasaCejaRemake.ViewModels.Inventory
             PriceSpecial = "0";
             PriceDealer = "0";
             InitialQuantity = "0";
-            // Opcional: limpiar catego y medida, o dejarlos para que se hagan capturas más rápidas
         }
 
         [RelayCommand]
-        private void RemoveFromList(Product product)
+        private void RemoveFromList(PendingProductEntry? entry)
         {
-            if (product != null)
+            if (entry != null)
             {
-                PendingProducts.Remove(product);
+                PendingProducts.Remove(entry);
                 StatusMessage = $"Producto removido. ({PendingProducts.Count} productos).";
             }
         }
@@ -234,13 +246,13 @@ namespace CasaCejaRemake.ViewModels.Inventory
                         return;
                     }
 
-                    // Guardar todos los pendientes
-                    foreach (var pending in PendingProducts)
+                    foreach (var pendingEntry in PendingProducts)
                     {
-                        int newId = await _inventoryService.SaveProductAsync(pending);
-                        if (int.TryParse(InitialQuantity, out var qty) && qty > 0)
+                        int newId = await _inventoryService.SaveProductAsync(pendingEntry.Product);
+                        if (pendingEntry.InitialQty > 0)
                         {
-                            await _inventoryService.SetProductStockAsync(newId > 0 ? newId : pending.Id, _currentBranchId, qty);
+                            int savedId = newId > 0 ? newId : pendingEntry.Product.Id;
+                            await _inventoryService.SetProductStockAsync(savedId, _currentBranchId, pendingEntry.InitialQty);
                         }
                     }
                     StatusMessage = $"{PendingProducts.Count} productos guardados.";

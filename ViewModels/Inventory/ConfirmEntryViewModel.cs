@@ -68,11 +68,17 @@ namespace CasaCejaRemake.ViewModels.Inventory
             try
             {
                 var entries = await _inventoryService.GetPendingEntriesAsync(_branchId);
-                PendingEntries.Clear();
+                
+                // Un solo query para todos los proveedores — evita N+1
+                var supplierMap = await _inventoryService.GetSupplierNameMapAsync();
 
+                PendingEntries.Clear();
                 foreach (var e in entries.OrderByDescending(x => x.EntryDate))
                 {
-                    var supplierName = await _inventoryService.GetSupplierNameAsync(e.SupplierId);
+                    var supplierName = e.SupplierId > 0
+                        ? (supplierMap.TryGetValue(e.SupplierId, out var name) ? name : "Desconocido")
+                        : "Sin proveedor";
+
                     PendingEntries.Add(new PendingEntryItem
                     {
                         Id = e.Id,
@@ -107,21 +113,13 @@ namespace CasaCejaRemake.ViewModels.Inventory
         /// </summary>
         public async Task DoConfirmEntryAsync(PendingEntryItem entry)
         {
-            IsConfirming = true;
-            try
-            {
-                await _inventoryService.ConfirmEntryAsync(entry.Id, _userId);
-                PendingEntries.Remove(entry);
-                ShowMessageRequested?.Invoke(this, $"Entrada {entry.Folio} confirmada correctamente.");
-            }
-            catch (Exception ex)
-            {
-                ShowMessageRequested?.Invoke(this, $"Error al confirmar: {ex.Message}");
-            }
-            finally
-            {
-                IsConfirming = false;
-            }
+            // FASE 3: La confirmación de traspasos requiere integración con el servidor Laravel.
+            // El servidor valida las cantidades y aplica el stock en ambas sucursales.
+            ShowMessageRequested?.Invoke(this,
+                "Confirmar traspasos requiere conexión al servidor.\n" +
+                "Esta funcionalidad estará disponible próximamente.");
+
+            await Task.CompletedTask;
         }
 
         [RelayCommand]

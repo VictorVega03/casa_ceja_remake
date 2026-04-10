@@ -47,6 +47,15 @@ namespace CasaCejaRemake.Models
         [Indexed(Name = "IX_StockEntries_Date")]
         public DateTime EntryDate { get; set; } = DateTime.Now;
 
+        // ========== TIPO DE ENTRADA ==========
+        /// <summary>
+        /// PURCHASE = compra a proveedor (manual, offline permitido).
+        /// TRANSFER = traspaso recibido automáticamente desde el servidor.
+        /// </summary>
+        [Column("entry_type")]
+        [MaxLength(20)]
+        public string EntryType { get; set; } = StockEntryType.Purchase;
+
         // ========== OBSERVACIONES ==========
         [Column("notes")]
         [MaxLength(500)]

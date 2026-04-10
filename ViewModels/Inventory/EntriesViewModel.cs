@@ -229,6 +229,7 @@ namespace CasaCejaRemake.ViewModels.Inventory
                     BranchId = _branchId,
                     SupplierId = SelectedSupplier?.Id ?? 0,
                     UserId = _userId,
+                    EntryType = StockEntryType.Purchase,
                     TotalAmount = TotalAmount,
                     EntryDate = EntryDate?.DateTime ?? DateTime.Now,
                     Notes = string.IsNullOrWhiteSpace(Notes) ? null : Notes.Trim()

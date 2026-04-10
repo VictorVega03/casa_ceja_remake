@@ -61,12 +61,9 @@ namespace CasaCejaRemake.ViewModels.Inventory
         public event EventHandler<Product?>? ProductFormRequested;
         public event EventHandler<Product>? ProductDetailRequested;
 
-        public int CurrentBranchId { get; }
-
         public CatalogViewModel(InventoryService inventoryService, int branchId)
         {
             _inventoryService = inventoryService;
-            CurrentBranchId = branchId;
             _currentBranchId = branchId;
             
             _ = InitializeAsync();

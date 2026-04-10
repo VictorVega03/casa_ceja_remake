@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace CasaCejaRemake.ViewModels.Inventory
 {
-    public partial class HistoryItem
+    public class HistoryItem
     {
         public string Folio { get; set; } = string.Empty;
         public string Tipo { get; set; } = string.Empty; // "ENTRADA" o "SALIDA"
@@ -97,12 +97,18 @@ namespace CasaCejaRemake.ViewModels.Inventory
 
                 _allItems.Clear();
 
+                // Un solo query por catálogo — evita N+1
+                var supplierMap = await _inventoryService.GetSupplierNameMapAsync();
+                var branchMap = await _inventoryService.GetBranchNameMapAsync();
+
                 if (SelectedFilterIndex == 0 || SelectedFilterIndex == 1)
                 {
                     var entries = await _inventoryService.GetEntriesAsync(_currentBranchId, start, end);
                     foreach (var e in entries)
                     {
-                        var supplierName = e.SupplierId > 0 ? await _inventoryService.GetSupplierNameAsync(e.SupplierId) : "Desconocido";
+                        var supplierName = e.SupplierId > 0
+                            ? (supplierMap.TryGetValue(e.SupplierId, out var name) ? name : "Desconocido")
+                            : "Sin proveedor";
                         _allItems.Add(new HistoryItem
                         {
                             Folio = e.Folio,
@@ -110,7 +116,7 @@ namespace CasaCejaRemake.ViewModels.Inventory
                             Fecha = e.EntryDate,
                             DestinoOrigen = $"Proveedor: {supplierName}",
                             Total = e.TotalAmount,
-                            Estado = "CONFIRMADO", 
+                            Estado = "CONFIRMADO",
                             Entry = e
                         });
                     }
@@ -121,7 +127,7 @@ namespace CasaCejaRemake.ViewModels.Inventory
                     var outputs = await _inventoryService.GetOutputsAsync(_currentBranchId, start, end);
                     foreach (var o in outputs)
                     {
-                        var branchName = await _inventoryService.GetBranchNameAsync(o.DestinationBranchId);
+                        var branchName = branchMap.TryGetValue(o.DestinationBranchId, out var bName) ? bName : "Desconocido";
                         _allItems.Add(new HistoryItem
                         {
                             Folio = o.Folio,

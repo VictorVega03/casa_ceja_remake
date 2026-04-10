@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using CasaCejaRemake.Data.Repositories;
 using CasaCejaRemake.Models;
@@ -360,7 +361,29 @@ namespace CasaCejaRemake.Services
         public async Task<List<StockEntry>> GetPendingEntriesAsync(int branchId)
         {
             return await _entryRepo.FindAsync(
-                x => x.BranchId == branchId && x.ConfirmedAt == null);
+                x => x.BranchId == branchId
+                  && x.EntryType == StockEntryType.Transfer
+                  && x.ConfirmedAt == null);
+        }
+
+        /// <summary>
+        /// Carga los nombres de todos los proveedores en un solo query.
+        /// Úsalo antes de iterar una lista de entradas para evitar N+1.
+        /// </summary>
+        public async Task<Dictionary<int, string>> GetSupplierNameMapAsync()
+        {
+            var suppliers = await _supplierRepo.GetAllAsync();
+            return suppliers.ToDictionary(s => s.Id, s => s.Name);
+        }
+
+        /// <summary>
+        /// Carga los nombres de todas las sucursales en un solo query.
+        /// Úsalo antes de iterar una lista de salidas para evitar N+1.
+        /// </summary>
+        public async Task<Dictionary<int, string>> GetBranchNameMapAsync()
+        {
+            var branches = await _branchRepo.GetAllAsync();
+            return branches.ToDictionary(b => b.Id, b => b.Name);
         }
 
         /// <summary>

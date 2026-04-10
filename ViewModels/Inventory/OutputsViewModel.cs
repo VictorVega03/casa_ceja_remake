@@ -216,56 +216,14 @@ namespace CasaCejaRemake.ViewModels.Inventory
         [RelayCommand]
         private async Task SaveOutputAsync()
         {
-            if (Lines.Count == 0)
-            {
-                ShowMessageRequested?.Invoke(this, "Agrega al menos un producto a la salida antes de guardar.");
-                return;
-            }
+            // FASE 3: Este flujo requiere integración con el servidor Laravel.
+            // El servidor valida el stock, registra la salida y crea la entrada
+            // pendiente en la sucursal destino. Por ahora se muestra aviso.
+            ShowMessageRequested?.Invoke(this,
+                "Las salidas entre sucursales requieren conexión al servidor.\n" +
+                "Esta funcionalidad estará disponible próximamente.");
 
-            if (SelectedDestination == null)
-            {
-                ShowMessageRequested?.Invoke(this, "Selecciona una sucursal destino antes de guardar.");
-                return;
-            }
-
-            IsSaving = true;
-            try
-            {
-                var folio = await _folioService.GenerarFolioSalidaAsync(_branchId);
-
-                var output = new StockOutput
-                {
-                    Folio = folio,
-                    OriginBranchId = _branchId,
-                    DestinationBranchId = SelectedDestination.Id,
-                    UserId = _userId,
-                    TotalAmount = TotalAmount,
-                    OutputDate = OutputDate?.DateTime ?? DateTime.Now,
-                    Notes = string.IsNullOrWhiteSpace(Notes) ? null : Notes.Trim(),
-                    Status = "PENDING"
-                };
-
-                var products = Lines.Select(l => new OutputProduct
-                {
-                    ProductId = l.ProductId,
-                    Barcode = l.Barcode,
-                    ProductName = l.ProductName,
-                    Quantity = l.Quantity,
-                    UnitCost = l.UnitCost,
-                    LineTotal = l.LineTotal
-                }).ToList();
-
-                await _inventoryService.CreateOutputAsync(output, products);
-                GoBackRequested?.Invoke(this, EventArgs.Empty);
-            }
-            catch (Exception ex)
-            {
-                ShowMessageRequested?.Invoke(this, $"Error al guardar la salida: {ex.Message}");
-            }
-            finally
-            {
-                IsSaving = false;
-            }
+            await Task.CompletedTask;
         }
 
         [RelayCommand]
