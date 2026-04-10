@@ -45,6 +45,8 @@ namespace CasaCejaRemake.ViewModels.Inventory
         // ── Eventos de navegación ──────────────────────────────────────────
         public event EventHandler? GoBackRequested;
         public event EventHandler<string>? ShowMessageRequested;
+        public event EventHandler<string>? OpenPosCatalogRequested;
+        public event EventHandler<OutputLineItem>? ProductAddedOrUpdated;
 
         // ── Colecciones ───────────────────────────────────────────────────
         public ObservableCollection<Branch> Branches { get; } = new();
@@ -146,6 +148,7 @@ namespace CasaCejaRemake.ViewModels.Inventory
                 if (results.Count == 0)
                 {
                     SearchError = $"No se encontró ningún producto con: \"{term}\"";
+                    OpenPosCatalogRequested?.Invoke(this, term);
                     return;
                 }
 
@@ -174,10 +177,12 @@ namespace CasaCejaRemake.ViewModels.Inventory
             if (existing != null)
             {
                 existing.Quantity++;
+                SelectedLine = existing;
+                ProductAddedOrUpdated?.Invoke(this, existing);
             }
             else
             {
-                Lines.Add(new OutputLineItem
+                var newLine = new OutputLineItem
                 {
                     ProductId = product.Id,
                     Barcode = product.Barcode,
@@ -185,8 +190,46 @@ namespace CasaCejaRemake.ViewModels.Inventory
                     Quantity = 1,
                     UnitCost = 0m,
                     CurrentStock = stock
-                });
+                };
+
+                Lines.Add(newLine);
+                SelectedLine = newLine;
+                ProductAddedOrUpdated?.Invoke(this, newLine);
             }
+        }
+
+        [RelayCommand]
+        private void OpenCatalog()
+        {
+            OpenPosCatalogRequested?.Invoke(this, SearchTerm?.Trim() ?? string.Empty);
+        }
+
+        public async Task AddProductFromPosCatalogAsync(Product product, int quantity)
+        {
+            var stock = await _inventoryService.GetProductStockAsync(product.Id, _branchId);
+            var existing = Lines.FirstOrDefault(l => l.ProductId == product.Id);
+
+            if (existing != null)
+            {
+                existing.Quantity += Math.Max(1, quantity);
+                SelectedLine = existing;
+                ProductAddedOrUpdated?.Invoke(this, existing);
+                return;
+            }
+
+            var newLine = new OutputLineItem
+            {
+                ProductId = product.Id,
+                Barcode = product.Barcode,
+                ProductName = product.Name,
+                Quantity = Math.Max(1, quantity),
+                UnitCost = 0m,
+                CurrentStock = stock
+            };
+
+            Lines.Add(newLine);
+            SelectedLine = newLine;
+            ProductAddedOrUpdated?.Invoke(this, newLine);
         }
 
         // ── Comandos de líneas ────────────────────────────────────────────

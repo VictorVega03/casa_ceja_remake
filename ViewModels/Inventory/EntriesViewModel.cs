@@ -43,6 +43,8 @@ namespace CasaCejaRemake.ViewModels.Inventory
         // ── Eventos de navegación ──────────────────────────────────────────
         public event EventHandler? GoBackRequested;
         public event EventHandler<string>? ShowMessageRequested;
+        public event EventHandler<string>? OpenPosCatalogRequested;
+        public event EventHandler<EntryLineItem>? ProductAddedOrUpdated;
 
         // ── Colecciones ───────────────────────────────────────────────────
         public ObservableCollection<Supplier> Suppliers { get; } = new();
@@ -113,17 +115,24 @@ namespace CasaCejaRemake.ViewModels.Inventory
             {
                 var list = await _inventoryService.GetSuppliersAsync();
                 Suppliers.Clear();
-                Suppliers.Add(new Supplier { Id = 0, Name = "Sin proveedor" });
                 foreach (var s in list.OrderBy(x => x.Name))
                     Suppliers.Add(s);
-                SelectedSupplier = Suppliers[0];
+
+                if (Suppliers.Count > 0)
+                {
+                    SelectedSupplier = Suppliers[0];
+                }
+                else
+                {
+                    SelectedSupplier = null;
+                    ShowMessageRequested?.Invoke(this, "No hay proveedores disponibles. Debes crear al menos uno para registrar entradas.");
+                }
             }
             catch (Exception ex)
             {
                 Suppliers.Clear();
-                Suppliers.Add(new Supplier { Id = 0, Name = "Sin proveedor" });
-                SelectedSupplier = Suppliers[0];
-                ShowMessageRequested?.Invoke(this, $"Modo sin conexión: no se pudo cargar proveedores ({ex.Message}).");
+                SelectedSupplier = null;
+                ShowMessageRequested?.Invoke(this, $"No se pudieron cargar proveedores ({ex.Message}). El proveedor es obligatorio para guardar entradas.");
             }
         }
 
@@ -145,6 +154,7 @@ namespace CasaCejaRemake.ViewModels.Inventory
                 if (results.Count == 0)
                 {
                     SearchError = $"No se encontró ningún producto con: \"{term}\"";
+                    OpenPosCatalogRequested?.Invoke(this, term);
                     return;
                 }
 
@@ -172,18 +182,55 @@ namespace CasaCejaRemake.ViewModels.Inventory
             if (existing != null)
             {
                 existing.Quantity++;
+                SelectedLine = existing;
+                ProductAddedOrUpdated?.Invoke(this, existing);
             }
             else
             {
-                Lines.Add(new EntryLineItem
+                var newLine = new EntryLineItem
                 {
                     ProductId = product.Id,
                     Barcode = product.Barcode,
                     ProductName = product.Name,
                     Quantity = 1,
                     UnitCost = 0m   // El usuario captura el costo de compra
-                });
+                };
+
+                Lines.Add(newLine);
+                SelectedLine = newLine;
+                ProductAddedOrUpdated?.Invoke(this, newLine);
             }
+        }
+
+        [RelayCommand]
+        private void OpenCatalog()
+        {
+            OpenPosCatalogRequested?.Invoke(this, SearchTerm?.Trim() ?? string.Empty);
+        }
+
+        public void AddProductFromPosCatalog(Product product, int quantity)
+        {
+            var existing = Lines.FirstOrDefault(l => l.ProductId == product.Id);
+            if (existing != null)
+            {
+                existing.Quantity += Math.Max(1, quantity);
+                SelectedLine = existing;
+                ProductAddedOrUpdated?.Invoke(this, existing);
+                return;
+            }
+
+            var newLine = new EntryLineItem
+            {
+                ProductId = product.Id,
+                Barcode = product.Barcode,
+                ProductName = product.Name,
+                Quantity = Math.Max(1, quantity),
+                UnitCost = 0m
+            };
+
+            Lines.Add(newLine);
+            SelectedLine = newLine;
+            ProductAddedOrUpdated?.Invoke(this, newLine);
         }
 
         // ── Comandos de líneas ────────────────────────────────────────────
@@ -212,6 +259,12 @@ namespace CasaCejaRemake.ViewModels.Inventory
         [RelayCommand]
         private async Task SaveEntryAsync()
         {
+            if (SelectedSupplier == null)
+            {
+                ShowMessageRequested?.Invoke(this, "Selecciona un proveedor para guardar la entrada.");
+                return;
+            }
+
             if (Lines.Count == 0)
             {
                 ShowMessageRequested?.Invoke(this, "Agrega al menos un producto a la entrada antes de guardar.");
@@ -227,7 +280,7 @@ namespace CasaCejaRemake.ViewModels.Inventory
                 {
                     Folio = folio,
                     BranchId = _branchId,
-                    SupplierId = SelectedSupplier?.Id ?? 0,
+                    SupplierId = SelectedSupplier.Id,
                     UserId = _userId,
                     EntryType = StockEntryType.Purchase,
                     TotalAmount = TotalAmount,

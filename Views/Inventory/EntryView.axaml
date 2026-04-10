@@ -122,7 +122,7 @@
     <Grid RowDefinitions="Auto,*,Auto">
 
         <!-- ═══ HEADER ═══ -->
-        <Border Grid.Row="0" Background="#1C1C1C" BorderBrush="#2A2A2A" BorderThickness="0,0,0,1" Padding="28,18">
+        <Border Grid.Row="0" Background="#2D2D2D" BorderBrush="#3A3A3A" BorderThickness="0,0,0,1" Padding="28,18">
             <Grid ColumnDefinitions="Auto,*,Auto">
                 <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="14" VerticalAlignment="Center">
                     <Button Classes="icon-btn" Command="{Binding CancelCommand}" ToolTip.Tip="Cancelar (Esc)" CornerRadius="4">
@@ -130,10 +130,10 @@
                     </Button>
                     <Border Width="5" Height="24" CornerRadius="2" Background="#FF9800"/>
                     <TextBlock Text="ENTRADA DE MERCANCÍA" FontSize="20" FontWeight="Bold" Foreground="White" VerticalAlignment="Center"/>
-                    <Border Background="#1B3A1D" CornerRadius="4" Padding="10,4" VerticalAlignment="Center"
+                    <Border Background="#3A250A" CornerRadius="4" Padding="10,4" VerticalAlignment="Center"
                             IsVisible="{Binding HasLines}">
                         <TextBlock Text="{Binding Lines.Count, StringFormat='{}{0} productos'}"
-                                   FontSize="12" FontWeight="Bold" Foreground="#4CAF50"/>
+                                   FontSize="12" FontWeight="Bold" Foreground="#FF9800"/>
                     </Border>
                 </StackPanel>
 
@@ -220,7 +220,7 @@
                     <StackPanel Spacing="8">
                         <TextBlock Text="BUSCAR Y AGREGAR PRODUCTO" FontSize="12" FontWeight="Bold"
                                    Foreground="#FF9800" LetterSpacing="1"/>
-                        <Grid ColumnDefinitions="*,Auto">
+                        <Grid ColumnDefinitions="*,Auto,Auto">
                             <TextBox Grid.Column="0"
                                      x:Name="SearchBox"
                                      Text="{Binding SearchTerm}"
@@ -233,6 +233,14 @@
                                     Padding="22,10" CornerRadius="6"
                                     FontWeight="SemiBold" Cursor="Hand">
                                 Agregar
+                            </Button>
+                            <Button Grid.Column="2"
+                                    Command="{Binding OpenCatalogCommand}"
+                                    Margin="10,0,0,0"
+                                    Background="#2F5D8A" Foreground="White"
+                                    Padding="20,10" CornerRadius="6"
+                                    FontWeight="SemiBold" Cursor="Hand">
+                                Catálogo (F3)
                             </Button>
                         </Grid>
                         <!-- Error de búsqueda -->
@@ -277,7 +285,7 @@
                                             Width="*" IsReadOnly="True"/>
 
                         <!-- Cantidad (editable) -->
-                        <DataGridTemplateColumn Header="CANTIDAD" Width="140">
+                        <DataGridTemplateColumn Header="CANTIDAD" Width="130">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
                                     <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center" HorizontalAlignment="Center">
@@ -286,9 +294,15 @@
                                                 CommandParameter="{Binding}">
                                             <TextBlock Text="−" FontSize="16" Foreground="#BDBDBD"/>
                                         </Button>
-                                        <TextBlock Text="{Binding Quantity}" FontSize="16" FontWeight="SemiBold"
-                                                   Foreground="White" VerticalAlignment="Center" Width="40"
-                                                   TextAlignment="Center"/>
+                                        <TextBox Text="{Binding Quantity, Mode=TwoWay}"
+                                                 Width="46"
+                                                 Padding="0"
+                                                 FontSize="15"
+                                                 FontWeight="SemiBold"
+                                                 HorizontalContentAlignment="Center"
+                                                 VerticalContentAlignment="Center"
+                                                 Background="#2A2A2A"
+                                                 BorderBrush="#3A3A3A"/>
                                         <Button Classes="icon-btn" CornerRadius="4"
                                                 Command="{Binding DataContext.IncrementQtyCommand, RelativeSource={RelativeSource AncestorType=Window}}"
                                                 CommandParameter="{Binding}">
@@ -302,11 +316,12 @@
                         <!-- Costo unitario (editable) -->
                         <DataGridTextColumn Header="COSTO UNIT." 
                                             Binding="{Binding UnitCost, Converter={StaticResource DecimalInputConverter}}"
-                                            Width="150"/>
+                                            Width="140"
+                                            IsReadOnly="True"/>
 
                         <!-- Total línea (readonly) -->
                         <DataGridTextColumn Header="TOTAL LÍNEA" Binding="{Binding LineTotal, StringFormat={}{0:C}}"
-                                            Width="150" IsReadOnly="True"/>
+                                            Width="140" IsReadOnly="True"/>
 
                         <!-- Eliminar -->
                         <DataGridTemplateColumn Header="" Width="64" CanUserResize="False">
@@ -331,7 +346,7 @@
         <Border Grid.Row="2" Background="#1C1C1C" BorderBrush="#2A2A2A" BorderThickness="0,1,0,0" Padding="28,18">
             <Grid ColumnDefinitions="*,Auto">
                 <TextBlock Grid.Column="0"
-                           Text="Esc: Cancelar   |   Los costos unitarios son editables en la tabla"
+                           Text="Esc: Salir   |   F3: Catálogo   |   Flechas ←/→: Ajustar cantidad"
                            FontSize="13" Foreground="#444" VerticalAlignment="Center"/>
                 <Button Grid.Column="1"
                         Classes="action-save"
