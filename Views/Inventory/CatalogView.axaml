@@ -59,28 +59,28 @@
                 Background="#2D2D2D"
                 BorderBrush="#3A3A3A"
                 BorderThickness="0,0,0,1"
-                Padding="20,15">
+                Padding="16,10">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
 
-                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="15" VerticalAlignment="Center">
+                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
                     <Button Command="{Binding GoBackCommand}"
                             Background="Transparent"
                             BorderThickness="0"
                             ToolTip.Tip="Volver al Menú Principal (Esc)">
-                        <StackPanel Orientation="Horizontal" Spacing="5">
-                            <TextBlock Text="←" FontSize="18" Foreground="#1E88E5" VerticalAlignment="Center"/>
-                            <TextBlock Text="Catálogo" FontSize="20" FontWeight="Bold" Foreground="#FFFFFF" VerticalAlignment="Center"/>
+                        <StackPanel Orientation="Horizontal" Spacing="4">
+                            <TextBlock Text="←" FontSize="14" Foreground="#1E88E5" VerticalAlignment="Center"/>
+                            <TextBlock Text="Catálogo" FontSize="15" FontWeight="Bold" Foreground="#FFFFFF" VerticalAlignment="Center"/>
                         </StackPanel>
                     </Button>
 
-                    <Border Width="1" Height="30" Background="#4A4A4A" VerticalAlignment="Center" Margin="5,0"/>
+                    <Border Width="1" Height="24" Background="#4A4A4A" VerticalAlignment="Center" Margin="2,0"/>
 
                     <TextBox Text="{Binding SearchTerm}"
-                             Width="300"
+                             Width="220"
                              Watermark="Buscar por código o nombre..."
                              VerticalAlignment="Center">
                         <TextBox.KeyBindings>
@@ -91,7 +91,7 @@
                     <ComboBox ItemsSource="{Binding Categories}"
                               SelectedValue="{Binding SelectedCategoryId}"
                               SelectedValueBinding="{Binding Id}"
-                              Width="200"
+                              Width="155"
                               VerticalAlignment="Center">
                         <ComboBox.ItemTemplate>
                             <DataTemplate>
@@ -103,7 +103,7 @@
                     <ComboBox ItemsSource="{Binding Units}"
                               SelectedValue="{Binding SelectedUnitId}"
                               SelectedValueBinding="{Binding Id}"
-                              Width="150"
+                              Width="115"
                               VerticalAlignment="Center">
                         <ComboBox.ItemTemplate>
                             <DataTemplate>
@@ -115,21 +115,21 @@
                     <Button Command="{Binding SearchCommand}"
                             Background="#1565C0"
                             Foreground="White"
-                            Padding="12,6"
+                            Padding="10,5"
                             CornerRadius="4"
                             VerticalAlignment="Center"
-                            ToolTip.Tip="Atajo: F5">
-                        <TextBlock Text="Buscar (F5)" />
+                            ToolTip.Tip="Buscar (F5)">
+                        <TextBlock Text="Buscar" FontSize="13"/>
                     </Button>
 
                     <Button Command="{Binding ClearSearchCommand}"
                             Background="#424242"
                             Foreground="White"
-                            Padding="12,6"
+                            Padding="10,5"
                             CornerRadius="4"
                             VerticalAlignment="Center"
-                            ToolTip.Tip="Atajo: F4">
-                        <TextBlock Text="Limpiar (F4)" />
+                            ToolTip.Tip="Limpiar (F4)">
+                        <TextBlock Text="Limpiar" FontSize="13"/>
                     </Button>
                 </StackPanel>
 
@@ -137,13 +137,13 @@
                     <Button Command="{Binding CreateProductCommand}"
                             Background="#2E7D32"
                             Foreground="White"
-                            Padding="15,8"
+                            Padding="12,7"
                             CornerRadius="4"
                             FontWeight="Bold"
                             ToolTip.Tip="Atajo: F2">
-                        <StackPanel Orientation="Horizontal" Spacing="5">
-                            <TextBlock Text="+" FontSize="16" />
-                            <TextBlock Text="Nuevo Producto (F2)" VerticalAlignment="Center" />
+                        <StackPanel Orientation="Horizontal" Spacing="4">
+                            <TextBlock Text="+" FontSize="14" />
+                            <TextBlock Text="Nuevo Producto (F2)" FontSize="13" VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
                 </StackPanel>
@@ -151,7 +151,7 @@
         </Border>
 
         <!-- ==================== DATAGRID ==================== -->
-        <Border Grid.Row="1" Margin="20" Background="#252525" CornerRadius="8" BorderBrush="#3A3A3A" BorderThickness="1" ClipToBounds="True">
+        <Border Grid.Row="1" Margin="12" Background="#252525" CornerRadius="8" BorderBrush="#3A3A3A" BorderThickness="1" ClipToBounds="True">
             <DataGrid ItemsSource="{Binding SearchResults}"
                       SelectedItem="{Binding SelectedProduct}"
                       AutoGenerateColumns="False"
@@ -171,7 +171,7 @@
         </Border>
 
         <!-- ==================== Paginación y Estado ==================== -->
-        <Border Grid.Row="2" Background="#2D2D2D" BorderBrush="#3A3A3A" BorderThickness="0,1,0,0" Padding="20,10">
+        <Border Grid.Row="2" Background="#2D2D2D" BorderBrush="#3A3A3A" BorderThickness="0,1,0,0" Padding="16,8">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />

@@ -64,33 +64,33 @@
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="GridLinesVisibility" Value="Horizontal"/>
             <Setter Property="HorizontalGridLinesBrush" Value="#252525"/>
-            <Setter Property="RowHeight" Value="52"/>
+            <Setter Property="RowHeight" Value="40"/>
         </Style>
         <Style Selector="DataGridColumnHeader">
             <Setter Property="Background" Value="#1A1A1A"/>
             <Setter Property="Foreground" Value="#888"/>
             <Setter Property="FontSize" Value="11"/>
             <Setter Property="FontWeight" Value="Bold"/>
-            <Setter Property="Padding" Value="12,8"/>
+            <Setter Property="Padding" Value="10,6"/>
         </Style>
         <Style Selector="DataGridCell">
-            <Setter Property="Padding" Value="12,0"/>
+            <Setter Property="Padding" Value="10,0"/>
             <Setter Property="Foreground" Value="#E0E0E0"/>
-            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontSize" Value="12"/>
         </Style>
     </Window.Styles>
 
     <Grid RowDefinitions="Auto,*,Auto">
 
         <!-- ═══ HEADER ═══ -->
-        <Border Grid.Row="0" Background="#1C1C1C" BorderBrush="#2A2A2A" BorderThickness="0,0,0,1" Padding="20,13">
+        <Border Grid.Row="0" Background="#1C1C1C" BorderBrush="#2A2A2A" BorderThickness="0,0,0,1" Padding="18,10">
             <Grid ColumnDefinitions="Auto,*,Auto">
-                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
+                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
                     <Button Classes="icon-btn" Command="{Binding GoBackCommand}" ToolTip.Tip="Volver (Esc)" CornerRadius="4">
-                        <TextBlock Text="←" FontSize="18" Foreground="#1976D2" FontWeight="Bold"/>
+                        <TextBlock Text="←" FontSize="15" Foreground="#1976D2" FontWeight="Bold"/>
                     </Button>
-                    <Border Width="4" Height="20" CornerRadius="2" Background="#1976D2"/>
-                    <TextBlock Text="CONFIRMAR ENTRADA DE MERCANCÍA" FontSize="18" FontWeight="Bold" Foreground="White" VerticalAlignment="Center"/>
+                    <Border Width="4" Height="18" CornerRadius="2" Background="#1976D2"/>
+                    <TextBlock Text="CONFIRMAR ENTRADA DE MERCANCÍA" FontSize="16" FontWeight="Bold" Foreground="White" VerticalAlignment="Center"/>
                     <Border Background="#0D2A4A" CornerRadius="4" Padding="8,3" VerticalAlignment="Center"
                             IsVisible="{Binding HasPending}">
                         <TextBlock Text="{Binding PendingEntries.Count, StringFormat='{}{0} pendientes'}"
@@ -122,23 +122,23 @@
 
             <!-- Sin pendientes -->
             <Border IsVisible="{Binding !HasPending}" HorizontalAlignment="Center" VerticalAlignment="Center">
-                <StackPanel Spacing="16" HorizontalAlignment="Center">
-                    <Border Width="106" Height="106" CornerRadius="53" Background="#0D2A1A" BorderBrush="#1E5E3A" BorderThickness="2" HorizontalAlignment="Center">
+                <StackPanel Spacing="12" HorizontalAlignment="Center">
+                    <Border Width="84" Height="84" CornerRadius="42" Background="#0D2A1A" BorderBrush="#1E5E3A" BorderThickness="2" HorizontalAlignment="Center">
                         <Grid>
-                            <Canvas Width="64" Height="64" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                <Path Data="M 10 34 L 24 48 L 52 20"
+                            <Canvas Width="50" Height="50" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <Path Data="M 8 27 L 19 38 L 41 16"
                                       Stroke="#66BB6A"
-                                      StrokeThickness="7"
+                                      StrokeThickness="5"
                                       StrokeLineCap="Round"
-                                      Width="64"
-                                      Height="64"/>
+                                      Width="50"
+                                      Height="50"/>
                             </Canvas>
                         </Grid>
                     </Border>
                     <TextBlock Text="No hay entradas pendientes de confirmación"
-                               FontSize="18" Foreground="#555" HorizontalAlignment="Center"/>
+                               FontSize="15" Foreground="#555" HorizontalAlignment="Center"/>
                     <TextBlock Text="Todas las entradas de esta sucursal ya fueron confirmadas."
-                               FontSize="13" Foreground="#444" HorizontalAlignment="Center"/>
+                               FontSize="12" Foreground="#444" HorizontalAlignment="Center"/>
                 </StackPanel>
             </Border>
 
@@ -225,11 +225,11 @@
         </Grid>
 
         <!-- ═══ FOOTER ═══ -->
-        <Border Grid.Row="2" Background="#1C1C1C" BorderBrush="#2A2A2A" BorderThickness="0,1,0,0" Padding="20,14">
+        <Border Grid.Row="2" Background="#1C1C1C" BorderBrush="#2A2A2A" BorderThickness="0,1,0,0" Padding="18,10">
             <Grid>
                 <TextBlock
                     Text="Esc: Volver   |   Confirma la entrada para registrar la mercancía como recibida"
-                    FontSize="12" Foreground="#444" VerticalAlignment="Center"/>
+                    FontSize="11" Foreground="#444" VerticalAlignment="Center"/>
             </Grid>
         </Border>
     </Grid>

@@ -43,6 +43,24 @@ namespace CasaCejaRemake.Views.Inventory
                         Close();
                     }
                 };
+
+                // Maximizar automáticamente cuando se activa modo "Agregar Varios"
+                vm.PropertyChanged += (s, args) =>
+                {
+                    if (args.PropertyName == nameof(ProductFormViewModel.IsMultipleMode))
+                    {
+                        if (vm.IsMultipleMode)
+                        {
+                            SizeToContent = Avalonia.Controls.SizeToContent.Manual;
+                            WindowState = Avalonia.Controls.WindowState.Maximized;
+                        }
+                        else
+                        {
+                            WindowState = Avalonia.Controls.WindowState.Normal;
+                            SizeToContent = Avalonia.Controls.SizeToContent.WidthAndHeight;
+                        }
+                    }
+                };
             }
         }
 
