@@ -159,7 +159,8 @@ namespace CasaCejaRemake.ViewModels.Inventory
                     p.Barcode.Equals(term, StringComparison.OrdinalIgnoreCase));
                 var product = exact ?? results[0];
 
-                var stock = await _inventoryService.GetProductStockAsync(product.Id, _branchId);
+                var (stockItems, _) = await _inventoryService.GetStockByProductAsync(product.Id, product.Barcode);
+                var stock = stockItems.FirstOrDefault(s => s.BranchId == _branchId)?.Quantity ?? 0;
 
                 AddOrIncrementLine(product, stock);
                 SearchTerm = string.Empty;
@@ -209,7 +210,8 @@ namespace CasaCejaRemake.ViewModels.Inventory
 
         public async Task AddProductFromPosCatalogAsync(Product product, int quantity)
         {
-            var stock = await _inventoryService.GetProductStockAsync(product.Id, _branchId);
+            var (stockItems, _) = await _inventoryService.GetStockByProductAsync(product.Id, product.Barcode);
+            var stock = stockItems.FirstOrDefault(s => s.BranchId == _branchId)?.Quantity ?? 0;
             var existing = Lines.FirstOrDefault(l => l.ProductId == product.Id);
 
             if (existing != null)

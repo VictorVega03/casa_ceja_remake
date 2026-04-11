@@ -1,10 +1,14 @@
 using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Avalonia;
 using System;
 using System.Threading.Tasks;
 using CasaCejaRemake.Models.Results;
 using CasaCejaRemake.Services;
+using CasaCejaRemake.Models;
+using System.Collections.Generic;
+using CasaCejaRemake.Views.Shared;
 
 namespace casa_ceja_remake.Helpers;
 
@@ -559,5 +563,11 @@ public static class DialogHelper
         await dialog.ShowDialog(parentWindow);
 
         return dialog.Tag is DuplicateFileAction action ? action : DuplicateFileAction.Cancel;
+    }
+
+    public static async Task ShowStockDialog(Window parent, Product product, List<ProductStockItem> items, bool isFromCache)
+    {
+        var dialog = new StockByBranchDialog(product, items, isFromCache);
+        await dialog.ShowDialog(parent);
     }
 }

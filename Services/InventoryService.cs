@@ -12,6 +12,7 @@ namespace CasaCejaRemake.Services
         private readonly ProductRepository _productRepository;
         private readonly BaseRepository<Category> _categoryRepository;
         private readonly BaseRepository<Unit> _unitRepository;
+        private readonly ApiClient _apiClient;
         private readonly BaseRepository<ProductStock> _productStockRepository;
         private readonly BaseRepository<StockEntry> _entryRepo;
         private readonly BaseRepository<StockOutput> _outputRepo;
@@ -30,11 +31,13 @@ namespace CasaCejaRemake.Services
             BaseRepository<EntryProduct> entryProductRepo,
             BaseRepository<OutputProduct> outputProductRepo,
             BaseRepository<Supplier> supplierRepo,
-            BaseRepository<Branch> branchRepo)
+            BaseRepository<Branch> branchRepo,
+            ApiClient apiClient)
         {
             _productRepository = productRepository;
             _categoryRepository = categoryRepository;
             _unitRepository = unitRepository;
+            _apiClient = apiClient;
             _productStockRepository = productStockRepository;
             _entryRepo = entryRepo;
             _outputRepo = outputRepo;
@@ -172,33 +175,70 @@ namespace CasaCejaRemake.Services
         // ============================
         // STOCK POR SUCURSAL
         // ============================
-        public async Task<int> GetProductStockAsync(int productId, int branchId)
+        public async Task<(List<ProductStockItem> Items, bool IsFromCache)> GetStockByProductAsync(int productId, string barcode)
         {
-            var stockList = await _productStockRepository.FindAsync(x => x.ProductId == productId && x.BranchId == branchId);
-            if (stockList.Count > 0)
-                return stockList[0].Quantity;
-            return 0;
-        }
+            try
+            {
+                var response = await _apiClient.GetAsync<System.Text.Json.JsonElement>(
+                    $"/api/v1/stock/product/{barcode}");
 
-        public async Task SetProductStockAsync(int productId, int branchId, int quantity)
-        {
-            var stockList = await _productStockRepository.FindAsync(x => x.ProductId == productId && x.BranchId == branchId);
-            if (stockList.Count > 0)
-            {
-                var stock = stockList[0];
-                stock.Quantity = quantity;
-                await _productStockRepository.UpdateAsync(stock);
-            }
-            else
-            {
-                var stock = new ProductStock
+                if (response?.IsSuccess == true)
                 {
-                    ProductId = productId,
-                    BranchId = branchId,
-                    Quantity = quantity
-                };
-                await _productStockRepository.AddAsync(stock);
+                    var stockArray = response.Data.GetProperty("stock");
+                    foreach (var item in stockArray.EnumerateArray())
+                    {
+                        var branchId = item.GetProperty("branch_id").GetInt32();
+                        var quantity = item.GetProperty("quantity").GetInt32();
+
+                        var existing = await _productStockRepository.FindAsync(
+                            x => x.ProductId == productId && x.BranchId == branchId);
+
+                        if (existing.Count > 0)
+                        {
+                            existing[0].Quantity = quantity;
+                            existing[0].UpdatedAt = DateTime.Now;
+                            await _productStockRepository.UpdateAsync(existing[0]);
+                        }
+                        else
+                        {
+                            await _productStockRepository.AddAsync(new ProductStock
+                            {
+                                ProductId = productId,
+                                BranchId = branchId,
+                                Quantity = quantity,
+                                UpdatedAt = DateTime.Now,
+                            });
+                        }
+                    }
+
+                    var result = new List<ProductStockItem>();
+                    foreach (var item in stockArray.EnumerateArray())
+                    {
+                        result.Add(new ProductStockItem
+                        {
+                            BranchId = item.GetProperty("branch_id").GetInt32(),
+                            BranchName = item.GetProperty("branch_name").GetString() ?? "",
+                            Quantity = item.GetProperty("quantity").GetInt32(),
+                        });
+                    }
+
+                    return (result, false);
+                }
             }
+            catch
+            {
+            }
+
+            var cached = await _productStockRepository.FindAsync(x => x.ProductId == productId);
+            var branchMap = await GetBranchNameMapAsync();
+            var cachedResult = cached.Select(x => new ProductStockItem
+            {
+                BranchId = x.BranchId,
+                BranchName = branchMap.TryGetValue(x.BranchId, out var name) ? name : $"Sucursal {x.BranchId}",
+                Quantity = x.Quantity,
+            }).ToList();
+
+            return (cachedResult, true);
         }
 
         // ============================
@@ -232,35 +272,7 @@ namespace CasaCejaRemake.Services
                 await _entryProductRepo.AddAsync(product);
             }
 
-            await UpdateStockOnEntryAsync(products, entry.BranchId);
             return entryId;
-        }
-
-        private async Task UpdateStockOnEntryAsync(List<EntryProduct> products, int branchId)
-        {
-            foreach (var item in products)
-            {
-                var existing = await _productStockRepository.FindAsync(
-                    x => x.ProductId == item.ProductId && x.BranchId == branchId);
-
-                if (existing.Count > 0)
-                {
-                    var stock = existing[0];
-                    stock.Quantity += item.Quantity;
-                    stock.UpdatedAt = DateTime.Now;
-                    await _productStockRepository.UpdateAsync(stock);
-                }
-                else
-                {
-                    await _productStockRepository.AddAsync(new ProductStock
-                    {
-                        ProductId = item.ProductId,
-                        BranchId = branchId,
-                        Quantity = item.Quantity,
-                        UpdatedAt = DateTime.Now
-                    });
-                }
-            }
         }
 
         // ============================
@@ -329,26 +341,7 @@ namespace CasaCejaRemake.Services
                 await _outputProductRepo.AddAsync(product);
             }
 
-            await DeductStockOnOutputAsync(products, output.OriginBranchId);
             return outputId;
-        }
-
-        private async Task DeductStockOnOutputAsync(List<OutputProduct> products, int branchId)
-        {
-            foreach (var item in products)
-            {
-                var existing = await _productStockRepository.FindAsync(
-                    x => x.ProductId == item.ProductId && x.BranchId == branchId);
-
-                if (existing.Count > 0)
-                {
-                    var stock = existing[0];
-                    stock.Quantity = Math.Max(0, stock.Quantity - item.Quantity);
-                    stock.UpdatedAt = DateTime.Now;
-                    await _productStockRepository.UpdateAsync(stock);
-                }
-                // If no stock record exists, nothing to deduct
-            }
         }
 
         // ============================

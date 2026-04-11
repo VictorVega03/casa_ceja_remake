@@ -6,6 +6,7 @@ using CommunityToolkit.Mvvm.Input;
 using CasaCejaRemake.Models;
 using CasaCejaRemake.Services;
 using System.Linq;
+using System.Collections.Generic;
 
 namespace CasaCejaRemake.ViewModels.Inventory
 {
@@ -31,6 +32,9 @@ namespace CasaCejaRemake.ViewModels.Inventory
 
         [ObservableProperty]
         private bool _isSearching;
+
+        [ObservableProperty]
+        private bool _isLoadingStock;
 
         [ObservableProperty]
         private string _statusMessage = string.Empty;
@@ -60,6 +64,7 @@ namespace CasaCejaRemake.ViewModels.Inventory
         public event EventHandler? GoBackRequested;
         public event EventHandler<Product?>? ProductFormRequested;
         public event EventHandler<Product>? ProductDetailRequested;
+        public event EventHandler<(Product Product, List<ProductStockItem> Items, bool IsFromCache)>? StockDataReady;
 
         public CatalogViewModel(InventoryService inventoryService, int branchId)
         {
@@ -199,6 +204,29 @@ namespace CasaCejaRemake.ViewModels.Inventory
         private void CreateProduct()
         {
             ProductFormRequested?.Invoke(this, null);
+        }
+
+        [RelayCommand]
+        private async Task ShowStockAsync()
+        {
+            if (SelectedProduct == null) return;
+
+            IsLoadingStock = true;
+            try
+            {
+                var (items, isFromCache) = await _inventoryService.GetStockByProductAsync(
+                    SelectedProduct.Id, SelectedProduct.Barcode);
+
+                StockDataReady?.Invoke(this, (SelectedProduct, items, isFromCache));
+            }
+            catch
+            {
+                StockDataReady?.Invoke(this, (SelectedProduct, new List<ProductStockItem>(), true));
+            }
+            finally
+            {
+                IsLoadingStock = false;
+            }
         }
 
         public void RequestProductForm(Product? product)

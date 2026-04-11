@@ -134,6 +134,21 @@
                 </StackPanel>
 
                 <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button Command="{Binding ShowStockCommand}"
+                            IsEnabled="{Binding SelectedProduct, Converter={x:Static ObjectConverters.IsNotNull}}"
+                            Background="#1565C0"
+                            Foreground="White"
+                            Padding="12,7"
+                            CornerRadius="4"
+                            FontWeight="Bold"
+                            Margin="0,0,8,0"
+                            ToolTip.Tip="Ver stock por sucursal (F3)">
+                        <StackPanel Orientation="Horizontal" Spacing="4">
+                            <TextBlock Text="📦" FontSize="13" VerticalAlignment="Center"/>
+                            <TextBlock Text="Ver Existencia (F3)" FontSize="13" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+
                     <Button Command="{Binding CreateProductCommand}"
                             Background="#2E7D32"
                             Foreground="White"

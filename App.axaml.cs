@@ -176,7 +176,8 @@ namespace CasaCejaRemake
 
                 _inventoryService = new InventoryService(
                     productRepo, categoryRepo, unitRepo, productStockRepo,
-                    entryRepo, outputRepo, entryProductRepo, outputProductRepo, supplierRepo, branchRepo);
+                    entryRepo, outputRepo, entryProductRepo, outputProductRepo, supplierRepo, branchRepo,
+                    ApiClient!);
             }
             catch
             {

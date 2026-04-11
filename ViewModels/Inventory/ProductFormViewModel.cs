@@ -248,12 +248,7 @@ namespace CasaCejaRemake.ViewModels.Inventory
 
                     foreach (var pendingEntry in PendingProducts)
                     {
-                        int newId = await _inventoryService.SaveProductAsync(pendingEntry.Product);
-                        if (pendingEntry.InitialQty > 0)
-                        {
-                            int savedId = newId > 0 ? newId : pendingEntry.Product.Id;
-                            await _inventoryService.SetProductStockAsync(savedId, _currentBranchId, pendingEntry.InitialQty);
-                        }
+                        await _inventoryService.SaveProductAsync(pendingEntry.Product);
                     }
                     StatusMessage = $"{PendingProducts.Count} productos guardados.";
                     PendingProducts.Clear();
@@ -264,11 +259,7 @@ namespace CasaCejaRemake.ViewModels.Inventory
                     if (!await ValidateCurrentProductAsync()) return;
 
                     var singleProduct = CreateProductFromForm();
-                    int savedId = await _inventoryService.SaveProductAsync(singleProduct);
-                    if (int.TryParse(InitialQuantity, out var qty) && qty > 0)
-                    {
-                        await _inventoryService.SetProductStockAsync(savedId, _currentBranchId, qty);
-                    }
+                    await _inventoryService.SaveProductAsync(singleProduct);
 
                     StatusMessage = "Guardado correctamente.";
                     SaveCompleted?.Invoke(this, EventArgs.Empty);
