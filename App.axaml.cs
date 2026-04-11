@@ -629,7 +629,7 @@ namespace CasaCejaRemake
             catch { /* use default */ }
 
             var viewModel = new ViewModels.Inventory.OutputsViewModel(
-                _inventoryService, FolioService, branchId, branchName, userId);
+                _inventoryService, FolioService, ApiClient!, branchId, branchName, userId);
 
             var outputView = new Views.Inventory.OutputView
             {
@@ -670,7 +670,7 @@ namespace CasaCejaRemake
             catch { /* use default */ }
 
             var viewModel = new ViewModels.Inventory.ConfirmEntryViewModel(
-                _inventoryService, branchId, branchName, userId);
+                _inventoryService, ApiClient!, branchId, branchName, userId);
 
             var confirmView = new Views.Inventory.ConfirmEntryView
             {

@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
 using System;
+using CasaCejaRemake.Models;
 
 namespace CasaCejaRemake.Models.DTOs
 {
@@ -20,6 +21,9 @@ namespace CasaCejaRemake.Models.DTOs
 
         [JsonPropertyName("user_id")]
         public int UserId { get; set; }
+
+        [JsonPropertyName("entry_type")]
+        public string EntryType { get; set; } = StockEntryType.Purchase;
 
         [JsonPropertyName("total_amount")]
         public decimal TotalAmount { get; set; }

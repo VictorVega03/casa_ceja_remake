@@ -636,6 +636,7 @@ namespace CasaCejaRemake.Services
                     BranchId     = e.BranchId,
                     SupplierId   = e.SupplierId,
                     UserId       = e.UserId,
+                    EntryType    = e.EntryType,
                     TotalAmount  = e.TotalAmount,
                     EntryDate    = e.EntryDate,
                     Notes        = e.Notes,

@@ -39,6 +39,7 @@ namespace CasaCejaRemake.ViewModels.Inventory
     {
         private readonly InventoryService _inventoryService;
         private readonly FolioService _folioService;
+        private readonly ApiClient _apiClient;
         private readonly int _branchId;
         private readonly int _userId;
 
@@ -73,12 +74,14 @@ namespace CasaCejaRemake.ViewModels.Inventory
         public OutputsViewModel(
             InventoryService inventoryService,
             FolioService folioService,
+            ApiClient apiClient,
             int branchId,
             string branchName,
             int userId)
         {
             _inventoryService = inventoryService;
             _folioService = folioService;
+            _apiClient = apiClient;
             _branchId = branchId;
             _userId = userId;
             BranchName = branchName;
@@ -259,14 +262,67 @@ namespace CasaCejaRemake.ViewModels.Inventory
         [RelayCommand]
         private async Task SaveOutputAsync()
         {
-            // FASE 3: Este flujo requiere integración con el servidor Laravel.
-            // El servidor valida el stock, registra la salida y crea la entrada
-            // pendiente en la sucursal destino. Por ahora se muestra aviso.
-            ShowMessageRequested?.Invoke(this,
-                "Las salidas entre sucursales requieren conexión al servidor.\n" +
-                "Esta funcionalidad estará disponible próximamente.");
+            if (SelectedDestination == null)
+            {
+                ShowMessageRequested?.Invoke(this, "Selecciona una sucursal destino antes de guardar.");
+                return;
+            }
 
-            await Task.CompletedTask;
+            if (Lines.Count == 0)
+            {
+                ShowMessageRequested?.Invoke(this, "Agrega al menos un producto a la salida antes de guardar.");
+                return;
+            }
+
+            IsSaving = true;
+            try
+            {
+                var folio = await _folioService.GenerarFolioSalidaAsync(_branchId);
+
+                var request = new Models.DTOs.StockOutputRequest
+                {
+                    BranchId = _branchId,
+                    Folio = folio,
+                    DestinationBranchId = SelectedDestination.Id,
+                    UserId = _userId,
+                    TotalAmount = TotalAmount,
+                    OutputDate = OutputDate?.DateTime ?? DateTime.Now,
+                    Notes = string.IsNullOrWhiteSpace(Notes) ? null : Notes.Trim(),
+                    Products = Lines.Select(l => new Models.DTOs.StockOutputProductRequest
+                    {
+                        ProductId = l.ProductId,
+                        Barcode = l.Barcode,
+                        ProductName = l.ProductName,
+                        Quantity = l.Quantity,
+                        UnitCost = l.UnitCost,
+                        LineTotal = l.LineTotal
+                    }).ToList()
+                };
+
+                var response = await _apiClient.PostAsync<Models.DTOs.FolioResponse>(
+                    "/api/v1/inventory/outputs", request);
+
+                if (response?.IsSuccess == true)
+                {
+                    ShowMessageRequested?.Invoke(this,
+                        $"Salida {folio} registrada. Stock descontado en esta sucursal.\n" +
+                        $"La sucursal destino recibirá la entrada pendiente.");
+                    GoBackRequested?.Invoke(this, EventArgs.Empty);
+                }
+                else
+                {
+                    ShowMessageRequested?.Invoke(this,
+                        "Error al registrar la salida en el servidor. Verifica la conexión e intenta de nuevo.");
+                }
+            }
+            catch (Exception ex)
+            {
+                ShowMessageRequested?.Invoke(this, $"Error al guardar la salida: {ex.Message}");
+            }
+            finally
+            {
+                IsSaving = false;
+            }
         }
 
         [RelayCommand]
