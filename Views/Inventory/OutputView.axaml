@@ -356,7 +356,7 @@
         <Border Grid.Row="2" Background="#1C1C1C" BorderBrush="#2A2A2A" BorderThickness="0,1,0,0" Padding="20,12">
             <Grid ColumnDefinitions="*,Auto">
                 <TextBlock Grid.Column="0"
-                           Text="Esc: Salir   |   F3: Catálogo   |   Flechas ←/→: Ajustar cantidad"
+                           Text="Esc: Salir   |   F1: Buscador   |   F3: Catálogo   |   F5: Guardar   |   Flechas ←/→: Ajustar cantidad"
                            FontSize="11" Foreground="#444" VerticalAlignment="Center"/>
                 <Button Grid.Column="1"
                         Classes="action-save"

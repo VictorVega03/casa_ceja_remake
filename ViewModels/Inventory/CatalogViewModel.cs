@@ -17,6 +17,7 @@ namespace CasaCejaRemake.ViewModels.Inventory
 
         private const int PageSize = 50;
         private System.Collections.Generic.List<Product> _allResults = new();
+        private List<Branch> _allBranches = new();
 
         [ObservableProperty]
         private string _searchTerm = string.Empty;
@@ -64,7 +65,7 @@ namespace CasaCejaRemake.ViewModels.Inventory
         public event EventHandler? GoBackRequested;
         public event EventHandler<Product?>? ProductFormRequested;
         public event EventHandler<Product>? ProductDetailRequested;
-        public event EventHandler<(Product Product, List<ProductStockItem> Items, bool IsFromCache)>? StockDataReady;
+        public event EventHandler<(Product Product, List<ProductStockItem> Items, bool IsFromCache, List<Branch> AllBranches)>? StockDataReady;
 
         public CatalogViewModel(InventoryService inventoryService, int branchId)
         {
@@ -83,21 +84,26 @@ namespace CasaCejaRemake.ViewModels.Inventory
                 SelectedCategoryId = -1;
                 SelectedUnitId = -1;
 
-                // Cargar categorías
-                var categories = await _inventoryService.GetCategoriesAsync();
+                // Cargar categorías, unidades y sucursales en paralelo
+                var categoriesTask = _inventoryService.GetCategoriesAsync();
+                var unitsTask = _inventoryService.GetUnitsAsync();
+                var branchesTask = _inventoryService.GetBranchesAsync();
+
+                await System.Threading.Tasks.Task.WhenAll(categoriesTask, unitsTask,
+                    branchesTask.ContinueWith(_ => { })); // no fallar si branches falla
+
+                var categories = categoriesTask.Result;
+                var units = unitsTask.Result;
+                try { _allBranches = branchesTask.Result ?? new List<Branch>(); }
+                catch { _allBranches = new List<Branch>(); }
+
                 Categories.Add(new Category { Id = 0, Name = "Todas las categorías" });
                 foreach (var category in categories)
-                {
                     Categories.Add(category);
-                }
 
-                // Cargar unidades
-                var units = await _inventoryService.GetUnitsAsync();
                 Units.Add(new Unit { Id = 0, Name = "Todas las medidas" });
                 foreach (var unit in units)
-                {
                     Units.Add(unit);
-                }
 
                 // Seleccionar "Todas" por defecto, ahora sí dispara PropertyChanged
                 SelectedCategoryId = 0;
@@ -217,11 +223,11 @@ namespace CasaCejaRemake.ViewModels.Inventory
                 var (items, isFromCache) = await _inventoryService.GetStockByProductAsync(
                     SelectedProduct.Id, SelectedProduct.Barcode);
 
-                StockDataReady?.Invoke(this, (SelectedProduct, items, isFromCache));
+                StockDataReady?.Invoke(this, (SelectedProduct, items, isFromCache, _allBranches));
             }
             catch
             {
-                StockDataReady?.Invoke(this, (SelectedProduct, new List<ProductStockItem>(), true));
+                StockDataReady?.Invoke(this, (SelectedProduct, new List<ProductStockItem>(), true, _allBranches));
             }
             finally
             {

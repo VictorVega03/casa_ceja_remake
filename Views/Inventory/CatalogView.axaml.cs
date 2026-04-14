@@ -43,22 +43,30 @@ namespace CasaCejaRemake.Views.Inventory
             base.OnClosed(e);
         }
 
-        private async void OnStockDataReady(object? sender, (CasaCejaRemake.Models.Product Product, System.Collections.Generic.List<CasaCejaRemake.Models.ProductStockItem> Items, bool IsFromCache) data)
+        private async void OnStockDataReady(object? sender, (CasaCejaRemake.Models.Product Product, System.Collections.Generic.List<CasaCejaRemake.Models.ProductStockItem> Items, bool IsFromCache, System.Collections.Generic.List<CasaCejaRemake.Models.Branch> AllBranches) data)
         {
-            await DialogHelper.ShowStockDialog(this, data.Product, data.Items, data.IsFromCache);
+            await DialogHelper.ShowStockDialog(this, data.Product, data.Items, data.IsFromCache, data.AllBranches);
         }
 
         private void OnPreviewKeyDown(object? sender, KeyEventArgs e)
         {
             if (DataContext is CatalogViewModel vm)
             {
+                if (e.Key == Key.F1)
+                {
+                    SearchBox?.Focus();
+                    SearchBox?.SelectAll();
+                    e.Handled = true;
+                    return;
+                }
+
                 if (e.Key == Key.Escape)
                 {
                     vm.GoBackCommand.Execute(null);
                     e.Handled = true;
                     return;
                 }
-                
+
                 if (e.Key == Key.F2)
                 {
                     vm.CreateProductCommand.Execute(null);

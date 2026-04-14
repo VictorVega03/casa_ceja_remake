@@ -39,6 +39,14 @@ namespace CasaCejaRemake.Views.Inventory
                     await casa_ceja_remake.Helpers.DialogHelper.ShowMessageDialog(this, "Aviso", msg);
                 };
 
+                _viewModel.RequestConfirmSave += async (s, data) =>
+                {
+                    var confirmed = await casa_ceja_remake.Helpers.DialogHelper.ShowEntryConfirmDialog(
+                        this, data.BranchName, data.SupplierName, data.ProductCount, data.TotalAmount);
+                    if (confirmed)
+                        await _viewModel.DoSaveEntryAsync();
+                };
+
                 _viewModel.OpenPosCatalogRequested += OnOpenPosCatalogRequested;
                 _viewModel.ProductAddedOrUpdated += OnProductAddedOrUpdated;
                 _viewModel.GoBackRequested += (s, args) => _allowClose = true;

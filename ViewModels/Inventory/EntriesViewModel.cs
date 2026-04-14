@@ -64,6 +64,7 @@ namespace CasaCejaRemake.ViewModels.Inventory
         public event EventHandler<string>? ShowMessageRequested;
         public event EventHandler<string>? OpenPosCatalogRequested;
         public event EventHandler<EntryLineItem>? ProductAddedOrUpdated;
+        public event EventHandler<(string BranchName, string SupplierName, int ProductCount, decimal TotalAmount)>? RequestConfirmSave;
 
         // ── Colecciones ───────────────────────────────────────────────────
         public ObservableCollection<Supplier> Suppliers { get; } = new();
@@ -280,7 +281,7 @@ namespace CasaCejaRemake.ViewModels.Inventory
         // ── Guardar ───────────────────────────────────────────────────────
 
         [RelayCommand]
-        private async Task SaveEntryAsync()
+        private void SaveEntry()
         {
             if (SelectedSupplier == null)
             {
@@ -293,6 +294,13 @@ namespace CasaCejaRemake.ViewModels.Inventory
                 ShowMessageRequested?.Invoke(this, "Agrega al menos un producto a la entrada antes de guardar.");
                 return;
             }
+
+            RequestConfirmSave?.Invoke(this, (BranchName, SelectedSupplier.Name, Lines.Count, TotalAmount));
+        }
+
+        public async Task DoSaveEntryAsync()
+        {
+            if (SelectedSupplier == null || Lines.Count == 0) return;
 
             IsSaving = true;
             try

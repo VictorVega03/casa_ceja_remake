@@ -79,7 +79,8 @@
 
                     <Border Width="1" Height="24" Background="#4A4A4A" VerticalAlignment="Center" Margin="2,0"/>
 
-                    <TextBox Text="{Binding SearchTerm}"
+                    <TextBox x:Name="SearchBox"
+                             Text="{Binding SearchTerm}"
                              Width="220"
                              Watermark="Buscar por código o nombre..."
                              VerticalAlignment="Center">
@@ -194,7 +195,11 @@
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
 
-                <TextBlock Grid.Column="0" Text="{Binding StatusMessage}" Foreground="#BDBDBD" VerticalAlignment="Center" />
+                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="16" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding StatusMessage}" Foreground="#BDBDBD" VerticalAlignment="Center" />
+                    <TextBlock Text="F1: Buscador   |   F2: Nuevo   |   F3: Ver existencia   |   F4: Limpiar   |   F5: Buscar"
+                               FontSize="11" Foreground="#555" VerticalAlignment="Center"/>
+                </StackPanel>
 
                 <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
                     <Button Command="{Binding PreviousPageCommand}"

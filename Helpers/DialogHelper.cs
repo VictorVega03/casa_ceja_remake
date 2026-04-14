@@ -1,4 +1,5 @@
 using Avalonia.Controls;
+using Avalonia.Input;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia;
@@ -565,9 +566,324 @@ public static class DialogHelper
         return dialog.Tag is DuplicateFileAction action ? action : DuplicateFileAction.Cancel;
     }
 
-    public static async Task ShowStockDialog(Window parent, Product product, List<ProductStockItem> items, bool isFromCache)
+    public static async Task ShowStockDialog(Window parent, Product product, List<ProductStockItem> items, bool isFromCache, List<Branch> allBranches)
     {
-        var dialog = new StockByBranchDialog(product, items, isFromCache);
+        var dialog = new StockByBranchDialog(product, items, isFromCache, allBranches);
         await dialog.ShowDialog(parent);
+    }
+
+    public static async Task<bool> ShowEntryConfirmDialog(
+        Window parent, string branchName, string supplierName, int productCount, decimal total)
+    {
+        var dialog = new Window
+        {
+            Title = "Confirmar Entrada",
+            Width = 440,
+            Height = 340,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner,
+            CanResize = false,
+            ShowInTaskbar = false,
+            Background = new SolidColorBrush(Color.Parse("#1E1E1E"))
+        };
+
+        var mainGrid = new Grid();
+        mainGrid.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
+        mainGrid.RowDefinitions.Add(new RowDefinition(new GridLength(1, GridUnitType.Star)));
+        mainGrid.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
+
+        // Header
+        var header = new Border
+        {
+            Background = new SolidColorBrush(Color.Parse("#2D2D2D")),
+            BorderBrush = new SolidColorBrush(Color.Parse("#3A3A3A")),
+            BorderThickness = new Thickness(0, 0, 0, 1),
+            Padding = new Thickness(20, 14)
+        };
+        var headerStack = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 10 };
+        headerStack.Children.Add(new Border
+        {
+            Width = 4, Height = 22, CornerRadius = new CornerRadius(2),
+            Background = new SolidColorBrush(Color.Parse("#FF9800")),
+            VerticalAlignment = VerticalAlignment.Center
+        });
+        headerStack.Children.Add(new TextBlock
+        {
+            Text = "Confirmar Entrada de Mercancía",
+            FontSize = 15, FontWeight = FontWeight.Bold,
+            Foreground = Brushes.White, VerticalAlignment = VerticalAlignment.Center
+        });
+        header.Child = headerStack;
+        Grid.SetRow(header, 0);
+        mainGrid.Children.Add(header);
+
+        // Body
+        var body = new StackPanel { Margin = new Thickness(24, 20, 24, 0), Spacing = 0 };
+
+        body.Children.Add(new TextBlock
+        {
+            Text = "Se dará de alta la siguiente mercancía:",
+            FontSize = 13, Foreground = new SolidColorBrush(Color.Parse("#AAAAAA")),
+            Margin = new Thickness(0, 0, 0, 16)
+        });
+
+        void AddRow(StackPanel container, string label, string value, string valueColor = "#E0E0E0", double valueFontSize = 14)
+        {
+            var row = new Grid();
+            row.ColumnDefinitions.Add(new ColumnDefinition(new GridLength(1, GridUnitType.Star)));
+            row.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Auto));
+            row.Margin = new Thickness(0, 0, 0, 10);
+
+            row.Children.Add(new TextBlock
+            {
+                Text = label, FontSize = 13,
+                Foreground = new SolidColorBrush(Color.Parse("#999999")),
+                VerticalAlignment = VerticalAlignment.Center
+            });
+            var valBlock = new TextBlock
+            {
+                Text = value, FontSize = valueFontSize, FontWeight = FontWeight.SemiBold,
+                Foreground = new SolidColorBrush(Color.Parse(valueColor)),
+                VerticalAlignment = VerticalAlignment.Center
+            };
+            Grid.SetColumn(valBlock, 1);
+            row.Children.Add(valBlock);
+            container.Children.Add(row);
+        }
+
+        AddRow(body, "Sucursal", branchName, "#FF9800");
+        AddRow(body, "Proveedor", supplierName);
+        AddRow(body, "Productos", $"{productCount} {(productCount == 1 ? "artículo" : "artículos")}");
+
+        body.Children.Add(new Border
+        {
+            Height = 1, Background = new SolidColorBrush(Color.Parse("#2E2E2E")),
+            Margin = new Thickness(0, 4, 0, 12)
+        });
+
+        AddRow(body, "Total de la entrada", total.ToString("C"), "#4CAF50", 17);
+
+        Grid.SetRow(body, 1);
+        mainGrid.Children.Add(body);
+
+        // Footer
+        var footer = new Border
+        {
+            Background = new SolidColorBrush(Color.Parse("#252525")),
+            BorderBrush = new SolidColorBrush(Color.Parse("#3A3A3A")),
+            BorderThickness = new Thickness(0, 1, 0, 0),
+            Padding = new Thickness(20, 14)
+        };
+        var footerBtns = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            HorizontalAlignment = HorizontalAlignment.Right,
+            Spacing = 10
+        };
+
+        var cancelBtn = new Button
+        {
+            Content = "Cancelar (Esc)",
+            Padding = new Thickness(18, 9),
+            Background = new SolidColorBrush(Color.Parse("#3A3A3A")),
+            Foreground = new SolidColorBrush(Colors.White),
+            CornerRadius = new CornerRadius(5),
+            FontSize = 13, Cursor = new Cursor(StandardCursorType.Hand)
+        };
+        cancelBtn.Click += (_, __) => { dialog.Tag = false; dialog.Close(); };
+
+        var confirmBtn = new Button
+        {
+            Content = "Confirmar (Enter)",
+            Padding = new Thickness(18, 9),
+            Background = new SolidColorBrush(Color.Parse("#2E7D32")),
+            Foreground = new SolidColorBrush(Colors.White),
+            CornerRadius = new CornerRadius(5),
+            FontSize = 13, FontWeight = FontWeight.SemiBold,
+            Cursor = new Cursor(StandardCursorType.Hand)
+        };
+        confirmBtn.Click += (_, __) => { dialog.Tag = true; dialog.Close(); };
+
+        footerBtns.Children.Add(cancelBtn);
+        footerBtns.Children.Add(confirmBtn);
+        footer.Child = footerBtns;
+        Grid.SetRow(footer, 2);
+        mainGrid.Children.Add(footer);
+
+        dialog.Content = mainGrid;
+        dialog.Tag = false;
+
+        dialog.KeyDown += (_, e) =>
+        {
+            if (e.Key == Avalonia.Input.Key.Enter) { dialog.Tag = true; dialog.Close(); e.Handled = true; }
+            else if (e.Key == Avalonia.Input.Key.Escape) { dialog.Tag = false; dialog.Close(); e.Handled = true; }
+        };
+
+        await dialog.ShowDialog(parent);
+        return dialog.Tag is true;
+    }
+
+    public static async Task<bool> ShowOutputConfirmDialog(
+        Window parent, string destinationName, int productCount, decimal total)
+    {
+        var dialog = new Window
+        {
+            Title = "Confirmar Salida",
+            Width = 440,
+            Height = 320,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner,
+            CanResize = false,
+            ShowInTaskbar = false,
+            Background = new SolidColorBrush(Color.Parse("#1E1E1E"))
+        };
+
+        var mainGrid = new Grid();
+        mainGrid.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
+        mainGrid.RowDefinitions.Add(new RowDefinition(new GridLength(1, GridUnitType.Star)));
+        mainGrid.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
+
+        // Header
+        var header = new Border
+        {
+            Background = new SolidColorBrush(Color.Parse("#2D2D2D")),
+            BorderBrush = new SolidColorBrush(Color.Parse("#3A3A3A")),
+            BorderThickness = new Thickness(0, 0, 0, 1),
+            Padding = new Thickness(20, 14)
+        };
+        var headerStack = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 10 };
+        headerStack.Children.Add(new Border
+        {
+            Width = 4, Height = 22, CornerRadius = new CornerRadius(2),
+            Background = new SolidColorBrush(Color.Parse("#42A5F5")),
+            VerticalAlignment = VerticalAlignment.Center
+        });
+        headerStack.Children.Add(new TextBlock
+        {
+            Text = "Confirmar Salida de Mercancía",
+            FontSize = 15, FontWeight = FontWeight.Bold,
+            Foreground = Brushes.White, VerticalAlignment = VerticalAlignment.Center
+        });
+        header.Child = headerStack;
+        Grid.SetRow(header, 0);
+        mainGrid.Children.Add(header);
+
+        // Body
+        var body = new StackPanel { Margin = new Thickness(24, 20, 24, 0), Spacing = 0 };
+
+        body.Children.Add(new TextBlock
+        {
+            Text = "Se registrará la salida con los siguientes datos:",
+            FontSize = 13, Foreground = new SolidColorBrush(Color.Parse("#AAAAAA")),
+            Margin = new Thickness(0, 0, 0, 16)
+        });
+
+        void AddRow(StackPanel container, string label, string value, string valueColor = "#E0E0E0", double valueFontSize = 14)
+        {
+            var row = new Grid();
+            row.ColumnDefinitions.Add(new ColumnDefinition(new GridLength(1, GridUnitType.Star)));
+            row.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Auto));
+            row.Margin = new Thickness(0, 0, 0, 10);
+
+            row.Children.Add(new TextBlock
+            {
+                Text = label, FontSize = 13,
+                Foreground = new SolidColorBrush(Color.Parse("#999999")),
+                VerticalAlignment = VerticalAlignment.Center
+            });
+            var valBlock = new TextBlock
+            {
+                Text = value, FontSize = valueFontSize, FontWeight = FontWeight.SemiBold,
+                Foreground = new SolidColorBrush(Color.Parse(valueColor)),
+                VerticalAlignment = VerticalAlignment.Center
+            };
+            Grid.SetColumn(valBlock, 1);
+            row.Children.Add(valBlock);
+            container.Children.Add(row);
+        }
+
+        AddRow(body, "Sucursal destino", destinationName, "#42A5F5");
+        AddRow(body, "Productos", $"{productCount} {(productCount == 1 ? "artículo" : "artículos")}");
+
+        body.Children.Add(new Border
+        {
+            Height = 1, Background = new SolidColorBrush(Color.Parse("#2E2E2E")),
+            Margin = new Thickness(0, 4, 0, 12)
+        });
+
+        AddRow(body, "Total de la salida", total.ToString("C"), "#4CAF50", 17);
+
+        body.Children.Add(new Border
+        {
+            Background = new SolidColorBrush(Color.Parse("#1A1200")),
+            BorderBrush = new SolidColorBrush(Color.Parse("#4A3800")),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(5),
+            Padding = new Thickness(12, 8),
+            Margin = new Thickness(0, 4, 0, 0),
+            Child = new TextBlock
+            {
+                Text = "⚠ La sucursal destino deberá confirmar la recepción para que su stock se actualice.",
+                FontSize = 11, Foreground = new SolidColorBrush(Color.Parse("#FFC107")),
+                TextWrapping = TextWrapping.Wrap
+            }
+        });
+
+        Grid.SetRow(body, 1);
+        mainGrid.Children.Add(body);
+
+        // Footer
+        var footer = new Border
+        {
+            Background = new SolidColorBrush(Color.Parse("#252525")),
+            BorderBrush = new SolidColorBrush(Color.Parse("#3A3A3A")),
+            BorderThickness = new Thickness(0, 1, 0, 0),
+            Padding = new Thickness(20, 14)
+        };
+        var footerBtns = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            HorizontalAlignment = HorizontalAlignment.Right,
+            Spacing = 10
+        };
+
+        var cancelBtn = new Button
+        {
+            Content = "Cancelar (Esc)",
+            Padding = new Thickness(18, 9),
+            Background = new SolidColorBrush(Color.Parse("#3A3A3A")),
+            Foreground = new SolidColorBrush(Colors.White),
+            CornerRadius = new CornerRadius(5),
+            FontSize = 13, Cursor = new Cursor(StandardCursorType.Hand)
+        };
+        cancelBtn.Click += (_, __) => { dialog.Tag = false; dialog.Close(); };
+
+        var confirmBtn = new Button
+        {
+            Content = "Confirmar (Enter)",
+            Padding = new Thickness(18, 9),
+            Background = new SolidColorBrush(Color.Parse("#1565C0")),
+            Foreground = new SolidColorBrush(Colors.White),
+            CornerRadius = new CornerRadius(5),
+            FontSize = 13, FontWeight = FontWeight.SemiBold,
+            Cursor = new Cursor(StandardCursorType.Hand)
+        };
+        confirmBtn.Click += (_, __) => { dialog.Tag = true; dialog.Close(); };
+
+        footerBtns.Children.Add(cancelBtn);
+        footerBtns.Children.Add(confirmBtn);
+        footer.Child = footerBtns;
+        Grid.SetRow(footer, 2);
+        mainGrid.Children.Add(footer);
+
+        dialog.Content = mainGrid;
+        dialog.Tag = false;
+
+        dialog.KeyDown += (_, e) =>
+        {
+            if (e.Key == Avalonia.Input.Key.Enter) { dialog.Tag = true; dialog.Close(); e.Handled = true; }
+            else if (e.Key == Avalonia.Input.Key.Escape) { dialog.Tag = false; dialog.Close(); e.Handled = true; }
+        };
+
+        await dialog.ShowDialog(parent);
+        return dialog.Tag is true;
     }
 }
