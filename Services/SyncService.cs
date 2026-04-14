@@ -619,8 +619,12 @@ namespace CasaCejaRemake.Services
         {
             try
             {
-                var all     = await _stockEntryRepo.GetAllAsync();
-                var pending = all.Where(x => GetSyncStatus(x) == 1).ToList();
+                var all = await _stockEntryRepo.GetAllAsync();
+
+                // Solo PURCHASE con SyncStatus=1 — las TRANSFER ya vienen del servidor (SyncStatus=2)
+                var pending = all
+                    .Where(x => GetSyncStatus(x) == 1 && x.EntryType == StockEntryType.Purchase)
+                    .ToList();
 
                 if (pending.Count == 0)
                     return SyncResult.Ok("stock-entries");

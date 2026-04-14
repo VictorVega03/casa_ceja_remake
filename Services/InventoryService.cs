@@ -474,7 +474,8 @@ namespace CasaCejaRemake.Services
 
         /// <summary>
         /// Resta la cantidad de un producto en el stock de la sucursal origen.
-        /// Si no existe registro previo, lo crea con cantidad 0 (no negativa).
+        /// El stock puede quedar negativo — es una regla de negocio del cliente:
+        /// el sistema nunca bloquea ventas ni traspasos por stock insuficiente.
         /// </summary>
         private async Task UpdateStockOnOutputAsync(int productId, int branchId, int quantity)
         {
@@ -489,7 +490,7 @@ namespace CasaCejaRemake.Services
 
                 if (existing.Count > 0)
                 {
-                    existing[0].Quantity = Math.Max(0, existing[0].Quantity - quantity);
+                    existing[0].Quantity -= quantity; // Sin Math.Max — el stock puede ser negativo
                     existing[0].UpdatedAt = DateTime.Now;
                     existing[0].SyncStatus = 1;
                     await _productStockRepository.UpdateAsync(existing[0]);
@@ -497,17 +498,17 @@ namespace CasaCejaRemake.Services
                 }
                 else
                 {
-                    // No hay registro previo: crear con 0 (la salida no puede dejar negativo)
+                    // No había registro previo: la salida genera stock negativo
                     var newStock = new ProductStock
                     {
                         ProductId = productId,
                         BranchId = branchId,
-                        Quantity = 0,
+                        Quantity = -quantity, // Negativo por diseño
                         UpdatedAt = DateTime.Now,
                         SyncStatus = 1,
                     };
                     var newId = await _productStockRepository.AddAsync(newStock);
-                    Console.WriteLine($"[UpdateStockOnOutputAsync] No había stock previo — creado registro en 0 con Id={newId}");
+                    Console.WriteLine($"[UpdateStockOnOutputAsync] No había stock previo — creado registro en {-quantity} con Id={newId}");
                 }
             }
             catch (Exception ex)
