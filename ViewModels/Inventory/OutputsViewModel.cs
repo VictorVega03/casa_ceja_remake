@@ -192,7 +192,7 @@ namespace CasaCejaRemake.ViewModels.Inventory
                     Barcode = product.Barcode,
                     ProductName = product.Name,
                     Quantity = 1,
-                    UnitCost = 0m,
+                    UnitCost = product.PriceRetail,
                     CurrentStock = stock
                 };
 
@@ -228,7 +228,7 @@ namespace CasaCejaRemake.ViewModels.Inventory
                 Barcode = product.Barcode,
                 ProductName = product.Name,
                 Quantity = Math.Max(1, quantity),
-                UnitCost = 0m,
+                UnitCost = product.PriceRetail,
                 CurrentStock = stock
             };
 
@@ -281,6 +281,7 @@ namespace CasaCejaRemake.ViewModels.Inventory
             {
                 var folio = await _folioService.GenerarFolioSalidaAsync(_branchId);
 
+                // 1. SERVIDOR PRIMERO — el servidor crea la entrada pendiente para la sucursal destino
                 var request = new Models.DTOs.StockOutputRequest
                 {
                     BranchId = _branchId,
@@ -304,22 +305,52 @@ namespace CasaCejaRemake.ViewModels.Inventory
                 var response = await _apiClient.PostAsync<Models.DTOs.FolioResponse>(
                     "/api/v1/inventory/outputs", request);
 
-                if (response?.IsSuccess == true)
+                if (response?.IsSuccess != true)
                 {
                     ShowMessageRequested?.Invoke(this,
-                        $"Salida {folio} registrada. Stock descontado en esta sucursal.\n" +
-                        $"La sucursal destino recibirá la entrada pendiente.");
-                    GoBackRequested?.Invoke(this, EventArgs.Empty);
+                        "No se pudo registrar la salida en el servidor.\n" +
+                        "Verifica tu conexión a internet e intenta de nuevo.");
+                    return;
                 }
-                else
+
+                // 2. Servidor aceptó — ahora guardar localmente y descontar stock
+                var output = new StockOutput
                 {
-                    ShowMessageRequested?.Invoke(this,
-                        "Error al registrar la salida en el servidor. Verifica la conexión e intenta de nuevo.");
-                }
+                    Folio = folio,
+                    OriginBranchId = _branchId,
+                    DestinationBranchId = SelectedDestination.Id,
+                    UserId = _userId,
+                    TotalAmount = TotalAmount,
+                    OutputDate = OutputDate?.DateTime ?? DateTime.Now,
+                    Notes = string.IsNullOrWhiteSpace(Notes) ? null : Notes.Trim(),
+                    Status = "PENDING",
+                    SyncStatus = 2, // Ya sincronizado con servidor
+                    LastSync = DateTime.Now
+                };
+
+                var products = Lines.Select(l => new OutputProduct
+                {
+                    ProductId = l.ProductId,
+                    Barcode = l.Barcode,
+                    ProductName = l.ProductName,
+                    Quantity = l.Quantity,
+                    UnitCost = l.UnitCost,
+                    LineTotal = l.LineTotal
+                }).ToList();
+
+                await _inventoryService.CreateOutputAsync(output, products);
+
+                ShowMessageRequested?.Invoke(this,
+                    $"Salida {folio} registrada exitosamente.\n" +
+                    $"Stock descontado en esta sucursal.\n" +
+                    $"La sucursal destino recibirá la entrada pendiente.");
+                GoBackRequested?.Invoke(this, EventArgs.Empty);
             }
             catch (Exception ex)
             {
-                ShowMessageRequested?.Invoke(this, $"Error al guardar la salida: {ex.Message}");
+                ShowMessageRequested?.Invoke(this,
+                    $"Error al guardar la salida: {ex.Message}\n" +
+                    $"Verifica tu conexión e intenta de nuevo.");
             }
             finally
             {

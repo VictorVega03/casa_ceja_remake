@@ -182,12 +182,15 @@ namespace CasaCejaRemake.ViewModels.Inventory
 
                 if (response?.IsSuccess == true)
                 {
+                    // Servidor confirmó — persistir localmente: crear entrada + actualizar stock
+                    await PersistConfirmedEntryLocallyAsync(entry);
+
                     PendingEntries.Remove(entry);
                     if (SelectedEntry == entry) SelectedEntry = null;
 
                     var msg = entry.HasDiscrepancies
                         ? $"Entrada {entry.Folio} confirmada con diferencias.\nLas unidades faltantes quedan registradas como merma."
-                        : $"Entrada {entry.Folio} confirmada correctamente.";
+                        : $"Entrada {entry.Folio} confirmada correctamente.\nStock actualizado en esta sucursal.";
 
                     ShowMessageRequested?.Invoke(this, msg);
                 }
@@ -204,6 +207,54 @@ namespace CasaCejaRemake.ViewModels.Inventory
             finally
             {
                 IsConfirming = false;
+            }
+        }
+
+        /// <summary>
+        /// Persiste la entrada confirmada en la BD local: crea StockEntry + EntryProducts
+        /// con las cantidades realmente recibidas y actualiza el stock de la sucursal.
+        /// </summary>
+        private async Task PersistConfirmedEntryLocallyAsync(PendingEntryItem entry)
+        {
+            try
+            {
+                var localEntry = new StockEntry
+                {
+                    Folio = entry.Folio,
+                    FolioOutput = entry.FolioOutput,
+                    BranchId = _branchId,
+                    SupplierId = 0, // Traspaso no tiene proveedor
+                    UserId = _userId,
+                    EntryType = StockEntryType.Transfer,
+                    TotalAmount = entry.Lines.Sum(l => l.ReceivedQuantity * l.UnitCost),
+                    EntryDate = entry.EntryDate,
+                    Notes = entry.Notes,
+                    ConfirmedByUserId = _userId,
+                    ConfirmedAt = DateTime.Now,
+                    SyncStatus = 2, // Ya viene del servidor
+                    LastSync = DateTime.Now
+                };
+
+                var products = entry.Lines.Select(l => new EntryProduct
+                {
+                    ProductId = l.ProductId,
+                    Barcode = l.Barcode,
+                    ProductName = l.ProductName,
+                    Quantity = l.ReceivedQuantity,
+                    UnitCost = l.UnitCost,
+                    LineTotal = l.ReceivedQuantity * l.UnitCost
+                }).ToList();
+
+                // CreateEntryAsync guarda la entrada + productos + actualiza stock
+                // El SyncStatus ya viene como 2 para que no se reintente subir
+                await _inventoryService.CreateEntryAsync(localEntry, products);
+
+                Console.WriteLine($"[ConfirmEntry] Entrada {entry.Folio} persistida localmente con {products.Count} productos");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[ConfirmEntry] Error al persistir localmente: {ex.Message}");
+                // No lanzamos — el servidor ya confirmó, la persistencia local es best-effort
             }
         }
 

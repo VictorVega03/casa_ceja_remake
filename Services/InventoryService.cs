@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using CasaCejaRemake.Data.Repositories;
 using CasaCejaRemake.Models;
+using CasaCejaRemake.Models.DTOs;
 
 namespace CasaCejaRemake.Services
 {
@@ -255,13 +256,21 @@ namespace CasaCejaRemake.Services
         // ============================
 
         /// <summary>
-        /// Persiste una entrada de mercancía completa y actualiza el stock de la sucursal.
+        /// Persiste una entrada de mercancía completa, actualiza el stock de la sucursal,
+        /// e intenta subir al servidor inmediatamente. Si falla, queda con SyncStatus=1
+        /// para que SyncService lo reintente después.
         /// </summary>
-        public async Task<int> CreateEntryAsync(StockEntry entry, List<EntryProduct> products)
+        public async Task<(int EntryId, bool SyncedToServer)> CreateEntryAsync(StockEntry entry, List<EntryProduct> products)
         {
+            // Respetar SyncStatus si ya viene seteado (ej: TRANSFER confirmada = 2)
+            var alreadySynced = entry.SyncStatus == 2;
+            if (!alreadySynced)
+            {
+                entry.SyncStatus = 1;
+            }
+
             entry.CreatedAt = DateTime.Now;
             entry.UpdatedAt = DateTime.Now;
-            entry.SyncStatus = 1;
 
             var entryId = await _entryRepo.AddAsync(entry);
 
@@ -270,9 +279,126 @@ namespace CasaCejaRemake.Services
                 product.EntryId = entryId;
                 product.CreatedAt = DateTime.Now;
                 await _entryProductRepo.AddAsync(product);
+                await UpdateStockOnEntryAsync(product.ProductId, entry.BranchId, product.Quantity);
             }
 
-            return entryId;
+            // Solo intentar push inmediato para entradas PURCHASE (offline-first)
+            // Las TRANSFER ya vienen del servidor, no necesitan push
+            if (alreadySynced)
+            {
+                Console.WriteLine($"[CreateEntryAsync] Entrada {entry.Folio} (TRANSFER) guardada localmente — ya sincronizada");
+                return (entryId, true);
+            }
+
+            var synced = await TryPushEntryToServerAsync(entry, products);
+            if (synced)
+            {
+                entry.SyncStatus = 2;
+                entry.LastSync = DateTime.Now;
+                await _entryRepo.UpdateAsync(entry);
+                Console.WriteLine($"[CreateEntryAsync] Entrada {entry.Folio} sincronizada con servidor");
+            }
+            else
+            {
+                Console.WriteLine($"[CreateEntryAsync] Entrada {entry.Folio} guardada offline (SyncStatus=1)");
+            }
+
+            return (entryId, synced);
+        }
+
+        /// <summary>
+        /// Intenta subir una entrada PURCHASE al servidor usando el endpoint de sync push.
+        /// Retorna true si el servidor aceptó el folio.
+        /// </summary>
+        private async Task<bool> TryPushEntryToServerAsync(StockEntry entry, List<EntryProduct> products)
+        {
+            try
+            {
+                var dto = new StockEntryPushDto
+                {
+                    Folio = entry.Folio,
+                    FolioOutput = entry.FolioOutput,
+                    BranchId = entry.BranchId,
+                    SupplierId = entry.SupplierId,
+                    UserId = entry.UserId,
+                    EntryType = entry.EntryType,
+                    TotalAmount = entry.TotalAmount,
+                    EntryDate = entry.EntryDate,
+                    Notes = entry.Notes,
+                    Products = products.Select(p => new EntryProductPushDto
+                    {
+                        ProductId = p.ProductId,
+                        Barcode = p.Barcode,
+                        ProductName = p.ProductName,
+                        Quantity = p.Quantity,
+                        UnitCost = p.UnitCost,
+                        LineTotal = p.LineTotal,
+                    }).ToList()
+                };
+
+                var body = new { branch_id = entry.BranchId, records = new List<StockEntryPushDto> { dto } };
+                var response = await _apiClient.PostAsync<PushResponse>("/api/v1/sync/push/stock-entries", body);
+
+                if (response?.Data != null && response.Data.Accepted.Contains(entry.Folio))
+                    return true;
+
+                if (response?.Data?.Rejected != null)
+                {
+                    foreach (var r in response.Data.Rejected)
+                        Console.WriteLine($"[TryPushEntryToServerAsync] Rechazado folio={r.Folio}: {r.Reason}");
+                }
+
+                return false;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[TryPushEntryToServerAsync] Error: {ex.Message}");
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Suma la cantidad de un producto en el stock de la sucursal.
+        /// Crea el registro si no existe todavía.
+        /// </summary>
+        private async Task UpdateStockOnEntryAsync(int productId, int branchId, int quantity)
+        {
+            Console.WriteLine($"[UpdateStockOnEntryAsync] Iniciando — ProductId={productId}, BranchId={branchId}, Quantity={quantity}");
+
+            try
+            {
+                var existing = await _productStockRepository.FindAsync(
+                    x => x.ProductId == productId && x.BranchId == branchId);
+
+                Console.WriteLine($"[UpdateStockOnEntryAsync] Registros existentes encontrados: {existing.Count}");
+
+                if (existing.Count > 0)
+                {
+                    existing[0].Quantity += quantity;
+                    existing[0].UpdatedAt = DateTime.Now;
+                    existing[0].SyncStatus = 1;
+                    await _productStockRepository.UpdateAsync(existing[0]);
+                    Console.WriteLine($"[UpdateStockOnEntryAsync] Stock actualizado — nuevo total: {existing[0].Quantity}");
+                }
+                else
+                {
+                    var newStock = new ProductStock
+                    {
+                        ProductId = productId,
+                        BranchId = branchId,
+                        Quantity = quantity,
+                        UpdatedAt = DateTime.Now,
+                        SyncStatus = 1,
+                    };
+                    var newId = await _productStockRepository.AddAsync(newStock);
+                    Console.WriteLine($"[UpdateStockOnEntryAsync] Nuevo registro de stock creado con Id={newId}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[UpdateStockOnEntryAsync] ERROR — {ex.Message}");
+                throw;
+            }
         }
 
         // ============================
@@ -330,7 +456,8 @@ namespace CasaCejaRemake.Services
         {
             output.CreatedAt = DateTime.Now;
             output.UpdatedAt = DateTime.Now;
-            output.SyncStatus = 1;
+            if (output.SyncStatus != 2)
+                output.SyncStatus = 1;
 
             var outputId = await _outputRepo.AddAsync(output);
 
@@ -339,9 +466,55 @@ namespace CasaCejaRemake.Services
                 product.OutputId = outputId;
                 product.CreatedAt = DateTime.Now;
                 await _outputProductRepo.AddAsync(product);
+                await UpdateStockOnOutputAsync(product.ProductId, output.OriginBranchId, product.Quantity);
             }
 
             return outputId;
+        }
+
+        /// <summary>
+        /// Resta la cantidad de un producto en el stock de la sucursal origen.
+        /// Si no existe registro previo, lo crea con cantidad 0 (no negativa).
+        /// </summary>
+        private async Task UpdateStockOnOutputAsync(int productId, int branchId, int quantity)
+        {
+            Console.WriteLine($"[UpdateStockOnOutputAsync] Iniciando — ProductId={productId}, BranchId={branchId}, Quantity={quantity}");
+
+            try
+            {
+                var existing = await _productStockRepository.FindAsync(
+                    x => x.ProductId == productId && x.BranchId == branchId);
+
+                Console.WriteLine($"[UpdateStockOnOutputAsync] Registros existentes encontrados: {existing.Count}");
+
+                if (existing.Count > 0)
+                {
+                    existing[0].Quantity = Math.Max(0, existing[0].Quantity - quantity);
+                    existing[0].UpdatedAt = DateTime.Now;
+                    existing[0].SyncStatus = 1;
+                    await _productStockRepository.UpdateAsync(existing[0]);
+                    Console.WriteLine($"[UpdateStockOnOutputAsync] Stock actualizado — nuevo total: {existing[0].Quantity}");
+                }
+                else
+                {
+                    // No hay registro previo: crear con 0 (la salida no puede dejar negativo)
+                    var newStock = new ProductStock
+                    {
+                        ProductId = productId,
+                        BranchId = branchId,
+                        Quantity = 0,
+                        UpdatedAt = DateTime.Now,
+                        SyncStatus = 1,
+                    };
+                    var newId = await _productStockRepository.AddAsync(newStock);
+                    Console.WriteLine($"[UpdateStockOnOutputAsync] No había stock previo — creado registro en 0 con Id={newId}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[UpdateStockOnOutputAsync] ERROR — {ex.Message}");
+                throw;
+            }
         }
 
         // ============================

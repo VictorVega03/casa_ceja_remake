@@ -177,7 +177,7 @@ namespace CasaCejaRemake
                 _inventoryService = new InventoryService(
                     productRepo, categoryRepo, unitRepo, productStockRepo,
                     entryRepo, outputRepo, entryProductRepo, outputProductRepo, supplierRepo, branchRepo,
-                    ApiClient!);
+                    ApiClient);
             }
             catch
             {
@@ -357,7 +357,7 @@ namespace CasaCejaRemake
             }
             
             // Obtener sucursal actual desde ConfigService
-            var currentBranchId = AuthService.CurrentBranchId;
+            var currentBranchId = ConfigService.AppConfig.CurrentBranchId ?? 0;
 
             // Obtener el nombre real desde la BD (nunca usar valor hardcodeado del config)
             var currentBranchName = "Sucursal";
@@ -576,7 +576,7 @@ namespace CasaCejaRemake
             if (ApplicationLifetime is not IClassicDesktopStyleApplicationLifetime desktop) return;
             if (_inventoryService == null || FolioService == null) return;
 
-            var branchId   = AuthService.CurrentBranchId;
+            var branchId   = ConfigService.AppConfig.CurrentBranchId ?? 0;
             var branchName = "Sucursal";
             var userId     = AuthService?.CurrentUser?.Id ?? 0;
 
@@ -617,7 +617,7 @@ namespace CasaCejaRemake
             if (ApplicationLifetime is not IClassicDesktopStyleApplicationLifetime desktop) return;
             if (_inventoryService == null || FolioService == null) return;
 
-            var branchId   = AuthService.CurrentBranchId;
+            var branchId   = ConfigService.AppConfig.CurrentBranchId ?? 0;
             var branchName = "Sucursal";
             var userId     = AuthService?.CurrentUser?.Id ?? 0;
 
@@ -658,7 +658,7 @@ namespace CasaCejaRemake
             if (ApplicationLifetime is not IClassicDesktopStyleApplicationLifetime desktop) return;
             if (_inventoryService == null) return;
 
-            var branchId   = AuthService.CurrentBranchId;
+            var branchId   = ConfigService.AppConfig.CurrentBranchId ?? 0;
             var branchName = "Sucursal";
             var userId     = AuthService?.CurrentUser?.Id ?? 0;
 
@@ -699,7 +699,7 @@ namespace CasaCejaRemake
             if (ApplicationLifetime is not IClassicDesktopStyleApplicationLifetime desktop) return;
             if (_inventoryService == null) return;
 
-            var branchId = AuthService?.CurrentUser?.BranchId ?? 0;
+            var branchId = ConfigService.AppConfig.CurrentBranchId ?? 0;
             var viewModel = new ViewModels.Inventory.CatalogViewModel(_inventoryService, branchId);
             
             var catalogView = new Views.Inventory.CatalogView
@@ -763,7 +763,7 @@ namespace CasaCejaRemake
             if (ApplicationLifetime is not IClassicDesktopStyleApplicationLifetime desktop) return;
             if (_inventoryService == null) return;
 
-            var branchId = AuthService?.CurrentUser?.BranchId ?? 0;
+            var branchId = ConfigService.AppConfig.CurrentBranchId ?? 0;
             var viewModel = new ViewModels.Inventory.HistoryViewModel(_inventoryService, branchId);
             
             var historyView = new Views.Inventory.HistoryView

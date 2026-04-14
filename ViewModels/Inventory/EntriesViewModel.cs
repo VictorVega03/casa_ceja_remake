@@ -5,6 +5,7 @@ using CasaCejaRemake.Services;
 using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -29,6 +30,24 @@ namespace CasaCejaRemake.ViewModels.Inventory
         [ObservableProperty]
         [NotifyPropertyChangedFor(nameof(LineTotal))]
         private decimal _unitCost;
+
+        public string UnitCostText
+        {
+            get => UnitCost.ToString("F2", CultureInfo.InvariantCulture);
+            set
+            {
+                var normalized = (value ?? string.Empty).Trim().Replace(",", ".");
+                if (decimal.TryParse(normalized, NumberStyles.Any, CultureInfo.InvariantCulture, out var parsed) && parsed >= 0)
+                    UnitCost = Math.Round(parsed, 2);
+
+                OnPropertyChanged();
+            }
+        }
+
+        partial void OnUnitCostChanged(decimal value)
+        {
+            OnPropertyChanged(nameof(UnitCostText));
+        }
 
         public decimal LineTotal => Quantity * UnitCost;
     }
@@ -163,7 +182,7 @@ namespace CasaCejaRemake.ViewModels.Inventory
                     p.Barcode.Equals(term, StringComparison.OrdinalIgnoreCase));
                 var product = exact ?? results[0];
 
-                AddOrIncrementLine(product);
+                await AddOrIncrementLineAsync(product);
                 SearchTerm = string.Empty;
             }
             catch (Exception ex)
@@ -176,8 +195,10 @@ namespace CasaCejaRemake.ViewModels.Inventory
             }
         }
 
-        private void AddOrIncrementLine(Product product)
+        private async Task AddOrIncrementLineAsync(Product product)
         {
+            var pricedProduct = await _inventoryService.GetProductByIdAsync(product.Id) ?? product;
+
             var existing = Lines.FirstOrDefault(l => l.ProductId == product.Id);
             if (existing != null)
             {
@@ -189,11 +210,11 @@ namespace CasaCejaRemake.ViewModels.Inventory
             {
                 var newLine = new EntryLineItem
                 {
-                    ProductId = product.Id,
-                    Barcode = product.Barcode,
-                    ProductName = product.Name,
+                    ProductId = pricedProduct.Id,
+                    Barcode = pricedProduct.Barcode,
+                    ProductName = pricedProduct.Name,
                     Quantity = 1,
-                    UnitCost = 0m   // El usuario captura el costo de compra
+                    UnitCost = ResolveDefaultUnitCost(pricedProduct)
                 };
 
                 Lines.Add(newLine);
@@ -208,8 +229,10 @@ namespace CasaCejaRemake.ViewModels.Inventory
             OpenPosCatalogRequested?.Invoke(this, SearchTerm?.Trim() ?? string.Empty);
         }
 
-        public void AddProductFromPosCatalog(Product product, int quantity)
+        public async Task AddProductFromPosCatalogAsync(Product product, int quantity)
         {
+            var pricedProduct = await _inventoryService.GetProductByIdAsync(product.Id) ?? product;
+
             var existing = Lines.FirstOrDefault(l => l.ProductId == product.Id);
             if (existing != null)
             {
@@ -221,11 +244,11 @@ namespace CasaCejaRemake.ViewModels.Inventory
 
             var newLine = new EntryLineItem
             {
-                ProductId = product.Id,
-                Barcode = product.Barcode,
-                ProductName = product.Name,
+                ProductId = pricedProduct.Id,
+                Barcode = pricedProduct.Barcode,
+                ProductName = pricedProduct.Name,
                 Quantity = Math.Max(1, quantity),
-                UnitCost = 0m
+                UnitCost = ResolveDefaultUnitCost(pricedProduct)
             };
 
             Lines.Add(newLine);
@@ -298,7 +321,19 @@ namespace CasaCejaRemake.ViewModels.Inventory
                     LineTotal = l.LineTotal
                 }).ToList();
 
-                await _inventoryService.CreateEntryAsync(entry, products);
+                var (entryId, synced) = await _inventoryService.CreateEntryAsync(entry, products);
+
+                if (synced)
+                {
+                    ShowMessageRequested?.Invoke(this,
+                        $"Entrada {folio} guardada y sincronizada con el servidor.");
+                }
+                else
+                {
+                    ShowMessageRequested?.Invoke(this,
+                        $"Entrada {folio} guardada localmente.\nSe sincronizará con el servidor cuando haya conexión.");
+                }
+
                 GoBackRequested?.Invoke(this, EventArgs.Empty);
             }
             catch (Exception ex)
@@ -315,6 +350,17 @@ namespace CasaCejaRemake.ViewModels.Inventory
         private void Cancel()
         {
             GoBackRequested?.Invoke(this, EventArgs.Empty);
+        }
+
+        private static decimal ResolveDefaultUnitCost(Product product)
+        {
+            if (product.PriceRetail > 0)
+                return product.PriceRetail;
+
+            if (product.LowestPrice > 0)
+                return product.LowestPrice;
+
+            return 0m;
         }
     }
 }

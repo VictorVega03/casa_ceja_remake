@@ -179,6 +179,26 @@ namespace CasaCejaRemake.Views.Inventory
         {
         }
 
+        private void OnQuantityTextChanged(object? sender, TextChangedEventArgs e)
+        {
+            if (sender is not TextBox tb) return;
+            var text = tb.Text ?? string.Empty;
+            var clean = new string(text.Where(char.IsDigit).ToArray());
+            if (clean != text)
+                tb.Text = clean;
+        }
+
+        private void OnQuantityLostFocus(object? sender, RoutedEventArgs e)
+        {
+            if (sender is not TextBox tb) return;
+            if (string.IsNullOrWhiteSpace(tb.Text) || !int.TryParse(tb.Text, out var val) || val < 1)
+            {
+                tb.Text = "1";
+                if (tb.DataContext is EntryLineItem line)
+                    line.Quantity = 1;
+            }
+        }
+
         private async void OnOpenPosCatalogRequested(object? sender, string initialSearchTerm)
         {
             var app = App.Current as App;
@@ -201,10 +221,10 @@ namespace CasaCejaRemake.Views.Inventory
             await searchViewModel.InitializeAsync();
             searchView.DataContext = searchViewModel;
 
-            searchViewModel.ProductSelected += (s, args) =>
+            searchViewModel.ProductSelected += async (s, args) =>
             {
                 var (product, quantity) = args;
-                _viewModel.AddProductFromPosCatalog(product, quantity);
+                await _viewModel.AddProductFromPosCatalogAsync(product, quantity);
                 searchView.Close();
             };
 

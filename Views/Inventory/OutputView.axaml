@@ -302,7 +302,7 @@
                                                 CommandParameter="{Binding}">
                                             <TextBlock Text="−" FontSize="16" Foreground="#BDBDBD"/>
                                         </Button>
-                                        <TextBox Text="{Binding Quantity, Mode=TwoWay}"
+                                        <TextBox Text="{Binding Quantity, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
                                                  Width="46"
                                                  Padding="0"
                                                  FontSize="15"
@@ -310,7 +310,9 @@
                                                  HorizontalContentAlignment="Center"
                                                  VerticalContentAlignment="Center"
                                                  Background="#2A2A2A"
-                                                 BorderBrush="#3A3A3A"/>
+                                                 BorderBrush="#3A3A3A"
+                                                 TextChanged="OnQuantityTextChanged"
+                                                 LostFocus="OnQuantityLostFocus"/>
                                         <Button Classes="icon-btn" CornerRadius="4"
                                                 Command="{Binding DataContext.IncrementQtyCommand, RelativeSource={RelativeSource AncestorType=Window}}"
                                                 CommandParameter="{Binding}">
@@ -325,7 +327,7 @@
                         <DataGridTextColumn Header="COSTO UNIT."
                                             Binding="{Binding UnitCost, Converter={StaticResource DecimalInputConverter}}"
                                             Width="110"
-                                            IsReadOnly="True"/>
+                                            IsReadOnly="False"/>
 
                         <!-- Total línea (readonly) -->
                         <DataGridTextColumn Header="TOTAL LÍNEA" Binding="{Binding LineTotal, StringFormat={}{0:C}}"
