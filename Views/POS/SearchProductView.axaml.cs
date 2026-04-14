@@ -1,8 +1,11 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using CasaCejaRemake.Models;
+using CasaCejaRemake.Views.Shared;
 using CasaCejaRemake.ViewModels.POS;
 using casa_ceja_remake.Helpers;
 
@@ -64,11 +67,43 @@ namespace CasaCejaRemake.Views.POS
                 return;
             }
 
-            // Mostrar diálogo de existencia (pendiente de implementación)
-            await DialogHelper.ShowMessageDialog(
-                this, 
-                $"Existencia - {_viewModel.SelectedProduct.Name}",
-                "⚠️ Función en desarrollo.\n\nAquí se mostrará la existencia del producto en cada sucursal.");
+            var app = App.Current as App;
+            var inventoryService = app?.GetInventoryService();
+
+            if (inventoryService == null)
+            {
+                await DialogHelper.ShowMessageDialog(this, "Aviso", "Servicio de inventario no disponible.");
+                return;
+            }
+
+            var product = _viewModel.SelectedProduct;
+
+            // Cargar stock y sucursales en paralelo
+            List<ProductStockItem> stockItems;
+            List<Branch> allBranches;
+            bool isFromCache;
+
+            try
+            {
+                var stockTask = inventoryService.GetStockByProductAsync(product.Id, product.Barcode);
+                var branchTask = inventoryService.GetBranchesAsync();
+                await System.Threading.Tasks.Task.WhenAll(
+                    stockTask,
+                    branchTask.ContinueWith(_ => { }));
+
+                (stockItems, isFromCache) = stockTask.Result;
+                try { allBranches = branchTask.Result; }
+                catch { allBranches = new List<Branch>(); }
+            }
+            catch
+            {
+                stockItems = new List<ProductStockItem>();
+                allBranches = new List<Branch>();
+                isFromCache = true;
+            }
+
+            var dialog = new StockByBranchDialog(product, stockItems, isFromCache, allBranches);
+            await dialog.ShowDialog(this);
         }
 
         protected override void OnKeyDown(KeyEventArgs e)

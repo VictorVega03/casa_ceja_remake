@@ -132,6 +132,10 @@ namespace CasaCejaRemake.Views.Inventory
                 if (tb.DataContext is ConfirmLineItem line)
                     line.ReceivedQuantity = 0;
             }
+            else if (tb.DataContext is ConfirmLineItem lineItem)
+            {
+                lineItem.ReceivedQuantity = val;
+            }
         }
     }
 }

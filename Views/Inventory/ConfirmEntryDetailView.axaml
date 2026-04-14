@@ -194,7 +194,7 @@
                                     <TextBlock Text="−" FontSize="14" Foreground="#BDBDBD"
                                                HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Button>
-                                <TextBox Text="{Binding ReceivedQuantity, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
+                                <TextBox Text="{Binding ReceivedQuantity, Mode=OneWay}"
                                          Width="48" Padding="0"
                                          FontSize="14" FontWeight="SemiBold"
                                          HorizontalContentAlignment="Center"

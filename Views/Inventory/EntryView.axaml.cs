@@ -17,6 +17,7 @@ namespace CasaCejaRemake.Views.Inventory
     {
         private EntriesViewModel? _viewModel;
         private bool _allowClose;
+        private bool _hasOpenDialog;
         private DispatcherTimer? _quantityTimer;
         private Key _currentArrowKey;
 
@@ -41,8 +42,10 @@ namespace CasaCejaRemake.Views.Inventory
 
                 _viewModel.RequestConfirmSave += async (s, data) =>
                 {
+                    _hasOpenDialog = true;
                     var confirmed = await casa_ceja_remake.Helpers.DialogHelper.ShowEntryConfirmDialog(
                         this, data.BranchName, data.SupplierName, data.ProductCount, data.TotalAmount);
+                    _hasOpenDialog = false;
                     if (confirmed)
                         await _viewModel.DoSaveEntryAsync();
                 };
@@ -144,7 +147,7 @@ namespace CasaCejaRemake.Views.Inventory
                 return;
             }
 
-            if (e.Key == Key.Escape)
+            if (e.Key == Key.Escape && !_hasOpenDialog)
             {
                 _ = ConfirmAndExitAsync();
                 e.Handled = true;
@@ -157,6 +160,12 @@ namespace CasaCejaRemake.Views.Inventory
             if (_allowClose)
             {
                 base.OnClosing(e);
+                return;
+            }
+
+            if (_hasOpenDialog)
+            {
+                e.Cancel = true;
                 return;
             }
 
@@ -204,6 +213,10 @@ namespace CasaCejaRemake.Views.Inventory
                 tb.Text = "1";
                 if (tb.DataContext is EntryLineItem line)
                     line.Quantity = 1;
+            }
+            else if (tb.DataContext is EntryLineItem lineItem)
+            {
+                lineItem.Quantity = val;
             }
         }
 

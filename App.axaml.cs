@@ -963,6 +963,11 @@ namespace CasaCejaRemake
             return _cashCloseService;
         }
 
+        public InventoryService? GetInventoryService()
+        {
+            return _inventoryService;
+        }
+
         /// <summary>
         /// Obtiene la sucursal actual desde la base de datos.
         /// </summary>

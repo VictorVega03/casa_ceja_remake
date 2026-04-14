@@ -294,7 +294,7 @@
                                                 CommandParameter="{Binding}">
                                             <TextBlock Text="−" FontSize="16" Foreground="#BDBDBD"/>
                                         </Button>
-                                        <TextBox Text="{Binding Quantity, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
+                                        <TextBox Text="{Binding Quantity, Mode=OneWay}"
                                                  Width="46"
                                                  Padding="0"
                                                  FontSize="15"
