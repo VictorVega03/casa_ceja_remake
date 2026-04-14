@@ -18,23 +18,8 @@
         <Style Selector="TextBlock.label">
             <Setter Property="FontSize" Value="11"/>
             <Setter Property="FontWeight" Value="Bold"/>
-            <Setter Property="Foreground" Value="#777"/>
-        </Style>
-        <Style Selector="Button.action-confirm">
-            <Setter Property="Background" Value="#1565C0"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="Padding" Value="20,8"/>
-            <Setter Property="CornerRadius" Value="6"/>
-            <Setter Property="FontSize" Value="13"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="Cursor" Value="Hand"/>
-        </Style>
-        <Style Selector="Button.action-confirm:pointerover">
-            <Setter Property="Background" Value="#1976D2"/>
-        </Style>
-        <Style Selector="Button.action-confirm:disabled">
-            <Setter Property="Background" Value="#0D2A4A"/>
-            <Setter Property="Foreground" Value="#555"/>
+            <Setter Property="Foreground" Value="#666"/>
+            <Setter Property="LetterSpacing" Value="0.5"/>
         </Style>
         <Style Selector="Button.action-refresh">
             <Setter Property="Background" Value="#2A2A2A"/>
@@ -56,6 +41,20 @@
         <Style Selector="Button.icon-btn:pointerover">
             <Setter Property="Background" Value="#2A2A2A"/>
         </Style>
+        <Style Selector="Button.btn-detail">
+            <Setter Property="Background" Value="#1A2A3A"/>
+            <Setter Property="Foreground" Value="#42A5F5"/>
+            <Setter Property="BorderBrush" Value="#1E4A70"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="14,7"/>
+            <Setter Property="CornerRadius" Value="5"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+        <Style Selector="Button.btn-detail:pointerover">
+            <Setter Property="Background" Value="#1E3A55"/>
+        </Style>
         <Style Selector="DataGrid">
             <Setter Property="Background" Value="#1A1A1A"/>
             <Setter Property="RowBackground" Value="#1E1E1E"/>
@@ -64,33 +63,44 @@
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="GridLinesVisibility" Value="Horizontal"/>
             <Setter Property="HorizontalGridLinesBrush" Value="#252525"/>
-            <Setter Property="RowHeight" Value="40"/>
+            <Setter Property="RowHeight" Value="52"/>
         </Style>
         <Style Selector="DataGridColumnHeader">
-            <Setter Property="Background" Value="#1A1A1A"/>
-            <Setter Property="Foreground" Value="#888"/>
+            <Setter Property="Background" Value="#161616"/>
+            <Setter Property="Foreground" Value="#777"/>
             <Setter Property="FontSize" Value="11"/>
             <Setter Property="FontWeight" Value="Bold"/>
-            <Setter Property="Padding" Value="10,6"/>
+            <Setter Property="Padding" Value="14,8"/>
         </Style>
         <Style Selector="DataGridCell">
-            <Setter Property="Padding" Value="10,0"/>
+            <Setter Property="Padding" Value="14,0"/>
             <Setter Property="Foreground" Value="#E0E0E0"/>
-            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontSize" Value="13"/>
+        </Style>
+        <!-- Selección discreta: fondo sutil azul oscuro, texto siempre legible -->
+        <Style Selector="DataGridRow:selected /template/ Rectangle#BackgroundRectangle">
+            <Setter Property="Fill" Value="#1E3A55"/>
+            <Setter Property="Opacity" Value="1"/>
+        </Style>
+        <Style Selector="DataGridRow:selected DataGridCell">
+            <Setter Property="Foreground" Value="#E0E0E0"/>
+        </Style>
+        <Style Selector="DataGridRow:selected:focus DataGridCell">
+            <Setter Property="Foreground" Value="#E0E0E0"/>
         </Style>
     </Window.Styles>
 
     <Grid RowDefinitions="Auto,*,Auto">
 
         <!-- ═══ HEADER ═══ -->
-        <Border Grid.Row="0" Background="#1C1C1C" BorderBrush="#2A2A2A" BorderThickness="0,0,0,1" Padding="18,10">
+        <Border Grid.Row="0" Background="#1C1C1C" BorderBrush="#2A2A2A" BorderThickness="0,0,0,1" Padding="18,12">
             <Grid ColumnDefinitions="Auto,*,Auto">
                 <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
                     <Button Classes="icon-btn" Command="{Binding GoBackCommand}" ToolTip.Tip="Volver (Esc)" CornerRadius="4">
                         <TextBlock Text="←" FontSize="15" Foreground="#1976D2" FontWeight="Bold"/>
                     </Button>
-                    <Border Width="4" Height="18" CornerRadius="2" Background="#1976D2"/>
-                    <TextBlock Text="CONFIRMAR ENTRADA DE MERCANCÍA" FontSize="16" FontWeight="Bold" Foreground="White" VerticalAlignment="Center"/>
+                    <Border Width="4" Height="20" CornerRadius="2" Background="#1976D2"/>
+                    <TextBlock Text="CONFIRMAR ENTRADA DE MERCANCÍA" FontSize="15" FontWeight="Bold" Foreground="White" VerticalAlignment="Center"/>
                     <Border Background="#0D2A4A" CornerRadius="4" Padding="8,3" VerticalAlignment="Center"
                             IsVisible="{Binding HasPending}">
                         <TextBlock Text="{Binding PendingEntries.Count, StringFormat='{}{0} pendientes'}"
@@ -99,7 +109,7 @@
                 </StackPanel>
 
                 <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="20" VerticalAlignment="Center">
-                    <StackPanel>
+                    <StackPanel Spacing="2">
                         <TextBlock Text="SUCURSAL" Classes="label"/>
                         <TextBlock Text="{Binding BranchName}" FontSize="13" Foreground="#E0E0E0" FontWeight="SemiBold"/>
                     </StackPanel>
@@ -121,26 +131,22 @@
             </Border>
 
             <!-- Sin pendientes -->
-            <Border IsVisible="{Binding !HasPending}" HorizontalAlignment="Center" VerticalAlignment="Center">
-                <StackPanel Spacing="12" HorizontalAlignment="Center">
-                    <Border Width="84" Height="84" CornerRadius="42" Background="#0D2A1A" BorderBrush="#1E5E3A" BorderThickness="2" HorizontalAlignment="Center">
-                        <Grid>
-                            <Canvas Width="50" Height="50" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                <Path Data="M 8 27 L 19 38 L 41 16"
-                                      Stroke="#66BB6A"
-                                      StrokeThickness="5"
-                                      StrokeLineCap="Round"
-                                      Width="50"
-                                      Height="50"/>
-                            </Canvas>
-                        </Grid>
-                    </Border>
-                    <TextBlock Text="No hay entradas pendientes de confirmación"
-                               FontSize="15" Foreground="#555" HorizontalAlignment="Center"/>
-                    <TextBlock Text="Todas las entradas de esta sucursal ya fueron confirmadas."
-                               FontSize="12" Foreground="#444" HorizontalAlignment="Center"/>
-                </StackPanel>
-            </Border>
+            <StackPanel IsVisible="{Binding !HasPending}"
+                        HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="12">
+                <Border Width="84" Height="84" CornerRadius="42"
+                        Background="#0D2A1A" BorderBrush="#1E5E3A" BorderThickness="2"
+                        HorizontalAlignment="Center">
+                    <Canvas Width="50" Height="50" HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <Path Data="M 8 27 L 19 38 L 41 16"
+                              Stroke="#66BB6A" StrokeThickness="5" StrokeLineCap="Round"
+                              Width="50" Height="50"/>
+                    </Canvas>
+                </Border>
+                <TextBlock Text="No hay entradas pendientes de confirmación"
+                           FontSize="15" Foreground="#555" HorizontalAlignment="Center"/>
+                <TextBlock Text="Todas las entradas de esta sucursal ya fueron confirmadas."
+                           FontSize="12" Foreground="#444" HorizontalAlignment="Center"/>
+            </StackPanel>
 
             <!-- Lista de entradas pendientes -->
             <DataGrid IsVisible="{Binding HasPending}"
@@ -155,14 +161,24 @@
                 <DataGrid.Columns>
 
                     <!-- Folio -->
-                    <DataGridTextColumn Header="FOLIO" Binding="{Binding Folio}"
-                                        Width="160" IsReadOnly="True"/>
-
-                    <!-- Tipo -->
-                    <DataGridTemplateColumn Header="TIPO" Width="110" IsReadOnly="True">
+                    <DataGridTemplateColumn Header="FOLIO" Width="230" IsReadOnly="True">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
-                                <Border CornerRadius="4" Padding="8,3" VerticalAlignment="Center" HorizontalAlignment="Left"
+                                <StackPanel VerticalAlignment="Center" Margin="14,0">
+                                    <TextBlock Text="{Binding Folio}"
+                                               FontSize="12" FontWeight="SemiBold"
+                                               Foreground="White" FontFamily="Consolas,Courier New"/>
+                                </StackPanel>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+
+                    <!-- Tipo -->
+                    <DataGridTemplateColumn Header="TIPO" Width="130" IsReadOnly="True">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <Border CornerRadius="4" Padding="10,4" Margin="14,0"
+                                        VerticalAlignment="Center" HorizontalAlignment="Left"
                                         Background="{Binding IsTransfer, Converter={StaticResource BoolToColor},
                                             ConverterParameter='#1A3A1A|#1A1A3A'}">
                                     <TextBlock Text="{Binding TypeLabel}" FontSize="11" FontWeight="Bold"
@@ -174,48 +190,67 @@
                     </DataGridTemplateColumn>
 
                     <!-- Fecha -->
-                    <DataGridTextColumn Header="FECHA" Binding="{Binding DateDisplay}"
-                                        Width="120" IsReadOnly="True"/>
+                    <DataGridTemplateColumn Header="FECHA" Width="155" IsReadOnly="True">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding DateDisplay}"
+                                           FontSize="13" Foreground="#CCCCCC"
+                                           VerticalAlignment="Center" Margin="14,0"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
 
-                    <!-- Proveedor / Folio Origen -->
+                    <!-- Proveedor / Origen -->
                     <DataGridTemplateColumn Header="PROVEEDOR / ORIGEN" Width="*" IsReadOnly="True">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
-                                <StackPanel VerticalAlignment="Center" Margin="12,0">
-                                    <TextBlock Text="{Binding SupplierName}" FontSize="13" Foreground="#E0E0E0"/>
+                                <StackPanel VerticalAlignment="Center" Margin="14,0" Spacing="2">
+                                    <TextBlock Text="{Binding SupplierName}"
+                                               FontSize="13" Foreground="#E0E0E0" FontWeight="SemiBold"/>
                                     <TextBlock Text="{Binding FolioOutput, StringFormat='Folio salida: {0}'}"
-                                               FontSize="11" Foreground="#666"
+                                               FontSize="11" Foreground="#555"
                                                IsVisible="{Binding IsTransfer}"/>
                                 </StackPanel>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
 
-                    <!-- Total -->
-                    <DataGridTextColumn Header="TOTAL" Binding="{Binding TotalAmount, StringFormat={}{0:C}}"
-                                        Width="130" IsReadOnly="True"/>
-
-                    <!-- Notas -->
-                    <DataGridTemplateColumn Header="NOTAS" Width="200" IsReadOnly="True">
+                    <!-- Productos -->
+                    <DataGridTemplateColumn Header="PRODUCTOS" Width="100" IsReadOnly="True">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
-                                <TextBlock Text="{Binding Notes}" FontSize="12" Foreground="#888"
-                                           TextWrapping="Wrap" VerticalAlignment="Center" Margin="12,0"/>
+                                <TextBlock Text="{Binding ProductCount}"
+                                           FontSize="14" FontWeight="Bold"
+                                           Foreground="#AAAAAA"
+                                           VerticalAlignment="Center"
+                                           HorizontalAlignment="Center"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+
+                    <!-- Total -->
+                    <DataGridTemplateColumn Header="TOTAL" Width="130" IsReadOnly="True">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding TotalAmount, StringFormat={}{0:C}}"
+                                           FontSize="14" FontWeight="Bold"
+                                           Foreground="#4CAF50"
+                                           VerticalAlignment="Center" Margin="14,0"/>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
 
                     <!-- Acción -->
-                    <DataGridTemplateColumn Header="" Width="160" CanUserResize="False">
+                    <DataGridTemplateColumn Header="" Width="180" CanUserResize="False">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
-                                <Button Classes="action-confirm"
-                                        Command="{Binding DataContext.ConfirmEntryCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                <Button Classes="btn-detail"
+                                        Command="{Binding DataContext.RequestConfirmCommand, RelativeSource={RelativeSource AncestorType=Window}}"
                                         CommandParameter="{Binding}"
                                         HorizontalAlignment="Center"
                                         VerticalAlignment="Center"
                                         Margin="8,0">
-                                    ✓  Confirmar
+                                    Ver detalle →
                                 </Button>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
@@ -226,11 +261,8 @@
 
         <!-- ═══ FOOTER ═══ -->
         <Border Grid.Row="2" Background="#1C1C1C" BorderBrush="#2A2A2A" BorderThickness="0,1,0,0" Padding="18,10">
-            <Grid>
-                <TextBlock
-                    Text="Esc: Volver   |   Confirma la entrada para registrar la mercancía como recibida"
-                    FontSize="11" Foreground="#444" VerticalAlignment="Center"/>
-            </Grid>
+            <TextBlock Text="Esc: Volver   |   Haz clic en 'Ver detalle' para revisar los productos y confirmar la recepción"
+                       FontSize="11" Foreground="#444" VerticalAlignment="Center"/>
         </Border>
     </Grid>
 </Window>

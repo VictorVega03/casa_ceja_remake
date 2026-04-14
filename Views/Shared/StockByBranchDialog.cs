@@ -273,7 +273,7 @@ namespace CasaCejaRemake.Views.Shared
                         (false, true) => new CornerRadius(0, 0, 8, 8),
                         _             => new CornerRadius(0)
                     },
-                    Padding = new Thickness(14, 10)
+                    Padding = new Thickness(14, 13)
                 };
 
                 var itemGrid = new Grid();

@@ -40,9 +40,13 @@ namespace CasaCejaRemake.ViewModels.Inventory
         public string OriginBranchName { get; init; } = string.Empty;
         public DateTime EntryDate { get; init; }
         public decimal TotalAmount { get; init; }
-        public string? Notes { get; init; }
+        public string? Notes { get; set; }
         public ObservableCollection<ConfirmLineItem> Lines { get; init; } = new();
 
+        // Propiedades calculadas para la vista
+        public bool IsTransfer => !string.IsNullOrEmpty(FolioOutput);
+        public string TypeLabel => IsTransfer ? "TRASPASO" : "COMPRA";
+        public string SupplierName => IsTransfer ? OriginBranchName : "—";
         public string DateDisplay => EntryDate.ToString("dd/MM/yyyy HH:mm");
         public int ProductCount => Lines.Count;
         public bool HasDiscrepancies => Lines.Any(l => l.HasDiscrepancy);

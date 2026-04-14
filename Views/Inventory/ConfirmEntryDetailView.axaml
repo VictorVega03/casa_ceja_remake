@@ -1,0 +1,272 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:CasaCejaRemake.ViewModels.Inventory"
+        xmlns:helpers="using:CasaCejaRemake.Helpers"
+        x:Class="CasaCejaRemake.Views.Inventory.ConfirmEntryDetailView"
+        x:DataType="vm:ConfirmEntryDetailViewModel"
+        x:CompileBindings="False"
+        Title="Detalle de Entrada Pendiente"
+        Width="860" Height="620"
+        MinWidth="700" MinHeight="480"
+        WindowStartupLocation="CenterOwner"
+        CanResize="True"
+        ShowInTaskbar="False"
+        Background="#1A1A1A">
+
+    <Window.Resources>
+        <helpers:BoolToColorConverter x:Key="BoolToColor"/>
+    </Window.Resources>
+
+    <Window.Styles>
+        <Style Selector="TextBlock.lbl">
+            <Setter Property="FontSize" Value="10"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Foreground" Value="#666"/>
+            <Setter Property="LetterSpacing" Value="0.5"/>
+            <Setter Property="Margin" Value="0,0,0,3"/>
+        </Style>
+        <Style Selector="TextBlock.val">
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Foreground" Value="#E0E0E0"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+        </Style>
+        <Style Selector="Button.icon-btn">
+            <Setter Property="Background" Value="#2A2A2A"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderBrush" Value="#3A3A3A"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="CornerRadius" Value="4"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Width" Value="28"/>
+            <Setter Property="Height" Value="28"/>
+        </Style>
+        <Style Selector="Button.icon-btn:pointerover">
+            <Setter Property="Background" Value="#383838"/>
+        </Style>
+        <Style Selector="TextBox">
+            <Setter Property="Background" Value="#242424"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderBrush" Value="#3A3A3A"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="5"/>
+            <Setter Property="Padding" Value="10,7"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="CaretBrush" Value="White"/>
+        </Style>
+        <Style Selector="TextBox:focus">
+            <Setter Property="BorderBrush" Value="#42A5F5"/>
+        </Style>
+        <Style Selector="DataGrid">
+            <Setter Property="Background" Value="#1E1E1E"/>
+            <Setter Property="RowBackground" Value="#212121"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderBrush" Value="#2A2A2A"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="GridLinesVisibility" Value="Horizontal"/>
+            <Setter Property="HorizontalGridLinesBrush" Value="#2A2A2A"/>
+            <Setter Property="RowHeight" Value="44"/>
+        </Style>
+        <Style Selector="DataGridColumnHeader">
+            <Setter Property="Background" Value="#181818"/>
+            <Setter Property="Foreground" Value="#777"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Padding" Value="12,7"/>
+        </Style>
+        <Style Selector="DataGridCell">
+            <Setter Property="Padding" Value="12,0"/>
+            <Setter Property="Foreground" Value="#E0E0E0"/>
+            <Setter Property="FontSize" Value="13"/>
+        </Style>
+        <!-- Selección discreta: fondo sutil, texto siempre legible -->
+        <Style Selector="DataGridRow:selected /template/ Rectangle#BackgroundRectangle">
+            <Setter Property="Fill" Value="#1E3A55"/>
+            <Setter Property="Opacity" Value="1"/>
+        </Style>
+        <Style Selector="DataGridRow:selected DataGridCell">
+            <Setter Property="Foreground" Value="#E0E0E0"/>
+        </Style>
+        <Style Selector="DataGridRow:selected:focus DataGridCell">
+            <Setter Property="Foreground" Value="#E0E0E0"/>
+        </Style>
+    </Window.Styles>
+
+    <Grid RowDefinitions="Auto,Auto,*,Auto,Auto">
+
+        <!-- ═══ HEADER INFO ═══ -->
+        <Border Grid.Row="0" Background="#232323" BorderBrush="#2E2E2E" BorderThickness="0,0,0,1" Padding="20,14">
+            <Grid ColumnDefinitions="*,Auto">
+
+                <WrapPanel Grid.Column="0" Orientation="Horizontal">
+
+                    <StackPanel Margin="0,0,28,0">
+                        <TextBlock Text="FOLIO" Classes="lbl"/>
+                        <TextBlock Text="{Binding Entry.Folio}" Classes="val"
+                                   FontFamily="Consolas,Courier New" FontSize="14"/>
+                    </StackPanel>
+
+                    <StackPanel Margin="0,0,28,0" VerticalAlignment="Top">
+                        <TextBlock Text="TIPO" Classes="lbl"/>
+                        <Border CornerRadius="4" Padding="8,3"
+                                Background="{Binding Entry.IsTransfer, Converter={StaticResource BoolToColor},
+                                    ConverterParameter='#1A3A1A|#1A1A3A'}">
+                            <TextBlock Text="{Binding Entry.TypeLabel}" FontSize="11" FontWeight="Bold"
+                                       Foreground="{Binding Entry.IsTransfer, Converter={StaticResource BoolToColor},
+                                           ConverterParameter='#66BB6A|#42A5F5'}"/>
+                        </Border>
+                    </StackPanel>
+
+                    <StackPanel Margin="0,0,28,0">
+                        <TextBlock Text="FECHA" Classes="lbl"/>
+                        <TextBlock Text="{Binding Entry.DateDisplay}" Classes="val"/>
+                    </StackPanel>
+
+                    <StackPanel Margin="0,0,28,0">
+                        <TextBlock Text="ORIGEN / PROVEEDOR" Classes="lbl"/>
+                        <TextBlock Text="{Binding Entry.SupplierName}" Classes="val" Foreground="#CCCCCC"/>
+                    </StackPanel>
+
+                    <StackPanel>
+                        <TextBlock Text="TOTAL" Classes="lbl"/>
+                        <TextBlock Text="{Binding Entry.TotalAmount, StringFormat={}{0:C}}"
+                                   FontSize="15" FontWeight="Bold" Foreground="#4CAF50"/>
+                    </StackPanel>
+                </WrapPanel>
+
+                <!-- Badge discrepancias -->
+                <Border Grid.Column="1" VerticalAlignment="Center"
+                        Background="#3E1A00" BorderBrush="#7A3A00" BorderThickness="1"
+                        CornerRadius="5" Padding="12,6"
+                        IsVisible="{Binding Entry.HasDiscrepancies}">
+                    <TextBlock Text="⚠ Con diferencias" FontSize="12" FontWeight="Bold" Foreground="#FFA040"/>
+                </Border>
+            </Grid>
+        </Border>
+
+        <!-- ═══ SUBHEADER ═══ -->
+        <Border Grid.Row="1" Background="#1E1E1E" Padding="20,8" BorderBrush="#2A2A2A" BorderThickness="0,0,0,1">
+            <TextBlock Text="PRODUCTOS DE LA ENTRADA" FontSize="11" FontWeight="Bold"
+                       Foreground="#42A5F5" LetterSpacing="1"/>
+        </Border>
+
+        <!-- ═══ DATAGRID PRODUCTOS ═══ -->
+        <DataGrid Grid.Row="2"
+                  x:Name="LinesGrid"
+                  ItemsSource="{Binding Entry.Lines}"
+                  SelectedItem="{Binding SelectedLine}"
+                  AutoGenerateColumns="False"
+                  CanUserReorderColumns="False"
+                  CanUserResizeColumns="True"
+                  CanUserSortColumns="False"
+                  IsReadOnly="False"
+                  SelectionMode="Single">
+            <DataGrid.Columns>
+
+                <!-- Código -->
+                <DataGridTextColumn Header="CÓDIGO" Binding="{Binding Barcode}"
+                                    Width="130" IsReadOnly="True"/>
+
+                <!-- Nombre -->
+                <DataGridTextColumn Header="PRODUCTO" Binding="{Binding ProductName}"
+                                    Width="*" IsReadOnly="True"/>
+
+                <!-- Enviado -->
+                <DataGridTemplateColumn Header="ENVIADO" Width="90" IsReadOnly="True">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding OriginalQuantity}"
+                                       FontSize="14" FontWeight="SemiBold"
+                                       Foreground="#888"
+                                       VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+
+                <!-- Recibido (editable) -->
+                <DataGridTemplateColumn Header="RECIBIDO" Width="148">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal" Spacing="4"
+                                        VerticalAlignment="Center" HorizontalAlignment="Center">
+                                <Button Classes="icon-btn"
+                                        Command="{Binding DataContext.DecrementLineCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                        CommandParameter="{Binding}">
+                                    <TextBlock Text="−" FontSize="14" Foreground="#BDBDBD"
+                                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Button>
+                                <TextBox Text="{Binding ReceivedQuantity, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
+                                         Width="48" Padding="0"
+                                         FontSize="14" FontWeight="SemiBold"
+                                         HorizontalContentAlignment="Center"
+                                         VerticalContentAlignment="Center"
+                                         Background="#2A2A2A" BorderBrush="#3A3A3A"
+                                         TextChanged="OnQtyTextChanged"
+                                         LostFocus="OnQtyLostFocus"/>
+                                <Button Classes="icon-btn"
+                                        Command="{Binding DataContext.IncrementLineCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                        CommandParameter="{Binding}">
+                                    <TextBlock Text="+" FontSize="14" Foreground="#BDBDBD"
+                                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Button>
+                            </StackPanel>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+
+                <!-- Diferencia -->
+                <DataGridTemplateColumn Header="DIF." Width="80" IsReadOnly="True">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding Discrepancy}"
+                                       FontSize="13" FontWeight="Bold"
+                                       Foreground="{Binding HasDiscrepancy, Converter={StaticResource BoolToColor},
+                                           ConverterParameter='#EF5350|#555555'}"
+                                       VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+
+                <!-- Costo unitario -->
+                <DataGridTextColumn Header="COSTO UNIT." Binding="{Binding UnitCost, StringFormat={}{0:C}}"
+                                    Width="110" IsReadOnly="True"/>
+
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <!-- ═══ NOTAS ═══ -->
+        <Border Grid.Row="3" Background="#1E1E1E" BorderBrush="#2A2A2A" BorderThickness="0,1,0,0" Padding="20,12">
+            <Grid ColumnDefinitions="Auto,*">
+                <TextBlock Grid.Column="0" Text="NOTA:" FontSize="11" FontWeight="Bold"
+                           Foreground="#666" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                <TextBox Grid.Column="1"
+                         x:Name="NotesBox"
+                         Text="{Binding Notes}"
+                         Watermark="Agrega una nota sobre la recepción (opcional)..."
+                         Height="36"/>
+            </Grid>
+        </Border>
+
+        <!-- ═══ FOOTER ═══ -->
+        <Border Grid.Row="4" Background="#232323" BorderBrush="#2E2E2E" BorderThickness="0,1,0,0" Padding="20,14">
+            <Grid ColumnDefinitions="*,Auto">
+                <TextBlock Grid.Column="0"
+                           Text="Ajusta las cantidades recibidas si hubo diferencias con lo enviado."
+                           FontSize="11" Foreground="#555" VerticalAlignment="Center"/>
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10">
+                    <Button x:Name="CancelBtn"
+                            Background="#2A2A2A" Foreground="#BDBDBD"
+                            Padding="18,9" CornerRadius="5" FontSize="13"
+                            Cursor="Hand">
+                        Cancelar (Esc)
+                    </Button>
+                    <Button x:Name="ConfirmBtn"
+                            Background="#1565C0" Foreground="White"
+                            Padding="20,9" CornerRadius="5"
+                            FontSize="13" FontWeight="SemiBold" Cursor="Hand">
+                        ✓  Confirmar recepción
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>
