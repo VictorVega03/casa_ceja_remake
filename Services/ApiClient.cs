@@ -53,8 +53,10 @@ namespace CasaCejaRemake.Services
             try
             {
                 var response = await _httpClient.GetAsync($"{BaseUrl}/api/v1/health");
-                Console.WriteLine($"[ApiClient] Health check: {(response.IsSuccessStatusCode ? "OK" : response.StatusCode.ToString())}");
-                return response.IsSuccessStatusCode;
+                // Conectividad = servidor alcanzable, aunque responda 401/404.
+                // Si hubo respuesta HTTP, hay conexión con el servidor.
+                Console.WriteLine($"[ApiClient] Health check HTTP: {response.StatusCode}");
+                return true;
             }
             catch (Exception ex)
             {

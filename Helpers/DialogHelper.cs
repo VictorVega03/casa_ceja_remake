@@ -821,7 +821,7 @@ public static class DialogHelper
             Margin = new Thickness(0, 4, 0, 0),
             Child = new TextBlock
             {
-                Text = "⚠ La sucursal destino deberá confirmar la recepción para que su stock se actualice.",
+                Text = "⚠ La sucursal destino deberá confirmar la recepción para que su inventario se actualice.",
                 FontSize = 11, Foreground = new SolidColorBrush(Color.Parse("#FFC107")),
                 TextWrapping = TextWrapping.Wrap
             }

@@ -41,6 +41,12 @@ namespace CasaCejaRemake.ViewModels.Inventory
         private bool _isCheckingConnection = false;
 
         [ObservableProperty]
+        private bool _showOnlineBanner = false;
+
+        private bool _wasOffline = false;
+        private bool _hasConnectivityCheckCompleted = false;
+
+        [ObservableProperty]
         private int _pendingConfirmations = 0;
 
         /// <summary>
@@ -67,21 +73,28 @@ namespace CasaCejaRemake.ViewModels.Inventory
         [RelayCommand]
         private void OpenEntries()
         {
-            // TODO: restaurar check de conectividad: if (!IsOnline) return;
             EntriesSelected?.Invoke(this, EventArgs.Empty);
         }
 
         [RelayCommand]
         private void OpenOutputs()
         {
-            // TODO: restaurar check de conectividad: if (!IsOnline) return;
+            if (!IsOnline)
+            {
+                return;
+            }
+
             OutputsSelected?.Invoke(this, EventArgs.Empty);
         }
 
         [RelayCommand]
         private void OpenConfirmEntry()
         {
-            // TODO: restaurar check de conectividad: if (!IsOnline) return;
+            if (!IsOnline)
+            {
+                return;
+            }
+
             ConfirmEntrySelected?.Invoke(this, EventArgs.Empty);
         }
 
@@ -131,8 +144,21 @@ namespace CasaCejaRemake.ViewModels.Inventory
             IsCheckingConnection = true;
             try
             {
-                var response = await _apiClient.GetAsync<Models.DTOs.HealthResponse>("/api/v1/health");
-                IsOnline = response?.IsSuccess == true;
+                var isOnlineNow = await _apiClient.IsServerAvailableAsync();
+
+                // Primer check: si inició offline, marcar estado para permitir banner al reconectar.
+                // Si inició online, no mostrar banner en este primer check.
+                if (!_hasConnectivityCheckCompleted)
+                {
+                    if (!isOnlineNow)
+                    {
+                        _wasOffline = true;
+                    }
+
+                    _hasConnectivityCheckCompleted = true;
+                }
+
+                IsOnline = isOnlineNow;
             }
             catch
             {
@@ -149,6 +175,26 @@ namespace CasaCejaRemake.ViewModels.Inventory
         partial void OnPendingConfirmationsChanged(int value)
         {
             OnPropertyChanged(nameof(HasPendingConfirmations));
+        }
+
+        partial void OnIsOnlineChanged(bool value)
+        {
+            if (value && _wasOffline)
+            {
+                _ = ShowOnlineBannerAsync();
+            }
+
+            if (!value)
+            {
+                _wasOffline = true;
+            }
+        }
+
+        private async System.Threading.Tasks.Task ShowOnlineBannerAsync()
+        {
+            ShowOnlineBanner = true;
+            await System.Threading.Tasks.Task.Delay(3000);
+            ShowOnlineBanner = false;
         }
     }
 }

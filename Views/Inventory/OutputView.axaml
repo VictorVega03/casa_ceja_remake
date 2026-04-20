@@ -212,7 +212,7 @@
                         <StackPanel Spacing="4">
                             <TextBlock Text="⚠ Estado: PENDIENTE" FontSize="11" FontWeight="Bold" Foreground="#FFC107"/>
                             <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="#888"
-                                       Text="La sucursal destino deberá confirmar la recepción para que su stock se actualice."/>
+                                       Text="La sucursal destino deberá confirmar la recepción para que su inventario se actualice."/>
                         </StackPanel>
                     </Border>
                 </StackPanel>

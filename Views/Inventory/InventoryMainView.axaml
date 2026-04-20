@@ -130,6 +130,21 @@
             </StackPanel>
         </Border>
 
+        <!-- Banner online (aparece 3 segundos al reconectar) -->
+        <Border Grid.Row="1"
+                Background="#1B5E20"
+                Padding="16,7"
+                IsVisible="{Binding ShowOnlineBanner}">
+            <StackPanel Orientation="Horizontal" Spacing="10" HorizontalAlignment="Center">
+                <Path Fill="#A5D6A7" Width="15" Height="15" Stretch="Uniform"
+                      Data="M12,2C6.48,2,2,6.48,2,12s4.48,10,10,10s10-4.48,10-10S17.52,2,12,2z M10,17l-5-5l1.41-1.41L10,14.17l7.59-7.59L19,8L10,17z" />
+                <TextBlock Text="Conexión establecida con el servidor."
+                           Foreground="#C8E6C9"
+                           FontSize="12"
+                           VerticalAlignment="Center" />
+            </StackPanel>
+        </Border>
+
         <!-- Banner verificando -->
         <Border Grid.Row="1"
                 Background="#0D47A1"
@@ -189,21 +204,14 @@
                 <StackPanel Spacing="12" HorizontalAlignment="Center" VerticalAlignment="Center">
                     <Border Width="70" Height="70" CornerRadius="35" HorizontalAlignment="Center">
                         <Border.Background>
-                            <SolidColorBrush Color="#2E7D32" Opacity="{Binding IsOnline, Converter={StaticResource BoolToOpacityConverter}}" />
+                            <SolidColorBrush Color="#2E7D32" />
                         </Border.Background>
-                        <Panel>
-                            <TextBlock Text="📥" FontSize="32" HorizontalAlignment="Center" VerticalAlignment="Center"
-                                       IsVisible="{Binding IsOnline}" />
-                            <Path Fill="#9E9E9E" Width="30" Height="30" Stretch="Uniform"
-                                  HorizontalAlignment="Center" VerticalAlignment="Center"
-                                  IsVisible="{Binding !IsOnline}"
-                                  Data="M18,8h-1V6c0-2.76-2.24-5-5-5S7,3.24,7,6v2H6c-1.1,0-2,0.9-2,2v10c0,1.1,0.9,2,2,2h12c1.1,0,2-0.9,2-2V10C20,8.9,19.1,8,18,8z M12,17c-1.1,0-2-0.9-2-2s0.9-2,2-2s2,0.9,2,2S13.1,17,12,17z M15.1,8H8.9V6c0-1.71,1.39-3.1,3.1-3.1s3.1,1.39,3.1,3.1V8z" />
-                        </Panel>
+                        <TextBlock Text="📥" FontSize="32" HorizontalAlignment="Center" VerticalAlignment="Center" />
                     </Border>
                     <TextBlock Text="ENTRADA DE MERCANCÍA" FontSize="14" FontWeight="Bold"
                                Foreground="#212121" HorizontalAlignment="Center"
                                TextWrapping="Wrap" TextAlignment="Center" />
-                    <TextBlock Text="Registrar productos recibidos" FontSize="12"
+                    <TextBlock Text="Registrar productos recibidos desde bodega o proveedores" FontSize="12"
                                Foreground="#757575" HorizontalAlignment="Center"
                                TextWrapping="Wrap" TextAlignment="Center" />
                 </StackPanel>
@@ -212,6 +220,7 @@
             <!-- ===== CARD 2: SALIDA / TRASPASO ===== -->
             <Button Grid.Row="0" Grid.Column="2"
                     Command="{Binding OpenOutputsCommand}"
+                    IsEnabled="{Binding IsOnline}"
                     VerticalAlignment="Stretch" HorizontalAlignment="Stretch"
                     BorderBrush="#BBBBBB" BorderThickness="1"
                     CornerRadius="10" Padding="20,22">
@@ -250,7 +259,7 @@
                                   Data="M18,8h-1V6c0-2.76-2.24-5-5-5S7,3.24,7,6v2H6c-1.1,0-2,0.9-2,2v10c0,1.1,0.9,2,2,2h12c1.1,0,2-0.9,2-2V10C20,8.9,19.1,8,18,8z M12,17c-1.1,0-2-0.9-2-2s0.9-2,2-2s2,0.9,2,2S13.1,17,12,17z M15.1,8H8.9V6c0-1.71,1.39-3.1,3.1-3.1s3.1,1.39,3.1,3.1V8z" />
                         </Panel>
                     </Border>
-                    <TextBlock Text="SALIDA / TRASPASO" FontSize="14" FontWeight="Bold"
+                    <TextBlock Text="SALIDA DE MERCANCÍA" FontSize="14" FontWeight="Bold"
                                Foreground="#212121" HorizontalAlignment="Center"
                                TextWrapping="Wrap" TextAlignment="Center" />
                     <TextBlock Text="Enviar productos a otra sucursal" FontSize="12"
@@ -262,6 +271,7 @@
             <!-- ===== CARD 3: CONFIRMAR ENTRADA ===== -->
             <Button Grid.Row="0" Grid.Column="4"
                     Command="{Binding OpenConfirmEntryCommand}"
+                    IsEnabled="{Binding IsOnline}"
                     VerticalAlignment="Stretch" HorizontalAlignment="Stretch"
                     BorderBrush="#BBBBBB" BorderThickness="1"
                     CornerRadius="10" Padding="20,22">

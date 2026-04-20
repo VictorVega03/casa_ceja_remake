@@ -109,14 +109,20 @@ namespace CasaCejaRemake.ViewModels.Inventory
                         var supplierName = e.SupplierId > 0
                             ? (supplierMap.TryGetValue(e.SupplierId, out var name) ? name : "Desconocido")
                             : "Sin proveedor";
+                        var estado = e.EntryType == StockEntryType.Transfer
+                            ? (e.ConfirmedAt != null ? "CONFIRMADO" : "PENDIENTE")
+                            : (e.SyncStatus == 2 ? "SINCRONIZADO" : "PENDIENTE SYNC");
+
                         _allItems.Add(new HistoryItem
                         {
                             Folio = e.Folio,
                             Tipo = "ENTRADA",
                             Fecha = e.EntryDate,
-                            DestinoOrigen = $"Proveedor: {supplierName}",
+                            DestinoOrigen = e.EntryType == StockEntryType.Transfer
+                                ? $"Traspaso: {(supplierMap.TryGetValue(e.SupplierId, out var sName) ? sName : "Sin proveedor")}" 
+                                : $"Proveedor: {supplierName}",
                             Total = e.TotalAmount,
-                            Estado = "CONFIRMADO",
+                            Estado = estado,
                             Entry = e
                         });
                     }
