@@ -115,7 +115,7 @@ namespace CasaCejaRemake.Views.POS
                 
                 if (creditTicket != null)
                 {
-                    var ticketService = new Services.TicketService();
+                    var ticketService = (Avalonia.Application.Current as App)?.GetTicketService() ?? new Services.TicketService();
                     var ticketText = ticketService.GenerateTicketText(creditTicket, Services.TicketType.Credit);
                     await DialogHelper.ShowTicketDialog(this, e.Folio, ticketText);
                 }
@@ -133,7 +133,7 @@ namespace CasaCejaRemake.Views.POS
                 
                 if (layawayTicket != null)
                 {
-                    var ticketService = new Services.TicketService();
+                    var ticketService = (Avalonia.Application.Current as App)?.GetTicketService() ?? new Services.TicketService();
                     var ticketText = ticketService.GenerateTicketText(layawayTicket, Services.TicketType.Layaway);
                     await DialogHelper.ShowTicketDialog(this, e.Folio, ticketText);
                 }
@@ -421,7 +421,7 @@ namespace CasaCejaRemake.Views.POS
                     var layawayTicket = await layawayService.RecoverTicketAsync(layaway.Id);
                     if (layawayTicket != null)
                     {
-                        var ticketService = new Services.TicketService();
+                        var ticketService = (Avalonia.Application.Current as App)?.GetTicketService() ?? new Services.TicketService();
                         var ticketText = ticketService.GenerateTicketText(layawayTicket, Services.TicketType.Layaway);
                         await DialogHelper.ShowTicketDialog(this, layaway.Folio, ticketText);
                     }
