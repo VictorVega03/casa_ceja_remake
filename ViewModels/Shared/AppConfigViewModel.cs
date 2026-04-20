@@ -151,7 +151,7 @@ namespace CasaCejaRemake.ViewModels.Shared
                 if (verified)
                 {
                     BranchChangeUnlocked = true;
-                    StatusMessage = "✓ Cambio de sucursal desbloqueado";
+                    StatusMessage = "Cambio de sucursal desbloqueado";
                 }
                 else
                 {
@@ -202,7 +202,7 @@ namespace CasaCejaRemake.ViewModels.Shared
                 });
 
                 if (!StatusMessage.Contains("⚠️"))
-                    StatusMessage = "✓ Configuración guardada correctamente";
+                    StatusMessage = "Configuración guardada correctamente";
 
                 if (branchChanged)
                 {
@@ -255,7 +255,7 @@ namespace CasaCejaRemake.ViewModels.Shared
 
                 SyncProgress      = 1.0;
                 SyncStatusMessage = errors == 0
-                    ? $"✓ Catálogo actualizado — {totalRecords} registros descargados"
+                    ? $"Catálogo actualizado — {totalRecords} registros descargados"
                     : $"⚠️ Completado con {errors} error(es)";
 
                 // Actualizar label de último sync
