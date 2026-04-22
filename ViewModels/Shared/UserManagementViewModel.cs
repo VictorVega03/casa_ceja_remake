@@ -79,7 +79,7 @@ namespace CasaCejaRemake.ViewModels.Shared
             {
                 _allUsers = IsAdminMode
                     ? await _userService.GetAllUsersAsync()
-                    : await _userService.GetCashiersAsync();
+                    : await _userService.GetCashiersAsync(_authService.CurrentBranchId);
 
                 ApplyFilter();
                 StatusMessage = $"{_allUsers.Count} usuario(s) encontrado(s)";

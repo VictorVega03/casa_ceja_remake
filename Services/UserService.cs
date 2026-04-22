@@ -37,12 +37,15 @@ namespace CasaCejaRemake.Services
         }
 
         
-        /// Obtiene solo los cajeros activos (para modo POS).
-        
-        public async Task<List<User>> GetCashiersAsync()
+        /// <summary>
+        /// Obtiene los cajeros activos de una sucursal específica (para modo POS).
+        /// Filtra por branch_id = la sucursal donde fue creado el cajero.
+        /// </summary>
+        public async Task<List<User>> GetCashiersAsync(int branchId)
         {
             var cashierRoleId = _roleService.GetCashierRoleId();
-            var users = await _userRepository.FindAsync(u => u.Active && u.UserType == cashierRoleId);
+            var users = await _userRepository.FindAsync(u =>
+                u.Active && u.UserType == cashierRoleId && u.BranchId == branchId);
             foreach (var user in users)
             {
                 user.RoleName = _roleService.GetRoleName(user.UserType);

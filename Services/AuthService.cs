@@ -114,7 +114,9 @@ namespace CasaCejaRemake.Services
             if (user == null) throw new ArgumentNullException(nameof(user));
             
             CurrentUser = user;
-            _currentBranchId = user.BranchId ?? 1;
+            // branch_id del usuario es su sucursal de creación, NO su sucursal de trabajo.
+            // La sucursal activa siempre viene de ConfigService.AppConfig.CurrentBranchId
+            // y se sincroniza en HandleSuccessfulLogin() en App.axaml.cs.
             
             // Disparar evento de login
             UserLoggedIn?.Invoke(this, user);
