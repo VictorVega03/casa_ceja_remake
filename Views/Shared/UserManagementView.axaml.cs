@@ -92,7 +92,7 @@ namespace CasaCejaRemake.Views.Shared
                 return;
             }
 
-            var formVm = new UserFormViewModel(appUserService, isAdminMode);
+            var formVm = new UserFormViewModel(appUserService, isAdminMode, _viewModel.CurrentBranchId);
             var formView = new UserFormView
             {
                 DataContext = formVm
@@ -118,7 +118,7 @@ namespace CasaCejaRemake.Views.Shared
             
             if (appUserService == null) return;
 
-            var formVm = new UserFormViewModel(appUserService, isAdminMode, user);
+            var formVm = new UserFormViewModel(appUserService, isAdminMode, _viewModel.CurrentBranchId, user);
             var formView = new UserFormView
             {
                 DataContext = formVm
@@ -142,7 +142,7 @@ namespace CasaCejaRemake.Views.Shared
             if (appUserService == null) return;
 
             // Formulario en modo solo lectura con la nueva vista de detalles
-            var formVm = new UserFormViewModel(appUserService, _viewModel.IsAdminMode, user, isReadOnly: true);
+            var formVm = new UserFormViewModel(appUserService, _viewModel.IsAdminMode, _viewModel.CurrentBranchId, user, isReadOnly: true);
             var detailsView = new UserDetailsView
             {
                 DataContext = formVm

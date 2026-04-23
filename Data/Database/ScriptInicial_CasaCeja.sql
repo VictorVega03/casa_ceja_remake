@@ -19,14 +19,9 @@ BEGIN TRANSACTION;
 
 -- =====================================================
 -- 1. ROLES
--- Los IDs deben coincidir con el RoleSeeder del servidor:
---   1 = admin, 2 = inventory, 3 = cashier.
--- INSERT OR IGNORE: solo garantiza que existan en el primer arranque.
--- El servidor sigue siendo la fuente de verdad — PullRolesOnlyAsync
--- y PullAllAsync los actualizan vía UpsertAsync cada login.
 -- =====================================================
-INSERT OR IGNORE INTO roles (id, name, key, access_level, description, active, created_at, updated_at) VALUES (1, 'Administrador', 'admin',     1, 'Acceso total al sistema',         1, '2026-03-11 05:10:34', '2026-03-11 05:10:34');
-INSERT OR IGNORE INTO roles (id, name, key, access_level, description, active, created_at, updated_at) VALUES (2, 'Inventario',    'inventory', 2, 'Acceso a POS e Inventario',       1, '2026-03-11 05:10:34', '2026-03-11 05:10:34');
+INSERT OR IGNORE INTO roles (id, name, key, access_level, description, active, created_at, updated_at) VALUES (1, 'Administrador', 'admin',     1, 'Acceso total al sistema',        1, '2026-03-11 05:10:34', '2026-03-11 05:10:34');
+INSERT OR IGNORE INTO roles (id, name, key, access_level, description, active, created_at, updated_at) VALUES (2, 'Inventario',    'inventory', 2, 'Acceso a POS e Inventario',      1, '2026-03-11 05:10:34', '2026-03-11 05:10:34');
 INSERT OR IGNORE INTO roles (id, name, key, access_level, description, active, created_at, updated_at) VALUES (3, 'Cajero',        'cashier',   3, 'Acceso únicamente al módulo POS', 1, '2026-03-11 05:10:34', '2026-03-11 05:10:34');
 
 -- =====================================================

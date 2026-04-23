@@ -117,9 +117,11 @@ namespace CasaCejaRemake
                 // ── Servicios base ────────────────────────────────────────────
                 RoleService = new RoleService(DatabaseService);
                 await RoleService.LoadRolesAsync();
+                ApiClient   = new ApiClient(ConfigService);
+                SyncService = new SyncService(ApiClient, ConfigService, DatabaseService);
 
                 AuthService = new AuthService(userRepo, RoleService);
-                UserService = new UserService(userRepo, RoleService);
+                UserService = new UserService(userRepo, RoleService, SyncService);
 
                 // Sincronizar la sucursal inicial en AuthService desde ConfigService
                 if (AuthService != null && ConfigService != null)
@@ -128,12 +130,9 @@ namespace CasaCejaRemake
                     AuthService.SetCurrentBranch(initialBranchId);
                 }
 
-               
+
                 // Suscribirse a cambios de configuración
                 ConfigService.AppConfigChanged += OnAppConfigChanged;
-
-                ApiClient   = new ApiClient(ConfigService);
-                SyncService = new SyncService(ApiClient, ConfigService, DatabaseService);
 
                 PrintService = new PrintService(ConfigService);
                 ExportService = new ExportService();

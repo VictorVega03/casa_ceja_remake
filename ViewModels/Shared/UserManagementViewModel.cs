@@ -44,6 +44,9 @@ namespace CasaCejaRemake.ViewModels.Shared
         /// <summary>¿Se puede desactivar usuarios? Solo en modo Admin.</summary>
         public bool CanDeactivate => IsAdminMode;
 
+        /// <summary>Sucursal activa. Usada por UserFormViewModel al crear cajeros desde el POS.</summary>
+        public int CurrentBranchId => _authService.CurrentBranchId;
+
         // Lista completa sin filtro (para búsqueda)
         private List<User> _allUsers = new();
 

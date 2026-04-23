@@ -1448,5 +1448,46 @@ namespace CasaCejaRemake.Services
                 return false;
             }
         }
+
+        /// <summary>
+        /// Push inmediato de un usuario al servidor.
+        /// Se llama al crear un usuario desde el POS para que esté disponible
+        /// en otras terminales sin esperar el sync del siguiente login.
+        /// Usa username como identificador (no folio) porque el ID viene del servidor.
+        /// </summary>
+        public async Task<bool> PushUserAsync(User user, CancellationToken ct = default)
+        {
+            try
+            {
+                if (!await _apiClient.IsServerAvailableAsync())
+                {
+                    Console.WriteLine("[SyncService] PushUser omitido — sin conexión");
+                    return false;
+                }
+
+                var branchId = _configService.AppConfig.CurrentBranchId ?? 0;
+                var body = new { branch_id = branchId, records = new[] { user } };
+
+                var response = await _apiClient.PostAsync<PushResponse>(
+                    "/api/v1/sync/push/users", body, ct);
+
+                if (response?.Data?.Accepted.Contains(user.Username) == true)
+                {
+                    SetSyncStatus(user, 2);
+                    SetLastSync(user, DateTime.Now);
+                    await _userRepo.UpdateAsync(user);
+                    Console.WriteLine($"[SyncService] Usuario '{user.Username}' enviado al servidor ✅");
+                    return true;
+                }
+
+                Console.WriteLine($"[SyncService] Usuario '{user.Username}' rechazado por el servidor");
+                return false;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[SyncService] Error PushUser: {ex.Message}");
+                return false;
+            }
+        }
     }
 }

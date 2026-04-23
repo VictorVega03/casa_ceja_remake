@@ -16,11 +16,13 @@ namespace CasaCejaRemake.Services
     {
         private readonly IRepository<User> _userRepository;
         private readonly RoleService _roleService;
+        private readonly SyncService? _syncService;
 
-        public UserService(IRepository<User> userRepository, RoleService roleService)
+        public UserService(IRepository<User> userRepository, RoleService roleService, SyncService? syncService = null)
         {
             _userRepository = userRepository ?? throw new ArgumentNullException(nameof(userRepository));
-            _roleService = roleService ?? throw new ArgumentNullException(nameof(roleService));
+            _roleService    = roleService    ?? throw new ArgumentNullException(nameof(roleService));
+            _syncService    = syncService;
         }
 
         
@@ -106,10 +108,18 @@ namespace CasaCejaRemake.Services
             user.UpdatedAt = DateTime.Now;
             user.SyncStatus = 1;
 
+            // Hashear contraseña antes de guardar
+            user.Password = BCrypt.Net.BCrypt.HashPassword(user.Password);
+
             try
             {
                 await _userRepository.AddAsync(user);
                 Console.WriteLine($"[UserService] Usuario creado: {user.Username} (Rol: {role.Name})");
+
+                // Push inmediato al servidor — fire and forget
+                if (_syncService != null)
+                    _ = Task.Run(() => _syncService.PushUserAsync(user));
+
                 return (true, "Usuario creado exitosamente.");
             }
             catch (Exception ex)
@@ -150,8 +160,14 @@ namespace CasaCejaRemake.Services
 
             try
             {
+                user.SyncStatus = 1;
                 await _userRepository.UpdateAsync(user);
                 Console.WriteLine($"[UserService] Usuario actualizado: {user.Username}");
+
+                // Push inmediato al servidor
+                if (_syncService != null)
+                    _ = Task.Run(() => _syncService.PushUserAsync(user));
+
                 return (true, "Usuario actualizado exitosamente.");
             }
             catch (Exception ex)

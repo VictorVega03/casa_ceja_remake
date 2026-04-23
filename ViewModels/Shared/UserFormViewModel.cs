@@ -18,6 +18,7 @@ namespace CasaCejaRemake.ViewModels.Shared
     public partial class UserFormViewModel : ViewModelBase
     {
         private readonly UserService _userService;
+        private readonly int _branchId;
         private readonly bool _isAdminMode;
         private readonly User? _existingUser;
 
@@ -70,9 +71,10 @@ namespace CasaCejaRemake.ViewModels.Shared
         public event EventHandler? CloseRequested;
         public event EventHandler? SaveCompleted;
 
-        public UserFormViewModel(UserService userService, bool isAdminMode, User? existingUser = null, bool isReadOnly = false)
+        public UserFormViewModel(UserService userService, bool isAdminMode, int branchId = 0, User? existingUser = null, bool isReadOnly = false)
         {
             _userService = userService ?? throw new ArgumentNullException(nameof(userService));
+            _branchId = branchId;
             _isAdminMode = isAdminMode;
             _existingUser = existingUser;
             _isEditing = existingUser != null;
@@ -177,7 +179,8 @@ namespace CasaCejaRemake.ViewModels.Shared
                 Phone = Phone.Trim(),
                 Username = Username.Trim(),
                 Password = Password,
-                UserType = SelectedRole?.Id ?? _userService.GetCashierRoleId()
+                UserType = SelectedRole?.Id ?? _userService.GetCashierRoleId(),
+                BranchId = _branchId > 0 ? _branchId : (int?)null
             };
 
             var result = await _userService.CreateUserAsync(user);
