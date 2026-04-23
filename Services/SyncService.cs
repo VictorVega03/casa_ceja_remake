@@ -124,10 +124,15 @@ namespace CasaCejaRemake.Services
         var productCount = await _productRepo.CountAsync();
         var since = productCount == 0 ? 0 : _configService.AppConfig.LastSyncTimestamp;
 
-        // Catálogos globales — corren en paralelo
+        // Roles PRIMERO y SECUENCIAL — selector de módulos y autorización de todo
+        // el sistema dependen de ellos. Si falla aquí, no debe tumbar al resto
+        // de pulls, por eso está aislado del Task.WhenAll de abajo.
+        var rolesResult = await PullAsync("roles", 0, _roleRepo, ct);
+        results.Add(rolesResult);
+
+        // Catálogos globales restantes — corren en paralelo
         var catalogTasks = new[]
         {
-            PullAsync("roles",        0,     _roleRepo,       ct),   // siempre pull completo de roles
             PullAsync("categories",   since, _categoryRepo,  ct),
             PullAsync("units",        since, _unitRepo,       ct),
             PullAsync("branches",     since, _branchRepo,     ct),

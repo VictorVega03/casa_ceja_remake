@@ -60,6 +60,12 @@ namespace CasaCejaRemake
         {
             if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
             {
+                // Evitamos que Avalonia cierre la app al cerrar ventanas transitorias
+                // (Login, SyncLoading, ModuleSelector). El shutdown se dispara solo
+                // cuando llamamos desktop.Shutdown() explícitamente en cada salida
+                // intencional (botón Salir, botón X del login sin sesión, cambio de sucursal).
+                desktop.ShutdownMode = ShutdownMode.OnExplicitShutdown;
+
                 // Inicializar servicios
                 await InitializeServicesAsync();
                 
@@ -213,16 +219,26 @@ namespace CasaCejaRemake
             // Guardar referencia
             _currentLoginView = loginView;
 
-            loginView.Closed += (sender, args) =>
+            loginView.Closed += async (sender, args) =>
             {
                 _currentLoginView = null;
 
                 if (loginView.Tag is string result && result == "success")
                 {
-                    HandleSuccessfulLogin();
+                    try
+                    {
+                        await HandleSuccessfulLoginAsync();
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"[App] Error en HandleSuccessfulLogin: {ex}");
+                        try { ShowLogin(); } catch { }
+                    }
                 }
                 else
                 {
+                    // Con ShutdownMode.OnExplicitShutdown tenemos que cerrar manualmente
+                    // si el usuario cancela el login sin haber abierto ninguna otra ventana.
                     if (desktop.MainWindow == null)
                     {
                         desktop.Shutdown();
@@ -236,12 +252,36 @@ namespace CasaCejaRemake
             windowToClose?.Close();
         }
 
-        private void HandleSuccessfulLogin()
+        /// <summary>
+        /// Post-login: fija sucursal → garantiza roles en memoria (pull rápido si hay servidor,
+        /// o fallback a BD local) → lanza sync completo. Separar el pull de roles del sync
+        /// masivo evita que el selector de módulos quede sin roles si algún otro pull falla.
+        /// </summary>
+        private async Task HandleSuccessfulLoginAsync()
         {
             if (AuthService != null && ConfigService != null)
             {
                 var configBranchId = ConfigService.AppConfig.CurrentBranchId ?? 0;
                 AuthService.SetCurrentBranch(configBranchId);
+            }
+
+            if (RoleService != null)
+            {
+                try
+                {
+                    if (SyncService != null && ApiClient != null &&
+                        await ApiClient.IsServerAvailableAsync())
+                    {
+                        await SyncService.PullRolesOnlyAsync();
+                    }
+                    await RoleService.LoadRolesAsync();
+                    Console.WriteLine($"[App] Roles listos en memoria: {RoleService.Roles.Count}");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[App] Error garantizando roles: {ex.Message}");
+                    try { await RoleService.LoadRolesAsync(); } catch { }
+                }
             }
 
             ShowSyncLoading();
@@ -267,15 +307,16 @@ namespace CasaCejaRemake
         {
             try
             {
-                // Recargar roles en memoria por si el sync los actualizó desde el servidor
                 if (RoleService != null)
                     await RoleService.LoadRolesAsync();
+                ShowModuleSelector();
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[App] Error recargando roles: {ex.Message}");
+                Console.WriteLine($"[App] Error post-sync: {ex}");
+                // Recuperación: volver al login en vez de dejar la app en limbo
+                try { ShowLogin(); } catch { }
             }
-            ShowModuleSelector();
         };
 
         // Establecer como MainWindow antes de mostrar
