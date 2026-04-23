@@ -215,7 +215,6 @@ namespace CasaCejaRemake
 
             loginView.Closed += (sender, args) =>
             {
-                // Limpiar referencia al cerrar
                 _currentLoginView = null;
 
                 if (loginView.Tag is string result && result == "success")
@@ -224,7 +223,6 @@ namespace CasaCejaRemake
                 }
                 else
                 {
-                    // Usuario cancelo, cerrar aplicacion
                     if (desktop.MainWindow == null)
                     {
                         desktop.Shutdown();
@@ -238,19 +236,16 @@ namespace CasaCejaRemake
             windowToClose?.Close();
         }
 
-        /// Maneja el login exitoso: siempre va al selector de módulos.
-        /// Sincroniza la sucursal con ConfigService si es Admin.
-    private void HandleSuccessfulLogin()
-    {
-        if (AuthService != null && ConfigService != null)
+        private void HandleSuccessfulLogin()
         {
-            var configBranchId = ConfigService.AppConfig.CurrentBranchId ?? 0;
-            AuthService.SetCurrentBranch(configBranchId);
-        }
+            if (AuthService != null && ConfigService != null)
+            {
+                var configBranchId = ConfigService.AppConfig.CurrentBranchId ?? 0;
+                AuthService.SetCurrentBranch(configBranchId);
+            }
 
-        // Mostrar pantalla de carga y sincronización
-        ShowSyncLoading();
-    }
+            ShowSyncLoading();
+        }
 
     private void ShowSyncLoading()
     {
@@ -268,8 +263,18 @@ namespace CasaCejaRemake
             DataContext = syncViewModel
         };
 
-        syncView.Closed += (s, e) =>
+        syncView.Closed += async (s, e) =>
         {
+            try
+            {
+                // Recargar roles en memoria por si el sync los actualizó desde el servidor
+                if (RoleService != null)
+                    await RoleService.LoadRolesAsync();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[App] Error recargando roles: {ex.Message}");
+            }
             ShowModuleSelector();
         };
 

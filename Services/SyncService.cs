@@ -33,6 +33,7 @@ namespace CasaCejaRemake.Services
         private readonly BaseRepository<CashClose> _cashCloseRepo;
         private readonly BaseRepository<StockEntry> _stockEntryRepo;
         private readonly BaseRepository<StockOutput> _stockOutputRepo;
+        private readonly BaseRepository<Role> _roleRepo;
 
         public SyncService(
             ApiClient apiClient,
@@ -57,6 +58,7 @@ namespace CasaCejaRemake.Services
             _cashCloseRepo      = new BaseRepository<CashClose>(databaseService);
             _stockEntryRepo     = new BaseRepository<StockEntry>(databaseService);
             _stockOutputRepo    = new BaseRepository<StockOutput>(databaseService);
+            _roleRepo           = new BaseRepository<Role>(databaseService);
         }
 
         // ──────────────────────────────────────────────────────
@@ -92,6 +94,26 @@ namespace CasaCejaRemake.Services
         // PULL
         // ──────────────────────────────────────────────────────
 
+        /// <summary>
+        /// Pull rápido de roles desde el servidor. Se llama justo después del login
+        /// para garantizar que los roles están disponibles antes de mostrar el selector.
+        /// </summary>
+        public async Task PullRolesOnlyAsync(CancellationToken ct = default)
+        {
+            try
+            {
+                if (!await _apiClient.IsServerAvailableAsync())
+                    return;
+
+                await PullAsync("roles", 0, _roleRepo, ct);
+                Console.WriteLine("[SyncService] Roles sincronizados desde servidor");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[SyncService] Error al sincronizar roles: {ex.Message}");
+            }
+        }
+
     public async Task<List<SyncResult>> PullAllAsync(CancellationToken ct = default)
     {
         var branchId = _configService.AppConfig.CurrentBranchId ?? 0;
@@ -105,6 +127,7 @@ namespace CasaCejaRemake.Services
         // Catálogos globales — corren en paralelo
         var catalogTasks = new[]
         {
+            PullAsync("roles",        0,     _roleRepo,       ct),   // siempre pull completo de roles
             PullAsync("categories",   since, _categoryRepo,  ct),
             PullAsync("units",        since, _unitRepo,       ct),
             PullAsync("branches",     since, _branchRepo,     ct),

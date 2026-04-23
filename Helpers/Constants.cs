@@ -22,6 +22,9 @@ namespace CasaCejaRemake.Helpers
         /// <summary>Clave del rol de administrador</summary>
         public const string ROLE_ADMIN_KEY = "admin";
 
+        /// <summary>Clave del rol de inventario</summary>
+        public const string ROLE_INVENTORY_KEY = "inventory";
+
         /// <summary>Clave del rol de cajero</summary>
         public const string ROLE_CASHIER_KEY = "cashier";
 

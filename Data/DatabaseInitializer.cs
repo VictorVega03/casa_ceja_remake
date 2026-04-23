@@ -22,16 +22,16 @@ namespace CasaCejaRemake.Data
 
         public async Task InitializeDefaultDataAsync()
         {
-            var roleCount     = await _databaseService.Table<Role>().CountAsync();
             var unitCount     = await _databaseService.Table<Unit>().CountAsync();
             var categoryCount = await _databaseService.Table<Category>().CountAsync();
             var branchCount   = await _databaseService.Table<Branch>().CountAsync();
             var userCount     = await _databaseService.Table<User>().CountAsync();
             var productCount  = await _databaseService.Table<Product>().CountAsync();
 
-            Console.WriteLine($"📊 Estado BD → Roles: {roleCount} | Unidades: {unitCount} | Categorías: {categoryCount} | Sucursales: {branchCount} | Usuarios: {userCount} | Productos: {productCount}");
+            Console.WriteLine($"📊 Estado BD → Unidades: {unitCount} | Categorías: {categoryCount} | Sucursales: {branchCount} | Usuarios: {userCount} | Productos: {productCount}");
 
-            bool hasData = roleCount > 0 || branchCount > 0 || userCount > 0 || productCount > 0;
+            // Los roles NO se incluyen aquí — vienen exclusivamente del servidor via sync
+            bool hasData = branchCount > 0 || userCount > 0 || productCount > 0;
             if (hasData)
             {
                 Console.WriteLine("✅ BD con datos existentes — no se ejecuta seed");

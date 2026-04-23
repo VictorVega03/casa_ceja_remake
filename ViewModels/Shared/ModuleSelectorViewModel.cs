@@ -20,10 +20,25 @@ namespace CasaCejaRemake.ViewModels.Shared
         private string _welcomeMessage = string.Empty;
 
         [ObservableProperty]
-        private bool _isAdmin = true;
+        private bool _isAdmin;
 
         [ObservableProperty]
-        private bool _isCashier = false;
+        private bool _isInventory;
+
+        [ObservableProperty]
+        private bool _isCashier;
+
+        // Acceso a inventario: admin o rol de inventario
+        [ObservableProperty]
+        private bool _canAccessInventory;
+
+        // Visibilidad del candado en el card de inventario (solo cajero lo ve bloqueado)
+        [ObservableProperty]
+        private bool _isInventoryLocked;
+
+        // Visibilidad del candado en el card de admin (inventario y cajero lo ven bloqueado)
+        [ObservableProperty]
+        private bool _isAdminLocked;
 
         // ====================
         // EVENTOS
@@ -76,9 +91,13 @@ namespace CasaCejaRemake.ViewModels.Shared
             var userName = _authService.CurrentUserName ?? "Administrador";
             WelcomeMessage = $"Bienvenido, {userName}";
             
-            // Configurar permisos
+            // Configurar permisos por rol
             IsAdmin = _authService.IsAdmin;
+            IsInventory = _authService.IsInventory;
             IsCashier = _authService.IsCajero;
+            CanAccessInventory = IsAdmin || IsInventory;
+            IsInventoryLocked = !CanAccessInventory;
+            IsAdminLocked = !IsAdmin;
         }
 
         // ====================
@@ -100,9 +119,8 @@ namespace CasaCejaRemake.ViewModels.Shared
         [RelayCommand]
         private void OpenInventory()
         {
-            // Solo admins pueden acceder
-            if (!IsAdmin) return;
-            
+            if (!CanAccessInventory) return;
+
             InventorySelected?.Invoke(this, EventArgs.Empty);
         }
 
@@ -112,7 +130,6 @@ namespace CasaCejaRemake.ViewModels.Shared
         [RelayCommand]
         private void OpenAdmin()
         {
-            // Solo admins pueden acceder
             if (!IsAdmin) return;
             
             AdminSelected?.Invoke(this, EventArgs.Empty);

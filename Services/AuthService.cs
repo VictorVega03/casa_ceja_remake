@@ -17,6 +17,9 @@ namespace CasaCejaRemake.Services
         /// <summary>Verifica si el usuario actual es Admin usando roles dinámicos de la BD.</summary>
         public bool IsAdmin => CurrentUser != null && _roleService.IsAdminRole(CurrentUser.UserType);
 
+        /// <summary>Verifica si el usuario actual es de Inventario usando roles dinámicos de la BD.</summary>
+        public bool IsInventory => CurrentUser != null && _roleService.IsInventoryRole(CurrentUser.UserType);
+
         /// <summary>Verifica si el usuario actual es Cajero usando roles dinámicos de la BD.</summary>
         public bool IsCajero => CurrentUser != null && _roleService.IsCashierRole(CurrentUser.UserType);
 

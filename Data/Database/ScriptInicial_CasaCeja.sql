@@ -19,13 +19,9 @@ BEGIN TRANSACTION;
 
 -- =====================================================
 -- 1. ROLES
--- key debe coincidir con Constants.ROLE_ADMIN_KEY = "admin"
---                        Constants.ROLE_CASHIER_KEY = "cashier"
+-- Los roles se cargan exclusivamente desde el servidor en el primer sync.
+-- No se insertan aquí para evitar conflictos con los IDs del servidor.
 -- =====================================================
-INSERT OR IGNORE INTO roles (id, name, key, access_level, active, created_at, updated_at)
-VALUES
-    (1, 'Administrador', 'admin',   100, 1, datetime('now'), datetime('now')),
-    (2, 'Cajero',        'cashier',  10, 1, datetime('now'), datetime('now'));
 
 
 -- =====================================================

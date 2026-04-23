@@ -92,6 +92,16 @@ namespace CasaCejaRemake.Services
         }
 
         /// <summary>
+        /// Verifica si un UserType (role ID) corresponde al rol de inventario.
+        /// </summary>
+        public bool IsInventoryRole(int userType)
+        {
+            var role = GetById(userType);
+            if (role == null) return false;
+            return role.Key.Equals(Constants.ROLE_INVENTORY_KEY, StringComparison.OrdinalIgnoreCase);
+        }
+
+        /// <summary>
         /// Verifica si un UserType (role ID) corresponde al rol de cajero.
         /// </summary>
         public bool IsCashierRole(int userType)
