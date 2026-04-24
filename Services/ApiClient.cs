@@ -35,10 +35,20 @@ namespace CasaCejaRemake.Services
             {
                 Timeout = TimeSpan.FromSeconds(TimeoutSeconds)
             };
+            _httpClient.DefaultRequestHeaders.Add("Accept", "application/json");
+            _httpClient.DefaultRequestHeaders.Add("User-Agent", "CasaCeja/1.0");
         }
 
         private string BaseUrl    => _configService.AppConfig.ServerUrl.TrimEnd('/');
         private string? UserToken => _configService.AppConfig.UserToken;
+
+        private static StringContent CreateJsonContent(object body)
+        {
+            var json    = JsonSerializer.Serialize(body, _jsonOptions);
+            var content = new StringContent(json);
+            content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+            return content;
+        }
 
         private HttpRequestMessage CreateRequest(HttpMethod method, string endpoint)
         {
@@ -84,11 +94,15 @@ namespace CasaCejaRemake.Services
             var body = new LoginRequest { Username = username, Password = password };
             try
             {
-                var response = await _httpClient.PostAsJsonAsync(url, body);
-                var json     = await response.Content.ReadAsStringAsync();
+                var json    = JsonSerializer.Serialize(body, _jsonOptions);
+                var request = new HttpRequestMessage(HttpMethod.Post, url);
+                request.Content = CreateJsonContent(body);
+
+                var response = await _httpClient.SendAsync(request);
+                var respJson = await response.Content.ReadAsStringAsync();
                 if (response.IsSuccessStatusCode)
-                    return JsonSerializer.Deserialize<ApiResponse<LoginResponse>>(json);
-                Console.WriteLine($"[ApiClient] Login fallido: {response.StatusCode}");
+                    return JsonSerializer.Deserialize<ApiResponse<LoginResponse>>(respJson, _jsonOptions);
+                Console.WriteLine($"[ApiClient] Login fallido: {response.StatusCode} - {respJson}");
                 return null;
             }
             catch (Exception ex)
@@ -136,7 +150,7 @@ namespace CasaCejaRemake.Services
                 try
                 {
                     var request = CreateRequest(HttpMethod.Post, endpoint);
-                    request.Content = JsonContent.Create(body, options: _jsonOptions);
+                    request.Content = CreateJsonContent(body);
 
                     var response = await _httpClient.SendAsync(request, ct);
                     var json     = await response.Content.ReadAsStringAsync(ct);
@@ -170,7 +184,7 @@ namespace CasaCejaRemake.Services
             try
             {
                 var request = CreateRequest(HttpMethod.Put, endpoint);
-                request.Content = JsonContent.Create(body);
+                request.Content = CreateJsonContent(body);
                 var response    = await _httpClient.SendAsync(request);
                 var json        = await response.Content.ReadAsStringAsync();
                 if (response.IsSuccessStatusCode)
