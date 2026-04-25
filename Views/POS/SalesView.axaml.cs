@@ -381,13 +381,13 @@ namespace CasaCejaRemake.Views.POS
             var quickViewModel = new QuickCustomerViewModel(customerService);
             quickView.DataContext = quickViewModel;
 
-            quickViewModel.CustomerCreated += (s, customer) =>
+            quickViewModel.CustomerCreated += async (s, customer) =>
             {
-                if (customer != null)
-                {
-                    OnShowMessage(this, $"Cliente creado: {customer.Name}");
-                }
                 quickView.Close();
+                if (customer != null && !quickViewModel.EditModeActive)
+                {
+                    await DialogHelper.ShowCreationSuccessDialog(this, "cliente", customer.Name);
+                }
             };
 
             quickViewModel.Cancelled += (s, args) =>

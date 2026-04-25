@@ -14,6 +14,7 @@ namespace CasaCejaRemake.Views.Shared
     {
         private UserFormViewModel? _viewModel;
         private TextBox? _phoneTextBox;
+        private bool _suppressClose;
 
         public UserFormView()
         {
@@ -33,6 +34,7 @@ namespace CasaCejaRemake.Views.Shared
             {
                 _viewModel = vm;
                 _viewModel.CloseRequested += OnCloseRequested;
+                _viewModel.SaveCompleted += OnSaveCompleted;
             }
 
             // Encontrar el TextBox de teléfono y agregar validación
@@ -43,9 +45,20 @@ namespace CasaCejaRemake.Views.Shared
             }
         }
 
+        private async void OnSaveCompleted(object? sender, EventArgs e)
+        {
+            if (_viewModel == null || _viewModel.IsEditing) return;
+
+            _suppressClose = true;
+            await DialogHelper.ShowCreationSuccessDialog(this, "usuario", _viewModel.Name);
+            _suppressClose = false;
+            Close();
+        }
+
         private void OnCloseRequested(object? sender, EventArgs e)
         {
-            Close();
+            if (!_suppressClose)
+                Close();
         }
 
         private void OnPhoneTextChanging(object? sender, TextChangingEventArgs e)
@@ -101,6 +114,7 @@ namespace CasaCejaRemake.Views.Shared
             if (_viewModel != null)
             {
                 _viewModel.CloseRequested -= OnCloseRequested;
+                _viewModel.SaveCompleted -= OnSaveCompleted;
             }
             base.OnClosed(e);
         }

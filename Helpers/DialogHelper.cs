@@ -566,6 +566,107 @@ public static class DialogHelper
         return dialog.Tag is DuplicateFileAction action ? action : DuplicateFileAction.Cancel;
     }
 
+    public static async Task ShowCreationSuccessDialog(Window parentWindow, string entityName, string entityValue = "")
+    {
+        var dialog = new Window
+        {
+            Title = $"{entityName} creado",
+            Width = 380,
+            Height = 230,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner,
+            CanResize = false,
+            ShowInTaskbar = false,
+            Background = new SolidColorBrush(Color.Parse("#1E1E1E"))
+        };
+
+        var mainGrid = new Grid();
+        mainGrid.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
+        mainGrid.RowDefinitions.Add(new RowDefinition(new GridLength(1, GridUnitType.Star)));
+        mainGrid.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
+
+        // Header
+        var header = new Border
+        {
+            Background = new SolidColorBrush(Color.Parse("#1B5E20")),
+            BorderBrush = new SolidColorBrush(Color.Parse("#2E7D32")),
+            BorderThickness = new Thickness(0, 0, 0, 1),
+            Padding = new Thickness(20, 14)
+        };
+        var headerStack = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 10 };
+        headerStack.Children.Add(new Border
+        {
+            Width = 4, Height = 22, CornerRadius = new CornerRadius(2),
+            Background = new SolidColorBrush(Color.Parse("#4CAF50")),
+            VerticalAlignment = VerticalAlignment.Center
+        });
+        headerStack.Children.Add(new TextBlock
+        {
+            Text = $"✓  {char.ToUpper(entityName[0]) + entityName[1..]} creado exitosamente",
+            FontSize = 14, FontWeight = FontWeight.Bold,
+            Foreground = Brushes.White, VerticalAlignment = VerticalAlignment.Center
+        });
+        header.Child = headerStack;
+        Grid.SetRow(header, 0);
+        mainGrid.Children.Add(header);
+
+        // Body
+        var body = new StackPanel { Margin = new Thickness(24, 20, 24, 0), Spacing = 10 };
+
+        var messageText = string.IsNullOrWhiteSpace(entityValue)
+            ? $"El {entityName} ha sido registrado correctamente en el sistema."
+            : $"El {entityName} \"{entityValue}\" ha sido registrado correctamente en el sistema.";
+
+        body.Children.Add(new TextBlock
+        {
+            Text = messageText,
+            FontSize = 13,
+            Foreground = new SolidColorBrush(Color.Parse("#E0E0E0")),
+            TextWrapping = Avalonia.Media.TextWrapping.Wrap
+        });
+
+        Grid.SetRow(body, 1);
+        mainGrid.Children.Add(body);
+
+        // Footer
+        var footer = new Border
+        {
+            Background = new SolidColorBrush(Color.Parse("#252525")),
+            BorderBrush = new SolidColorBrush(Color.Parse("#3A3A3A")),
+            BorderThickness = new Thickness(0, 1, 0, 0),
+            Padding = new Thickness(20, 14)
+        };
+
+        var okButton = new Button
+        {
+            Content = "Aceptar (Enter)",
+            Padding = new Thickness(28, 9),
+            Background = new SolidColorBrush(Color.Parse("#2E7D32")),
+            Foreground = new SolidColorBrush(Colors.White),
+            CornerRadius = new CornerRadius(5),
+            FontSize = 13, FontWeight = FontWeight.SemiBold,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            Cursor = new Cursor(StandardCursorType.Hand),
+            Focusable = false
+        };
+        okButton.Click += (_, __) => dialog.Close();
+        footer.Child = okButton;
+        Grid.SetRow(footer, 2);
+        mainGrid.Children.Add(footer);
+
+        dialog.Content = mainGrid;
+
+        dialog.KeyDown += (_, e) =>
+        {
+            if (e.Key == Avalonia.Input.Key.Enter || e.Key == Avalonia.Input.Key.Escape)
+            {
+                dialog.Close();
+                e.Handled = true;
+            }
+        };
+
+        await dialog.ShowDialog(parentWindow);
+    }
+
     public static async Task ShowStockDialog(Window parent, Product product, List<ProductStockItem> items, bool isFromCache, List<Branch> allBranches)
     {
         var dialog = new StockByBranchDialog(product, items, isFromCache, allBranches);
