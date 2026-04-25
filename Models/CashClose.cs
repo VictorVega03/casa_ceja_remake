@@ -65,12 +65,12 @@ namespace CasaCejaRemake.Models
         [Column("layaway_total_created")]
         public decimal LayawayTotalCreated { get; set; } = 0;
 
-        // ============ GASTOS E INGRESOS (JSON TEXT) ============
+        // ============ GASTOS E INGRESOS (TOTALES) ============
         [Column("expenses")]
-        public string Expenses { get; set; } = "[]"; // JSON: [{"description": "Comida", "amount": 100}]
+        public decimal Expenses { get; set; } = 0;
 
         [Column("income")]
-        public string Income { get; set; } = "[]"; // JSON: [{"description": "Venta externa", "amount": 500}]
+        public decimal Income { get; set; } = 0;
 
         // ============ SOBRANTE/FALTANTE ============
         [Column("surplus")]

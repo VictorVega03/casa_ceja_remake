@@ -46,10 +46,10 @@ namespace CasaCejaRemake.Models.DTOs
         public decimal LayawayTotalCreated { get; set; }
 
         [JsonPropertyName("expenses")]
-        public string Expenses { get; set; } = "[]";
+        public decimal Expenses { get; set; } = 0;
 
         [JsonPropertyName("income")]
-        public string Income { get; set; } = "[]";
+        public decimal Income { get; set; } = 0;
 
         [JsonPropertyName("surplus")]
         public decimal Surplus { get; set; }

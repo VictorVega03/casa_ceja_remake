@@ -98,38 +98,12 @@ namespace CasaCejaRemake.Views.POS
                 var branchName = branch?.Name ?? configService?.AppConfig.CurrentBranchName ?? string.Empty;
                 var branchAddress = branch?.Address ?? string.Empty;
 
-                // Parsear gastos e ingresos del JSON
+                // Listas para detalle en ticket (ya no se persisten en cash_closes)
                 var expenses = new List<(string Concept, decimal Amount)>();
                 var incomes = new List<(string Concept, decimal Amount)>();
 
-                if (!string.IsNullOrEmpty(cashClose.Expenses) && cashClose.Expenses != "[]")
-                {
-                    try
-                    {
-                        var expensesList = System.Text.Json.JsonSerializer.Deserialize<List<ExpenseIncomeItem>>(cashClose.Expenses);
-                        if (expensesList != null)
-                        {
-                            expenses = expensesList.Select(e => (e.description ?? e.Concept ?? "", e.amount)).ToList();
-                        }
-                    }
-                    catch { }
-                }
-
-                if (!string.IsNullOrEmpty(cashClose.Income) && cashClose.Income != "[]")
-                {
-                    try
-                    {
-                        var incomesList = System.Text.Json.JsonSerializer.Deserialize<List<ExpenseIncomeItem>>(cashClose.Income);
-                        if (incomesList != null)
-                        {
-                            incomes = incomesList.Select(i => (i.description ?? i.Concept ?? "", i.amount)).ToList();
-                        }
-                    }
-                    catch { }
-                }
-
-                decimal totalExpenses = expenses.Sum(e => e.Amount);
-                decimal totalIncome = incomes.Sum(i => i.Amount);
+                decimal totalExpenses = cashClose.Expenses;
+                decimal totalIncome = cashClose.Income;
 
                 _ticketText = ticketService.GenerateCashCloseTicketText(
                     branchName: branchName,

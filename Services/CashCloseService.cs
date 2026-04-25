@@ -344,12 +344,8 @@ namespace CasaCejaRemake.Services
 
                 cashClose.TotalSales = Math.Round(totals.TotalSales, 2);
 
-                var movements = await GetMovementsAsync(cashClose.Id);
-                var expenses = movements.Where(m => m.IsExpense).Select(m => new { description = m.Concept, amount = m.Amount }).ToList();
-                var income = movements.Where(m => !m.IsExpense).Select(m => new { description = m.Concept, amount = m.Amount }).ToList();
-
-                cashClose.Expenses = System.Text.Json.JsonSerializer.Serialize(expenses);
-                cashClose.Income = System.Text.Json.JsonSerializer.Serialize(income);
+                cashClose.Expenses = Math.Round(totals.TotalExpenses, 2);
+                cashClose.Income = Math.Round(totals.TotalIncome, 2);
 
                 decimal expectedCash = cashClose.OpeningCash
                                      + totals.TotalCash
