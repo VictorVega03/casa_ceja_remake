@@ -728,6 +728,7 @@ namespace CasaCejaRemake.Services
                             Quantity    = p.Quantity,
                             UnitCost    = p.UnitCost,
                             LineTotal   = p.LineTotal,
+                            CreatedAt   = p.CreatedAt,
                         }).ToList()
                 }).ToList();
 

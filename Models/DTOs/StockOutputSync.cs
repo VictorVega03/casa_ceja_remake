@@ -53,5 +53,8 @@ namespace CasaCejaRemake.Models.DTOs
 
         [JsonPropertyName("line_total")]
         public decimal LineTotal { get; set; }
+
+        [JsonPropertyName("created_at")]
+        public DateTime? CreatedAt { get; set; }
     }
 }
