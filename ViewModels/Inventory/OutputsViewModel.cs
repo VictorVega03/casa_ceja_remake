@@ -46,6 +46,8 @@ namespace CasaCejaRemake.ViewModels.Inventory
         // ── Eventos de navegación ──────────────────────────────────────────
         public event EventHandler? GoBackRequested;
         public event EventHandler<string>? ShowMessageRequested;
+        public event EventHandler<string>? ShowSuccessRequested;
+        public event EventHandler<string>? ShowErrorRequested;
         public event EventHandler<string>? OpenPosCatalogRequested;
         public event EventHandler<OutputLineItem>? ProductAddedOrUpdated;
         public event EventHandler<(string DestinationName, int ProductCount, decimal TotalAmount)>? RequestConfirmSave;
@@ -315,7 +317,7 @@ namespace CasaCejaRemake.ViewModels.Inventory
 
                 if (response?.IsSuccess != true)
                 {
-                    ShowMessageRequested?.Invoke(this,
+                    ShowErrorRequested?.Invoke(this,
                         "No se pudo registrar la salida en el servidor.\n" +
                         "Verifica tu conexión a internet e intenta de nuevo.");
                     return;
@@ -348,17 +350,13 @@ namespace CasaCejaRemake.ViewModels.Inventory
 
                 await _inventoryService.CreateOutputAsync(output, products);
 
-                ShowMessageRequested?.Invoke(this,
-                    $"Salida {folio} registrada exitosamente.\n" +
-                    $"Stock descontado en esta sucursal.\n" +
-                    $"La sucursal destino recibirá la entrada pendiente.");
-                GoBackRequested?.Invoke(this, EventArgs.Empty);
+                ShowSuccessRequested?.Invoke(this,
+                    $"Folio: {folio}\nStock descontado en esta sucursal.\nLa sucursal destino recibirá la entrada pendiente.");
             }
             catch (Exception ex)
             {
-                ShowMessageRequested?.Invoke(this,
-                    $"Error al guardar la salida: {ex.Message}\n" +
-                    $"Verifica tu conexión e intenta de nuevo.");
+                ShowErrorRequested?.Invoke(this,
+                    $"No se pudo guardar la salida.\n{ex.Message}\nVerifica tu conexión e intenta de nuevo.");
             }
             finally
             {

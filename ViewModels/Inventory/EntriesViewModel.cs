@@ -62,6 +62,8 @@ namespace CasaCejaRemake.ViewModels.Inventory
         // ── Eventos de navegación ──────────────────────────────────────────
         public event EventHandler? GoBackRequested;
         public event EventHandler<string>? ShowMessageRequested;
+        public event EventHandler<string>? ShowSuccessRequested;
+        public event EventHandler<string>? ShowErrorRequested;
         public event EventHandler<string>? OpenPosCatalogRequested;
         public event EventHandler<EntryLineItem>? ProductAddedOrUpdated;
         public event EventHandler<(string BranchName, string SupplierName, int ProductCount, decimal TotalAmount)>? RequestConfirmSave;
@@ -331,22 +333,15 @@ namespace CasaCejaRemake.ViewModels.Inventory
 
                 var (entryId, synced) = await _inventoryService.CreateEntryAsync(entry, products);
 
-                if (synced)
-                {
-                    ShowMessageRequested?.Invoke(this,
-                        $"Entrada {folio} guardada y sincronizada con el servidor.");
-                }
-                else
-                {
-                    ShowMessageRequested?.Invoke(this,
-                        $"Entrada {folio} guardada localmente.\nSe sincronizará con el servidor cuando haya conexión.");
-                }
+                var successMsg = synced
+                    ? $"Folio: {folio}\nSincronizada con el servidor correctamente."
+                    : $"Folio: {folio}\nGuardada localmente. Se sincronizará cuando haya conexión.";
 
-                GoBackRequested?.Invoke(this, EventArgs.Empty);
+                ShowSuccessRequested?.Invoke(this, successMsg);
             }
             catch (Exception ex)
             {
-                ShowMessageRequested?.Invoke(this, $"Error al guardar la entrada: {ex.Message}");
+                ShowErrorRequested?.Invoke(this, $"No se pudo guardar la entrada.\n{ex.Message}");
             }
             finally
             {

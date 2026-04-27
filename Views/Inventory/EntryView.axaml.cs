@@ -37,7 +37,27 @@ namespace CasaCejaRemake.Views.Inventory
             {
                 _viewModel.ShowMessageRequested += async (s, msg) =>
                 {
+                    _hasOpenDialog = true;
                     await casa_ceja_remake.Helpers.DialogHelper.ShowMessageDialog(this, "Aviso", msg);
+                    _hasOpenDialog = false;
+                };
+
+                _viewModel.ShowSuccessRequested += async (s, msg) =>
+                {
+                    _hasOpenDialog = true;
+                    await casa_ceja_remake.Helpers.DialogHelper.ShowResultDialog(
+                        this, true, "Entrada guardada exitosamente", msg);
+                    _hasOpenDialog = false;
+                    _allowClose = true;
+                    _viewModel.CancelCommand.Execute(null);
+                };
+
+                _viewModel.ShowErrorRequested += async (s, msg) =>
+                {
+                    _hasOpenDialog = true;
+                    await casa_ceja_remake.Helpers.DialogHelper.ShowResultDialog(
+                        this, false, "Error al guardar la entrada", msg);
+                    _hasOpenDialog = false;
                 };
 
                 _viewModel.RequestConfirmSave += async (s, data) =>

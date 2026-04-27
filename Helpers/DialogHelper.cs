@@ -566,6 +566,150 @@ public static class DialogHelper
         return dialog.Tag is DuplicateFileAction action ? action : DuplicateFileAction.Cancel;
     }
 
+    public static async Task ShowResultDialog(Window parentWindow, bool isSuccess, string title, string message)
+    {
+        var accentColor  = isSuccess ? "#4CAF50" : "#EF5350";
+        var headerBg     = isSuccess ? "#1B3A20" : "#3A1010";
+        var headerBorder = isSuccess ? "#2E7D32" : "#C62828";
+        var iconChar     = isSuccess ? "✓" : "✗";
+        var btnBg        = isSuccess ? "#2E7D32" : "#C62828";
+        var btnHover     = isSuccess ? "#388E3C" : "#D32F2F";
+
+        var dialog = new Window
+        {
+            Title = title,
+            Width = 420,
+            SizeToContent = SizeToContent.Height,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner,
+            CanResize = false,
+            ShowInTaskbar = false,
+            Background = new SolidColorBrush(Color.Parse("#1E1E1E"))
+        };
+
+        var mainGrid = new Grid();
+        mainGrid.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
+        mainGrid.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
+        mainGrid.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
+
+        // ── Header ─────────────────────────────────────────────────────────
+        var header = new Border
+        {
+            Background = new SolidColorBrush(Color.Parse(headerBg)),
+            BorderBrush = new SolidColorBrush(Color.Parse(headerBorder)),
+            BorderThickness = new Thickness(0, 0, 0, 1),
+            Padding = new Thickness(20, 14)
+        };
+        var headerRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 12 };
+        headerRow.Children.Add(new Border
+        {
+            Width = 4, Height = 22, CornerRadius = new CornerRadius(2),
+            Background = new SolidColorBrush(Color.Parse(accentColor)),
+            VerticalAlignment = VerticalAlignment.Center
+        });
+        headerRow.Children.Add(new TextBlock
+        {
+            Text = $"{iconChar}  {title}",
+            FontSize = 14, FontWeight = FontWeight.Bold,
+            Foreground = Brushes.White, VerticalAlignment = VerticalAlignment.Center
+        });
+        header.Child = headerRow;
+        Grid.SetRow(header, 0);
+        mainGrid.Children.Add(header);
+
+        // ── Body ──────────────────────────────────────────────────────────
+        var body = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Margin = new Thickness(28, 28, 28, 28),
+            Spacing = 18
+        };
+
+        var iconCircle = new Border
+        {
+            Width = 48, Height = 48, CornerRadius = new CornerRadius(24),
+            Background = new SolidColorBrush(Color.Parse(isSuccess ? "#0D2A10" : "#2A0D0D")),
+            BorderBrush = new SolidColorBrush(Color.Parse(accentColor)),
+            BorderThickness = new Thickness(2),
+            VerticalAlignment = VerticalAlignment.Top,
+            Child = new TextBlock
+            {
+                Text = iconChar, FontSize = 22, FontWeight = FontWeight.Bold,
+                Foreground = new SolidColorBrush(Color.Parse(accentColor)),
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center
+            }
+        };
+        body.Children.Add(iconCircle);
+
+        var msgBlock = new TextBlock
+        {
+            Text = message,
+            FontSize = 13,
+            Foreground = new SolidColorBrush(Color.Parse("#E0E0E0")),
+            TextWrapping = TextWrapping.Wrap,
+            VerticalAlignment = VerticalAlignment.Center,
+            MaxWidth = 290,
+            LineHeight = 22
+        };
+        body.Children.Add(msgBlock);
+
+        Grid.SetRow(body, 1);
+        mainGrid.Children.Add(body);
+
+        // ── Footer ────────────────────────────────────────────────────────
+        var footer = new Border
+        {
+            Background = new SolidColorBrush(Color.Parse("#252525")),
+            BorderBrush = new SolidColorBrush(Color.Parse("#333333")),
+            BorderThickness = new Thickness(0, 1, 0, 0),
+            Padding = new Thickness(20, 12)
+        };
+        var footerGrid = new Grid();
+        footerGrid.ColumnDefinitions.Add(new ColumnDefinition(new GridLength(1, GridUnitType.Star)));
+        footerGrid.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Auto));
+
+        footerGrid.Children.Add(new TextBlock
+        {
+            Text = "Esc · Enter para cerrar",
+            FontSize = 11,
+            Foreground = new SolidColorBrush(Color.Parse("#555555")),
+            VerticalAlignment = VerticalAlignment.Center
+        });
+
+        var okBtn = new Button
+        {
+            Content = "Aceptar",
+            Padding = new Thickness(28, 9),
+            Background = new SolidColorBrush(Color.Parse(btnBg)),
+            Foreground = Brushes.White,
+            CornerRadius = new CornerRadius(5),
+            FontSize = 13, FontWeight = FontWeight.SemiBold,
+            Cursor = new Cursor(StandardCursorType.Hand),
+            Focusable = false
+        };
+        okBtn.Click += (_, __) => dialog.Close();
+        okBtn.PointerEntered += (_, __) => okBtn.Background = new SolidColorBrush(Color.Parse(btnHover));
+        okBtn.PointerExited  += (_, __) => okBtn.Background = new SolidColorBrush(Color.Parse(btnBg));
+        Grid.SetColumn(okBtn, 1);
+        footerGrid.Children.Add(okBtn);
+
+        footer.Child = footerGrid;
+        Grid.SetRow(footer, 2);
+        mainGrid.Children.Add(footer);
+
+        dialog.Content = mainGrid;
+        dialog.KeyDown += (_, e) =>
+        {
+            if (e.Key == Key.Enter || e.Key == Key.Escape)
+            {
+                dialog.Close();
+                e.Handled = true;
+            }
+        };
+
+        await dialog.ShowDialog(parentWindow);
+    }
+
     public static async Task ShowCreationSuccessDialog(Window parentWindow, string entityName, string entityValue = "")
     {
         var dialog = new Window
