@@ -83,13 +83,44 @@ namespace CasaCejaRemake.Views.POS
         }
 
         /// <summary>
+        /// Exportación multi-hoja para un módulo específico (Inventario, Administrador, etc.).
+        /// </summary>
+        public static async Task ExportMultiSheetAsync(
+            Window parentWindow,
+            List<ExportSheetData> sheets,
+            string fileBaseName,
+            DocumentModule module)
+        {
+            try
+            {
+                if (App.ExportService == null)
+                {
+                    await DialogHelper.ShowMessageDialog(parentWindow,
+                        "El servicio de exportación no está disponible.", "Error");
+                    return;
+                }
+
+                var filePath = await ResolveFilePathAsync(parentWindow, fileBaseName, module);
+                if (filePath == null) return;
+
+                var result = await App.ExportService.ExportMultiSheetAsync(sheets, filePath);
+                await ShowResultAsync(parentWindow, result, module);
+            }
+            catch (Exception ex)
+            {
+                await DialogHelper.ShowMessageDialog(parentWindow,
+                    $"Error al exportar: {ex.Message}", "Error");
+            }
+        }
+
+        /// <summary>
         /// Resuelve la ruta final del archivo, manejando duplicados.
         /// Retorna null si el usuario cancela.
         /// </summary>
         private static async Task<string?> ResolveFilePathAsync(
-            Window parentWindow, string fileBaseName)
+            Window parentWindow, string fileBaseName, DocumentModule module = DocumentModule.POS)
         {
-            var existingFile = FileHelper.FindExistingFile(DocumentModule.POS, fileBaseName);
+            var existingFile = FileHelper.FindExistingFile(module, fileBaseName);
 
             if (existingFile != null)
             {
@@ -100,29 +131,30 @@ namespace CasaCejaRemake.Views.POS
                 switch (action)
                 {
                     case DialogHelper.DuplicateFileAction.Replace:
-                        return existingFile; // Sobrescribir
+                        return existingFile;
                     case DialogHelper.DuplicateFileAction.Duplicate:
-                        return FileHelper.GetNextDuplicatePath(DocumentModule.POS, fileBaseName);
+                        return FileHelper.GetNextDuplicatePath(module, fileBaseName);
                     case DialogHelper.DuplicateFileAction.Cancel:
                     default:
-                        return null; // Cancelar
+                        return null;
                 }
             }
 
-            // No existe, usar ruta normal
-            return FileHelper.GetReadableFilePath(DocumentModule.POS, fileBaseName);
+            return FileHelper.GetReadableFilePath(module, fileBaseName);
         }
 
         /// <summary>
         /// Muestra el resultado de la exportación al usuario.
         /// </summary>
-        private static async Task ShowResultAsync(Window parentWindow, ExportResult result)
+        private static async Task ShowResultAsync(Window parentWindow, ExportResult result,
+            DocumentModule module = DocumentModule.POS)
         {
             if (result.Success)
             {
                 var fileName = Path.GetFileName(result.FilePath);
+                var folder = FileHelper.GetModulePath(module);
                 await DialogHelper.ShowMessageDialog(parentWindow,
-                    $"Archivo exportado exitosamente:\n{fileName}\n\nUbicación: CasaCejaDocs/POS/",
+                    $"Archivo exportado exitosamente:\n{fileName}\n\nUbicación: CasaCejaDocs/{folder}/",
                     "Exportación completada");
             }
             else

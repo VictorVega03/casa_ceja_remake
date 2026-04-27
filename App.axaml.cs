@@ -929,7 +929,8 @@ namespace CasaCejaRemake
                 DataContext = viewModel
             };
 
-            await viewModel.InitializeAsync();
+            // InitializeAsync se llama desde el Loaded de la vista para que el dialog
+            // aparezca inmediatamente sin bloquear por la enumeración de impresoras (lenta en Windows)
             await view.ShowDialog(parentWindow);
         }
 

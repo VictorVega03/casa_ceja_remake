@@ -710,6 +710,124 @@ public static class DialogHelper
         await dialog.ShowDialog(parentWindow);
     }
 
+    public enum InventoryExportChoice { Entradas, Salidas, Ambas, Cancelar }
+
+    public static async Task<InventoryExportChoice> ShowInventoryExportTypeDialog(Window parentWindow)
+    {
+        var result = InventoryExportChoice.Cancelar;
+
+        var dialog = new Window
+        {
+            Title = "Generar Excel — Inventario",
+            Width = 400,
+            SizeToContent = SizeToContent.Height,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner,
+            CanResize = false,
+            ShowInTaskbar = false,
+            Background = new SolidColorBrush(Color.Parse("#1E1E1E"))
+        };
+
+        var mainGrid = new Grid();
+        mainGrid.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
+        mainGrid.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
+        mainGrid.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
+
+        // Header
+        var header = new Border
+        {
+            Background = new SolidColorBrush(Color.Parse("#1A2A1A")),
+            BorderBrush = new SolidColorBrush(Color.Parse("#2E7D32")),
+            BorderThickness = new Thickness(0, 0, 0, 1),
+            Padding = new Thickness(20, 14)
+        };
+        var headerRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 12 };
+        headerRow.Children.Add(new Border
+        {
+            Width = 4, Height = 22, CornerRadius = new CornerRadius(2),
+            Background = new SolidColorBrush(Color.Parse("#4CAF50")),
+            VerticalAlignment = VerticalAlignment.Center
+        });
+        headerRow.Children.Add(new TextBlock
+        {
+            Text = "¿Qué deseas exportar?",
+            FontSize = 14, FontWeight = FontWeight.Bold,
+            Foreground = Brushes.White, VerticalAlignment = VerticalAlignment.Center
+        });
+        header.Child = headerRow;
+        Grid.SetRow(header, 0);
+        mainGrid.Children.Add(header);
+
+        // Body — 3 botones de opción
+        var body = new StackPanel { Margin = new Thickness(24, 20, 24, 20), Spacing = 10 };
+
+        void AddOptionButton(string label, string sublabel, string accentColor, InventoryExportChoice choice)
+        {
+            var btn = new Button
+            {
+                Padding = new Thickness(16, 12),
+                Background = new SolidColorBrush(Color.Parse("#252525")),
+                BorderBrush = new SolidColorBrush(Color.Parse(accentColor)),
+                BorderThickness = new Thickness(1),
+                CornerRadius = new CornerRadius(6),
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+                Cursor = new Cursor(StandardCursorType.Hand)
+            };
+            var stack = new StackPanel { Spacing = 2 };
+            stack.Children.Add(new TextBlock
+            {
+                Text = label, FontSize = 13, FontWeight = FontWeight.SemiBold,
+                Foreground = new SolidColorBrush(Color.Parse(accentColor))
+            });
+            stack.Children.Add(new TextBlock
+            {
+                Text = sublabel, FontSize = 11,
+                Foreground = new SolidColorBrush(Color.Parse("#777777"))
+            });
+            btn.Content = stack;
+            btn.Click += (_, __) => { result = choice; dialog.Close(); };
+            body.Children.Add(btn);
+        }
+
+        AddOptionButton("↑  Entradas", "2 hojas: lista de entradas + productos", "#4CAF50", InventoryExportChoice.Entradas);
+        AddOptionButton("↓  Salidas", "2 hojas: lista de salidas + productos", "#EF5350", InventoryExportChoice.Salidas);
+        AddOptionButton("↕  Entradas y Salidas", "4 hojas: entradas, salidas y sus productos", "#42A5F5", InventoryExportChoice.Ambas);
+
+        Grid.SetRow(body, 1);
+        mainGrid.Children.Add(body);
+
+        // Footer — Cancelar
+        var footer = new Border
+        {
+            Background = new SolidColorBrush(Color.Parse("#252525")),
+            BorderBrush = new SolidColorBrush(Color.Parse("#333")),
+            BorderThickness = new Thickness(0, 1, 0, 0),
+            Padding = new Thickness(20, 12)
+        };
+        var cancelBtn = new Button
+        {
+            Content = "Cancelar (Esc)",
+            Padding = new Thickness(20, 8),
+            Background = new SolidColorBrush(Color.Parse("#333")),
+            Foreground = new SolidColorBrush(Color.Parse("#AAAAAA")),
+            CornerRadius = new CornerRadius(5),
+            HorizontalAlignment = HorizontalAlignment.Right,
+            Cursor = new Cursor(StandardCursorType.Hand)
+        };
+        cancelBtn.Click += (_, __) => dialog.Close();
+        footer.Child = cancelBtn;
+        Grid.SetRow(footer, 2);
+        mainGrid.Children.Add(footer);
+
+        dialog.Content = mainGrid;
+        dialog.KeyDown += (_, e) =>
+        {
+            if (e.Key == Key.Escape) { dialog.Close(); e.Handled = true; }
+        };
+
+        await dialog.ShowDialog(parentWindow);
+        return result;
+    }
+
     public static async Task ShowCreationSuccessDialog(Window parentWindow, string entityName, string entityValue = "")
     {
         var dialog = new Window

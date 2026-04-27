@@ -346,37 +346,41 @@ namespace CasaCejaRemake.Helpers
             // ── Sección 2: Fondo + Total del Corte ────────────────────────────
             lines.Add(FormatAmountLine("FONDO DE APERTURA:", openingCash, lineWidth));
             lines.Add("");
-            // Total del corte = ventas directas + créditos creados + apartados creados (igual que la vista)
             decimal totalDelCorte = totalCash + totalDebit + totalCredit + totalChecks + totalTransfer
                                     + creditTotalCreated + layawayTotalCreated;
             lines.Add(FormatAmountLine("TOTAL CORTE DE CAJA:", totalDelCorte, lineWidth));
+            lines.Add(FormatAmountLine("  CREDITOS CREADOS:", creditTotalCreated, lineWidth));
+            lines.Add(FormatAmountLine("  APARTADOS CREADOS:", layawayTotalCreated, lineWidth));
             lines.Add(sep);
 
             // ── Sección 3: Desglose efectivo ──────────────────────────────────
-            decimal efectivoDirecto = totalCash; // Efectivo de ventas directas (creditCash y layawayCash son flujos separados)
+            decimal efectivoDirecto = totalCash;
             lines.Add(FormatAmountLine("EFECTIVO DE CREDITOS:", creditCash, lineWidth));
-            lines.Add(FormatAmountLine("EFECTIVO DE APARTADOS", layawayCash, lineWidth));
+            lines.Add(FormatAmountLine("EFECTIVO DE APARTADOS:", layawayCash, lineWidth));
             lines.Add(FormatAmountLine("EFECTIVO DIRECTO:", efectivoDirecto, lineWidth));
             lines.Add(sep);
             lines.Add("");
 
-            // ── Sección 4: Otras formas de pago ──────────────────────────────
+            // ── Sección 4: Otras formas de pago ───────────────────────────────
             lines.Add(sep);
-            lines.Add(FormatAmountLine("TOTAL T. DEBITO", totalDebit, lineWidth));
-            lines.Add(FormatAmountLine("TOTAL T. CREDITO", totalCredit, lineWidth));
-            lines.Add(FormatAmountLine("TOTAL CHEQUES", totalChecks, lineWidth));
-            lines.Add(FormatAmountLine("TOTAL TRANSFERENCIAS", totalTransfer, lineWidth));
+            lines.Add(FormatAmountLine("TOTAL T. DEBITO:", totalDebit, lineWidth));
+            lines.Add(FormatAmountLine("TOTAL T. CREDITO:", totalCredit, lineWidth));
+            lines.Add(FormatAmountLine("TOTAL CHEQUES:", totalChecks, lineWidth));
+            lines.Add(FormatAmountLine("TOTAL TRANSFERENCIAS:", totalTransfer, lineWidth));
             lines.Add(sep);
             lines.Add("");
 
-            // ── Sección 5: Gastos / Ingresos / Efectivo total ─────────────────
+            // ── Sección 5: Gastos / Ingresos / Ganancias / Efectivo total ─────
             lines.Add(sep);
             lines.Add(FormatAmountLine("SOBRANTE:", difference >= 0 ? difference : 0, lineWidth));
             lines.Add(FormatAmountLine("GASTOS:", totalExpenses, lineWidth));
             lines.Add(FormatAmountLine("INGRESOS:", totalIncome, lineWidth));
-
-            // Efectivo total = fondo + ventas efectivo + abonos créditos + abonos apartados + ingresos - gastos
-            decimal efectivoTotal = openingCash + totalCash + layawayCash + creditCash + totalIncome - totalExpenses;
+            lines.Add("");
+            // Ganancias en efectivo del turno, SIN incluir el fondo de apertura
+            decimal gananciasEfectivo = totalCash + creditCash + layawayCash + totalIncome - totalExpenses;
+            lines.Add(FormatAmountLine("GANANCIAS EFECTIVO:", gananciasEfectivo, lineWidth));
+            // Efectivo total en caja = fondo + ganancias (lo que debe haber físicamente)
+            decimal efectivoTotal = openingCash + gananciasEfectivo;
             lines.Add(FormatAmountLine("EFECTIVO TOTAL:", efectivoTotal, lineWidth));
             lines.Add(sep);
 

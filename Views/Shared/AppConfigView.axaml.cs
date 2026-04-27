@@ -18,7 +18,7 @@ namespace CasaCejaRemake.Views.Shared
             Loaded += OnLoaded;
         }
 
-        private void OnLoaded(object? sender, RoutedEventArgs e)
+        private async void OnLoaded(object? sender, RoutedEventArgs e)
         {
             _viewModel = DataContext as AppConfigViewModel;
 
@@ -33,6 +33,8 @@ namespace CasaCejaRemake.Views.Shared
                     if (userService == null) return false;
                     return await AdminVerificationHelper.VerifyAdminAsync(this, userService);
                 };
+
+                await _viewModel.InitializeAsync();
             }
         }
 

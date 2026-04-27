@@ -19,7 +19,7 @@
         </Border>
 
         <!-- Product List -->
-        <DataGrid Grid.Row="1" ItemsSource="{Binding Products}" Margin="20"
+        <DataGrid x:Name="ProductsGrid" Grid.Row="1" ItemsSource="{Binding Products}" Margin="20"
                   AutoGenerateColumns="False" CanUserReorderColumns="False" CanUserResizeColumns="True" CanUserSortColumns="True"
                   IsReadOnly="True" GridLinesVisibility="All" Background="#252525" RowBackground="#252525"
                   BorderBrush="#424242" BorderThickness="1" SelectionMode="Single">

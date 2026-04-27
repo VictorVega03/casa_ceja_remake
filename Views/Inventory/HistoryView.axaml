@@ -220,7 +220,7 @@
             <Grid ColumnDefinitions="*,Auto,*">
 
                 <!-- Left: hint -->
-                <TextBlock Grid.Column="0" Text="Enter: Ver detalle   |   Esc: Volver"
+                <TextBlock Grid.Column="0" Text="Enter: Ver detalle   |   F8: Exportar Excel   |   Esc: Volver"
                            Foreground="#555" FontSize="12" VerticalAlignment="Center"/>
 
                 <!-- Center: pagination -->
@@ -240,11 +240,24 @@
                     </Button>
                 </StackPanel>
 
-                <!-- Right: loading indicator -->
+                <!-- Right: loading + export button -->
                 <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right"
-                            Spacing="8" VerticalAlignment="Center"
-                            IsVisible="{Binding IsSearching}">
-                    <TextBlock Text="Cargando..." Foreground="#FF9800" FontSize="12"/>
+                            Spacing="12" VerticalAlignment="Center">
+                    <TextBlock Text="Cargando..." Foreground="#FF9800" FontSize="12"
+                               IsVisible="{Binding IsSearching}" VerticalAlignment="Center"/>
+                    <Button x:Name="ExportButton"
+                            Background="#1A2A1A"
+                            Foreground="#4CAF50"
+                            BorderBrush="#2E7D32"
+                            BorderThickness="1"
+                            Padding="14,7"
+                            CornerRadius="5"
+                            FontSize="12"
+                            FontWeight="SemiBold"
+                            Cursor="Hand"
+                            ToolTip.Tip="Generar Excel (F8)">
+                        ⬇  Generar Excel (F8)
+                    </Button>
                 </StackPanel>
 
             </Grid>
