@@ -76,8 +76,10 @@
                             <TextBlock Text="Teléfono" Classes="label"/>
                             <TextBlock Text=" *" Classes="label required"/>
                         </StackPanel>
-                        <TextBox Text="{Binding Phone}"
-                                 Watermark="10 dígitos"/>
+                        <TextBox x:Name="PhoneBox"
+                                 Text="{Binding Phone}"
+                                 Watermark="10 dígitos"
+                                 TextChanging="OnPhoneTextChanging"/>
                     </StackPanel>
                 </Grid>
 

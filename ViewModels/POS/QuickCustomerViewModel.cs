@@ -95,7 +95,7 @@ namespace CasaCejaRemake.ViewModels.POS
 
         partial void OnPhoneChanged(string value)
         {
-            var sanitized = RemoveWhitespace(value);
+            var sanitized = new string(value.Where(char.IsDigit).ToArray());
             if (!string.Equals(sanitized, value, StringComparison.Ordinal))
             {
                 Phone = sanitized;

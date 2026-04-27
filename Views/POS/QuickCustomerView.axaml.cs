@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
@@ -15,6 +16,20 @@ namespace CasaCejaRemake.Views.POS
         {
             InitializeComponent();
             Loaded += OnLoaded;
+        }
+
+        private void OnPhoneTextChanging(object? sender, TextChangingEventArgs e)
+        {
+            if (sender is not TextBox textBox) return;
+
+            var newText = textBox.Text ?? string.Empty;
+            if (!string.IsNullOrEmpty(newText) && !newText.All(char.IsDigit))
+            {
+                var filtered = new string(newText.Where(char.IsDigit).ToArray());
+                var cursor = textBox.CaretIndex;
+                textBox.Text = filtered;
+                textBox.CaretIndex = Math.Min(cursor, filtered.Length);
+            }
         }
 
         private void OnLoaded(object? sender, RoutedEventArgs e)

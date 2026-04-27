@@ -9,6 +9,7 @@ namespace CasaCejaRemake.Views.Inventory
     public partial class CatalogView : Window
     {
         private CatalogViewModel? _subscribedViewModel;
+        private bool _isDialogOpen;
 
         public CatalogView()
         {
@@ -45,11 +46,15 @@ namespace CasaCejaRemake.Views.Inventory
 
         private async void OnStockDataReady(object? sender, (CasaCejaRemake.Models.Product Product, System.Collections.Generic.List<CasaCejaRemake.Models.ProductStockItem> Items, bool IsFromCache, System.Collections.Generic.List<CasaCejaRemake.Models.Branch> AllBranches) data)
         {
+            _isDialogOpen = true;
             await DialogHelper.ShowStockDialog(this, data.Product, data.Items, data.IsFromCache, data.AllBranches);
+            _isDialogOpen = false;
         }
 
         private void OnPreviewKeyDown(object? sender, KeyEventArgs e)
         {
+            if (_isDialogOpen) return;
+
             if (DataContext is CatalogViewModel vm)
             {
                 if (e.Key == Key.F1)

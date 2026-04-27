@@ -159,6 +159,44 @@ namespace CasaCejaRemake.Views.Shared
                 Margin = new Thickness(0, 4)
             };
 
+            // ── Total global ──────────────────────────────────────────────────
+            int totalQty = allBranchItems.Sum(x => x.Quantity);
+            string totalColor = totalQty > 0 ? "#4CAF50" : totalQty < 0 ? "#EF5350" : "#9E9E9E";
+
+            var totalBanner = new Border
+            {
+                Background = new SolidColorBrush(Color.Parse("#252525")),
+                BorderBrush = new SolidColorBrush(Color.Parse("#3A3A3A")),
+                BorderThickness = new Thickness(0, 1, 0, 0),
+                Padding = new Thickness(20, 10)
+            };
+
+            var totalContent = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, HorizontalAlignment = HorizontalAlignment.Center };
+            totalContent.Children.Add(new TextBlock
+            {
+                Text = "EXISTENCIA TOTAL:",
+                FontSize = 12,
+                FontWeight = FontWeight.SemiBold,
+                Foreground = new SolidColorBrush(Color.Parse("#AAAAAA")),
+                VerticalAlignment = VerticalAlignment.Center
+            });
+            totalContent.Children.Add(new TextBlock
+            {
+                Text = totalQty.ToString(),
+                FontSize = 16,
+                FontWeight = FontWeight.Bold,
+                Foreground = new SolidColorBrush(Color.Parse(totalColor)),
+                VerticalAlignment = VerticalAlignment.Center
+            });
+            totalContent.Children.Add(new TextBlock
+            {
+                Text = "uds.",
+                FontSize = 12,
+                Foreground = new SolidColorBrush(Color.Parse("#555555")),
+                VerticalAlignment = VerticalAlignment.Center
+            });
+            totalBanner.Child = totalContent;
+
             // ── Footer ────────────────────────────────────────────────────────
             var footer = new Border
             {
@@ -220,6 +258,7 @@ namespace CasaCejaRemake.Views.Shared
             if (cacheBanner != null) mainGrid.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
             mainGrid.RowDefinitions.Add(new RowDefinition(new GridLength(1, GridUnitType.Star)));
             mainGrid.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
+            mainGrid.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
 
             var row = 0;
             Grid.SetRow(header, row++);
@@ -233,6 +272,9 @@ namespace CasaCejaRemake.Views.Shared
 
             Grid.SetRow(scrollViewer, row++);
             mainGrid.Children.Add(scrollViewer);
+
+            Grid.SetRow(totalBanner, row++);
+            mainGrid.Children.Add(totalBanner);
 
             Grid.SetRow(footer, row);
             mainGrid.Children.Add(footer);

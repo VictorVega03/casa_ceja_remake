@@ -149,7 +149,8 @@
             </StackPanel>
 
             <!-- Lista de entradas pendientes -->
-            <DataGrid IsVisible="{Binding HasPending}"
+            <DataGrid x:Name="EntriesGrid"
+                      IsVisible="{Binding HasPending}"
                       ItemsSource="{Binding PendingEntries}"
                       SelectedItem="{Binding SelectedEntry}"
                       AutoGenerateColumns="False"
