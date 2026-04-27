@@ -191,7 +191,7 @@
                 </DataGridTemplateColumn>
 
                 <!-- Folio -->
-                <DataGridTextColumn Header="FOLIO" Binding="{Binding Folio}" Width="140"/>
+                <DataGridTextColumn Header="FOLIO" Binding="{Binding Folio}" Width="210"/>
 
                 <!-- Origen / Destino -->
                 <DataGridTextColumn Header="ORIGEN / DESTINO" Binding="{Binding DestinoOrigen}" Width="*"/>

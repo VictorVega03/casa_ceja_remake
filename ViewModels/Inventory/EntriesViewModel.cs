@@ -140,7 +140,7 @@ namespace CasaCejaRemake.ViewModels.Inventory
 
                 if (Suppliers.Count > 0)
                 {
-                    SelectedSupplier = Suppliers[0];
+                    SelectedSupplier = null;
                 }
                 else
                 {

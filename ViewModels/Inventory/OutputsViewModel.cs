@@ -124,7 +124,7 @@ namespace CasaCejaRemake.ViewModels.Inventory
                 foreach (var b in list.Where(b => b.Id != _branchId).OrderBy(b => b.Name))
                     Branches.Add(b);
                 if (Branches.Count > 0)
-                    SelectedDestination = Branches[0];
+                    SelectedDestination = null;
             }
             catch (Exception ex)
             {

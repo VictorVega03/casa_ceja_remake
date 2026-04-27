@@ -822,8 +822,9 @@ namespace CasaCejaRemake
                 ShowInventory(historyView);
             };
 
-            viewModel.MovementDetailRequested += (s, historyItem) =>
+            viewModel.MovementDetailRequested += async (s, historyItem) =>
             {
+                historyView.IsDetailOpen = true;
                 var detailVM = new ViewModels.Inventory.MovementDetailViewModel(_inventoryService!, historyItem);
                 var detailView = new Views.Inventory.MovementDetailView
                 {
@@ -831,7 +832,8 @@ namespace CasaCejaRemake
                 };
 
                 detailVM.CloseRequested += (s2, a2) => detailView.Close();
-                detailView.ShowDialog(historyView);
+                await detailView.ShowDialog(historyView);
+                historyView.IsDetailOpen = false;
             };
 
             historyView.Closed += (sender, args) =>

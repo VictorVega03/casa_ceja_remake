@@ -101,10 +101,10 @@
                     </Button>
                     <Border Width="4" Height="20" CornerRadius="2" Background="#1976D2"/>
                     <TextBlock Text="CONFIRMAR ENTRADA DE MERCANCÍA" FontSize="15" FontWeight="Bold" Foreground="White" VerticalAlignment="Center"/>
-                    <Border Background="#0D2A4A" CornerRadius="4" Padding="8,3" VerticalAlignment="Center"
+                    <Border Background="#2A1E00" CornerRadius="4" Padding="8,3" VerticalAlignment="Center"
                             IsVisible="{Binding HasPending}">
                         <TextBlock Text="{Binding PendingEntries.Count, StringFormat='{}{0} pendientes'}"
-                                   FontSize="11" FontWeight="Bold" Foreground="#42A5F5"/>
+                                   FontSize="11" FontWeight="Bold" Foreground="#FFC107"/>
                     </Border>
                 </StackPanel>
 
@@ -162,7 +162,7 @@
                 <DataGrid.Columns>
 
                     <!-- Folio -->
-                    <DataGridTemplateColumn Header="FOLIO" Width="230" IsReadOnly="True">
+                    <DataGridTemplateColumn Header="FOLIO" Width="300" IsReadOnly="True">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
                                 <StackPanel VerticalAlignment="Center" Margin="14,0">

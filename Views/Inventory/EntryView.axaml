@@ -167,6 +167,7 @@
                         <TextBlock Text="PROVEEDOR" Classes="label"/>
                         <ComboBox ItemsSource="{Binding Suppliers}"
                                   SelectedItem="{Binding SelectedSupplier}"
+                                  PlaceholderText="Seleccione un proveedor"
                                   HorizontalAlignment="Stretch">
                             <ComboBox.ItemTemplate>
                                 <DataTemplate>

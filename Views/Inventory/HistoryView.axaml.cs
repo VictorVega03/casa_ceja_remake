@@ -8,6 +8,7 @@ namespace CasaCejaRemake.Views.Inventory
     public partial class HistoryView : Window
     {
         private HistoryViewModel? _viewModel;
+        internal bool IsDetailOpen { get; set; }
 
         public HistoryView()
         {
@@ -36,6 +37,8 @@ namespace CasaCejaRemake.Views.Inventory
 
         protected override void OnKeyDown(KeyEventArgs e)
         {
+            if (IsDetailOpen) return;
+
             if (_viewModel == null)
             {
                 base.OnKeyDown(e);

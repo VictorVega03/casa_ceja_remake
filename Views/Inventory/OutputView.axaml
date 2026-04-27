@@ -162,6 +162,7 @@
                         <TextBlock Text="SUCURSAL DESTINO" Classes="label"/>
                         <ComboBox ItemsSource="{Binding Branches}"
                                   SelectedItem="{Binding SelectedDestination}"
+                                  PlaceholderText="Seleccione una sucursal"
                                   HorizontalAlignment="Stretch">
                             <ComboBox.ItemTemplate>
                                 <DataTemplate>
