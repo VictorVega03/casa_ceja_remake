@@ -3,12 +3,16 @@ using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
+using Avalonia.Platform;
 using CasaCejaRemake.ViewModels.POS;
 using CasaCejaRemake.Views.POS;
 using CasaCejaRemake.Models;
+using CasaCejaRemake.Services;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using CasaCejaRemake.ViewModels.Inventory;
 
 namespace CasaCejaRemake.Views.Inventory
@@ -42,12 +46,20 @@ namespace CasaCejaRemake.Views.Inventory
                     _hasOpenDialog = false;
                 };
 
-                _viewModel.ShowSuccessRequested += async (s, msg) =>
+                _viewModel.ShowSuccessRequested += async (s, result) =>
                 {
                     _hasOpenDialog = true;
+
+                    // 1. Mostrar dialog de éxito — usuario lo cierra con Enter/Esc
                     await casa_ceja_remake.Helpers.DialogHelper.ShowResultDialog(
-                        this, true, "Salida registrada exitosamente", msg);
+                        this, true, "Salida registrada exitosamente", result.Message);
+
                     _hasOpenDialog = false;
+
+                    // 2. Generar y abrir PDF de remisión
+                    await GenerateAndOpenRemissionAsync(result.PdfData);
+
+                    // 3. Navegar de vuelta
                     _allowClose = true;
                     _viewModel.CancelCommand.Execute(null);
                 };
@@ -328,7 +340,36 @@ namespace CasaCejaRemake.Views.Inventory
             }
         }
 
-        private async System.Threading.Tasks.Task ConfirmAndExitAsync()
+        private async Task GenerateAndOpenRemissionAsync(OutputRemissionData pdfData)
+        {
+            try
+            {
+                // Cargar logo desde recursos de Avalonia
+                try
+                {
+                    using var stream = AssetLoader.Open(new Uri("avares://casa_ceja_remake/Assets/LogoCasaCeja.png"));
+                    using var ms = new MemoryStream();
+                    await stream.CopyToAsync(ms);
+                    pdfData.LogoBytes = ms.ToArray();
+                }
+                catch
+                {
+                    // Sin logo si no se puede cargar
+                }
+
+                var pdfService = new OutputRemissionPdfService();
+                var filePath   = await Task.Run(() => pdfService.GenerateAndSave(pdfData));
+                OutputRemissionPdfService.OpenInNativeViewer(filePath);
+            }
+            catch (Exception ex)
+            {
+                await casa_ceja_remake.Helpers.DialogHelper.ShowMessageDialog(
+                    this, "Aviso",
+                    $"La salida se registró correctamente.\nNo se pudo generar el PDF: {ex.Message}");
+            }
+        }
+
+        private async Task ConfirmAndExitAsync()
         {
             if (_viewModel == null) return;
 

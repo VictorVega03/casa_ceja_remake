@@ -674,8 +674,9 @@ namespace CasaCejaRemake
             }
             catch { /* use default */ }
 
+            var userName = AuthService?.CurrentUserName ?? string.Empty;
             var viewModel = new ViewModels.Inventory.OutputsViewModel(
-                _inventoryService, FolioService, ApiClient!, branchId, branchName, userId);
+                _inventoryService, FolioService, ApiClient!, branchId, branchName, userId, userName);
 
             var outputView = new Views.Inventory.OutputView
             {

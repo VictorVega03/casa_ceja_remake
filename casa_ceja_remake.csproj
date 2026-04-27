@@ -43,6 +43,9 @@
     
     <!-- Excel Export -->
     <PackageReference Include="ClosedXML" Version="0.102.3" />
+
+    <!-- PDF Generation -->
+    <PackageReference Include="QuestPDF" Version="2024.10.4" />
   </ItemGroup>
 
 </Project>

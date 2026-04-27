@@ -42,11 +42,12 @@ namespace CasaCejaRemake.ViewModels.Inventory
         private readonly ApiClient _apiClient;
         private readonly int _branchId;
         private readonly int _userId;
+        private string _userName = string.Empty;
 
         // ── Eventos de navegación ──────────────────────────────────────────
         public event EventHandler? GoBackRequested;
         public event EventHandler<string>? ShowMessageRequested;
-        public event EventHandler<string>? ShowSuccessRequested;
+        public event EventHandler<(string Message, OutputRemissionData PdfData)>? ShowSuccessRequested;
         public event EventHandler<string>? ShowErrorRequested;
         public event EventHandler<string>? OpenPosCatalogRequested;
         public event EventHandler<OutputLineItem>? ProductAddedOrUpdated;
@@ -80,13 +81,15 @@ namespace CasaCejaRemake.ViewModels.Inventory
             ApiClient apiClient,
             int branchId,
             string branchName,
-            int userId)
+            int userId,
+            string userName = "")
         {
             _inventoryService = inventoryService;
             _folioService = folioService;
             _apiClient = apiClient;
             _branchId = branchId;
             _userId = userId;
+            _userName = userName;
             BranchName = branchName;
 
             Lines.CollectionChanged += (s, e) =>
@@ -350,8 +353,28 @@ namespace CasaCejaRemake.ViewModels.Inventory
 
                 await _inventoryService.CreateOutputAsync(output, products);
 
-                ShowSuccessRequested?.Invoke(this,
-                    $"Folio: {folio}\nStock descontado en esta sucursal.\nLa sucursal destino recibirá la entrada pendiente.");
+                var pdfData = new OutputRemissionData
+                {
+                    Folio               = folio,
+                    OriginBranchName    = BranchName,
+                    DestinationBranchName = SelectedDestination.Name,
+                    OutputDate          = output.OutputDate,
+                    UserName            = _userName,
+                    TotalAmount         = TotalAmount,
+                    Notes               = output.Notes,
+                    Lines               = Lines.Select(l => new OutputProductInfo
+                    {
+                        Barcode     = l.Barcode,
+                        ProductName = l.ProductName,
+                        Quantity    = l.Quantity,
+                        UnitCost    = l.UnitCost,
+                        LineTotal   = l.LineTotal
+                    }).ToList()
+                };
+
+                ShowSuccessRequested?.Invoke(this, (
+                    $"Folio: {folio}\nStock descontado en esta sucursal.\nLa sucursal destino recibirá la entrada pendiente.",
+                    pdfData));
             }
             catch (Exception ex)
             {
