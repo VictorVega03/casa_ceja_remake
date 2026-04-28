@@ -13,8 +13,9 @@
         <Style Selector="Button.action-btn">
             <Setter Property="Background" Value="#0078D4"/>
             <Setter Property="Foreground" Value="White"/>
-            <Setter Property="Padding" Value="15,8"/>
+            <Setter Property="Padding" Value="12,6"/>
             <Setter Property="Margin" Value="3"/>
+            <Setter Property="FontSize" Value="12"/>
             <Setter Property="CornerRadius" Value="4"/>
         </Style>
         <Style Selector="Button.action-btn:pointerover">
@@ -23,13 +24,14 @@
         <Style Selector="ComboBox">
             <Setter Property="Background" Value="#3D3D3D"/>
             <Setter Property="Foreground" Value="White"/>
-            <Setter Property="Padding" Value="10"/>
+            <Setter Property="Padding" Value="8"/>
             <Setter Property="CornerRadius" Value="4"/>
-            <Setter Property="MinWidth" Value="150"/>
+            <Setter Property="MinWidth" Value="140"/>
+            <Setter Property="FontSize" Value="12"/>
         </Style>
     </Window.Styles>
 
-    <Grid RowDefinitions="Auto,Auto,*,Auto,Auto,Auto" Margin="20">
+    <Grid RowDefinitions="Auto,Auto,*,Auto,Auto,Auto" Margin="12">
         
         <!-- Filtros de busqueda -->
         <Grid Grid.Row="0" ColumnDefinitions="*,Auto,Auto,Auto" Margin="0,0,0,10">
@@ -37,8 +39,8 @@
                      Grid.Column="0"
                      Text="{Binding SearchTerm, Mode=TwoWay}"
                      Watermark="Buscar por codigo o nombre... (presiona Enter para buscar)"
-                     FontSize="16"
-                     Padding="15"
+                     FontSize="13"
+                     Padding="10"
                      Background="#3D3D3D"
                      Foreground="White"
                      BorderThickness="0"
@@ -67,7 +69,8 @@
                     Content="📦 Ver Existencia"
                     Background="#FF9800"
                     Foreground="White"
-                    Padding="15,10"
+                    Padding="12,8"
+                    FontSize="12"
                     CornerRadius="4"
                     IsEnabled="{Binding SelectedProduct, Converter={x:Static ObjectConverters.IsNotNull}}"
                     Click="OnVerExistenciaClick"/>
@@ -168,27 +171,27 @@
         <!-- Selector de cantidad -->
         <Border Grid.Row="4" Background="#2D2D2D" Padding="10" CornerRadius="4" Margin="0,10,0,0">
             <Grid ColumnDefinitions="Auto,Auto,*,Auto">
-                <TextBlock Grid.Column="0" 
-                           Text="Cantidad:" 
-                           Foreground="White" 
+                <TextBlock Grid.Column="0"
+                           Text="Cantidad:"
+                           Foreground="White"
                            VerticalAlignment="Center"
-                           FontSize="16"
+                           FontSize="13"
                            Margin="0,0,10,0"/>
-                
+
                 <StackPanel Grid.Column="1" Orientation="Horizontal">
                     <Button Command="{Binding DecrementQuantityCommand}"
-                            Width="40"
-                            Height="40"
+                            Width="34"
+                            Height="34"
                             Background="#3D3D3D"
                             Foreground="White"
                             CornerRadius="4">
-                        <TextBlock Text="-" FontSize="20" FontWeight="Bold"/>
+                        <TextBlock Text="-" FontSize="16" FontWeight="Bold"/>
                     </Button>
-                    
+
                     <TextBox Text="{Binding Quantity, Mode=TwoWay}"
-                             Width="80"
-                             Height="40"
-                             FontSize="18"
+                             Width="70"
+                             Height="34"
+                             FontSize="14"
                              FontWeight="Bold"
                              HorizontalContentAlignment="Center"
                              VerticalContentAlignment="Center"
@@ -198,12 +201,12 @@
                              Margin="5,0"/>
                     
                     <Button Command="{Binding IncrementQuantityCommand}"
-                            Width="40"
-                            Height="40"
+                            Width="34"
+                            Height="34"
                             Background="#3D3D3D"
                             Foreground="White"
                             CornerRadius="4">
-                        <TextBlock Text="+" FontSize="20" FontWeight="Bold"/>
+                        <TextBlock Text="+" FontSize="16" FontWeight="Bold"/>
                     </Button>
                 </StackPanel>
 
@@ -224,11 +227,12 @@
                        VerticalAlignment="Center"
                        FontSize="12"/>
             
-            <Button Grid.Column="1" 
+            <Button Grid.Column="1"
                     Command="{Binding CancelCommand}"
                     Background="#3D3D3D"
                     Foreground="White"
-                    Padding="25,12"
+                    Padding="18,9"
+                    FontSize="12"
                     Margin="0,0,5,0"
                     CornerRadius="4">
                 <StackPanel Orientation="Horizontal" Spacing="8">
@@ -236,12 +240,13 @@
                     <TextBlock Text="Cancelar"/>
                 </StackPanel>
             </Button>
-            
-            <Button Grid.Column="2" 
+
+            <Button Grid.Column="2"
                     Command="{Binding ConfirmCommand}"
                     Background="#4CAF50"
                     Foreground="White"
-                    Padding="25,12"
+                    Padding="18,9"
+                    FontSize="12"
                     Margin="5,0,0,0"
                     CornerRadius="4">
                 <StackPanel Orientation="Horizontal" Spacing="8">

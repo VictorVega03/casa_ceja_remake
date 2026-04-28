@@ -12,5 +12,9 @@
         <FluentTheme />
         <!-- Estilos del DataGrid - REQUERIDO para que funcione -->
         <StyleInclude Source="avares://Avalonia.Controls.DataGrid/Themes/Fluent.xaml"/>
+        <!-- Tamaño base de fuente para toda la aplicación -->
+        <Style Selector="TextBlock">
+            <Setter Property="FontSize" Value="12"/>
+        </Style>
     </Application.Styles>
 </Application>

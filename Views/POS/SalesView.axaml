@@ -14,9 +14,10 @@
         <Style Selector="Button.action-button">
             <Setter Property="Background" Value="#0078D4"/>
             <Setter Property="Foreground" Value="White"/>
-            <Setter Property="Padding" Value="15,10"/>
-            <Setter Property="Margin" Value="5"/>
+            <Setter Property="Padding" Value="10,6"/>
+            <Setter Property="Margin" Value="4"/>
             <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="FontSize" Value="12"/>
             <Setter Property="CornerRadius" Value="4"/>
         </Style>
         <Style Selector="Button.action-button:pointerover">
@@ -25,9 +26,10 @@
         <Style Selector="Button.danger-button">
             <Setter Property="Background" Value="#D32F2F"/>
             <Setter Property="Foreground" Value="White"/>
-            <Setter Property="Padding" Value="15,10"/>
-            <Setter Property="Margin" Value="5"/>
+            <Setter Property="Padding" Value="10,6"/>
+            <Setter Property="Margin" Value="4"/>
             <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="FontSize" Value="12"/>
             <Setter Property="CornerRadius" Value="4"/>
         </Style>
         <Style Selector="Button.danger-button:pointerover">
@@ -36,10 +38,10 @@
         <Style Selector="Button.success-button">
             <Setter Property="Background" Value="#388E3C"/>
             <Setter Property="Foreground" Value="White"/>
-            <Setter Property="Padding" Value="20,15"/>
-            <Setter Property="Margin" Value="5"/>
+            <Setter Property="Padding" Value="15,10"/>
+            <Setter Property="Margin" Value="4"/>
             <Setter Property="FontWeight" Value="Bold"/>
-            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="FontSize" Value="14"/>
             <Setter Property="CornerRadius" Value="4"/>
         </Style>
         <Style Selector="Button.success-button:pointerover">
@@ -50,7 +52,7 @@
     <Grid RowDefinitions="Auto,*">
         
         <!-- Header -->
-        <Border Grid.Row="0" Background="#252525" Padding="15">
+        <Border Grid.Row="0" Background="#252525" Padding="10">
             <Border.Effect>
                 <DropShadowEffect Color="#000000" Opacity="0.3" BlurRadius="10" OffsetX="0" OffsetY="2"/>
             </Border.Effect>
@@ -69,11 +71,11 @@
                 <!-- Info izquierda -->
                 <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="30">
                     <StackPanel>
-                        <TextBlock Text="FOLIO DE CORTE" FontSize="10" Foreground="#888"/>
-                        <TextBlock Text="{Binding CashCloseFolio}" FontSize="16" Foreground="White" FontWeight="Bold"/>
+                        <TextBlock Text="FOLIO DE CORTE" FontSize="9" Foreground="#888"/>
+                        <TextBlock Text="{Binding CashCloseFolio}" FontSize="13" Foreground="White" FontWeight="Bold"/>
                     </StackPanel>
                     <StackPanel>
-                        <TextBlock Text="COBRANZA" FontSize="10" Foreground="#888"/>
+                        <TextBlock Text="COBRANZA" FontSize="9" Foreground="#888"/>
                         <StackPanel Orientation="Horizontal" Spacing="5">
                             <Button x:Name="BtnPrevCollection" 
                                     Background="#444" 
@@ -81,12 +83,12 @@
                                     Padding="8,5"
                                     VerticalAlignment="Center">
                                 <StackPanel Orientation="Horizontal" Spacing="5" VerticalAlignment="Center" HorizontalAlignment="Center">
-                                    <TextBlock Text="◀" FontSize="14" FontWeight="Bold" Margin="0,-2,0,0"/>
-                                    <TextBlock Text="F4" FontSize="12" FontWeight="Bold" Foreground="#DDD"/>
+                                    <TextBlock Text="◀" FontSize="11" FontWeight="Bold" Margin="0,-2,0,0"/>
+                                    <TextBlock Text="F4" FontSize="10" FontWeight="Bold" Foreground="#DDD"/>
                                 </StackPanel>
                             </Button>
                             
-                            <TextBlock Text="{Binding CurrentCollection}" FontSize="24" Foreground="#66BB6A" FontWeight="Bold" Margin="0,0,0,2" VerticalAlignment="Center"/>
+                            <TextBlock Text="{Binding CurrentCollection}" FontSize="18" Foreground="#66BB6A" FontWeight="Bold" Margin="0,0,0,2" VerticalAlignment="Center"/>
                             
                             <Button x:Name="BtnNextCollection" 
                                     Background="#444" 
@@ -94,26 +96,26 @@
                                     Padding="8,5"
                                     VerticalAlignment="Center">
                                 <StackPanel Orientation="Horizontal" Spacing="5" VerticalAlignment="Center" HorizontalAlignment="Center">
-                                    <TextBlock Text="F5" FontSize="12" FontWeight="Bold" Foreground="#DDD"/>
-                                    <TextBlock Text="▶" FontSize="14" FontWeight="Bold" Margin="0,-2,0,0"/>
+                                    <TextBlock Text="F5" FontSize="10" FontWeight="Bold" Foreground="#DDD"/>
+                                    <TextBlock Text="▶" FontSize="11" FontWeight="Bold" Margin="0,-2,0,0"/>
                                 </StackPanel>
                             </Button>
                         </StackPanel>
                     </StackPanel>
                     <!-- Indicadores de cobranzas con items -->
                     <StackPanel Orientation="Horizontal" Spacing="3" VerticalAlignment="Center">
-                        <Button x:Name="BtnCollectionA" Content="A" Width="28" Height="28" FontSize="12" FontWeight="Bold" CornerRadius="4" Padding="0" ToolTip.Tip="Ir a cobranza A"/>
-                        <Button x:Name="BtnCollectionB" Content="B" Width="28" Height="28" FontSize="12" FontWeight="Bold" CornerRadius="4" Padding="0" ToolTip.Tip="Ir a cobranza B"/>
-                        <Button x:Name="BtnCollectionC" Content="C" Width="28" Height="28" FontSize="12" FontWeight="Bold" CornerRadius="4" Padding="0" ToolTip.Tip="Ir a cobranza C"/>
-                        <Button x:Name="BtnCollectionD" Content="D" Width="28" Height="28" FontSize="12" FontWeight="Bold" CornerRadius="4" Padding="0" ToolTip.Tip="Ir a cobranza D"/>
+                        <Button x:Name="BtnCollectionA" Content="A" Width="22" Height="22" FontSize="10" FontWeight="Bold" CornerRadius="4" Padding="0" ToolTip.Tip="Ir a cobranza A"/>
+                        <Button x:Name="BtnCollectionB" Content="B" Width="22" Height="22" FontSize="10" FontWeight="Bold" CornerRadius="4" Padding="0" ToolTip.Tip="Ir a cobranza B"/>
+                        <Button x:Name="BtnCollectionC" Content="C" Width="22" Height="22" FontSize="10" FontWeight="Bold" CornerRadius="4" Padding="0" ToolTip.Tip="Ir a cobranza C"/>
+                        <Button x:Name="BtnCollectionD" Content="D" Width="22" Height="22" FontSize="10" FontWeight="Bold" CornerRadius="4" Padding="0" ToolTip.Tip="Ir a cobranza D"/>
                     </StackPanel>
                 </StackPanel>
 
                 <!-- Titulo central -->
-                <TextBlock Grid.Column="2" 
-                           Text="PUNTO DE VENTA" 
-                           FontSize="24" 
-                           FontWeight="Bold" 
+                <TextBlock Grid.Column="2"
+                           Text="PUNTO DE VENTA"
+                           FontSize="18"
+                           FontWeight="Bold"
                            Foreground="#E0E0E0"
                            VerticalAlignment="Center"
                            HorizontalAlignment="Center"/>
@@ -121,16 +123,16 @@
                 <!-- Info derecha -->
                 <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="30" HorizontalAlignment="Right">
                     <StackPanel>
-                        <TextBlock Text="SUCURSAL" FontSize="10" Foreground="#888"/>
-                        <TextBlock Text="{Binding Branch}" FontSize="14" Foreground="White"/>
+                        <TextBlock Text="SUCURSAL" FontSize="9" Foreground="#888"/>
+                        <TextBlock Text="{Binding Branch}" FontSize="12" Foreground="White"/>
                     </StackPanel>
                     <StackPanel>
-                        <TextBlock Text="USUARIO" FontSize="10" Foreground="#888"/>
-                        <TextBlock Text="{Binding User}" FontSize="14" Foreground="White"/>
+                        <TextBlock Text="USUARIO" FontSize="9" Foreground="#888"/>
+                        <TextBlock Text="{Binding User}" FontSize="12" Foreground="White"/>
                     </StackPanel>
                     <StackPanel>
-                        <TextBlock Text="FECHA/HORA" FontSize="10" Foreground="#888"/>
-                        <TextBlock x:Name="TxtFechaHora" Text="{Binding FechaHora}" FontSize="14" Foreground="White"/>
+                        <TextBlock Text="FECHA/HORA" FontSize="9" Foreground="#888"/>
+                        <TextBlock x:Name="TxtFechaHora" Text="{Binding FechaHora}" FontSize="12" Foreground="White"/>
                     </StackPanel>
                 </StackPanel>
             </Grid>
@@ -139,15 +141,15 @@
         <!-- Contenido Principal con SplitView -->
         <SplitView x:Name="MainSplitView" 
                    Grid.Row="1"
-                   IsPaneOpen="False" 
-                   DisplayMode="Overlay" 
-                   OpenPaneLength="300" 
+                   IsPaneOpen="False"
+                   DisplayMode="Overlay"
+                   OpenPaneLength="260"
                    PanePlacement="Left"
                    PaneBackground="#252525">
             <!-- Menú Lateral (Sidebar) -->
             <SplitView.Pane>
                 <Grid RowDefinitions="Auto,*,Auto" Margin="10">
-                    <TextBlock Grid.Row="0" Text="MENÚ PRINCIPAL" FontSize="18" FontWeight="Bold" Foreground="White" Margin="10,20,10,20" HorizontalAlignment="Center"/>
+                    <TextBlock Grid.Row="0" Text="MENÚ PRINCIPAL" FontSize="14" FontWeight="Bold" Foreground="White" Margin="10,15,10,15" HorizontalAlignment="Center"/>
                     
                     <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
                         <StackPanel Spacing="10">
@@ -240,7 +242,7 @@
                 <Grid RowDefinitions="*,Auto,Auto">
 
                     <!-- Area principal -->
-                    <Grid Grid.Row="0" ColumnDefinitions="*,300" Margin="10">
+                    <Grid Grid.Row="0" ColumnDefinitions="*,240" Margin="8">
             
             <!-- Contenido principal interactivo -->
             <Grid Grid.Column="0" RowDefinitions="Auto,*" Margin="0,0,10,0">
@@ -251,17 +253,17 @@
                     <!-- Mitad izquierda: Input de codigo de barras -->
                     <Border Grid.Column="0" Background="#2D2D2D" Padding="15" CornerRadius="4" Margin="0,0,5,0">
                         <Grid ColumnDefinitions="Auto,*,Auto">
-                            <TextBlock Grid.Column="0" 
-                                       Text="CODIGO:" 
-                                       VerticalAlignment="Center" 
+                            <TextBlock Grid.Column="0"
+                                       Text="CODIGO:"
+                                       VerticalAlignment="Center"
                                        Foreground="White"
-                                       FontSize="16"
+                                       FontSize="13"
                                        Margin="0,0,10,0"/>
                             <TextBox x:Name="TxtBarcode"
                                      Grid.Column="1"
                                      Text="{Binding Barcode, Mode=TwoWay}"
-                                     FontSize="18"
-                                     Padding="10"
+                                     FontSize="14"
+                                     Padding="8"
                                      Background="#3D3D3D"
                                      Foreground="White"
                                      BorderThickness="0"
@@ -276,28 +278,27 @@
                     </Border>
                     
                     <!-- Mitad derecha: Botones de acción rápida que antes estaban abajo -->
-                    <Border Grid.Column="1" Background="#2D2D2D" Padding="10" CornerRadius="4" Margin="5,0,0,0">
-                        <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right" VerticalAlignment="Center">
-                            <Button Classes="action-button" Command="{Binding SearchProductCommand}" Height="45" Padding="15,5">
-                                <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Center">
-                                    <!-- Catalog/List Icon -->
-                                    <Path Fill="White" Width="18" Height="18" Stretch="Uniform" 
+                    <Border Grid.Column="1" Background="#2D2D2D" Padding="8,6" CornerRadius="4" Margin="5,0,0,0">
+                        <StackPanel Orientation="Horizontal" Spacing="5" HorizontalAlignment="Right" VerticalAlignment="Center">
+                            <Button Classes="action-button" Command="{Binding SearchProductCommand}" Height="34" Padding="10,4">
+                                <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Center">
+                                    <Path Fill="White" Width="14" Height="14" Stretch="Uniform"
                                           Data="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-1 9H9V9h10v2zm-4 4H9v-2h6v2zm4-8H9V5h10v2z"/>
                                     <TextBlock Text="Catálogo (F3)" VerticalAlignment="Center" FontWeight="Bold"/>
                                 </StackPanel>
                             </Button>
-                            
-                            <Button Classes="action-button" Command="{Binding ModifyQuantityCommand}" Height="45" Padding="15,5">
-                                <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Center">
-                                    <Path Fill="White" Width="18" Height="18" Stretch="Uniform" 
+
+                            <Button Classes="action-button" Command="{Binding ModifyQuantityCommand}" Height="34" Padding="10,4">
+                                <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Center">
+                                    <Path Fill="White" Width="14" Height="14" Stretch="Uniform"
                                           Data="M3,17.25V21h3.75L17.81,9.94l-3.75-3.75L3,17.25z M20.71,7.04c0.39-0.39,0.39-1.02,0-1.41l-2.34-2.34c-0.39-0.39-1.02-0.39-1.41,0l-1.83,1.83l3.75,3.75L20.71,7.04z"/>
                                     <TextBlock Text="Cantidad (F2)" VerticalAlignment="Center" FontWeight="Bold"/>
                                 </StackPanel>
                             </Button>
-                            
-                            <Button Classes="danger-button" Command="{Binding RemoveProductCommand}" Height="45" Padding="15,5">
-                                <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Center">
-                                    <Path Fill="White" Width="18" Height="18" Stretch="Uniform" 
+
+                            <Button Classes="danger-button" Command="{Binding RemoveProductCommand}" Height="34" Padding="10,4">
+                                <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Center">
+                                    <Path Fill="White" Width="14" Height="14" Stretch="Uniform"
                                           Data="M16,9v10H8V9H16 M15.5,4l-1-1h-5l-1,1H5v2h14V4H15.5z M18,7H6v12c0,1.1,0.9,2,2,2h8c1.1,0,2-0.9,2-2V7z"/>
                                     <TextBlock Text="Eliminar (Supr)" VerticalAlignment="Center" FontWeight="Bold"/>
                                 </StackPanel>
@@ -410,11 +411,11 @@
                         <Separator Background="#444"/>
                         
                         <Grid ColumnDefinitions="*,Auto">
-                            <TextBlock Text="TOTAL:" FontSize="20" Foreground="White" FontWeight="Bold"/>
-                            <TextBlock Grid.Column="1" 
-                                       Text="{Binding FinalTotal, StringFormat='{}{0:C2}'}" 
-                                       FontSize="28" 
-                                       Foreground="#66BB6A" 
+                            <TextBlock Text="TOTAL:" FontSize="16" Foreground="White" FontWeight="Bold"/>
+                            <TextBlock Grid.Column="1"
+                                       Text="{Binding FinalTotal, StringFormat='{}{0:C2}'}"
+                                       FontSize="22"
+                                       Foreground="#66BB6A"
                                        FontWeight="Bold"/>
                         </Grid>
                     </StackPanel>
@@ -431,7 +432,7 @@
                             <!-- The buttons F1, F2, F3, and Delete were moved to the top header -->
                             <!-- The F4/F5 Collection buttons have been visually relocated to the top header COBRANZA layout section. -->
                             <!-- Delete product action -->
-                            <Button Classes="danger-button" Command="{Binding ClearCartCommand}" HorizontalAlignment="Stretch" Height="40">
+                            <Button Classes="danger-button" Command="{Binding ClearCartCommand}" HorizontalAlignment="Stretch" Height="34">
                                 <StackPanel Orientation="Horizontal" Spacing="10">
                                     <TextBlock Text="Shift+F5" FontWeight="Bold"/>
                                     <TextBlock Text="Vaciar Carrito"/>
@@ -440,22 +441,22 @@
                             
                             <Separator Background="#444" Margin="0,5"/>
                             
-                            <Button Classes="action-button" 
+                            <Button Classes="action-button"
                                     x:Name="BtnCustomers"
                                     HorizontalAlignment="Stretch"
                                     Background="#FF9800"
-                                    Height="40">
+                                    Height="34">
                                 <StackPanel Orientation="Horizontal" Spacing="10">
                                     <TextBlock Text="F8" FontWeight="Bold"/>
                                     <TextBlock Text="Clientes"/>
                                 </StackPanel>
                             </Button>
                             
-                            <Button Classes="action-button" 
-                                    Command="{Binding CreditsLayawaysCommand}" 
+                            <Button Classes="action-button"
+                                    Command="{Binding CreditsLayawaysCommand}"
                                     HorizontalAlignment="Stretch"
                                     Background="#9C27B0"
-                                    Height="40">
+                                    Height="34">
                                 <StackPanel Orientation="Horizontal" Spacing="10">
                                     <TextBlock Text="F12" FontWeight="Bold"/>
                                     <TextBlock Text="Créditos/Apartados"/>
@@ -466,11 +467,11 @@
                             
                             <!-- Botones de Descuento -->
                             <Button x:Name="BtnSpecialPrice"
-                                    Classes="action-button" 
-                                    Command="{Binding ApplySpecialPriceCommand}" 
+                                    Classes="action-button"
+                                    Command="{Binding ApplySpecialPriceCommand}"
                                     HorizontalAlignment="Stretch"
                                     Background="#FFC107"
-                                    Height="40">
+                                    Height="34">
                                 <StackPanel Orientation="Horizontal" Spacing="10">
                                     <TextBlock Text="Ctrl+F2" FontWeight="Bold" Foreground="#333"/>
                                     <TextBlock Text="Precio Especial" Foreground="#333"/>
@@ -478,11 +479,11 @@
                             </Button>
                             
                             <Button x:Name="BtnDealerPrice"
-                                    Classes="action-button" 
-                                    Command="{Binding ApplyDealerPriceCommand}" 
+                                    Classes="action-button"
+                                    Command="{Binding ApplyDealerPriceCommand}"
                                     HorizontalAlignment="Stretch"
                                     Background="#2196F3"
-                                    Height="40">
+                                    Height="34">
                                 <StackPanel Orientation="Horizontal" Spacing="10">
                                     <TextBlock Text="Ctrl+F3" FontWeight="Bold"/>
                                     <TextBlock Text="Precio Vendedor"/>
@@ -490,11 +491,11 @@
                             </Button>
                             
                             <Button x:Name="BtnGeneralDiscount"
-                                    Classes="action-button" 
-                                    Command="{Binding ShowGeneralDiscountCommand}" 
+                                    Classes="action-button"
+                                    Command="{Binding ShowGeneralDiscountCommand}"
                                     HorizontalAlignment="Stretch"
                                     Background="#4CAF50"
-                                    Height="40">
+                                    Height="34">
                                 <StackPanel Orientation="Horizontal" Spacing="10">
                                     <TextBlock Text="Ctrl+F6" FontWeight="Bold"/>
                                     <TextBlock Text="Descuento General"/>
@@ -510,9 +511,9 @@
                         Command="{Binding PayCommand}"
                         HorizontalAlignment="Stretch"
                         Margin="0,10,0,0">
-                    <StackPanel Orientation="Horizontal" Spacing="15">
-                        <TextBlock Text="F11" FontWeight="Bold" FontSize="18"/>
-                        <TextBlock Text="PAGAR" FontSize="18"/>
+                    <StackPanel Orientation="Horizontal" Spacing="12">
+                        <TextBlock Text="F11" FontWeight="Bold" FontSize="15"/>
+                        <TextBlock Text="PAGAR" FontSize="15"/>
                     </StackPanel>
                 </Button>
             </Grid>
