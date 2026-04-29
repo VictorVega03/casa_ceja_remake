@@ -165,19 +165,6 @@ namespace CasaCejaRemake.Views.Inventory
             await vm.SaveCategoryEditAsync(vm.SelectedCategory);
         }
 
-        private async void OnDeleteCategoryClick(object? sender, RoutedEventArgs e)
-        {
-            if (DataContext is not CatalogsManagementViewModel vm || vm.SelectedCategory == null) return;
-
-            var confirmed = await DialogHelper.ShowConfirmDialog(
-                this,
-                "Eliminar categoría",
-                $"¿Estás seguro de que deseas eliminar la categoría \"{vm.SelectedCategory.Name}\"?\n\nEsta acción no se puede deshacer.");
-
-            if (confirmed)
-                vm.DeleteCategoryCommand.Execute(vm.SelectedCategory);
-        }
-
         private async void OnAddUnitClick(object? sender, RoutedEventArgs e)
         {
             if (DataContext is not CatalogsManagementViewModel vm) return;
@@ -211,17 +198,5 @@ namespace CasaCejaRemake.Views.Inventory
             await vm.SaveUnitEditAsync(vm.SelectedUnit);
         }
 
-        private async void OnDeleteUnitClick(object? sender, RoutedEventArgs e)
-        {
-            if (DataContext is not CatalogsManagementViewModel vm || vm.SelectedUnit == null) return;
-
-            var confirmed = await DialogHelper.ShowConfirmDialog(
-                this,
-                "Eliminar unidad de medida",
-                $"¿Estás seguro de que deseas eliminar la unidad \"{vm.SelectedUnit.Name}\"?\n\nEsta acción no se puede deshacer.");
-
-            if (confirmed)
-                vm.DeleteUnitCommand.Execute(vm.SelectedUnit);
-        }
     }
 }

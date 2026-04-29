@@ -67,22 +67,6 @@ namespace CasaCejaRemake.ViewModels.Inventory
             await LoadDataAsync();
         }
 
-        [RelayCommand]
-        private async Task DeleteCategoryAsync(Category? category)
-        {
-            if (category == null) return;
-            
-            bool deleted = await _inventoryService.DeleteCategoryAsync(category.Id);
-            if (!deleted)
-            {
-                ShowErrorRequested?.Invoke(this, "No se puede eliminar la categoría porque está en uso o no existe.");
-            }
-            else
-            {
-                await LoadDataAsync();
-            }
-        }
-
         public async Task SaveCategoryEditAsync(Category? category)
         {
             if (category == null || string.IsNullOrWhiteSpace(category.Name)) return;
@@ -105,22 +89,6 @@ namespace CasaCejaRemake.ViewModels.Inventory
             await _inventoryService.SaveUnitAsync(unit);
             NewUnitName = string.Empty;
             await LoadDataAsync();
-        }
-
-        [RelayCommand]
-        private async Task DeleteUnitAsync(Unit? unit)
-        {
-            if (unit == null) return;
-
-            bool deleted = await _inventoryService.DeleteUnitAsync(unit.Id);
-            if (!deleted)
-            {
-                ShowErrorRequested?.Invoke(this, "No se puede eliminar la medida porque está en uso o no existe.");
-            }
-            else
-            {
-                await LoadDataAsync();
-            }
         }
 
         public async Task SaveUnitEditAsync(Unit? unit)
