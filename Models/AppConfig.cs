@@ -29,6 +29,10 @@ namespace CasaCejaRemake.Models
         /// Nombre de la sucursal actual
         public string? CurrentBranchName { get; set; } = "Casa Ceja Carranza";
 
+        // ============ SEGURIDAD ============
+        /// PIN de acceso al módulo de Administrador (opcional)
+        public string? AdminModulePin { get; set; } = null;
+
         // ============ METADATA ============
         /// Fecha de última modificación
         public DateTime LastModified { get; set; } = DateTime.Now;

@@ -357,7 +357,7 @@ public static class DialogHelper
         return dialog.Tag as string;
     }
 
-    public static async Task<bool> ShowConfirmDialog(Window parentWindow, string title, string message)
+    public static async Task<bool> ShowConfirmDialog(Window parentWindow, string title, string message, string yesText = "Sí (Enter)", string noText = "No (Esc)")
     {
         var dialog = new Window
         {
@@ -392,7 +392,7 @@ public static class DialogHelper
 
         var yesButton = new Button
         {
-            Content = "Sí (Enter)",
+            Content = yesText,
             Padding = new Avalonia.Thickness(20, 5),
             Width = 120
         };
@@ -404,7 +404,7 @@ public static class DialogHelper
 
         var noButton = new Button
         {
-            Content = "No (Esc)",
+            Content = noText,
             Padding = new Avalonia.Thickness(20, 5),
             Width = 120
         };

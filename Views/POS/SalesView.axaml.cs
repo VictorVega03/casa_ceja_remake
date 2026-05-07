@@ -1862,8 +1862,15 @@ namespace CasaCejaRemake.Views.POS
                 return;
             }
 
-            // Requiere verificación de administrador para ver el módulo de Cajeros
-            var verified = await AdminVerificationHelper.VerifyAdminAsync(this, userService);
+            var configService = App.ConfigService;
+            if (configService == null)
+            {
+                await DialogHelper.ShowMessageDialog(this, "Error", "Servicio de configuración no inicializado.");
+                return;
+            }
+
+            // Requiere verificación de PIN de administrador para ver el módulo de Cajeros
+            var verified = await AdminPinVerificationHelper.VerifyPinAsync(this, configService.AppConfig);
             if (!verified)
             {
                 return; // Acción cancelada si no verifica admin
@@ -1889,8 +1896,15 @@ namespace CasaCejaRemake.Views.POS
                 return;
             }
 
-            // Mostrar diálogo de verificación
-            var verified = await AdminVerificationHelper.VerifyAdminAsync(this, userService);
+            var configService = App.ConfigService;
+            if (configService == null)
+            {
+                await DialogHelper.ShowMessageDialog(this, "Error", "Servicio de configuración no inicializado.");
+                return;
+            }
+
+            // Mostrar diálogo de verificación por PIN
+            var verified = await AdminPinVerificationHelper.VerifyPinAsync(this, configService.AppConfig);
 
             if (verified)
             {

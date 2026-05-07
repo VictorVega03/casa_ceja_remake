@@ -22,6 +22,18 @@ namespace CasaCejaRemake.Views.Inventory
             Closed += OnClosed;
         }
 
+        /// <summary>
+        /// Establece el tab activo del TabControl.
+        /// </summary>
+        public void SelectTab(int tabIndex)
+        {
+            var tabControl = this.FindControl<TabControl>("SectionsTabControl");
+            if (tabControl != null)
+            {
+                tabControl.SelectedIndex = tabIndex;
+            }
+        }
+
         private void OnLoaded(object? sender, System.EventArgs e)
         {
             if (DataContext is CatalogsManagementViewModel vm)
@@ -197,6 +209,5 @@ namespace CasaCejaRemake.Views.Inventory
             vm.SelectedUnit.Name = newName;
             await vm.SaveUnitEditAsync(vm.SelectedUnit);
         }
-
     }
 }

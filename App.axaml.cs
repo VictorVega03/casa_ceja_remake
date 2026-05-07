@@ -354,8 +354,32 @@ namespace CasaCejaRemake
                 ShowInventory(selectorView);
             };
 
-            selectorViewModel.AdminSelected += (s, e) =>
+            selectorViewModel.AdminSelected += async (s, e) =>
             {
+                if (ApiClient == null || ConfigService == null) return;
+                
+                bool isOnline = false;
+                bool retry = true;
+                
+                while (retry)
+                {
+                    isOnline = await ApiClient.IsServerAvailableAsync();
+                    if (isOnline) break;
+                    
+                    var result = await DialogHelper.ShowConfirmDialog(
+                        selectorView,
+                        "Sin Conexión",
+                        "El módulo Administrador requiere conexión al servidor. No se detectó conexión.",
+                        "Reintentar",
+                        "Cancelar");
+                        
+                    if (!result) return;
+                }
+                
+                // Verificación de PIN
+                var pinVerified = await AdminPinVerificationHelper.VerifyPinAsync(selectorView, ConfigService.AppConfig);
+                if (!pinVerified) return;
+
                 selectorView.Tag = "module_selected";
                 ShowAdmin(selectorView);
             };
@@ -877,12 +901,12 @@ namespace CasaCejaRemake
 
             viewModel.UnitsSelected += (s, e) =>
             {
-                ShowAdminCatalogsManagement(adminView);
+                ShowAdminCatalogsManagement(adminView, initialTabIndex: 1);
             };
 
             viewModel.CategoriesSelected += (s, e) =>
             {
-                ShowAdminCatalogsManagement(adminView);
+                ShowAdminCatalogsManagement(adminView, initialTabIndex: 0);
             };
 
             viewModel.UsersSelected += (s, e) =>
@@ -1024,7 +1048,7 @@ namespace CasaCejaRemake
         /// Abre CatalogsManagementView como diálogo modal desde el Admin.
         /// Mismo comportamiento que desde Inventario.
         /// </summary>
-        private void ShowAdminCatalogsManagement(Window parentWindow)
+        private void ShowAdminCatalogsManagement(Window parentWindow, int initialTabIndex = 0)
         {
             if (_inventoryService == null) return;
 
@@ -1053,7 +1077,9 @@ namespace CasaCejaRemake
                 _currentCatalogsManagementView = null;
             };
 
+            // Establecer el tab después de mostrar el diálogo
             catalogsView.ShowDialog(parentWindow);
+            catalogsView.SelectTab(initialTabIndex);
         }
 
         /// <summary>

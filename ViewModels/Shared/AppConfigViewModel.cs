@@ -31,6 +31,22 @@ namespace CasaCejaRemake.ViewModels.Shared
         public string BranchLockButtonText => BranchChangeUnlocked ? "🔒 Bloquear" : "🔓 Desbloquear";
         private int _originalBranchId;
 
+        // ============ SEGURIDAD ============
+        public bool IsAdmin => _authService.IsAdmin;
+        [ObservableProperty] private string? _adminModulePin;
+        
+        private bool _isPinRevealed;
+        public bool IsPinRevealed
+        {
+            get => _isPinRevealed;
+            set
+            {
+                SetProperty(ref _isPinRevealed, value);
+                OnPropertyChanged(nameof(PinPasswordChar));
+            }
+        }
+        public char PinPasswordChar => IsPinRevealed ? '\0' : '•';
+
         // ============ IMPRESORA ============
         [ObservableProperty] private ObservableCollection<string> _availablePrinters = new();
         [ObservableProperty] private string? _selectedPrinter;
@@ -102,6 +118,8 @@ namespace CasaCejaRemake.ViewModels.Shared
                 SelectedBranch = Branches.FirstOrDefault(b => b.Id == appConfig.CurrentBranchId)
                                  ?? Branches.FirstOrDefault();
                 _originalBranchId = appConfig.CurrentBranchId ?? 0;
+                
+                AdminModulePin = appConfig.AdminModulePin;
 
                 var printers = await Task.Run(() => _printService.GetAvailablePrinters());
                 AvailablePrinters = new ObservableCollection<string>(printers);
@@ -190,9 +208,25 @@ namespace CasaCejaRemake.ViewModels.Shared
                         {
                             config.CurrentBranchId   = SelectedBranch.Id;
                             config.CurrentBranchName = SelectedBranch.Name;
+                            config.AdminModulePin    = AdminModulePin;
                         });
                         _authService.SetCurrentBranch(SelectedBranch.Id);
                     }
+                    else
+                    {
+                        // Save pin even if branch didn't change
+                        await _configService.UpdateAppConfigAsync(config =>
+                        {
+                            config.AdminModulePin = AdminModulePin;
+                        });
+                    }
+                }
+                else
+                {
+                    await _configService.UpdateAppConfigAsync(config =>
+                    {
+                        config.AdminModulePin = AdminModulePin;
+                    });
                 }
 
                 await _configService.UpdatePosTerminalConfigAsync(config =>

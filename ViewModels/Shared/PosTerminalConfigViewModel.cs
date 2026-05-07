@@ -48,7 +48,7 @@ namespace CasaCejaRemake.ViewModels.Shared
         public string TicketSettingsBorderColor => TicketSettingsUnlocked ? "#4CAF50" : "#404040";
         public string TicketStatusText => TicketSettingsUnlocked ? "🟢 Desbloqueado" : "";
         public string TicketStatusColor => TicketSettingsUnlocked ? "#4CAF50" : "Transparent";
-        public string TicketButtonBackground => TicketSettingsUnlocked ? "#555555" : "Transparent";
+        public string TicketButtonBackground => TicketSettingsUnlocked ? "#555555" : "#FF9800";
 
         partial void OnTicketSettingsUnlockedChanged(bool value)
         {
