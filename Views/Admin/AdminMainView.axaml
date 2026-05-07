@@ -1,0 +1,488 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="using:CasaCejaRemake.ViewModels.Admin"
+        xmlns:helpers="using:CasaCejaRemake.Helpers"
+        mc:Ignorable="d" d:DesignWidth="1280" d:DesignHeight="800"
+        x:Class="CasaCejaRemake.Views.Admin.AdminMainView"
+        x:DataType="vm:AdminMainViewModel"
+        Title="Casa Ceja - Administrador"
+        WindowState="Maximized"
+        WindowStartupLocation="CenterScreen"
+        Background="#1C1C1C">
+
+    <Window.Resources>
+        <helpers:BoolToOpacityConverter x:Key="BoolToOpacityConverter" />
+    </Window.Resources>
+
+    <Window.Styles>
+        <Style Selector="Button">
+            <Setter Property="Cursor" Value="Hand" />
+        </Style>
+    </Window.Styles>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- ==================== HEADER (mismo azul que Inventario) ==================== -->
+        <Border Grid.Row="0"
+                Background="#2F5D8A"
+                BorderBrush="#274E75"
+                BorderThickness="0,0,0,1"
+                Padding="20,10">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <!-- Título e info de sesión -->
+                <StackPanel Grid.Column="0" Orientation="Vertical" VerticalAlignment="Center">
+                    <TextBlock Text="ADMINISTRADOR"
+                               FontSize="16"
+                               FontWeight="Bold"
+                               Foreground="#FFFFFF" />
+                    <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,4,0,0">
+                        <!-- Ícono globo (acceso global) -->
+                        <Path Fill="#BBDEFB" Width="11" Height="11" Stretch="Uniform" VerticalAlignment="Center"
+                              Data="M12,2C6.48,2,2,6.48,2,12s4.48,10,10,10s10-4.48,10-10S17.52,2,12,2z M11,19.93c-3.95-0.49-7-3.85-7-7.93c0-0.62,0.08-1.21,0.21-1.79L9,15v1c0,1.1,0.9,2,2,2v1.93z M17.9,17.39c-0.26-0.81-1-1.39-1.9-1.39h-1v-3c0-0.55-0.45-1-1-1H8v-2h2c0.55,0,1-0.45,1-1V7h2c1.1,0,2-0.9,2-2v-0.41c2.93,1.19,5,4.06,5,7.41c0,2.08-0.8,3.97-2.1,5.39z" />
+                        <TextBlock Text="Acceso global"
+                                   FontSize="13"
+                                   Foreground="#E3F2FD"
+                                   VerticalAlignment="Center" />
+                        <TextBlock Text="·"
+                                   FontSize="13"
+                                   Foreground="#BBDEFB"
+                                   VerticalAlignment="Center"
+                                   Margin="2,0" />
+                        <!-- Ícono usuario -->
+                        <Path Fill="#BBDEFB" Width="12" Height="12" Stretch="Uniform" VerticalAlignment="Center"
+                              Data="M12,12c2.21,0,4-1.79,4-4s-1.79-4-4-4S8,5.79,8,8,9.79,12,12,12z M12,14c-2.67,0-8,1.34-8,4v2h16v-2C20,15.34,14.67,14,12,14z" />
+                        <TextBlock Text="{Binding UserName}"
+                                   FontSize="13"
+                                   Foreground="#E3F2FD"
+                                   VerticalAlignment="Center" />
+                    </StackPanel>
+                </StackPanel>
+
+                <!-- Botones de acción -->
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+
+                    <!-- Reintentar (solo visible si offline) -->
+                    <Button Command="{Binding CheckConnectivityCommand}"
+                            IsVisible="{Binding !IsOnline}"
+                            FontSize="12"
+                            Height="34"
+                            Padding="14,0"
+                            Background="#274E75"
+                            Foreground="White"
+                            BorderThickness="0"
+                            CornerRadius="4"
+                            ToolTip.Tip="Verificar conexión al servidor">
+                        <StackPanel Orientation="Horizontal" Spacing="5">
+                            <Path Fill="White" Width="12" Height="12" Stretch="Uniform"
+                                  Data="M17.65,6.35C16.2,4.9,14.21,4,12,4c-4.42,0-7.99,3.58-7.99,8s3.57,8,7.99,8c3.73,0,6.84-2.55,7.73-6h-2.08C16.78,16.21,14.61,18,12,18c-3.31,0-6-2.69-6-6s2.69-6,6-6c1.66,0,3.14,0.69,4.22,1.78L13,11h7V4L17.65,6.35z" />
+                            <TextBlock Text="Reintentar conexión" VerticalAlignment="Center" />
+                        </StackPanel>
+                        <Button.Styles>
+                            <Style Selector="Button:pointerover">
+                                <Setter Property="Background" Value="#1F3F5E" />
+                            </Style>
+                        </Button.Styles>
+                    </Button>
+
+                    <!-- Salir de Administrador -->
+                    <Button Command="{Binding ExitCommand}"
+                            FontSize="13"
+                            Height="36"
+                            Padding="15,0"
+                            Background="#C62828"
+                            Foreground="White"
+                            BorderThickness="0"
+                            CornerRadius="4"
+                            ToolTip.Tip="Salir de Administrador">
+                        <TextBlock Text="Salir de Administrador" VerticalAlignment="Center" FontWeight="Bold"/>
+                        <Button.Styles>
+                            <Style Selector="Button:pointerover">
+                                <Setter Property="Background" Value="#B71C1C" />
+                            </Style>
+                        </Button.Styles>
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- ==================== BANNERS DE CONECTIVIDAD ==================== -->
+
+        <!-- Banner offline -->
+        <Border Grid.Row="1"
+                Background="#6E2A2A"
+                Padding="16,7"
+                IsVisible="{Binding !IsOnline}">
+            <StackPanel Orientation="Horizontal" Spacing="10" HorizontalAlignment="Center">
+                <Path Fill="#E0B2B2" Width="15" Height="15" Stretch="Uniform"
+                      Data="M1,21h22L12,2 1,21z M13,18h-2v-2h2v2z M13,14h-2v-4h2v4z" />
+                <TextBlock Text="Sin conexión — Usando modo local. Algunas funciones pueden estar limitadas."
+                           Foreground="#F3D5D5"
+                           FontSize="12"
+                           VerticalAlignment="Center" />
+            </StackPanel>
+        </Border>
+
+        <!-- Banner online (aparece 3 segundos al reconectar) -->
+        <Border Grid.Row="1"
+                Background="#1B5E20"
+                Padding="16,7"
+                IsVisible="{Binding ShowOnlineBanner}">
+            <StackPanel Orientation="Horizontal" Spacing="10" HorizontalAlignment="Center">
+                <Path Fill="#A5D6A7" Width="15" Height="15" Stretch="Uniform"
+                      Data="M12,2C6.48,2,2,6.48,2,12s4.48,10,10,10s10-4.48,10-10S17.52,2,12,2z M10,17l-5-5l1.41-1.41L10,14.17l7.59-7.59L19,8L10,17z" />
+                <TextBlock Text="Conexión establecida con el servidor."
+                           Foreground="#C8E6C9"
+                           FontSize="12"
+                           VerticalAlignment="Center" />
+            </StackPanel>
+        </Border>
+
+        <!-- Banner verificando -->
+        <Border Grid.Row="1"
+                Background="#0D47A1"
+                Padding="10,6"
+                IsVisible="{Binding IsCheckingConnection}">
+            <StackPanel Orientation="Horizontal" Spacing="10" HorizontalAlignment="Center">
+                <ProgressBar IsIndeterminate="True" Width="90" Height="3" Foreground="#90CAF9" />
+                <TextBlock Text="Verificando conexión con el servidor..."
+                           Foreground="#90CAF9"
+                           FontSize="12"
+                           VerticalAlignment="Center" />
+            </StackPanel>
+        </Border>
+
+        <!-- ==================== CARDS 3×3 ==================== -->
+        <Grid Grid.Row="2" Margin="60,32">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*" />
+                <RowDefinition Height="14" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="14" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="14" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="14" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <!-- ===== FILA 1 ===== -->
+
+            <!-- CARD 1: CATÁLOGO -->
+            <Button Grid.Row="0" Grid.Column="0"
+                    Command="{Binding OpenCatalogCommand}"
+                    VerticalAlignment="Stretch" HorizontalAlignment="Stretch"
+                    Background="#D8D8D8"
+                    BorderBrush="#BBBBBB" BorderThickness="1"
+                    CornerRadius="10" Padding="20,22">
+                <Button.Styles>
+                    <Style Selector="Button:pointerover">
+                        <Setter Property="Background" Value="#C4C4C4" />
+                        <Setter Property="BorderBrush" Value="#7D4A1E" />
+                        <Setter Property="BorderThickness" Value="2" />
+                    </Style>
+                    <Style Selector="Button:pointerover /template/ ContentPresenter">
+                        <Setter Property="Background" Value="#C4C4C4" />
+                    </Style>
+                </Button.Styles>
+                <Button.Effect>
+                    <DropShadowEffect Color="#000000" Opacity="0.12" BlurRadius="12" OffsetX="0" OffsetY="3"/>
+                </Button.Effect>
+                <StackPanel Spacing="12" HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <Border Width="70" Height="70" Background="#7D4A1E" CornerRadius="35" HorizontalAlignment="Center">
+                        <TextBlock Text="📋" FontSize="32" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                    <TextBlock Text="CATÁLOGO" FontSize="14" FontWeight="Bold"
+                               Foreground="#212121" HorizontalAlignment="Center"
+                               TextWrapping="Wrap" TextAlignment="Center" />
+                    <TextBlock Text="Alta, edición y consulta de productos" FontSize="12"
+                               Foreground="#757575" HorizontalAlignment="Center"
+                               TextWrapping="Wrap" TextAlignment="Center" />
+                </StackPanel>
+            </Button>
+
+            <!-- CARD 2: MEDIDAS -->
+            <Button Grid.Row="0" Grid.Column="2"
+                    Command="{Binding OpenUnitsCommand}"
+                    VerticalAlignment="Stretch" HorizontalAlignment="Stretch"
+                    Background="#D8D8D8"
+                    BorderBrush="#BBBBBB" BorderThickness="1"
+                    CornerRadius="10" Padding="20,22">
+                <Button.Styles>
+                    <Style Selector="Button:pointerover">
+                        <Setter Property="Background" Value="#C4C4C4" />
+                        <Setter Property="BorderBrush" Value="#1565C0" />
+                        <Setter Property="BorderThickness" Value="2" />
+                    </Style>
+                    <Style Selector="Button:pointerover /template/ ContentPresenter">
+                        <Setter Property="Background" Value="#C4C4C4" />
+                    </Style>
+                </Button.Styles>
+                <Button.Effect>
+                    <DropShadowEffect Color="#000000" Opacity="0.12" BlurRadius="12" OffsetX="0" OffsetY="3"/>
+                </Button.Effect>
+                <StackPanel Spacing="12" HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <Border Width="70" Height="70" Background="#1565C0" CornerRadius="35" HorizontalAlignment="Center">
+                        <TextBlock Text="📏" FontSize="32" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                    <TextBlock Text="MEDIDAS" FontSize="14" FontWeight="Bold"
+                               Foreground="#212121" HorizontalAlignment="Center"
+                               TextWrapping="Wrap" TextAlignment="Center" />
+                    <TextBlock Text="Gestión de unidades de medida" FontSize="12"
+                               Foreground="#757575" HorizontalAlignment="Center"
+                               TextWrapping="Wrap" TextAlignment="Center" />
+                </StackPanel>
+            </Button>
+
+            <!-- CARD 3: CATEGORÍAS -->
+            <Button Grid.Row="0" Grid.Column="4"
+                    Command="{Binding OpenCategoriesCommand}"
+                    VerticalAlignment="Stretch" HorizontalAlignment="Stretch"
+                    Background="#D8D8D8"
+                    BorderBrush="#BBBBBB" BorderThickness="1"
+                    CornerRadius="10" Padding="20,22">
+                <Button.Styles>
+                    <Style Selector="Button:pointerover">
+                        <Setter Property="Background" Value="#C4C4C4" />
+                        <Setter Property="BorderBrush" Value="#6A1B9A" />
+                        <Setter Property="BorderThickness" Value="2" />
+                    </Style>
+                    <Style Selector="Button:pointerover /template/ ContentPresenter">
+                        <Setter Property="Background" Value="#C4C4C4" />
+                    </Style>
+                </Button.Styles>
+                <Button.Effect>
+                    <DropShadowEffect Color="#000000" Opacity="0.12" BlurRadius="12" OffsetX="0" OffsetY="3"/>
+                </Button.Effect>
+                <StackPanel Spacing="12" HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <Border Width="70" Height="70" Background="#6A1B9A" CornerRadius="35" HorizontalAlignment="Center">
+                        <TextBlock Text="🏷️" FontSize="32" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                    <TextBlock Text="CATEGORÍAS" FontSize="14" FontWeight="Bold"
+                               Foreground="#212121" HorizontalAlignment="Center"
+                               TextWrapping="Wrap" TextAlignment="Center" />
+                    <TextBlock Text="Agregar o modificar categorías de productos" FontSize="12"
+                               Foreground="#757575" HorizontalAlignment="Center"
+                               TextWrapping="Wrap" TextAlignment="Center" />
+                </StackPanel>
+            </Button>
+
+            <!-- ===== FILA 2 ===== -->
+
+            <!-- CARD 4: USUARIOS -->
+            <Button Grid.Row="2" Grid.Column="0"
+                    Command="{Binding OpenUsersCommand}"
+                    VerticalAlignment="Stretch" HorizontalAlignment="Stretch"
+                    Background="#D8D8D8"
+                    BorderBrush="#BBBBBB" BorderThickness="1"
+                    CornerRadius="10" Padding="20,22">
+                <Button.Styles>
+                    <Style Selector="Button:pointerover">
+                        <Setter Property="Background" Value="#C4C4C4" />
+                        <Setter Property="BorderBrush" Value="#00695C" />
+                        <Setter Property="BorderThickness" Value="2" />
+                    </Style>
+                    <Style Selector="Button:pointerover /template/ ContentPresenter">
+                        <Setter Property="Background" Value="#C4C4C4" />
+                    </Style>
+                </Button.Styles>
+                <Button.Effect>
+                    <DropShadowEffect Color="#000000" Opacity="0.12" BlurRadius="12" OffsetX="0" OffsetY="3"/>
+                </Button.Effect>
+                <StackPanel Spacing="12" HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <Border Width="70" Height="70" Background="#00695C" CornerRadius="35" HorizontalAlignment="Center">
+                        <TextBlock Text="👥" FontSize="32" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                    <TextBlock Text="USUARIOS" FontSize="14" FontWeight="Bold"
+                               Foreground="#212121" HorizontalAlignment="Center"
+                               TextWrapping="Wrap" TextAlignment="Center" />
+                    <TextBlock Text="Gestión de usuarios y roles" FontSize="12"
+                               Foreground="#757575" HorizontalAlignment="Center"
+                               TextWrapping="Wrap" TextAlignment="Center" />
+                </StackPanel>
+            </Button>
+
+            <!-- CARD 5: SUCURSALES -->
+            <Button Grid.Row="2" Grid.Column="2"
+                    Command="{Binding OpenBranchesCommand}"
+                    VerticalAlignment="Stretch" HorizontalAlignment="Stretch"
+                    Background="#D8D8D8"
+                    BorderBrush="#BBBBBB" BorderThickness="1"
+                    CornerRadius="10" Padding="20,22">
+                <Button.Styles>
+                    <Style Selector="Button:pointerover">
+                        <Setter Property="Background" Value="#C4C4C4" />
+                        <Setter Property="BorderBrush" Value="#E65100" />
+                        <Setter Property="BorderThickness" Value="2" />
+                    </Style>
+                    <Style Selector="Button:pointerover /template/ ContentPresenter">
+                        <Setter Property="Background" Value="#C4C4C4" />
+                    </Style>
+                </Button.Styles>
+                <Button.Effect>
+                    <DropShadowEffect Color="#000000" Opacity="0.12" BlurRadius="12" OffsetX="0" OffsetY="3"/>
+                </Button.Effect>
+                <StackPanel Spacing="12" HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <Border Width="70" Height="70" Background="#BF360C" CornerRadius="35" HorizontalAlignment="Center">
+                        <TextBlock Text="🏪" FontSize="32" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                    <TextBlock Text="SUCURSALES" FontSize="14" FontWeight="Bold"
+                               Foreground="#212121" HorizontalAlignment="Center"
+                               TextWrapping="Wrap" TextAlignment="Center" />
+                    <TextBlock Text="Alta y edición de sucursales" FontSize="12"
+                               Foreground="#757575" HorizontalAlignment="Center"
+                               TextWrapping="Wrap" TextAlignment="Center" />
+                </StackPanel>
+            </Button>
+
+            <!-- CARD 6: PROVEEDORES -->
+            <Button Grid.Row="2" Grid.Column="4"
+                    Command="{Binding OpenSuppliersCommand}"
+                    VerticalAlignment="Stretch" HorizontalAlignment="Stretch"
+                    Background="#D8D8D8"
+                    BorderBrush="#BBBBBB" BorderThickness="1"
+                    CornerRadius="10" Padding="20,22">
+                <Button.Styles>
+                    <Style Selector="Button:pointerover">
+                        <Setter Property="Background" Value="#C4C4C4" />
+                        <Setter Property="BorderBrush" Value="#37474F" />
+                        <Setter Property="BorderThickness" Value="2" />
+                    </Style>
+                    <Style Selector="Button:pointerover /template/ ContentPresenter">
+                        <Setter Property="Background" Value="#C4C4C4" />
+                    </Style>
+                </Button.Styles>
+                <Button.Effect>
+                    <DropShadowEffect Color="#000000" Opacity="0.12" BlurRadius="12" OffsetX="0" OffsetY="3"/>
+                </Button.Effect>
+                <StackPanel Spacing="12" HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <Border Width="70" Height="70" Background="#37474F" CornerRadius="35" HorizontalAlignment="Center">
+                        <TextBlock Text="🚚" FontSize="32" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                    <TextBlock Text="PROVEEDORES" FontSize="14" FontWeight="Bold"
+                               Foreground="#212121" HorizontalAlignment="Center"
+                               TextWrapping="Wrap" TextAlignment="Center" />
+                    <TextBlock Text="Gestión de proveedores" FontSize="12"
+                               Foreground="#757575" HorizontalAlignment="Center"
+                               TextWrapping="Wrap" TextAlignment="Center" />
+                </StackPanel>
+            </Button>
+
+            <!-- ===== FILA 3 ===== -->
+
+            <!-- CARD 7: ENT. Y SALIDAS -->
+            <Button Grid.Row="4" Grid.Column="0"
+                    Command="{Binding OpenMovementsCommand}"
+                    VerticalAlignment="Stretch" HorizontalAlignment="Stretch"
+                    Background="#D8D8D8"
+                    BorderBrush="#BBBBBB" BorderThickness="1"
+                    CornerRadius="10" Padding="20,22">
+                <Button.Styles>
+                    <Style Selector="Button:pointerover">
+                        <Setter Property="Background" Value="#C4C4C4" />
+                        <Setter Property="BorderBrush" Value="#2E7D32" />
+                        <Setter Property="BorderThickness" Value="2" />
+                    </Style>
+                    <Style Selector="Button:pointerover /template/ ContentPresenter">
+                        <Setter Property="Background" Value="#C4C4C4" />
+                    </Style>
+                </Button.Styles>
+                <Button.Effect>
+                    <DropShadowEffect Color="#000000" Opacity="0.12" BlurRadius="12" OffsetX="0" OffsetY="3"/>
+                </Button.Effect>
+                <StackPanel Spacing="12" HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <Border Width="70" Height="70" Background="#2E7D32" CornerRadius="35" HorizontalAlignment="Center">
+                        <TextBlock Text="📦" FontSize="32" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                    <TextBlock Text="ENT. Y SALIDAS" FontSize="14" FontWeight="Bold"
+                               Foreground="#212121" HorizontalAlignment="Center"
+                               TextWrapping="Wrap" TextAlignment="Center" />
+                    <TextBlock Text="Historial global de movimientos de inventario" FontSize="12"
+                               Foreground="#757575" HorizontalAlignment="Center"
+                               TextWrapping="Wrap" TextAlignment="Center" />
+                </StackPanel>
+            </Button>
+
+            <!-- CARD 8: HIST. CORTES -->
+            <Button Grid.Row="4" Grid.Column="2"
+                    Command="{Binding OpenCashCloseHistoryCommand}"
+                    VerticalAlignment="Stretch" HorizontalAlignment="Stretch"
+                    Background="#D8D8D8"
+                    BorderBrush="#BBBBBB" BorderThickness="1"
+                    CornerRadius="10" Padding="20,22">
+                <Button.Styles>
+                    <Style Selector="Button:pointerover">
+                        <Setter Property="Background" Value="#C4C4C4" />
+                        <Setter Property="BorderBrush" Value="#1565C0" />
+                        <Setter Property="BorderThickness" Value="2" />
+                    </Style>
+                    <Style Selector="Button:pointerover /template/ ContentPresenter">
+                        <Setter Property="Background" Value="#C4C4C4" />
+                    </Style>
+                </Button.Styles>
+                <Button.Effect>
+                    <DropShadowEffect Color="#000000" Opacity="0.12" BlurRadius="12" OffsetX="0" OffsetY="3"/>
+                </Button.Effect>
+                <StackPanel Spacing="12" HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <Border Width="70" Height="70" Background="#1565C0" CornerRadius="35" HorizontalAlignment="Center">
+                        <TextBlock Text="💰" FontSize="32" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                    <TextBlock Text="HIST. CORTES" FontSize="14" FontWeight="Bold"
+                               Foreground="#212121" HorizontalAlignment="Center"
+                               TextWrapping="Wrap" TextAlignment="Center" />
+                    <TextBlock Text="Historial global de cortes de caja" FontSize="12"
+                               Foreground="#757575" HorizontalAlignment="Center"
+                               TextWrapping="Wrap" TextAlignment="Center" />
+                </StackPanel>
+            </Button>
+
+            <!-- CARD 9: EXISTENCIAS -->
+            <Button Grid.Row="4" Grid.Column="4"
+                    Command="{Binding OpenGlobalStockCommand}"
+                    VerticalAlignment="Stretch" HorizontalAlignment="Stretch"
+                    Background="#D8D8D8"
+                    BorderBrush="#BBBBBB" BorderThickness="1"
+                    CornerRadius="10" Padding="20,22">
+                <Button.Styles>
+                    <Style Selector="Button:pointerover">
+                        <Setter Property="Background" Value="#C4C4C4" />
+                        <Setter Property="BorderBrush" Value="#AD1457" />
+                        <Setter Property="BorderThickness" Value="2" />
+                    </Style>
+                    <Style Selector="Button:pointerover /template/ ContentPresenter">
+                        <Setter Property="Background" Value="#C4C4C4" />
+                    </Style>
+                </Button.Styles>
+                <Button.Effect>
+                    <DropShadowEffect Color="#000000" Opacity="0.12" BlurRadius="12" OffsetX="0" OffsetY="3"/>
+                </Button.Effect>
+                <StackPanel Spacing="12" HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <Border Width="70" Height="70" Background="#880E4F" CornerRadius="35" HorizontalAlignment="Center">
+                        <TextBlock Text="📊" FontSize="32" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                    <TextBlock Text="EXISTENCIAS" FontSize="14" FontWeight="Bold"
+                               Foreground="#212121" HorizontalAlignment="Center"
+                               TextWrapping="Wrap" TextAlignment="Center" />
+                    <TextBlock Text="Existencias globales por sucursal" FontSize="12"
+                               Foreground="#757575" HorizontalAlignment="Center"
+                               TextWrapping="Wrap" TextAlignment="Center" />
+                </StackPanel>
+            </Button>
+
+        </Grid>
+    </Grid>
+</Window>
