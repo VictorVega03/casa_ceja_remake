@@ -13,6 +13,8 @@ using CasaCejaRemake.ViewModels.POS;
 using CasaCejaRemake.ViewModels.Inventory;
 using CasaCejaRemake.Views.Shared;using casa_ceja_remake.Helpers;using CasaCejaRemake.Views.POS;
 using CasaCejaRemake.Views.Inventory;
+using CasaCejaRemake.Views.Admin;
+using CasaCejaRemake.ViewModels.Admin;
 
 namespace CasaCejaRemake
 {
@@ -47,6 +49,9 @@ namespace CasaCejaRemake
 
         // Referencia a la ventana actual del inventario
         private InventoryMainView? _currentInventoryView;
+
+        // Referencia a la ventana actual del administrador
+        private AdminMainView? _currentAdminView;
 
         // Referencia al diálogo de categorías/medidas para evitar múltiples instancias
         private Views.Inventory.CatalogsManagementView? _currentCatalogsManagementView;
@@ -848,38 +853,238 @@ namespace CasaCejaRemake
         }
 
         /// <summary>
-        /// Muestra el modulo de Administrador (placeholder).
+        /// Muestra el módulo Administrador (menú principal con 9 tarjetas).
+        /// Opera a nivel global — sin sucursal fija (branchId = 0).
         /// </summary>
         private void ShowAdmin(Window? windowToClose = null)
         {
             if (ApplicationLifetime is not IClassicDesktopStyleApplicationLifetime desktop) return;
+            if (AuthService == null) return;
 
-            var placeholderWindow = new Window
+            var viewModel = new AdminMainViewModel(AuthService, ApiClient!);
+            var adminView = new AdminMainView
             {
-                Title = "Administrador - Proximamente",
-                Width = 400,
-                Height = 200,
-                WindowStartupLocation = WindowStartupLocation.CenterScreen,
-                Background = Avalonia.Media.Brushes.DimGray,
-                Content = new TextBlock
+                DataContext = viewModel
+            };
+
+            // ── Tarjetas funcionales desde Etapa 1 ──
+
+            viewModel.CatalogSelected += (s, e) =>
+            {
+                adminView.Tag = "catalog";
+                ShowAdminCatalog(adminView);
+            };
+
+            viewModel.UnitsSelected += (s, e) =>
+            {
+                ShowAdminCatalogsManagement(adminView);
+            };
+
+            viewModel.CategoriesSelected += (s, e) =>
+            {
+                ShowAdminCatalogsManagement(adminView);
+            };
+
+            viewModel.UsersSelected += (s, e) =>
+            {
+                ShowAdminUsers(adminView);
+            };
+
+            // ── Tarjetas con placeholder (etapas futuras) ──
+
+            viewModel.BranchesSelected += async (s, e) =>
+            {
+                await ShowAdminComingSoon(adminView, "Sucursales", "Etapa 3");
+            };
+
+            viewModel.SuppliersSelected += async (s, e) =>
+            {
+                await ShowAdminComingSoon(adminView, "Proveedores", "Etapa 4");
+            };
+
+            viewModel.MovementsSelected += async (s, e) =>
+            {
+                await ShowAdminComingSoon(adminView, "Entradas y Salidas", "Etapa 2");
+            };
+
+            viewModel.CashCloseHistorySelected += async (s, e) =>
+            {
+                await ShowAdminComingSoon(adminView, "Historial de Cortes", "Etapa 2");
+            };
+
+            viewModel.GlobalStockSelected += async (s, e) =>
+            {
+                await ShowAdminComingSoon(adminView, "Existencias Globales", "Etapa 5");
+            };
+
+            // ── Navegación de salida ──
+
+            viewModel.ExitRequested += (s, e) =>
+            {
+                adminView.Tag = "module_selector";
+                adminView.Close();
+            };
+
+
+            adminView.Closed += (sender, args) =>
+            {
+                _currentAdminView = null;
+                var closingView = sender as AdminMainView;
+
+                if (closingView?.Tag is string result)
                 {
-                    Text = "Modulo de Administrador\n\nProximamente",
-                    Foreground = Avalonia.Media.Brushes.White,
-                    FontSize = 18,
-                    HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
-                    VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
-                    TextAlignment = Avalonia.Media.TextAlignment.Center
+                    if (result == "module_selector")
+                    {
+                        ShowModuleSelector();
+                    }
+                    else if (result == "admin")
+                    {
+                        // Regresar al admin desde una subvista (ej: catálogo)
+                        ShowAdmin();
+                    }
                 }
+                // Si Tag es null (cerró con X), no hacemos nada — igual que Inventario.
             };
 
-            placeholderWindow.Closed += (s, e) =>
-            {
-                ShowModuleSelector();
-            };
-
-            desktop.MainWindow = placeholderWindow;
-            placeholderWindow.Show();
+            _currentAdminView = adminView;
+            desktop.MainWindow = adminView;
+            adminView.Show();
             windowToClose?.Close();
+        }
+
+        /// <summary>
+        /// Abre el catálogo de productos en modo Admin (branchId = 0, edición habilitada).
+        /// Al regresar vuelve al menú del Admin, no al ModuleSelector.
+        /// </summary>
+        private void ShowAdminCatalog(Window? windowToClose = null)
+        {
+            if (ApplicationLifetime is not IClassicDesktopStyleApplicationLifetime desktop) return;
+            if (_inventoryService == null) return;
+
+            // branchId = 0 → modo global (CatalogViewModel no filtra por sucursal)
+            const int branchId = 0;
+            var viewModel = new ViewModels.Inventory.CatalogViewModel(_inventoryService, branchId);
+
+            var catalogView = new Views.Inventory.CatalogView
+            {
+                DataContext = viewModel
+            };
+
+            viewModel.GoBackRequested += (s, e) =>
+            {
+                // Volver al Admin, no al ModuleSelector
+                catalogView.Tag = "admin";
+                ShowAdmin(catalogView);
+            };
+
+            viewModel.ProductFormRequested += (s, product) =>
+            {
+                var formViewModel = new ViewModels.Inventory.ProductFormViewModel(_inventoryService, branchId, product);
+                var formView = new Views.Inventory.ProductFormView
+                {
+                    DataContext = formViewModel
+                };
+
+                formViewModel.SaveCompleted += (s2, e2) =>
+                {
+                    formView.Close();
+                    viewModel.RefreshData();
+                };
+
+                formView.ShowDialog(catalogView);
+            };
+
+            viewModel.ProductDetailRequested += (s, product) =>
+            {
+                var detailViewModel = new ViewModels.Inventory.ProductDetailViewModel(product);
+                var detailView = new Views.Inventory.ProductDetailView
+                {
+                    DataContext = detailViewModel
+                };
+
+                detailViewModel.CloseRequested += (sender, args) =>
+                {
+                    detailView.Close();
+                };
+
+                detailView.ShowDialog(catalogView);
+            };
+
+            catalogView.Closed += (sender, args) =>
+            {
+                // Si no tiene tag, cerrado con X — dejar que la app se cierre.
+            };
+
+            desktop.MainWindow = catalogView;
+            catalogView.Show();
+            windowToClose?.Close();
+        }
+
+        /// <summary>
+        /// Abre CatalogsManagementView como diálogo modal desde el Admin.
+        /// Mismo comportamiento que desde Inventario.
+        /// </summary>
+        private void ShowAdminCatalogsManagement(Window parentWindow)
+        {
+            if (_inventoryService == null) return;
+
+            // Evitar múltiples instancias simultáneas
+            if (_currentCatalogsManagementView != null)
+            {
+                _currentCatalogsManagementView.Activate();
+                return;
+            }
+
+            var catalogsViewModel = new ViewModels.Inventory.CatalogsManagementViewModel(_inventoryService);
+            var catalogsView = new Views.Inventory.CatalogsManagementView
+            {
+                DataContext = catalogsViewModel
+            };
+
+            _currentCatalogsManagementView = catalogsView;
+
+            catalogsViewModel.GoBackRequested += (sender, args) =>
+            {
+                catalogsView.Close();
+            };
+
+            catalogsView.Closed += (sender, args) =>
+            {
+                _currentCatalogsManagementView = null;
+            };
+
+            catalogsView.ShowDialog(parentWindow);
+        }
+
+        /// <summary>
+        /// Abre UserManagementView en modo Admin (isAdminMode: true).
+        /// Como diálogo modal sobre el menú del Admin.
+        /// </summary>
+        private void ShowAdminUsers(Window parentWindow)
+        {
+            if (AuthService == null || UserService == null) return;
+
+            // branchId = 0 → admin global, sin sucursal fija
+            var userManagementViewModel = new ViewModels.Shared.UserManagementViewModel(
+                UserService, AuthService, isAdminMode: true);
+
+            var userManagementView = new Views.Shared.UserManagementView
+            {
+                DataContext = userManagementViewModel
+            };
+
+            userManagementView.ShowDialog(parentWindow);
+        }
+
+        /// <summary>
+        /// Muestra un diálogo informativo para tarjetas que aún no están implementadas.
+        /// </summary>
+        private async System.Threading.Tasks.Task ShowAdminComingSoon(Window parentWindow, string featureName, string stage)
+        {
+            await DialogHelper.ShowMessageDialog(
+                parentWindow,
+                "En Desarrollo",
+                $"{featureName} estará disponible en la {stage} del plan de implementación.");
         }
 
         /// <summary>
