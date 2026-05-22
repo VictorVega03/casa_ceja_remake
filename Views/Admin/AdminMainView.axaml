@@ -185,6 +185,7 @@
             <!-- CARD 1: CATÁLOGO -->
             <Button Grid.Row="0" Grid.Column="0"
                     Command="{Binding OpenCatalogCommand}"
+                    IsEnabled="{Binding IsOnline}"
                     VerticalAlignment="Stretch" HorizontalAlignment="Stretch"
                     Background="#D8D8D8"
                     BorderBrush="#BBBBBB" BorderThickness="1"
@@ -218,6 +219,7 @@
             <!-- CARD 2: MEDIDAS -->
             <Button Grid.Row="0" Grid.Column="2"
                     Command="{Binding OpenUnitsCommand}"
+                    IsEnabled="{Binding IsOnline}"
                     VerticalAlignment="Stretch" HorizontalAlignment="Stretch"
                     Background="#D8D8D8"
                     BorderBrush="#BBBBBB" BorderThickness="1"
@@ -251,6 +253,7 @@
             <!-- CARD 3: CATEGORÍAS -->
             <Button Grid.Row="0" Grid.Column="4"
                     Command="{Binding OpenCategoriesCommand}"
+                    IsEnabled="{Binding IsOnline}"
                     VerticalAlignment="Stretch" HorizontalAlignment="Stretch"
                     Background="#D8D8D8"
                     BorderBrush="#BBBBBB" BorderThickness="1"
@@ -286,6 +289,7 @@
             <!-- CARD 4: USUARIOS -->
             <Button Grid.Row="2" Grid.Column="0"
                     Command="{Binding OpenUsersCommand}"
+                    IsEnabled="{Binding IsOnline}"
                     VerticalAlignment="Stretch" HorizontalAlignment="Stretch"
                     Background="#D8D8D8"
                     BorderBrush="#BBBBBB" BorderThickness="1"
@@ -319,6 +323,7 @@
             <!-- CARD 5: SUCURSALES -->
             <Button Grid.Row="2" Grid.Column="2"
                     Command="{Binding OpenBranchesCommand}"
+                    IsEnabled="{Binding IsOnline}"
                     VerticalAlignment="Stretch" HorizontalAlignment="Stretch"
                     Background="#D8D8D8"
                     BorderBrush="#BBBBBB" BorderThickness="1"
@@ -352,6 +357,7 @@
             <!-- CARD 6: PROVEEDORES -->
             <Button Grid.Row="2" Grid.Column="4"
                     Command="{Binding OpenSuppliersCommand}"
+                    IsEnabled="{Binding IsOnline}"
                     VerticalAlignment="Stretch" HorizontalAlignment="Stretch"
                     Background="#D8D8D8"
                     BorderBrush="#BBBBBB" BorderThickness="1"
@@ -387,6 +393,7 @@
             <!-- CARD 7: ENT. Y SALIDAS -->
             <Button Grid.Row="4" Grid.Column="0"
                     Command="{Binding OpenMovementsCommand}"
+                    IsEnabled="{Binding IsOnline}"
                     VerticalAlignment="Stretch" HorizontalAlignment="Stretch"
                     Background="#D8D8D8"
                     BorderBrush="#BBBBBB" BorderThickness="1"
@@ -420,6 +427,7 @@
             <!-- CARD 8: HIST. CORTES -->
             <Button Grid.Row="4" Grid.Column="2"
                     Command="{Binding OpenCashCloseHistoryCommand}"
+                    IsEnabled="{Binding IsOnline}"
                     VerticalAlignment="Stretch" HorizontalAlignment="Stretch"
                     Background="#D8D8D8"
                     BorderBrush="#BBBBBB" BorderThickness="1"
@@ -453,6 +461,7 @@
             <!-- CARD 9: EXISTENCIAS -->
             <Button Grid.Row="4" Grid.Column="4"
                     Command="{Binding OpenGlobalStockCommand}"
+                    IsEnabled="{Binding IsOnline}"
                     VerticalAlignment="Stretch" HorizontalAlignment="Stretch"
                     Background="#D8D8D8"
                     BorderBrush="#BBBBBB" BorderThickness="1"

@@ -2,6 +2,8 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CasaCejaRemake.Services;
 using System;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace CasaCejaRemake.ViewModels.Admin
 {
@@ -9,6 +11,7 @@ namespace CasaCejaRemake.ViewModels.Admin
     {
         private readonly AuthService _authService;
         private readonly ApiClient _apiClient;
+        private readonly CancellationTokenSource _connectivityMonitorCts = new();
 
         // ===== EVENTOS DE NAVEGACIÓN =====
         public event EventHandler? CatalogSelected;
@@ -37,6 +40,7 @@ namespace CasaCejaRemake.ViewModels.Admin
             _authService = authService;
             _apiClient = apiClient;
             UserName = authService.CurrentUserName ?? "Administrador";
+            _ = MonitorConnectivityAsync(_connectivityMonitorCts.Token);
         }
 
         // ===== COMMANDS DE NAVEGACIÓN =====
@@ -53,7 +57,7 @@ namespace CasaCejaRemake.ViewModels.Admin
 
         // ===== CONECTIVIDAD =====
         [RelayCommand]
-        private async System.Threading.Tasks.Task CheckConnectivityAsync()
+        private async Task CheckConnectivityAsync()
         {
             IsCheckingConnection = true;
             try
@@ -69,6 +73,29 @@ namespace CasaCejaRemake.ViewModels.Admin
             catch { IsOnline = false; }
             finally { IsCheckingConnection = false; }
             Console.WriteLine($"[AdminMain] Conectividad: {(IsOnline ? "ONLINE" : "OFFLINE")}");
+        }
+
+        public void StopConnectivityMonitor()
+        {
+            if (!_connectivityMonitorCts.IsCancellationRequested)
+            {
+                _connectivityMonitorCts.Cancel();
+            }
+        }
+
+        private async Task MonitorConnectivityAsync(CancellationToken cancellationToken)
+        {
+            try
+            {
+                while (!cancellationToken.IsCancellationRequested)
+                {
+                    await CheckConnectivityAsync();
+                    await Task.Delay(TimeSpan.FromSeconds(30), cancellationToken);
+                }
+            }
+            catch (OperationCanceledException)
+            {
+            }
         }
 
         partial void OnIsOnlineChanged(bool value)

@@ -9,14 +9,14 @@ namespace CasaCejaRemake.Views.Admin
         public AdminMainView()
         {
             InitializeComponent();
-            this.Opened += OnOpened;
+            this.Closed += OnClosed;
         }
 
-        private async void OnOpened(object? sender, EventArgs e)
+        private void OnClosed(object? sender, EventArgs e)
         {
             if (DataContext is AdminMainViewModel viewModel)
             {
-                await viewModel.CheckConnectivityCommand.ExecuteAsync(null);
+                viewModel.StopConnectivityMonitor();
             }
         }
     }
