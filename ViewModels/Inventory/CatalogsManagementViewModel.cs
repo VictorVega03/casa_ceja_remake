@@ -12,6 +12,7 @@ namespace CasaCejaRemake.ViewModels.Inventory
     public partial class CatalogsManagementViewModel : ViewModelBase
     {
         private readonly InventoryService _inventoryService;
+        private readonly bool _isAdminMode;
 
         public event EventHandler? GoBackRequested;
         public event EventHandler? CloseRequested;
@@ -32,9 +33,10 @@ namespace CasaCejaRemake.ViewModels.Inventory
         [ObservableProperty]
         private string _newUnitName = string.Empty;
 
-        public CatalogsManagementViewModel(InventoryService inventoryService)
+        public CatalogsManagementViewModel(InventoryService inventoryService, bool isAdminMode = false)
         {
             _inventoryService = inventoryService;
+            _isAdminMode = isAdminMode;
             _ = LoadDataAsync();
         }
 
@@ -62,7 +64,12 @@ namespace CasaCejaRemake.ViewModels.Inventory
             }
 
             var cat = new Category { Name = NewCategoryName.Trim(), Active = true };
-            await _inventoryService.SaveCategoryAsync(cat);
+            var result = await _inventoryService.SaveCategoryAsync(cat, _isAdminMode);
+            if (!result.Success)
+            {
+                ShowErrorRequested?.Invoke(this, result.Message);
+                return;
+            }
             NewCategoryName = string.Empty;
             await LoadDataAsync();
         }
@@ -70,7 +77,12 @@ namespace CasaCejaRemake.ViewModels.Inventory
         public async Task SaveCategoryEditAsync(Category? category)
         {
             if (category == null || string.IsNullOrWhiteSpace(category.Name)) return;
-            await _inventoryService.SaveCategoryAsync(category);
+            var result = await _inventoryService.SaveCategoryAsync(category, _isAdminMode);
+            if (!result.Success)
+            {
+                ShowErrorRequested?.Invoke(this, result.Message);
+                return;
+            }
             await LoadDataAsync();
         }
 
@@ -86,7 +98,12 @@ namespace CasaCejaRemake.ViewModels.Inventory
             }
 
             var unit = new Unit { Name = NewUnitName.Trim(), Active = true };
-            await _inventoryService.SaveUnitAsync(unit);
+            var result = await _inventoryService.SaveUnitAsync(unit, _isAdminMode);
+            if (!result.Success)
+            {
+                ShowErrorRequested?.Invoke(this, result.Message);
+                return;
+            }
             NewUnitName = string.Empty;
             await LoadDataAsync();
         }
@@ -94,7 +111,12 @@ namespace CasaCejaRemake.ViewModels.Inventory
         public async Task SaveUnitEditAsync(Unit? unit)
         {
             if (unit == null || string.IsNullOrWhiteSpace(unit.Name)) return;
-            await _inventoryService.SaveUnitAsync(unit);
+            var result = await _inventoryService.SaveUnitAsync(unit, _isAdminMode);
+            if (!result.Success)
+            {
+                ShowErrorRequested?.Invoke(this, result.Message);
+                return;
+            }
             await LoadDataAsync();
         }
 

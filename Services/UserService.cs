@@ -17,12 +17,14 @@ namespace CasaCejaRemake.Services
         private readonly IRepository<User> _userRepository;
         private readonly RoleService _roleService;
         private readonly SyncService? _syncService;
+        private readonly ApiClient? _apiClient;
 
-        public UserService(IRepository<User> userRepository, RoleService roleService, SyncService? syncService = null)
+        public UserService(IRepository<User> userRepository, RoleService roleService, SyncService? syncService = null, ApiClient? apiClient = null)
         {
             _userRepository = userRepository ?? throw new ArgumentNullException(nameof(userRepository));
             _roleService    = roleService    ?? throw new ArgumentNullException(nameof(roleService));
             _syncService    = syncService;
+            _apiClient      = apiClient;
         }
 
         
@@ -72,9 +74,9 @@ namespace CasaCejaRemake.Services
         /// Crea un nuevo usuario con validaciones.
         
         /// <returns>El usuario creado, o null si hubo error de validación.</returns>
-        public async Task<(bool Success, string Message)> CreateUserAsync(User user)
+        public async Task<(bool Success, string Message)> CreateUserAsync(User user, bool isAdminMode = false)
         {
-            // Validaciones
+            // Validaciones locales
             if (string.IsNullOrWhiteSpace(user.Name))
                 return (false, "El nombre es requerido.");
 
@@ -93,7 +95,7 @@ namespace CasaCejaRemake.Services
             if (string.IsNullOrWhiteSpace(user.Phone))
                 return (false, "El teléfono es requerido.");
 
-            // Verificar username único
+            // Verificar username único localmente
             if (!await IsUsernameAvailableAsync(user.Username))
                 return (false, $"El nombre de usuario '{user.Username}' ya está en uso.");
 
@@ -102,37 +104,84 @@ namespace CasaCejaRemake.Services
             if (role == null)
                 return (false, "El rol seleccionado no es válido.");
 
-            // Establecer valores por defecto
-            user.Active = true;
-            user.CreatedAt = DateTime.Now;
-            user.UpdatedAt = DateTime.Now;
-            user.SyncStatus = 1;
-
-            // Hashear contraseña antes de guardar
-            user.Password = BCrypt.Net.BCrypt.HashPassword(user.Password);
-
-            try
+            if (isAdminMode)
             {
-                await _userRepository.AddAsync(user);
-                Console.WriteLine($"[UserService] Usuario creado: {user.Username} (Rol: {role.Name})");
+                if (_apiClient == null)
+                    return (false, "Sin conexión al servidor.");
 
-                // Push inmediato al servidor — fire and forget
-                if (_syncService != null)
-                    _ = Task.Run(() => _syncService.PushUserAsync(user));
+                // En modo admin: enviar contraseña en texto plano — el servidor hashea
+                var plainPassword = user.Password;
+                var payload = new
+                {
+                    name      = user.Name,
+                    email     = user.Email,
+                    phone     = user.Phone,
+                    username  = user.Username,
+                    password  = plainPassword,
+                    user_type = user.UserType,
+                    branch_id = user.BranchId,
+                    active    = true,
+                };
 
-                return (true, "Usuario creado exitosamente.");
+                try
+                {
+                    var response = await _apiClient.PostAsync<User>("/api/v1/admin/users", payload);
+                    if (response?.IsSuccess != true || response.Data == null)
+                        return (false, response?.Message ?? "No se pudo crear el usuario en el servidor.");
+
+                    // Servidor confirmó — guardar local con Id del servidor y contraseña hasheada
+                    user.Id         = response.Data.Id;
+                    user.Active     = true;
+                    user.CreatedAt  = DateTime.Now;
+                    user.UpdatedAt  = DateTime.Now;
+                    user.SyncStatus = 2;
+                    user.Password   = BCrypt.Net.BCrypt.HashPassword(plainPassword);
+
+                    if (_userRepository is Data.Repositories.BaseRepository<User> baseRepo)
+                        await baseRepo.UpsertAsync(user);
+                    else
+                        await _userRepository.AddAsync(user);
+
+                    Console.WriteLine($"[UserService] Usuario admin creado: {user.Username} (Id servidor: {user.Id})");
+                    return (true, "Usuario creado exitosamente.");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[UserService] Error creando usuario admin: {ex.Message}");
+                    return (false, $"Error al crear usuario: {ex.Message}");
+                }
             }
-            catch (Exception ex)
+            else
             {
-                Console.WriteLine($"[UserService] Error creando usuario: {ex.Message}");
-                return (false, $"Error al crear usuario: {ex.Message}");
+                // Modo offline-first: guardar local con SyncStatus=1, luego push
+                user.Active     = true;
+                user.CreatedAt  = DateTime.Now;
+                user.UpdatedAt  = DateTime.Now;
+                user.SyncStatus = 1;
+                user.Password   = BCrypt.Net.BCrypt.HashPassword(user.Password);
+
+                try
+                {
+                    await _userRepository.AddAsync(user);
+                    Console.WriteLine($"[UserService] Usuario creado: {user.Username} (Rol: {role.Name})");
+
+                    if (_syncService != null)
+                        _ = Task.Run(() => _syncService.PushUserAsync(user));
+
+                    return (true, "Usuario creado exitosamente.");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[UserService] Error creando usuario: {ex.Message}");
+                    return (false, $"Error al crear usuario: {ex.Message}");
+                }
             }
         }
 
         
         /// Actualiza los datos de un usuario existente.
         
-        public async Task<(bool Success, string Message)> UpdateUserAsync(User user)
+        public async Task<(bool Success, string Message)> UpdateUserAsync(User user, bool isAdminMode = false, string? newPlainPassword = null)
         {
             // Validaciones
             if (string.IsNullOrWhiteSpace(user.Name))
@@ -158,22 +207,69 @@ namespace CasaCejaRemake.Services
 
             user.UpdatedAt = DateTime.Now;
 
-            try
+            if (isAdminMode)
             {
-                user.SyncStatus = 1;
-                await _userRepository.UpdateAsync(user);
-                Console.WriteLine($"[UserService] Usuario actualizado: {user.Username}");
+                if (_apiClient == null)
+                    return (false, "Sin conexión al servidor.");
 
-                // Push inmediato al servidor
-                if (_syncService != null)
-                    _ = Task.Run(() => _syncService.PushUserAsync(user));
+                try
+                {
+                    // PUT campos del usuario (sin contraseña)
+                    var putPayload = new
+                    {
+                        name      = user.Name,
+                        email     = user.Email,
+                        phone     = user.Phone,
+                        username  = user.Username,
+                        user_type = user.UserType,
+                        branch_id = user.BranchId,
+                        active    = user.Active,
+                    };
 
-                return (true, "Usuario actualizado exitosamente.");
+                    var putResponse = await _apiClient.PutAsync<User>($"/api/v1/admin/users/{user.Id}", putPayload);
+                    if (putResponse?.IsSuccess != true)
+                        return (false, putResponse?.Message ?? "No se pudo actualizar el usuario en el servidor.");
+
+                    // Si se proporcionó nueva contraseña, cambiarla vía PATCH
+                    if (!string.IsNullOrWhiteSpace(newPlainPassword))
+                    {
+                        var patchPayload = new { password = newPlainPassword, password_confirmation = newPlainPassword };
+                        var patchResponse = await _apiClient.PatchAsync<object>($"/api/v1/admin/users/{user.Id}/password", patchPayload);
+                        if (patchResponse?.IsSuccess != true)
+                            return (false, "Usuario actualizado, pero no se pudo cambiar la contraseña en el servidor.");
+
+                        user.Password = BCrypt.Net.BCrypt.HashPassword(newPlainPassword);
+                    }
+
+                    user.SyncStatus = 2;
+                    await _userRepository.UpdateAsync(user);
+                    Console.WriteLine($"[UserService] Usuario admin actualizado: {user.Username}");
+                    return (true, "Usuario actualizado exitosamente.");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[UserService] Error actualizando usuario admin: {ex.Message}");
+                    return (false, $"Error al actualizar usuario: {ex.Message}");
+                }
             }
-            catch (Exception ex)
+            else
             {
-                Console.WriteLine($"[UserService] Error actualizando usuario: {ex.Message}");
-                return (false, $"Error al actualizar usuario: {ex.Message}");
+                try
+                {
+                    user.SyncStatus = 1;
+                    await _userRepository.UpdateAsync(user);
+                    Console.WriteLine($"[UserService] Usuario actualizado: {user.Username}");
+
+                    if (_syncService != null)
+                        _ = Task.Run(() => _syncService.PushUserAsync(user));
+
+                    return (true, "Usuario actualizado exitosamente.");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[UserService] Error actualizando usuario: {ex.Message}");
+                    return (false, $"Error al actualizar usuario: {ex.Message}");
+                }
             }
         }
 

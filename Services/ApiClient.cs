@@ -196,5 +196,24 @@ namespace CasaCejaRemake.Services
             }
             return null;
         }
+
+        public async Task<ApiResponse<T>?> PatchAsync<T>(string endpoint, object body)
+        {
+            try
+            {
+                var request = CreateRequest(new HttpMethod("PATCH"), endpoint);
+                request.Content = CreateJsonContent(body);
+                var response = await _httpClient.SendAsync(request);
+                var json     = await response.Content.ReadAsStringAsync();
+                if (response.IsSuccessStatusCode)
+                    return JsonSerializer.Deserialize<ApiResponse<T>>(json, _jsonOptions);
+                Console.WriteLine($"[ApiClient] Error en PATCH {endpoint}: {response.StatusCode} - {json}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[ApiClient] Error en PATCH {endpoint}: {ex.Message}");
+            }
+            return null;
+        }
     }
 }

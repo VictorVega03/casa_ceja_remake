@@ -126,7 +126,7 @@ namespace CasaCejaRemake
                 SyncService = new SyncService(ApiClient, ConfigService, DatabaseService);
 
                 AuthService = new AuthService(userRepo, RoleService);
-                UserService = new UserService(userRepo, RoleService, SyncService);
+                UserService = new UserService(userRepo, RoleService, SyncService, ApiClient);
 
                 // Sincronizar la sucursal inicial en AuthService desde ConfigService
                 if (AuthService != null && ConfigService != null)
@@ -1003,7 +1003,7 @@ namespace CasaCejaRemake
 
             viewModel.ProductFormRequested += (s, product) =>
             {
-                var formViewModel = new ViewModels.Inventory.ProductFormViewModel(_inventoryService, branchId, product);
+                var formViewModel = new ViewModels.Inventory.ProductFormViewModel(_inventoryService, branchId, product, isAdminMode: true);
                 var formView = new Views.Inventory.ProductFormView
                 {
                     DataContext = formViewModel
@@ -1059,7 +1059,7 @@ namespace CasaCejaRemake
                 return;
             }
 
-            var catalogsViewModel = new ViewModels.Inventory.CatalogsManagementViewModel(_inventoryService);
+            var catalogsViewModel = new ViewModels.Inventory.CatalogsManagementViewModel(_inventoryService, isAdminMode: true);
             var catalogsView = new Views.Inventory.CatalogsManagementView
             {
                 DataContext = catalogsViewModel
