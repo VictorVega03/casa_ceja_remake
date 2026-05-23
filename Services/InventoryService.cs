@@ -80,19 +80,63 @@ namespace CasaCejaRemake.Services
             return await _productRepository.GetByIdAsync(id);
         }
 
-        public async Task<int> SaveProductAsync(Product product)
+        public async Task<(bool Success, string Message, int Id)> SaveProductAsync(Product product, bool isAdminMode = false)
         {
             product.UpdatedAt = DateTime.Now;
-            product.SyncStatus = 1;
 
-            if (product.Id == 0)
+            if (isAdminMode)
             {
-                product.CreatedAt = DateTime.Now;
-                return await _productRepository.AddAsync(product);
+                var payload = new
+                {
+                    barcode            = product.Barcode,
+                    name               = product.Name,
+                    category_id        = product.CategoryId > 0 ? (int?)product.CategoryId : null,
+                    unit_id            = product.UnitId > 0 ? (int?)product.UnitId : null,
+                    presentation       = product.Presentation,
+                    iva                = product.Iva,
+                    price_retail       = product.PriceRetail,
+                    price_wholesale    = product.PriceWholesale,
+                    wholesale_quantity = product.WholesaleQuantity,
+                    price_special      = product.PriceSpecial,
+                    price_dealer       = product.PriceDealer,
+                    active             = product.Active,
+                };
+
+                Models.DTOs.ApiResponse<Product>? response;
+                bool isNew = product.Id == 0;
+                if (isNew)
+                {
+                    product.CreatedAt = DateTime.Now;
+                    response = await _apiClient.PostAsync<Product>("/api/v1/admin/products", payload);
+                }
+                else
+                {
+                    response = await _apiClient.PutAsync<Product>($"/api/v1/admin/products/{product.Id}", payload);
+                }
+
+                if (response?.IsSuccess != true || response.Data == null)
+                    return (false, response?.Message ?? "No se pudo guardar el producto en el servidor. Verifique que el código de barras no esté duplicado.", 0);
+
+                product.Id = response.Data.Id;
+                product.SyncStatus = 2;
+                product.LastSync = DateTime.Now;
+                await _productRepository.UpsertAsync(product);
+                return (true, response.Message, product.Id);
             }
             else
             {
-                return await _productRepository.UpdateAsync(product);
+                product.SyncStatus = 1;
+                if (product.Id == 0)
+                {
+                    product.CreatedAt = DateTime.Now;
+                    var id = await _productRepository.AddAsync(product);
+                    return (true, string.Empty, id);
+                }
+                else
+                {
+                    var id = await _productRepository.UpdateAsync(product);
+                    return (true, string.Empty, id);
+                }
             }
         }
 
@@ -117,19 +161,48 @@ namespace CasaCejaRemake.Services
             return await _unitRepository.GetAllAsync();
         }
 
-        public async Task<int> SaveCategoryAsync(Category category)
+        public async Task<(bool Success, string Message, int Id)> SaveCategoryAsync(Category category, bool isAdminMode = false)
         {
             category.UpdatedAt = DateTime.Now;
-            category.SyncStatus = 1;
 
-            if (category.Id == 0)
+            if (isAdminMode)
             {
-                category.CreatedAt = DateTime.Now;
-                return await _categoryRepository.AddAsync(category);
+                var payload = new { name = category.Name, active = category.Active };
+                Models.DTOs.ApiResponse<Category>? response;
+                bool isNew = category.Id == 0;
+                if (isNew)
+                {
+                    category.CreatedAt = DateTime.Now;
+                    response = await _apiClient.PostAsync<Category>("/api/v1/admin/categories", payload);
+                }
+                else
+                {
+                    response = await _apiClient.PutAsync<Category>($"/api/v1/admin/categories/{category.Id}", payload);
+                }
+
+                if (response?.IsSuccess != true || response.Data == null)
+                    return (false, response?.Message ?? "No se pudo guardar la categoría. El nombre puede estar duplicado o no hay conexión.", 0);
+
+                category.Id = response.Data.Id;
+                category.SyncStatus = 2;
+                category.LastSync = DateTime.Now;
+                await _categoryRepository.UpsertAsync(category);
+                return (true, response.Message, category.Id);
             }
             else
             {
-                return await _categoryRepository.UpdateAsync(category);
+                category.SyncStatus = 1;
+                if (category.Id == 0)
+                {
+                    category.CreatedAt = DateTime.Now;
+                    var id = await _categoryRepository.AddAsync(category);
+                    return (true, string.Empty, id);
+                }
+                else
+                {
+                    var id = await _categoryRepository.UpdateAsync(category);
+                    return (true, string.Empty, id);
+                }
             }
         }
 
@@ -145,19 +218,48 @@ namespace CasaCejaRemake.Services
             return await _categoryRepository.DeleteAsync(category) > 0;
         }
 
-        public async Task<int> SaveUnitAsync(Unit unit)
+        public async Task<(bool Success, string Message, int Id)> SaveUnitAsync(Unit unit, bool isAdminMode = false)
         {
             unit.UpdatedAt = DateTime.Now;
-            unit.SyncStatus = 1;
 
-            if (unit.Id == 0)
+            if (isAdminMode)
             {
-                unit.CreatedAt = DateTime.Now;
-                return await _unitRepository.AddAsync(unit);
+                var payload = new { name = unit.Name, active = unit.Active };
+                Models.DTOs.ApiResponse<Unit>? response;
+                bool isNew = unit.Id == 0;
+                if (isNew)
+                {
+                    unit.CreatedAt = DateTime.Now;
+                    response = await _apiClient.PostAsync<Unit>("/api/v1/admin/units", payload);
+                }
+                else
+                {
+                    response = await _apiClient.PutAsync<Unit>($"/api/v1/admin/units/{unit.Id}", payload);
+                }
+
+                if (response?.IsSuccess != true || response.Data == null)
+                    return (false, response?.Message ?? "No se pudo guardar la medida. El nombre puede estar duplicado o no hay conexión.", 0);
+
+                unit.Id = response.Data.Id;
+                unit.SyncStatus = 2;
+                unit.LastSync = DateTime.Now;
+                await _unitRepository.UpsertAsync(unit);
+                return (true, response.Message, unit.Id);
             }
             else
             {
-                return await _unitRepository.UpdateAsync(unit);
+                unit.SyncStatus = 1;
+                if (unit.Id == 0)
+                {
+                    unit.CreatedAt = DateTime.Now;
+                    var id = await _unitRepository.AddAsync(unit);
+                    return (true, string.Empty, id);
+                }
+                else
+                {
+                    var id = await _unitRepository.UpdateAsync(unit);
+                    return (true, string.Empty, id);
+                }
             }
         }
 

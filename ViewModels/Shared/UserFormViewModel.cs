@@ -183,7 +183,7 @@ namespace CasaCejaRemake.ViewModels.Shared
                 BranchId = _branchId > 0 ? _branchId : (int?)null
             };
 
-            var result = await _userService.CreateUserAsync(user);
+            var result = await _userService.CreateUserAsync(user, _isAdminMode);
 
             if (result.Success)
             {
@@ -208,10 +208,14 @@ namespace CasaCejaRemake.ViewModels.Shared
             _existingUser.Phone = Phone.Trim();
             _existingUser.Username = Username.Trim();
 
-            // Si se proporciona una nueva contraseña, actualizarla
+            // Capturar nueva contraseña en texto plano antes de modificar el objeto
+            string? newPlainPassword = null;
             if (!string.IsNullOrWhiteSpace(Password))
             {
-                _existingUser.Password = Password;
+                newPlainPassword = Password;
+                // Para modo no-admin: mantener comportamiento anterior (contraseña en el objeto)
+                if (!_isAdminMode)
+                    _existingUser.Password = Password;
             }
 
             // Solo cambiar rol en modo Admin
@@ -220,7 +224,7 @@ namespace CasaCejaRemake.ViewModels.Shared
                 _existingUser.UserType = SelectedRole.Id;
             }
 
-            var result = await _userService.UpdateUserAsync(_existingUser);
+            var result = await _userService.UpdateUserAsync(_existingUser, _isAdminMode, newPlainPassword);
 
             if (result.Success)
             {

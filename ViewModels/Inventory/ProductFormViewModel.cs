@@ -87,11 +87,13 @@ namespace CasaCejaRemake.ViewModels.Inventory
         public event EventHandler? StartSaveConfirmation;
 
         private readonly int _currentBranchId;
+        private readonly bool _isAdminMode;
 
-        public ProductFormViewModel(InventoryService inventoryService, int branchId, Product? product = null)
+        public ProductFormViewModel(InventoryService inventoryService, int branchId, Product? product = null, bool isAdminMode = false)
         {
             _inventoryService = inventoryService;
             _currentBranchId = branchId;
+            _isAdminMode = isAdminMode;
             
             if (product != null)
             {
@@ -248,7 +250,12 @@ namespace CasaCejaRemake.ViewModels.Inventory
 
                     foreach (var pendingEntry in PendingProducts)
                     {
-                        await _inventoryService.SaveProductAsync(pendingEntry.Product);
+                        var result = await _inventoryService.SaveProductAsync(pendingEntry.Product, _isAdminMode);
+                        if (!result.Success)
+                        {
+                            StatusMessage = $"Error en '{pendingEntry.Name}': {result.Message}";
+                            return;
+                        }
                     }
                     StatusMessage = $"{PendingProducts.Count} productos guardados.";
                     PendingProducts.Clear();
@@ -259,7 +266,12 @@ namespace CasaCejaRemake.ViewModels.Inventory
                     if (!await ValidateCurrentProductAsync()) return;
 
                     var singleProduct = CreateProductFromForm();
-                    await _inventoryService.SaveProductAsync(singleProduct);
+                    var result = await _inventoryService.SaveProductAsync(singleProduct, _isAdminMode);
+                    if (!result.Success)
+                    {
+                        StatusMessage = result.Message;
+                        return;
+                    }
 
                     StatusMessage = "Guardado correctamente.";
                     SaveCompleted?.Invoke(this, EventArgs.Empty);
