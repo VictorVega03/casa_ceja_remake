@@ -9,6 +9,16 @@ using CasaCejaRemake.Models.DTOs;
 
 namespace CasaCejaRemake.Services
 {
+    public class ApiResult<T>
+    {
+        public bool IsSuccess { get; init; }
+        public bool IsNetworkError { get; init; }
+        public bool IsServerError { get; init; }
+        public string? ServerMessage { get; init; }
+        public string? Message => ServerMessage;
+        public T? Data { get; init; }
+    }
+
     public class ApiClient
     {
         private readonly HttpClient _httpClient;
@@ -143,7 +153,7 @@ namespace CasaCejaRemake.Services
             return null;
         }
 
-        public async Task<ApiResponse<T>?> PostAsync<T>(string endpoint, object body, CancellationToken ct = default)
+        public async Task<ApiResult<T>> PostAsync<T>(string endpoint, object body, CancellationToken ct = default)
         {
             for (int attempt = 1; attempt <= MaxRetries; attempt++)
             {
@@ -156,13 +166,43 @@ namespace CasaCejaRemake.Services
                     var json     = await response.Content.ReadAsStringAsync(ct);
 
                     if (response.IsSuccessStatusCode || (int)response.StatusCode == 207)
-                        return JsonSerializer.Deserialize<ApiResponse<T>>(json, _jsonOptions);
+                    {
+                        var apiResponse = JsonSerializer.Deserialize<ApiResponse<T>>(json, _jsonOptions);
+                        if (apiResponse?.IsSuccess == true)
+                        {
+                            return new ApiResult<T>
+                            {
+                                IsSuccess = true,
+                                ServerMessage = apiResponse.Message,
+                                Data = apiResponse.Data,
+                            };
+                        }
+
+                        return new ApiResult<T>
+                        {
+                            IsServerError = true,
+                            ServerMessage = apiResponse?.Message ?? "Respuesta inválida del servidor.",
+                        };
+                    }
 
                     if ((int)response.StatusCode >= 400 && (int)response.StatusCode < 500)
                     {
+                        var errorResponse = JsonSerializer.Deserialize<ApiResponse<object>>(json, _jsonOptions);
+                        var serverMessage = errorResponse?.Message ?? $"Error del servidor ({(int)response.StatusCode}).";
                         Console.WriteLine($"[ApiClient] Error {response.StatusCode} en {endpoint}: {json}");
-                        return null;
+                        return new ApiResult<T>
+                        {
+                            IsServerError = true,
+                            ServerMessage = serverMessage,
+                        };
                     }
+
+                    var fallbackError = JsonSerializer.Deserialize<ApiResponse<object>>(json, _jsonOptions);
+                    return new ApiResult<T>
+                    {
+                        IsServerError = true,
+                        ServerMessage = fallbackError?.Message ?? $"Error del servidor ({(int)response.StatusCode}).",
+                    };
                 }
                 catch (TaskCanceledException)
                 {
@@ -176,25 +216,69 @@ namespace CasaCejaRemake.Services
                 if (attempt < MaxRetries)
                     await Task.Delay(TimeSpan.FromSeconds(Math.Pow(2, attempt)), ct);
             }
-            return null;
+
+            return new ApiResult<T>
+            {
+                IsNetworkError = true,
+                ServerMessage = "Sin conexión al servidor."
+            };
         }
 
-        public async Task<ApiResponse<T>?> PutAsync<T>(string endpoint, object body, CancellationToken ct = default)
+        public async Task<ApiResult<T>> PutAsync<T>(string endpoint, object body, CancellationToken ct = default)
         {
-            try
+            for (int attempt = 1; attempt <= MaxRetries; attempt++)
             {
-                var request = CreateRequest(HttpMethod.Put, endpoint);
-                request.Content = CreateJsonContent(body);
-                var response    = await _httpClient.SendAsync(request);
-                var json        = await response.Content.ReadAsStringAsync();
-                if (response.IsSuccessStatusCode)
-                    return JsonSerializer.Deserialize<ApiResponse<T>>(json, _jsonOptions);
+                try
+                {
+                    var request = CreateRequest(HttpMethod.Put, endpoint);
+                    request.Content = CreateJsonContent(body);
+                    var response    = await _httpClient.SendAsync(request, ct);
+                    var json        = await response.Content.ReadAsStringAsync(ct);
+
+                    if (response.IsSuccessStatusCode || (int)response.StatusCode == 207)
+                    {
+                        var apiResponse = JsonSerializer.Deserialize<ApiResponse<T>>(json, _jsonOptions);
+                        if (apiResponse?.IsSuccess == true)
+                        {
+                            return new ApiResult<T>
+                            {
+                                IsSuccess = true,
+                                ServerMessage = apiResponse.Message,
+                                Data = apiResponse.Data,
+                            };
+                        }
+
+                        return new ApiResult<T>
+                        {
+                            IsServerError = true,
+                            ServerMessage = apiResponse?.Message ?? "Respuesta inválida del servidor.",
+                        };
+                    }
+
+                    var errorResponse = JsonSerializer.Deserialize<ApiResponse<object>>(json, _jsonOptions);
+                    return new ApiResult<T>
+                    {
+                        IsServerError = true,
+                        ServerMessage = errorResponse?.Message ?? $"Error del servidor ({(int)response.StatusCode}).",
+                    };
+                }
+                catch (TaskCanceledException)
+                {
+                    Console.WriteLine($"[ApiClient] Timeout en PUT {endpoint} (intento {attempt})");
+                }
+                catch (HttpRequestException ex)
+                {
+                    Console.WriteLine($"[ApiClient] Error de red en PUT {endpoint} (intento {attempt}): {ex.Message}");
+                }
+
+                if (attempt < MaxRetries)
+                    await Task.Delay(TimeSpan.FromSeconds(Math.Pow(2, attempt)), ct);
             }
-            catch (Exception ex)
+            return new ApiResult<T>
             {
-                Console.WriteLine($"[ApiClient] Error en PUT {endpoint}: {ex.Message}");
-            }
-            return null;
+                IsNetworkError = true,
+                ServerMessage = "Sin conexión al servidor."
+            };
         }
 
         public async Task<ApiResponse<T>?> PatchAsync<T>(string endpoint, object body)

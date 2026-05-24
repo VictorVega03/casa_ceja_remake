@@ -1,7 +1,9 @@
 using CasaCejaRemake.Models;
+using CasaCejaRemake.Helpers;
 using CasaCejaRemake.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Avalonia.Controls;
 using System;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -12,7 +14,9 @@ namespace CasaCejaRemake.ViewModels.Inventory
     public partial class CatalogsManagementViewModel : ViewModelBase
     {
         private readonly InventoryService _inventoryService;
+        private readonly ApiClient _apiClient;
         private readonly bool _isAdminMode;
+        private Window? _parentWindow;
 
         public event EventHandler? GoBackRequested;
         public event EventHandler? CloseRequested;
@@ -33,11 +37,20 @@ namespace CasaCejaRemake.ViewModels.Inventory
         [ObservableProperty]
         private string _newUnitName = string.Empty;
 
-        public CatalogsManagementViewModel(InventoryService inventoryService, bool isAdminMode = false)
+        [ObservableProperty]
+        private bool _isSaving = false;
+
+        public CatalogsManagementViewModel(InventoryService inventoryService, ApiClient apiClient, bool isAdminMode = false)
         {
             _inventoryService = inventoryService;
+            _apiClient = apiClient;
             _isAdminMode = isAdminMode;
             _ = LoadDataAsync();
+        }
+
+        public void SetParentWindow(Window parentWindow)
+        {
+            _parentWindow = parentWindow;
         }
 
         private async Task LoadDataAsync()
@@ -57,33 +70,89 @@ namespace CasaCejaRemake.ViewModels.Inventory
         {
             if (string.IsNullOrWhiteSpace(NewCategoryName)) return;
 
-            if (Categories.Any(c => c.Name.Equals(NewCategoryName.Trim(), StringComparison.OrdinalIgnoreCase)))
+            if (!_isAdminMode)
             {
-                ShowErrorRequested?.Invoke(this, "Ya existe una categoría con ese nombre.");
+                if (Categories.Any(c => c.Name.Equals(NewCategoryName.Trim(), StringComparison.OrdinalIgnoreCase)))
+                {
+                    ShowErrorRequested?.Invoke(this, "Ya existe una categoría con ese nombre.");
+                    return;
+                }
+
+                var cat = new Category { Name = NewCategoryName.Trim(), Active = true };
+                var result = await _inventoryService.SaveCategoryAsync(cat, false);
+                if (!result.Success)
+                {
+                    ShowErrorRequested?.Invoke(this, result.Message);
+                    return;
+                }
+
+                NewCategoryName = string.Empty;
+                await LoadDataAsync();
                 return;
             }
 
-            var cat = new Category { Name = NewCategoryName.Trim(), Active = true };
-            var result = await _inventoryService.SaveCategoryAsync(cat, _isAdminMode);
-            if (!result.Success)
+            if (_parentWindow == null) return;
+
+            var success = await AdminOperationHelper.ExecuteAsync(
+                _parentWindow,
+                _apiClient,
+                async () =>
+                {
+                    if (Categories.Any(c => c.Name.Equals(NewCategoryName.Trim(), StringComparison.OrdinalIgnoreCase)))
+                        return (false, "Ya existe una categoría con ese nombre.");
+
+                    var cat = new Category { Name = NewCategoryName.Trim(), Active = true };
+                    var result = await _inventoryService.SaveCategoryAsync(cat, true);
+                    return (result.Success, result.Message);
+                },
+                "Categoría guardada",
+                onBusy: () => IsSaving = true,
+                onIdle: () => IsSaving = false);
+
+            if (success)
             {
-                ShowErrorRequested?.Invoke(this, result.Message);
-                return;
+                NewCategoryName = string.Empty;
+                await LoadDataAsync();
             }
-            NewCategoryName = string.Empty;
-            await LoadDataAsync();
         }
 
-        public async Task SaveCategoryEditAsync(Category? category)
+        public async Task<bool> SaveCategoryEditAsync(Category? category)
         {
-            if (category == null || string.IsNullOrWhiteSpace(category.Name)) return;
-            var result = await _inventoryService.SaveCategoryAsync(category, _isAdminMode);
-            if (!result.Success)
+            if (category == null || string.IsNullOrWhiteSpace(category.Name)) return false;
+            if (!_isAdminMode)
             {
-                ShowErrorRequested?.Invoke(this, result.Message);
-                return;
+                var result = await _inventoryService.SaveCategoryAsync(category, false);
+                if (!result.Success)
+                {
+                    ShowErrorRequested?.Invoke(this, result.Message);
+                    return false;
+                }
+
+                await LoadDataAsync();
+                return true;
             }
-            await LoadDataAsync();
+
+            if (_parentWindow == null) return false;
+
+            var success = await AdminOperationHelper.ExecuteAsync(
+                _parentWindow,
+                _apiClient,
+                async () =>
+                {
+                    var result = await _inventoryService.SaveCategoryAsync(category, true);
+                    return (result.Success, result.Message);
+                },
+                "Categoría guardada",
+                onBusy: () => IsSaving = true,
+                onIdle: () => IsSaving = false);
+
+            if (success)
+            {
+                await LoadDataAsync();
+                return true;
+            }
+
+            return false;
         }
 
         [RelayCommand]
@@ -91,33 +160,89 @@ namespace CasaCejaRemake.ViewModels.Inventory
         {
             if (string.IsNullOrWhiteSpace(NewUnitName)) return;
 
-            if (Units.Any(u => u.Name.Equals(NewUnitName.Trim(), StringComparison.OrdinalIgnoreCase)))
+            if (!_isAdminMode)
             {
-                ShowErrorRequested?.Invoke(this, "Ya existe una medida con ese nombre.");
+                if (Units.Any(u => u.Name.Equals(NewUnitName.Trim(), StringComparison.OrdinalIgnoreCase)))
+                {
+                    ShowErrorRequested?.Invoke(this, "Ya existe una medida con ese nombre.");
+                    return;
+                }
+
+                var unit = new Unit { Name = NewUnitName.Trim(), Active = true };
+                var result = await _inventoryService.SaveUnitAsync(unit, false);
+                if (!result.Success)
+                {
+                    ShowErrorRequested?.Invoke(this, result.Message);
+                    return;
+                }
+
+                NewUnitName = string.Empty;
+                await LoadDataAsync();
                 return;
             }
 
-            var unit = new Unit { Name = NewUnitName.Trim(), Active = true };
-            var result = await _inventoryService.SaveUnitAsync(unit, _isAdminMode);
-            if (!result.Success)
+            if (_parentWindow == null) return;
+
+            var success = await AdminOperationHelper.ExecuteAsync(
+                _parentWindow,
+                _apiClient,
+                async () =>
+                {
+                    if (Units.Any(u => u.Name.Equals(NewUnitName.Trim(), StringComparison.OrdinalIgnoreCase)))
+                        return (false, "Ya existe una medida con ese nombre.");
+
+                    var unit = new Unit { Name = NewUnitName.Trim(), Active = true };
+                    var result = await _inventoryService.SaveUnitAsync(unit, true);
+                    return (result.Success, result.Message);
+                },
+                "Medida guardada",
+                onBusy: () => IsSaving = true,
+                onIdle: () => IsSaving = false);
+
+            if (success)
             {
-                ShowErrorRequested?.Invoke(this, result.Message);
-                return;
+                NewUnitName = string.Empty;
+                await LoadDataAsync();
             }
-            NewUnitName = string.Empty;
-            await LoadDataAsync();
         }
 
-        public async Task SaveUnitEditAsync(Unit? unit)
+        public async Task<bool> SaveUnitEditAsync(Unit? unit)
         {
-            if (unit == null || string.IsNullOrWhiteSpace(unit.Name)) return;
-            var result = await _inventoryService.SaveUnitAsync(unit, _isAdminMode);
-            if (!result.Success)
+            if (unit == null || string.IsNullOrWhiteSpace(unit.Name)) return false;
+            if (!_isAdminMode)
             {
-                ShowErrorRequested?.Invoke(this, result.Message);
-                return;
+                var result = await _inventoryService.SaveUnitAsync(unit, false);
+                if (!result.Success)
+                {
+                    ShowErrorRequested?.Invoke(this, result.Message);
+                    return false;
+                }
+
+                await LoadDataAsync();
+                return true;
             }
-            await LoadDataAsync();
+
+            if (_parentWindow == null) return false;
+
+            var success = await AdminOperationHelper.ExecuteAsync(
+                _parentWindow,
+                _apiClient,
+                async () =>
+                {
+                    var result = await _inventoryService.SaveUnitAsync(unit, true);
+                    return (result.Success, result.Message);
+                },
+                "Medida guardada",
+                onBusy: () => IsSaving = true,
+                onIdle: () => IsSaving = false);
+
+            if (success)
+            {
+                await LoadDataAsync();
+                return true;
+            }
+
+            return false;
         }
 
         [RelayCommand]

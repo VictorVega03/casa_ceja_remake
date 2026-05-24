@@ -27,6 +27,8 @@ namespace CasaCejaRemake.Services
             _apiClient      = apiClient;
         }
 
+        public ApiClient? ApiClient => _apiClient;
+
         
         /// Obtiene todos los usuarios activos con nombre de rol resuelto.
         
@@ -107,7 +109,7 @@ namespace CasaCejaRemake.Services
             if (isAdminMode)
             {
                 if (_apiClient == null)
-                    return (false, "Sin conexión al servidor.");
+                    return (false, "Sin conexión al servidor. Verifica tu red e intenta de nuevo.");
 
                 // En modo admin: enviar contraseña en texto plano — el servidor hashea
                 var plainPassword = user.Password;
@@ -126,8 +128,14 @@ namespace CasaCejaRemake.Services
                 try
                 {
                     var response = await _apiClient.PostAsync<User>("/api/v1/admin/users", payload);
-                    if (response?.IsSuccess != true || response.Data == null)
-                        return (false, response?.Message ?? "No se pudo crear el usuario en el servidor.");
+                    if (response.IsNetworkError)
+                        return (false, "Sin conexión al servidor. Verifica tu red e intenta de nuevo.");
+
+                    if (response.IsServerError)
+                        return (false, response.ServerMessage ?? "No se pudo crear el usuario en el servidor.");
+
+                    if (!response.IsSuccess || response.Data == null)
+                        return (false, response.ServerMessage ?? "No se pudo crear el usuario en el servidor.");
 
                     // Servidor confirmó — guardar local con Id del servidor y contraseña hasheada
                     user.Id         = response.Data.Id;
@@ -210,10 +218,12 @@ namespace CasaCejaRemake.Services
             if (isAdminMode)
             {
                 if (_apiClient == null)
-                    return (false, "Sin conexión al servidor.");
+                    return (false, "Sin conexión al servidor. Verifica tu red e intenta de nuevo.");
 
                 try
                 {
+                    var existingLocalUser = await _userRepository.GetByIdAsync(user.Id);
+
                     // PUT campos del usuario (sin contraseña)
                     var putPayload = new
                     {
@@ -227,8 +237,14 @@ namespace CasaCejaRemake.Services
                     };
 
                     var putResponse = await _apiClient.PutAsync<User>($"/api/v1/admin/users/{user.Id}", putPayload);
-                    if (putResponse?.IsSuccess != true)
-                        return (false, putResponse?.Message ?? "No se pudo actualizar el usuario en el servidor.");
+                    if (putResponse.IsNetworkError)
+                        return (false, "Sin conexión al servidor. Verifica tu red e intenta de nuevo.");
+
+                    if (putResponse.IsServerError)
+                        return (false, putResponse.ServerMessage ?? "No se pudo actualizar el usuario en el servidor.");
+
+                    if (!putResponse.IsSuccess)
+                        return (false, putResponse.ServerMessage ?? "No se pudo actualizar el usuario en el servidor.");
 
                     // Si se proporcionó nueva contraseña, cambiarla vía PATCH
                     if (!string.IsNullOrWhiteSpace(newPlainPassword))
@@ -239,6 +255,10 @@ namespace CasaCejaRemake.Services
                             return (false, "Usuario actualizado, pero no se pudo cambiar la contraseña en el servidor.");
 
                         user.Password = BCrypt.Net.BCrypt.HashPassword(newPlainPassword);
+                    }
+                    else if (existingLocalUser != null)
+                    {
+                        user.Password = existingLocalUser.Password;
                     }
 
                     user.SyncStatus = 2;

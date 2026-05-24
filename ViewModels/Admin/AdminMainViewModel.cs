@@ -31,9 +31,6 @@ namespace CasaCejaRemake.ViewModels.Admin
         [ObservableProperty] private bool _isCheckingConnection = false;
         [ObservableProperty] private bool _showOnlineBanner = false;
 
-        private bool _wasOffline = false;
-        private bool _hasConnectivityCheckCompleted = false;
-
         // ===== CONSTRUCTOR =====
         public AdminMainViewModel(AuthService authService, ApiClient apiClient)
         {
@@ -62,13 +59,12 @@ namespace CasaCejaRemake.ViewModels.Admin
             IsCheckingConnection = true;
             try
             {
+                var wasOnline = IsOnline;
                 var isOnlineNow = await _apiClient.IsServerAvailableAsync();
-                if (!_hasConnectivityCheckCompleted)
-                {
-                    if (!isOnlineNow) _wasOffline = true;
-                    _hasConnectivityCheckCompleted = true;
-                }
                 IsOnline = isOnlineNow;
+
+                if (!wasOnline && isOnlineNow)
+                    _ = ShowOnlineBannerAsync();
             }
             catch { IsOnline = false; }
             finally { IsCheckingConnection = false; }
@@ -96,12 +92,6 @@ namespace CasaCejaRemake.ViewModels.Admin
             catch (OperationCanceledException)
             {
             }
-        }
-
-        partial void OnIsOnlineChanged(bool value)
-        {
-            if (value && _wasOffline) _ = ShowOnlineBannerAsync();
-            if (!value) _wasOffline = true;
         }
 
         private async System.Threading.Tasks.Task ShowOnlineBannerAsync()

@@ -21,6 +21,8 @@ namespace CasaCejaRemake.ViewModels.Shared
         private readonly int _branchId;
         private readonly bool _isAdminMode;
         private readonly User? _existingUser;
+        private readonly ApiClient? _apiClient;
+        private Avalonia.Controls.Window? _parentWindow;
 
         // ============ CAMPOS DEL FORMULARIO ============
 
@@ -77,6 +79,7 @@ namespace CasaCejaRemake.ViewModels.Shared
             _branchId = branchId;
             _isAdminMode = isAdminMode;
             _existingUser = existingUser;
+            _apiClient = userService.ApiClient;
             _isEditing = existingUser != null;
             _isReadOnly = isReadOnly;
 
@@ -86,6 +89,11 @@ namespace CasaCejaRemake.ViewModels.Shared
             {
                 PopulateFromUser(_existingUser);
             }
+        }
+
+        public void SetParentWindow(Avalonia.Controls.Window parentWindow)
+        {
+            _parentWindow = parentWindow;
         }
 
         private void LoadRoles()
@@ -151,6 +159,12 @@ namespace CasaCejaRemake.ViewModels.Shared
                 return;
             }
 
+            if (_isAdminMode)
+            {
+                await SaveAdminAsync();
+                return;
+            }
+
             IsSaving = true;
 
             try
@@ -167,6 +181,62 @@ namespace CasaCejaRemake.ViewModels.Shared
             finally
             {
                 IsSaving = false;
+            }
+        }
+
+        private async Task SaveAdminAsync()
+        {
+            if (_parentWindow == null || _apiClient == null)
+            {
+                HasError = true;
+                StatusMessage = "No se pudo iniciar el guardado administrador.";
+                return;
+            }
+
+            string? operationMessage = null;
+            var isUpdating = IsEditing && _existingUser != null;
+
+            var success = await CasaCejaRemake.Helpers.AdminOperationHelper.ExecuteAsync(
+                _parentWindow,
+                _apiClient,
+                async () =>
+                {
+                    if (isUpdating)
+                    {
+                        var updateResult = await _userService.UpdateUserAsync(_existingUser!, true, string.IsNullOrWhiteSpace(Password) ? null : Password);
+                        operationMessage = updateResult.Message;
+                        return updateResult;
+                    }
+
+                    var user = new User
+                    {
+                        Name = Name.Trim(),
+                        Email = Email.Trim(),
+                        Phone = Phone.Trim(),
+                        Username = Username.Trim(),
+                        Password = Password,
+                        UserType = SelectedRole?.Id ?? _userService.GetCashierRoleId(),
+                        BranchId = _branchId > 0 ? _branchId : (int?)null
+                    };
+
+                    var createResult = await _userService.CreateUserAsync(user, true);
+                    operationMessage = createResult.Message;
+                    return createResult;
+                },
+                isUpdating ? "Usuario actualizado exitosamente." : "Usuario creado exitosamente.",
+                onBusy: () => IsSaving = true,
+                onIdle: () => IsSaving = false);
+
+            if (success)
+            {
+                StatusMessage = operationMessage ?? string.Empty;
+                HasError = false;
+                CloseRequested?.Invoke(this, EventArgs.Empty);
+            }
+            else
+            {
+                StatusMessage = operationMessage ?? StatusMessage;
+                HasError = true;
             }
         }
 
@@ -203,31 +273,44 @@ namespace CasaCejaRemake.ViewModels.Shared
         {
             if (_existingUser == null) return;
 
-            _existingUser.Name = Name.Trim();
-            _existingUser.Email = Email.Trim();
-            _existingUser.Phone = Phone.Trim();
-            _existingUser.Username = Username.Trim();
+            string? newPlainPassword = !string.IsNullOrWhiteSpace(Password) ? Password : null;
 
-            // Capturar nueva contraseña en texto plano antes de modificar el objeto
-            string? newPlainPassword = null;
-            if (!string.IsNullOrWhiteSpace(Password))
+            var userToUpdate = new User
             {
-                newPlainPassword = Password;
-                // Para modo no-admin: mantener comportamiento anterior (contraseña en el objeto)
-                if (!_isAdminMode)
-                    _existingUser.Password = Password;
-            }
+                Id = _existingUser.Id,
+                Name = Name.Trim(),
+                Email = Email.Trim(),
+                Phone = Phone.Trim(),
+                Username = Username.Trim(),
+                UserType = _isAdminMode && SelectedRole != null
+                    ? SelectedRole.Id
+                    : _existingUser.UserType,
+                BranchId = _existingUser.BranchId,
+                Active = _existingUser.Active,
+                Password = _existingUser.Password,
+                CreatedAt = _existingUser.CreatedAt,
+                UpdatedAt = DateTime.Now,
+                SyncStatus = _existingUser.SyncStatus,
+                LastSync = _existingUser.LastSync,
+                RoleName = _existingUser.RoleName,
+            };
 
-            // Solo cambiar rol en modo Admin
-            if (_isAdminMode && SelectedRole != null)
-            {
-                _existingUser.UserType = SelectedRole.Id;
-            }
+            if (!_isAdminMode && newPlainPassword != null)
+                userToUpdate.Password = newPlainPassword;
 
-            var result = await _userService.UpdateUserAsync(_existingUser, _isAdminMode, newPlainPassword);
+            var result = await _userService.UpdateUserAsync(userToUpdate, _isAdminMode, newPlainPassword);
 
             if (result.Success)
             {
+                _existingUser.Name = userToUpdate.Name;
+                _existingUser.Email = userToUpdate.Email;
+                _existingUser.Phone = userToUpdate.Phone;
+                _existingUser.Username = userToUpdate.Username;
+                _existingUser.UserType = userToUpdate.UserType;
+                _existingUser.Password = userToUpdate.Password;
+                _existingUser.UpdatedAt = userToUpdate.UpdatedAt;
+                _existingUser.SyncStatus = userToUpdate.SyncStatus;
+
                 StatusMessage = result.Message;
                 HasError = false;
                 SaveCompleted?.Invoke(this, EventArgs.Empty);

@@ -33,6 +33,7 @@ namespace CasaCejaRemake.Views.Shared
             if (DataContext is UserFormViewModel vm)
             {
                 _viewModel = vm;
+                _viewModel.SetParentWindow(this);
                 _viewModel.CloseRequested += OnCloseRequested;
                 _viewModel.SaveCompleted += OnSaveCompleted;
             }

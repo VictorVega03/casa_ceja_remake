@@ -102,7 +102,7 @@ namespace CasaCejaRemake.Services
                     active             = product.Active,
                 };
 
-                Models.DTOs.ApiResponse<Product>? response;
+                ApiResult<Product>? response;
                 bool isNew = product.Id == 0;
                 if (isNew)
                 {
@@ -114,14 +114,20 @@ namespace CasaCejaRemake.Services
                     response = await _apiClient.PutAsync<Product>($"/api/v1/admin/products/{product.Id}", payload);
                 }
 
+                if (response?.IsNetworkError == true)
+                    return (false, "Sin conexión al servidor. Verifica tu red e intenta de nuevo.", 0);
+
+                if (response?.IsServerError == true)
+                    return (false, response.ServerMessage ?? "No se pudo guardar el producto en el servidor.", 0);
+
                 if (response?.IsSuccess != true || response.Data == null)
-                    return (false, response?.Message ?? "No se pudo guardar el producto en el servidor. Verifique que el código de barras no esté duplicado.", 0);
+                    return (false, response?.ServerMessage ?? "No se pudo guardar el producto en el servidor.", 0);
 
                 product.Id = response.Data.Id;
                 product.SyncStatus = 2;
                 product.LastSync = DateTime.Now;
                 await _productRepository.UpsertAsync(product);
-                return (true, response.Message, product.Id);
+                return (true, response.ServerMessage ?? string.Empty, product.Id);
             }
             else
             {
@@ -168,7 +174,7 @@ namespace CasaCejaRemake.Services
             if (isAdminMode)
             {
                 var payload = new { name = category.Name, active = category.Active };
-                Models.DTOs.ApiResponse<Category>? response;
+                ApiResult<Category>? response;
                 bool isNew = category.Id == 0;
                 if (isNew)
                 {
@@ -180,14 +186,20 @@ namespace CasaCejaRemake.Services
                     response = await _apiClient.PutAsync<Category>($"/api/v1/admin/categories/{category.Id}", payload);
                 }
 
+                if (response?.IsNetworkError == true)
+                    return (false, "Sin conexión al servidor. Verifica tu red e intenta de nuevo.", 0);
+
+                if (response?.IsServerError == true)
+                    return (false, response.ServerMessage ?? "No se pudo guardar la categoría.", 0);
+
                 if (response?.IsSuccess != true || response.Data == null)
-                    return (false, response?.Message ?? "No se pudo guardar la categoría. El nombre puede estar duplicado o no hay conexión.", 0);
+                    return (false, response?.ServerMessage ?? "No se pudo guardar la categoría.", 0);
 
                 category.Id = response.Data.Id;
                 category.SyncStatus = 2;
                 category.LastSync = DateTime.Now;
                 await _categoryRepository.UpsertAsync(category);
-                return (true, response.Message, category.Id);
+                return (true, response.ServerMessage ?? string.Empty, category.Id);
             }
             else
             {
@@ -225,7 +237,7 @@ namespace CasaCejaRemake.Services
             if (isAdminMode)
             {
                 var payload = new { name = unit.Name, active = unit.Active };
-                Models.DTOs.ApiResponse<Unit>? response;
+                ApiResult<Unit>? response;
                 bool isNew = unit.Id == 0;
                 if (isNew)
                 {
@@ -237,14 +249,20 @@ namespace CasaCejaRemake.Services
                     response = await _apiClient.PutAsync<Unit>($"/api/v1/admin/units/{unit.Id}", payload);
                 }
 
+                if (response?.IsNetworkError == true)
+                    return (false, "Sin conexión al servidor. Verifica tu red e intenta de nuevo.", 0);
+
+                if (response?.IsServerError == true)
+                    return (false, response.ServerMessage ?? "No se pudo guardar la medida.", 0);
+
                 if (response?.IsSuccess != true || response.Data == null)
-                    return (false, response?.Message ?? "No se pudo guardar la medida. El nombre puede estar duplicado o no hay conexión.", 0);
+                    return (false, response?.ServerMessage ?? "No se pudo guardar la medida.", 0);
 
                 unit.Id = response.Data.Id;
                 unit.SyncStatus = 2;
                 unit.LastSync = DateTime.Now;
                 await _unitRepository.UpsertAsync(unit);
-                return (true, response.Message, unit.Id);
+                return (true, response.ServerMessage ?? string.Empty, unit.Id);
             }
             else
             {

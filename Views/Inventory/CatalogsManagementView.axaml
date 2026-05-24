@@ -101,7 +101,7 @@
         </Style>
     </Window.Styles>
 
-    <Grid RowDefinitions="Auto,*">
+    <Grid RowDefinitions="Auto,*" IsEnabled="{Binding !IsSaving}">
 
         <!-- Header -->
         <Border Grid.Row="0" Background="#212121" BorderBrush="#2E2E2E" BorderThickness="0,0,0,1" Padding="24,14,16,14">

@@ -20,6 +20,7 @@ namespace CasaCejaRemake.Views.Inventory
         {
             if (DataContext is ProductFormViewModel vm)
             {
+                vm.SetParentWindow(this);
                 vm.StartSaveConfirmation += async (s, args) =>
                 {
                     bool res = await DialogHelper.ShowConfirmDialog(this, "Guardar", "¿Confirmar guardado?");

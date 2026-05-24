@@ -4,7 +4,9 @@ using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CasaCejaRemake.Models;
+using CasaCejaRemake.Helpers;
 using CasaCejaRemake.Services;
+using Avalonia.Controls;
 
 namespace CasaCejaRemake.ViewModels.Inventory
 {
@@ -25,7 +27,9 @@ namespace CasaCejaRemake.ViewModels.Inventory
     public partial class ProductFormViewModel : ViewModelBase
     {
         private readonly InventoryService _inventoryService;
+        private readonly ApiClient _apiClient;
         private readonly Product _product;
+        private Window? _parentWindow;
 
         [ObservableProperty]
         private string _barcode = string.Empty;
@@ -76,6 +80,9 @@ namespace CasaCejaRemake.ViewModels.Inventory
         private bool _isReadOnlyView = false;
 
         [ObservableProperty]
+        private bool _isSaving = false;
+
+        [ObservableProperty]
         private string _initialQuantity = "0";
 
         public ObservableCollection<Category> Categories { get; } = new();
@@ -89,9 +96,10 @@ namespace CasaCejaRemake.ViewModels.Inventory
         private readonly int _currentBranchId;
         private readonly bool _isAdminMode;
 
-        public ProductFormViewModel(InventoryService inventoryService, int branchId, Product? product = null, bool isAdminMode = false)
+        public ProductFormViewModel(InventoryService inventoryService, ApiClient apiClient, int branchId, Product? product = null, bool isAdminMode = false)
         {
             _inventoryService = inventoryService;
+            _apiClient = apiClient;
             _currentBranchId = branchId;
             _isAdminMode = isAdminMode;
             
@@ -119,6 +127,11 @@ namespace CasaCejaRemake.ViewModels.Inventory
             }
             
             _ = InitializeAsync();
+        }
+
+        public void SetParentWindow(Window parentWindow)
+        {
+            _parentWindow = parentWindow;
         }
 
         private async Task InitializeAsync()
@@ -238,6 +251,12 @@ namespace CasaCejaRemake.ViewModels.Inventory
 
         public async Task ConfirmSaveAsync()
         {
+            if (_isAdminMode)
+            {
+                await ConfirmAdminSaveAsync();
+                return;
+            }
+
             try
             {
                 if (IsMultipleMode)
@@ -280,6 +299,75 @@ namespace CasaCejaRemake.ViewModels.Inventory
             catch (Exception ex)
             {
                 StatusMessage = $"Error al guardar: {ex.Message}";
+            }
+        }
+
+        private async Task ConfirmAdminSaveAsync()
+        {
+            if (_parentWindow == null)
+            {
+                StatusMessage = "No se pudo abrir el diálogo de guardado.";
+                return;
+            }
+
+            string? operationMessage = null;
+            var successMessage = IsMultipleMode ? "Productos guardados" : "Producto guardado";
+
+            var success = await AdminOperationHelper.ExecuteAsync(
+                _parentWindow,
+                _apiClient,
+                async () =>
+                {
+                    if (IsMultipleMode)
+                    {
+                        if (PendingProducts.Count == 0)
+                        {
+                            operationMessage = "No hay productos en la lista para agregar.";
+                            return (false, operationMessage);
+                        }
+
+                        foreach (var pendingEntry in PendingProducts)
+                        {
+                            var result = await _inventoryService.SaveProductAsync(pendingEntry.Product, true);
+                            if (!result.Success)
+                            {
+                                operationMessage = $"Error en '{pendingEntry.Name}': {result.Message}";
+                                return (false, operationMessage);
+                            }
+                        }
+
+                        operationMessage = $"{PendingProducts.Count} productos guardados.";
+                        return (true, operationMessage);
+                    }
+
+                    if (!await ValidateCurrentProductAsync())
+                    {
+                        operationMessage = StatusMessage;
+                        return (false, operationMessage ?? string.Empty);
+                    }
+
+                    var singleProduct = CreateProductFromForm();
+                    var saveResult = await _inventoryService.SaveProductAsync(singleProduct, true);
+                    operationMessage = saveResult.Message;
+                    return (saveResult.Success, saveResult.Message);
+                },
+                successMessage,
+                onBusy: () => IsSaving = true,
+                onIdle: () => IsSaving = false);
+
+            if (success)
+            {
+                if (IsMultipleMode)
+                {
+                    PendingProducts.Clear();
+                }
+
+                StatusMessage = operationMessage ?? "Guardado correctamente.";
+                SaveCompleted?.Invoke(this, EventArgs.Empty);
+            }
+            else if (!string.IsNullOrWhiteSpace(operationMessage))
+            {
+                StatusMessage = operationMessage;
             }
         }
 

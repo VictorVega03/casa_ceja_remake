@@ -39,6 +39,7 @@ namespace CasaCejaRemake.Views.Inventory
             if (DataContext is CatalogsManagementViewModel vm)
             {
                 _viewModel = vm;
+                vm.SetParentWindow(this);
                 vm.ShowErrorRequested += async (s, errorMsg) =>
                 {
                     await DialogHelper.ShowMessageDialog(this, "Aviso", errorMsg);
@@ -173,8 +174,11 @@ namespace CasaCejaRemake.Views.Inventory
             newName = newName.Trim();
             if (string.IsNullOrEmpty(newName) || newName == vm.SelectedCategory.Name) return;
 
+            var originalName = vm.SelectedCategory.Name;
             vm.SelectedCategory.Name = newName;
-            await vm.SaveCategoryEditAsync(vm.SelectedCategory);
+            var success = await vm.SaveCategoryEditAsync(vm.SelectedCategory);
+            if (!success)
+                vm.SelectedCategory.Name = originalName;
         }
 
         private async void OnAddUnitClick(object? sender, RoutedEventArgs e)
@@ -206,8 +210,11 @@ namespace CasaCejaRemake.Views.Inventory
             newName = newName.Trim();
             if (string.IsNullOrEmpty(newName) || newName == vm.SelectedUnit.Name) return;
 
+            var originalName = vm.SelectedUnit.Name;
             vm.SelectedUnit.Name = newName;
-            await vm.SaveUnitEditAsync(vm.SelectedUnit);
+            var success = await vm.SaveUnitEditAsync(vm.SelectedUnit);
+            if (!success)
+                vm.SelectedUnit.Name = originalName;
         }
     }
 }
