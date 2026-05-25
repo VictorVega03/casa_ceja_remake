@@ -166,11 +166,18 @@
                     </DataGrid>
 
                     <!-- Action bar -->
-                    <Grid Grid.Row="2" ColumnDefinitions="*,Auto" Margin="0,12,0,0">
+                    <Grid Grid.Row="2" ColumnDefinitions="*,Auto,8,Auto" Margin="0,12,0,0">
                         <TextBlock Grid.Column="0"
                                    Text="Selecciona un elemento para editar"
                                    FontSize="12" Foreground="#555" VerticalAlignment="Center"/>
-                        <Button Grid.Column="1" Classes="edit-btn"
+                        <Button Grid.Column="1" Classes="danger"
+                                Command="{Binding DeactivateCategoryCommand}"
+                                CommandParameter="{Binding SelectedCategory}"
+                                IsEnabled="{Binding SelectedCategory, Converter={x:Static ObjectConverters.IsNotNull}}"
+                                IsVisible="{Binding IsAdminMode}">
+                            Eliminar
+                        </Button>
+                        <Button Grid.Column="3" Classes="edit-btn"
                                 Click="OnEditCategoryClick"
                                 IsEnabled="{Binding SelectedCategory, Converter={x:Static ObjectConverters.IsNotNull}}">
                             Editar
@@ -217,11 +224,18 @@
                     </DataGrid>
 
                     <!-- Action bar -->
-                    <Grid Grid.Row="2" ColumnDefinitions="*,Auto" Margin="0,12,0,0">
+                    <Grid Grid.Row="2" ColumnDefinitions="*,Auto,8,Auto" Margin="0,12,0,0">
                         <TextBlock Grid.Column="0"
                                    Text="Selecciona un elemento para editar"
                                    FontSize="12" Foreground="#555" VerticalAlignment="Center"/>
-                        <Button Grid.Column="1" Classes="edit-btn"
+                        <Button Grid.Column="1" Classes="danger"
+                                Command="{Binding DeactivateUnitCommand}"
+                                CommandParameter="{Binding SelectedUnit}"
+                                IsEnabled="{Binding SelectedUnit, Converter={x:Static ObjectConverters.IsNotNull}}"
+                                IsVisible="{Binding IsAdminMode}">
+                            Eliminar
+                        </Button>
+                        <Button Grid.Column="3" Classes="edit-btn"
                                 Click="OnEditUnitClick"
                                 IsEnabled="{Binding SelectedUnit, Converter={x:Static ObjectConverters.IsNotNull}}">
                             Editar

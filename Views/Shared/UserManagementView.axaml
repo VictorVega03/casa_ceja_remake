@@ -191,7 +191,7 @@
                             Command="{Binding DeactivateUserCommand}"
                             IsVisible="{Binding CanDeactivate}"
                             IsEnabled="{Binding SelectedUser, Converter={x:Static ObjectConverters.IsNotNull}}"
-                            Content="Desactivar Usuario"
+                            Content="Eliminar Usuario"
                             Padding="15,8"/>
                     
                     <Button Command="{Binding EditUserCommand}"

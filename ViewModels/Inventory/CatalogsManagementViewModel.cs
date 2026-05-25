@@ -1,6 +1,7 @@
 using CasaCejaRemake.Models;
 using CasaCejaRemake.Helpers;
 using CasaCejaRemake.Services;
+using casa_ceja_remake.Helpers;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Avalonia.Controls;
@@ -16,6 +17,8 @@ namespace CasaCejaRemake.ViewModels.Inventory
         private readonly InventoryService _inventoryService;
         private readonly ApiClient _apiClient;
         private Window? _parentWindow;
+
+        public bool IsAdminMode { get; }
 
         public event EventHandler? GoBackRequested;
         public event EventHandler? CloseRequested;
@@ -39,10 +42,11 @@ namespace CasaCejaRemake.ViewModels.Inventory
         [ObservableProperty]
         private bool _isSaving = false;
 
-        public CatalogsManagementViewModel(InventoryService inventoryService, ApiClient apiClient)
+        public CatalogsManagementViewModel(InventoryService inventoryService, ApiClient apiClient, bool isAdminMode = false)
         {
             _inventoryService = inventoryService;
             _apiClient = apiClient;
+            IsAdminMode = isAdminMode;
             _ = LoadDataAsync();
         }
 
@@ -167,6 +171,68 @@ namespace CasaCejaRemake.ViewModels.Inventory
             }
 
             return false;
+        }
+
+        [RelayCommand]
+        private async Task DeactivateCategoryAsync(Category? category)
+        {
+            if (category == null || _parentWindow == null) return;
+
+            bool confirmed = await DialogHelper.ShowConfirmDialog(
+                _parentWindow,
+                "Eliminar categoría",
+                $"¿Estás seguro de que deseas eliminar la categoría '{category.Name}'?\nEsta acción no se puede deshacer.");
+
+            if (!confirmed) return;
+
+            var success = await AdminOperationHelper.ExecuteAsync(
+                _parentWindow,
+                _apiClient,
+                async () =>
+                {
+                    var result = await _inventoryService.DeactivateCategoryAsync(category);
+                    return (result.Success, result.Message);
+                },
+                $"Categoría '{category.Name}' eliminada exitosamente.",
+                onBusy: () => IsSaving = true,
+                onIdle: () => IsSaving = false);
+
+            if (success)
+            {
+                SelectedCategory = null;
+                await LoadDataAsync();
+            }
+        }
+
+        [RelayCommand]
+        private async Task DeactivateUnitAsync(Unit? unit)
+        {
+            if (unit == null || _parentWindow == null) return;
+
+            bool confirmed = await DialogHelper.ShowConfirmDialog(
+                _parentWindow,
+                "Eliminar medida",
+                $"¿Estás seguro de que deseas eliminar la medida '{unit.Name}'?\nEsta acción no se puede deshacer.");
+
+            if (!confirmed) return;
+
+            var success = await AdminOperationHelper.ExecuteAsync(
+                _parentWindow,
+                _apiClient,
+                async () =>
+                {
+                    var result = await _inventoryService.DeactivateUnitAsync(unit);
+                    return (result.Success, result.Message);
+                },
+                $"Medida '{unit.Name}' eliminada exitosamente.",
+                onBusy: () => IsSaving = true,
+                onIdle: () => IsSaving = false);
+
+            if (success)
+            {
+                SelectedUnit = null;
+                await LoadDataAsync();
+            }
         }
 
         [RelayCommand]

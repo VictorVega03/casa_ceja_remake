@@ -1059,7 +1059,7 @@ namespace CasaCejaRemake
                 return;
             }
 
-            var catalogsViewModel = new ViewModels.Inventory.CatalogsManagementViewModel(_inventoryService, ApiClient!);
+            var catalogsViewModel = new ViewModels.Inventory.CatalogsManagementViewModel(_inventoryService, ApiClient!, isAdminMode: true);
             var catalogsView = new Views.Inventory.CatalogsManagementView
             {
                 DataContext = catalogsViewModel

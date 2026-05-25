@@ -184,12 +184,33 @@ namespace CasaCejaRemake.Services
             return (true, response.ServerMessage ?? string.Empty, category.Id);
         }
 
+        public async Task<(bool Success, string Message)> DeactivateCategoryAsync(Category category)
+        {
+            if (_apiClient == null)
+                return (false, "Sin conexión al servidor. Verifica tu red e intenta de nuevo.");
+
+            var payload = new { name = category.Name, active = false };
+            var response = await _apiClient.PutAsync<Category>($"/api/v1/admin/categories/{category.Id}", payload);
+
+            if (response?.IsNetworkError == true)
+                return (false, "Sin conexión al servidor. Verifica tu red e intenta de nuevo.");
+
+            if (response?.IsServerError == true || response?.IsSuccess != true)
+                return (false, response?.ServerMessage ?? "No se pudo desactivar la categoría.");
+
+            category.Active     = false;
+            category.UpdatedAt  = DateTime.Now;
+            category.SyncStatus = 2;
+            category.LastSync   = DateTime.Now;
+            await _categoryRepository.UpdateAsync(category);
+            return (true, $"Categoría '{category.Name}' eliminada exitosamente.");
+        }
+
         public async Task<bool> DeleteCategoryAsync(int id)
         {
             var category = await _categoryRepository.GetByIdAsync(id);
             if (category == null) return false;
 
-            // Optional: verify if used in products
             var products = await _productRepository.FindAsync(p => p.CategoryId == id);
             if (products.Count > 0) return false;
 
@@ -230,12 +251,33 @@ namespace CasaCejaRemake.Services
             return (true, response.ServerMessage ?? string.Empty, unit.Id);
         }
 
+        public async Task<(bool Success, string Message)> DeactivateUnitAsync(Unit unit)
+        {
+            if (_apiClient == null)
+                return (false, "Sin conexión al servidor. Verifica tu red e intenta de nuevo.");
+
+            var payload = new { name = unit.Name, active = false };
+            var response = await _apiClient.PutAsync<Unit>($"/api/v1/admin/units/{unit.Id}", payload);
+
+            if (response?.IsNetworkError == true)
+                return (false, "Sin conexión al servidor. Verifica tu red e intenta de nuevo.");
+
+            if (response?.IsServerError == true || response?.IsSuccess != true)
+                return (false, response?.ServerMessage ?? "No se pudo desactivar la medida.");
+
+            unit.Active     = false;
+            unit.UpdatedAt  = DateTime.Now;
+            unit.SyncStatus = 2;
+            unit.LastSync   = DateTime.Now;
+            await _unitRepository.UpdateAsync(unit);
+            return (true, $"Medida '{unit.Name}' eliminada exitosamente.");
+        }
+
         public async Task<bool> DeleteUnitAsync(int id)
         {
             var unit = await _unitRepository.GetByIdAsync(id);
             if (unit == null) return false;
 
-            // Optional: verify if used in products
             var products = await _productRepository.FindAsync(p => p.UnitId == id);
             if (products.Count > 0) return false;
 
