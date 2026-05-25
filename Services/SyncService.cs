@@ -857,7 +857,8 @@ namespace CasaCejaRemake.Services
                         }
                         else
                         {
-                            await _userRepo.AddAsync(serverUser);
+                            // Usar el ID asignado por el servidor para mantener consistencia
+                            await _userRepo.AddWithExplicitIdAsync(serverUser);
                         }
                     }
 

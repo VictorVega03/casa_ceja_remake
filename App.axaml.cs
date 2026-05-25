@@ -1003,7 +1003,7 @@ namespace CasaCejaRemake
 
             viewModel.ProductFormRequested += (s, product) =>
             {
-                var formViewModel = new ViewModels.Inventory.ProductFormViewModel(_inventoryService, ApiClient!, branchId, product, isAdminMode: true);
+                var formViewModel = new ViewModels.Inventory.ProductFormViewModel(_inventoryService, ApiClient!, branchId, product);
                 var formView = new Views.Inventory.ProductFormView
                 {
                     DataContext = formViewModel
@@ -1059,7 +1059,7 @@ namespace CasaCejaRemake
                 return;
             }
 
-            var catalogsViewModel = new ViewModels.Inventory.CatalogsManagementViewModel(_inventoryService, ApiClient!, isAdminMode: true);
+            var catalogsViewModel = new ViewModels.Inventory.CatalogsManagementViewModel(_inventoryService, ApiClient!);
             var catalogsView = new Views.Inventory.CatalogsManagementView
             {
                 DataContext = catalogsViewModel

@@ -127,6 +127,8 @@ namespace CasaCejaRemake.ViewModels.Shared
 
         private void PopulateFromUser(User user)
         {
+            Console.WriteLine($"[UserFormVM] PopulateFromUser — user.Name='{user.Name}', user.Username='{user.Username}'");
+
             Name = user.Name;
             Email = user.Email;
             Phone = user.Phone;
@@ -146,11 +148,9 @@ namespace CasaCejaRemake.ViewModels.Shared
         [RelayCommand]
         private async Task SaveAsync()
         {
-            // Limpiar estado previo
             HasError = false;
             StatusMessage = string.Empty;
 
-            // Validaciones del formulario
             var validationError = ValidateForm();
             if (validationError != null)
             {
@@ -159,37 +159,17 @@ namespace CasaCejaRemake.ViewModels.Shared
                 return;
             }
 
-            if (_isAdminMode)
-            {
-                await SaveAdminAsync();
-                return;
-            }
-
-            IsSaving = true;
-
-            try
-            {
-                if (IsEditing && _existingUser != null)
-                {
-                    await UpdateExistingUser();
-                }
-                else
-                {
-                    await CreateNewUser();
-                }
-            }
-            finally
-            {
-                IsSaving = false;
-            }
+            await SaveServerFirstAsync();
         }
 
-        private async Task SaveAdminAsync()
+        private async Task SaveServerFirstAsync()
         {
+            Console.WriteLine($"[UserFormVM] SaveServerFirstAsync — IsEditing={IsEditing}, _parentWindow={(_parentWindow != null ? "OK" : "NULL")}, _apiClient={(_apiClient != null ? "OK" : "NULL")}");
+
             if (_parentWindow == null || _apiClient == null)
             {
                 HasError = true;
-                StatusMessage = "No se pudo iniciar el guardado administrador.";
+                StatusMessage = "No se pudo iniciar el guardado. Verifica la conexión al servidor.";
                 return;
             }
 
@@ -203,23 +183,48 @@ namespace CasaCejaRemake.ViewModels.Shared
                 {
                     if (isUpdating)
                     {
-                        var updateResult = await _userService.UpdateUserAsync(_existingUser!, true, string.IsNullOrWhiteSpace(Password) ? null : Password);
+                        Console.WriteLine($"[UserFormVM] Formulario actual — Name='{Name}', Username='{Username}'");
+                        Console.WriteLine($"[UserFormVM] _existingUser actual — Name='{_existingUser?.Name}', Username='{_existingUser?.Username}'");
+
+                        var userToUpdate = new User
+                        {
+                            Id         = _existingUser!.Id,
+                            Name       = Name.Trim(),
+                            Email      = Email.Trim(),
+                            Phone      = Phone.Trim(),
+                            Username   = Username.Trim(),
+                            UserType   = SelectedRole?.Id ?? _existingUser.UserType,
+                            BranchId   = _existingUser.BranchId,
+                            Active     = _existingUser.Active,
+                            Password   = _existingUser.Password,
+                            CreatedAt  = _existingUser.CreatedAt,
+                            UpdatedAt  = DateTime.Now,
+                            SyncStatus = _existingUser.SyncStatus,
+                            LastSync   = _existingUser.LastSync,
+                            RoleName   = _existingUser.RoleName,
+                        };
+
+                        Console.WriteLine($"[UserFormVM] userToUpdate construido — Name='{userToUpdate.Name}', Username='{userToUpdate.Username}'");
+
+                        string? newPlainPassword = string.IsNullOrWhiteSpace(Password) ? null : Password;
+                        var updateResult = await _userService.UpdateUserAsync(userToUpdate, newPlainPassword);
+                        Console.WriteLine($"[UserFormVM] UpdateUserAsync retornó — Success={updateResult.Success}, Message='{updateResult.Message}'");
                         operationMessage = updateResult.Message;
                         return updateResult;
                     }
 
                     var user = new User
                     {
-                        Name = Name.Trim(),
-                        Email = Email.Trim(),
-                        Phone = Phone.Trim(),
+                        Name     = Name.Trim(),
+                        Email    = Email.Trim(),
+                        Phone    = Phone.Trim(),
                         Username = Username.Trim(),
                         Password = Password,
                         UserType = SelectedRole?.Id ?? _userService.GetCashierRoleId(),
                         BranchId = _branchId > 0 ? _branchId : (int?)null
                     };
 
-                    var createResult = await _userService.CreateUserAsync(user, true);
+                    var createResult = await _userService.CreateUserAsync(user);
                     operationMessage = createResult.Message;
                     return createResult;
                 },
@@ -231,95 +236,15 @@ namespace CasaCejaRemake.ViewModels.Shared
             {
                 StatusMessage = operationMessage ?? string.Empty;
                 HasError = false;
+                Console.WriteLine($"[UserFormVM] Éxito — operación completada para Name='{Name}'");
+                SaveCompleted?.Invoke(this, EventArgs.Empty);
                 CloseRequested?.Invoke(this, EventArgs.Empty);
             }
             else
             {
                 StatusMessage = operationMessage ?? StatusMessage;
                 HasError = true;
-            }
-        }
-
-        private async Task CreateNewUser()
-        {
-            var user = new User
-            {
-                Name = Name.Trim(),
-                Email = Email.Trim(),
-                Phone = Phone.Trim(),
-                Username = Username.Trim(),
-                Password = Password,
-                UserType = SelectedRole?.Id ?? _userService.GetCashierRoleId(),
-                BranchId = _branchId > 0 ? _branchId : (int?)null
-            };
-
-            var result = await _userService.CreateUserAsync(user, _isAdminMode);
-
-            if (result.Success)
-            {
-                StatusMessage = result.Message;
-                HasError = false;
-                SaveCompleted?.Invoke(this, EventArgs.Empty);
-                CloseRequested?.Invoke(this, EventArgs.Empty);
-            }
-            else
-            {
-                StatusMessage = result.Message;
-                HasError = true;
-            }
-        }
-
-        private async Task UpdateExistingUser()
-        {
-            if (_existingUser == null) return;
-
-            string? newPlainPassword = !string.IsNullOrWhiteSpace(Password) ? Password : null;
-
-            var userToUpdate = new User
-            {
-                Id = _existingUser.Id,
-                Name = Name.Trim(),
-                Email = Email.Trim(),
-                Phone = Phone.Trim(),
-                Username = Username.Trim(),
-                UserType = _isAdminMode && SelectedRole != null
-                    ? SelectedRole.Id
-                    : _existingUser.UserType,
-                BranchId = _existingUser.BranchId,
-                Active = _existingUser.Active,
-                Password = _existingUser.Password,
-                CreatedAt = _existingUser.CreatedAt,
-                UpdatedAt = DateTime.Now,
-                SyncStatus = _existingUser.SyncStatus,
-                LastSync = _existingUser.LastSync,
-                RoleName = _existingUser.RoleName,
-            };
-
-            if (!_isAdminMode && newPlainPassword != null)
-                userToUpdate.Password = newPlainPassword;
-
-            var result = await _userService.UpdateUserAsync(userToUpdate, _isAdminMode, newPlainPassword);
-
-            if (result.Success)
-            {
-                _existingUser.Name = userToUpdate.Name;
-                _existingUser.Email = userToUpdate.Email;
-                _existingUser.Phone = userToUpdate.Phone;
-                _existingUser.Username = userToUpdate.Username;
-                _existingUser.UserType = userToUpdate.UserType;
-                _existingUser.Password = userToUpdate.Password;
-                _existingUser.UpdatedAt = userToUpdate.UpdatedAt;
-                _existingUser.SyncStatus = userToUpdate.SyncStatus;
-
-                StatusMessage = result.Message;
-                HasError = false;
-                SaveCompleted?.Invoke(this, EventArgs.Empty);
-                CloseRequested?.Invoke(this, EventArgs.Empty);
-            }
-            else
-            {
-                StatusMessage = result.Message;
-                HasError = true;
+                Console.WriteLine($"[UserFormVM] Fallo — operación no completada");
             }
         }
 

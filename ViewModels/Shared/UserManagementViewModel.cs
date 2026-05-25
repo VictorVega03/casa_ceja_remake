@@ -3,8 +3,10 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
+using Avalonia.Controls;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using CasaCejaRemake.Helpers;
 using CasaCejaRemake.Models;
 using CasaCejaRemake.Services;
 
@@ -18,6 +20,8 @@ namespace CasaCejaRemake.ViewModels.Shared
     {
         private readonly UserService _userService;
         private readonly AuthService _authService;
+        private readonly ApiClient? _apiClient;
+        private Window? _parentWindow;
 
         // ============ PROPIEDADES ============
 
@@ -60,7 +64,10 @@ namespace CasaCejaRemake.ViewModels.Shared
             _userService = userService ?? throw new ArgumentNullException(nameof(userService));
             _authService = authService ?? throw new ArgumentNullException(nameof(authService));
             _isAdminMode = isAdminMode;
+            _apiClient   = userService.ApiClient;
         }
+
+        public void SetParentWindow(Window window) => _parentWindow = window;
 
         /// <summary>
         /// Inicializa la vista cargando los usuarios.
@@ -116,16 +123,21 @@ namespace CasaCejaRemake.ViewModels.Shared
         [RelayCommand]
         private async Task DeactivateUserAsync()
         {
-            if (SelectedUser == null || !IsAdminMode) return;
+            if (SelectedUser == null || !IsAdminMode || _parentWindow == null || _apiClient == null) return;
 
-            // El diálogo de confirmación se maneja en el code-behind
-            var result = await _userService.DeactivateUserAsync(SelectedUser.Id);
-            StatusMessage = result.Message;
+            // El diálogo de confirmación se maneja en el code-behind antes de invocar este comando
+            var success = await AdminOperationHelper.ExecuteAsync(
+                _parentWindow,
+                _apiClient,
+                async () =>
+                {
+                    var result = await _userService.DeactivateUserAsync(SelectedUser.Id);
+                    return (result.Success, result.Message);
+                },
+                $"Usuario '{SelectedUser.Name}' desactivado exitosamente.");
 
-            if (result.Success)
-            {
+            if (success)
                 await LoadUsersAsync();
-            }
         }
 
         [RelayCommand]

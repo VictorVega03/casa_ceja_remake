@@ -80,70 +80,53 @@ namespace CasaCejaRemake.Services
             return await _productRepository.GetByIdAsync(id);
         }
 
-        public async Task<(bool Success, string Message, int Id)> SaveProductAsync(Product product, bool isAdminMode = false)
+        public async Task<(bool Success, string Message, int Id)> SaveProductAsync(Product product)
         {
             product.UpdatedAt = DateTime.Now;
 
-            if (isAdminMode)
+            var payload = new
             {
-                var payload = new
-                {
-                    barcode            = product.Barcode,
-                    name               = product.Name,
-                    category_id        = product.CategoryId > 0 ? (int?)product.CategoryId : null,
-                    unit_id            = product.UnitId > 0 ? (int?)product.UnitId : null,
-                    presentation       = product.Presentation,
-                    iva                = product.Iva,
-                    price_retail       = product.PriceRetail,
-                    price_wholesale    = product.PriceWholesale,
-                    wholesale_quantity = product.WholesaleQuantity,
-                    price_special      = product.PriceSpecial,
-                    price_dealer       = product.PriceDealer,
-                    active             = product.Active,
-                };
+                barcode            = product.Barcode,
+                name               = product.Name,
+                category_id        = product.CategoryId > 0 ? (int?)product.CategoryId : null,
+                unit_id            = product.UnitId > 0 ? (int?)product.UnitId : null,
+                presentation       = product.Presentation,
+                iva                = product.Iva,
+                price_retail       = product.PriceRetail,
+                price_wholesale    = product.PriceWholesale,
+                wholesale_quantity = product.WholesaleQuantity,
+                price_special      = product.PriceSpecial,
+                price_dealer       = product.PriceDealer,
+                active             = product.Active,
+            };
 
-                ApiResult<Product>? response;
-                bool isNew = product.Id == 0;
-                if (isNew)
-                {
-                    product.CreatedAt = DateTime.Now;
-                    response = await _apiClient.PostAsync<Product>("/api/v1/admin/products", payload);
-                }
-                else
-                {
-                    response = await _apiClient.PutAsync<Product>($"/api/v1/admin/products/{product.Id}", payload);
-                }
-
-                if (response?.IsNetworkError == true)
-                    return (false, "Sin conexión al servidor. Verifica tu red e intenta de nuevo.", 0);
-
-                if (response?.IsServerError == true)
-                    return (false, response.ServerMessage ?? "No se pudo guardar el producto en el servidor.", 0);
-
-                if (response?.IsSuccess != true || response.Data == null)
-                    return (false, response?.ServerMessage ?? "No se pudo guardar el producto en el servidor.", 0);
-
-                product.Id = response.Data.Id;
-                product.SyncStatus = 2;
-                product.LastSync = DateTime.Now;
-                await _productRepository.UpsertAsync(product);
-                return (true, response.ServerMessage ?? string.Empty, product.Id);
+            ApiResult<Product>? response;
+            bool isNew = product.Id == 0;
+            if (isNew)
+            {
+                product.CreatedAt = DateTime.Now;
+                response = await _apiClient.PostAsync<Product>("/api/v1/admin/products", payload);
             }
             else
             {
-                product.SyncStatus = 1;
-                if (product.Id == 0)
-                {
-                    product.CreatedAt = DateTime.Now;
-                    var id = await _productRepository.AddAsync(product);
-                    return (true, string.Empty, id);
-                }
-                else
-                {
-                    var id = await _productRepository.UpdateAsync(product);
-                    return (true, string.Empty, id);
-                }
+                response = await _apiClient.PutAsync<Product>($"/api/v1/admin/products/{product.Id}", payload);
             }
+
+            if (response?.IsNetworkError == true)
+                return (false, "Sin conexión al servidor. Verifica tu red e intenta de nuevo.", 0);
+
+            if (response?.IsServerError == true)
+                return (false, response.ServerMessage ?? "No se pudo guardar el producto en el servidor.", 0);
+
+            if (response?.IsSuccess != true || response.Data == null)
+                return (false, response?.ServerMessage ?? "No se pudo guardar el producto en el servidor.", 0);
+
+            // Servidor confirmó — guardar local con Id del servidor
+            product.Id         = response.Data.Id;
+            product.SyncStatus = 2;
+            product.LastSync   = DateTime.Now;
+            await _productRepository.UpsertAsync(product);
+            return (true, response.ServerMessage ?? string.Empty, product.Id);
         }
 
         public async Task<bool> IsBarcodeUniqueAsync(string barcode, int currentProductId = 0)
@@ -167,55 +150,38 @@ namespace CasaCejaRemake.Services
             return await _unitRepository.GetAllAsync();
         }
 
-        public async Task<(bool Success, string Message, int Id)> SaveCategoryAsync(Category category, bool isAdminMode = false)
+        public async Task<(bool Success, string Message, int Id)> SaveCategoryAsync(Category category)
         {
             category.UpdatedAt = DateTime.Now;
 
-            if (isAdminMode)
+            var payload = new { name = category.Name, active = category.Active };
+            ApiResult<Category>? response;
+            bool isNew = category.Id == 0;
+            if (isNew)
             {
-                var payload = new { name = category.Name, active = category.Active };
-                ApiResult<Category>? response;
-                bool isNew = category.Id == 0;
-                if (isNew)
-                {
-                    category.CreatedAt = DateTime.Now;
-                    response = await _apiClient.PostAsync<Category>("/api/v1/admin/categories", payload);
-                }
-                else
-                {
-                    response = await _apiClient.PutAsync<Category>($"/api/v1/admin/categories/{category.Id}", payload);
-                }
-
-                if (response?.IsNetworkError == true)
-                    return (false, "Sin conexión al servidor. Verifica tu red e intenta de nuevo.", 0);
-
-                if (response?.IsServerError == true)
-                    return (false, response.ServerMessage ?? "No se pudo guardar la categoría.", 0);
-
-                if (response?.IsSuccess != true || response.Data == null)
-                    return (false, response?.ServerMessage ?? "No se pudo guardar la categoría.", 0);
-
-                category.Id = response.Data.Id;
-                category.SyncStatus = 2;
-                category.LastSync = DateTime.Now;
-                await _categoryRepository.UpsertAsync(category);
-                return (true, response.ServerMessage ?? string.Empty, category.Id);
+                category.CreatedAt = DateTime.Now;
+                response = await _apiClient.PostAsync<Category>("/api/v1/admin/categories", payload);
             }
             else
             {
-                category.SyncStatus = 1;
-                if (category.Id == 0)
-                {
-                    category.CreatedAt = DateTime.Now;
-                    var id = await _categoryRepository.AddAsync(category);
-                    return (true, string.Empty, id);
-                }
-                else
-                {
-                    var id = await _categoryRepository.UpdateAsync(category);
-                    return (true, string.Empty, id);
-                }
+                response = await _apiClient.PutAsync<Category>($"/api/v1/admin/categories/{category.Id}", payload);
             }
+
+            if (response?.IsNetworkError == true)
+                return (false, "Sin conexión al servidor. Verifica tu red e intenta de nuevo.", 0);
+
+            if (response?.IsServerError == true)
+                return (false, response.ServerMessage ?? "No se pudo guardar la categoría.", 0);
+
+            if (response?.IsSuccess != true || response.Data == null)
+                return (false, response?.ServerMessage ?? "No se pudo guardar la categoría.", 0);
+
+            // Servidor confirmó — guardar local con Id del servidor
+            category.Id         = response.Data.Id;
+            category.SyncStatus = 2;
+            category.LastSync   = DateTime.Now;
+            await _categoryRepository.UpsertAsync(category);
+            return (true, response.ServerMessage ?? string.Empty, category.Id);
         }
 
         public async Task<bool> DeleteCategoryAsync(int id)
@@ -230,55 +196,38 @@ namespace CasaCejaRemake.Services
             return await _categoryRepository.DeleteAsync(category) > 0;
         }
 
-        public async Task<(bool Success, string Message, int Id)> SaveUnitAsync(Unit unit, bool isAdminMode = false)
+        public async Task<(bool Success, string Message, int Id)> SaveUnitAsync(Unit unit)
         {
             unit.UpdatedAt = DateTime.Now;
 
-            if (isAdminMode)
+            var payload = new { name = unit.Name, active = unit.Active };
+            ApiResult<Unit>? response;
+            bool isNew = unit.Id == 0;
+            if (isNew)
             {
-                var payload = new { name = unit.Name, active = unit.Active };
-                ApiResult<Unit>? response;
-                bool isNew = unit.Id == 0;
-                if (isNew)
-                {
-                    unit.CreatedAt = DateTime.Now;
-                    response = await _apiClient.PostAsync<Unit>("/api/v1/admin/units", payload);
-                }
-                else
-                {
-                    response = await _apiClient.PutAsync<Unit>($"/api/v1/admin/units/{unit.Id}", payload);
-                }
-
-                if (response?.IsNetworkError == true)
-                    return (false, "Sin conexión al servidor. Verifica tu red e intenta de nuevo.", 0);
-
-                if (response?.IsServerError == true)
-                    return (false, response.ServerMessage ?? "No se pudo guardar la medida.", 0);
-
-                if (response?.IsSuccess != true || response.Data == null)
-                    return (false, response?.ServerMessage ?? "No se pudo guardar la medida.", 0);
-
-                unit.Id = response.Data.Id;
-                unit.SyncStatus = 2;
-                unit.LastSync = DateTime.Now;
-                await _unitRepository.UpsertAsync(unit);
-                return (true, response.ServerMessage ?? string.Empty, unit.Id);
+                unit.CreatedAt = DateTime.Now;
+                response = await _apiClient.PostAsync<Unit>("/api/v1/admin/units", payload);
             }
             else
             {
-                unit.SyncStatus = 1;
-                if (unit.Id == 0)
-                {
-                    unit.CreatedAt = DateTime.Now;
-                    var id = await _unitRepository.AddAsync(unit);
-                    return (true, string.Empty, id);
-                }
-                else
-                {
-                    var id = await _unitRepository.UpdateAsync(unit);
-                    return (true, string.Empty, id);
-                }
+                response = await _apiClient.PutAsync<Unit>($"/api/v1/admin/units/{unit.Id}", payload);
             }
+
+            if (response?.IsNetworkError == true)
+                return (false, "Sin conexión al servidor. Verifica tu red e intenta de nuevo.", 0);
+
+            if (response?.IsServerError == true)
+                return (false, response.ServerMessage ?? "No se pudo guardar la medida.", 0);
+
+            if (response?.IsSuccess != true || response.Data == null)
+                return (false, response?.ServerMessage ?? "No se pudo guardar la medida.", 0);
+
+            // Servidor confirmó — guardar local con Id del servidor
+            unit.Id         = response.Data.Id;
+            unit.SyncStatus = 2;
+            unit.LastSync   = DateTime.Now;
+            await _unitRepository.UpsertAsync(unit);
+            return (true, response.ServerMessage ?? string.Empty, unit.Id);
         }
 
         public async Task<bool> DeleteUnitAsync(int id)

@@ -32,7 +32,8 @@ namespace CasaCejaRemake.Views.Shared
             if (DataContext is UserManagementViewModel vm)
             {
                 _viewModel = vm;
-                
+                _viewModel.SetParentWindow(this);
+
                 // Suscribirse a eventos
                 _viewModel.CloseRequested += OnCloseRequested;
                 _viewModel.AddUserRequested += OnAddUserRequested;
@@ -118,7 +119,25 @@ namespace CasaCejaRemake.Views.Shared
             
             if (appUserService == null) return;
 
-            var formVm = new UserFormViewModel(appUserService, isAdminMode, _viewModel.CurrentBranchId, user);
+            var userCopy = new User
+            {
+                Id = user.Id,
+                Name = user.Name,
+                Email = user.Email,
+                Phone = user.Phone,
+                Username = user.Username,
+                Password = user.Password,
+                UserType = user.UserType,
+                BranchId = user.BranchId,
+                Active = user.Active,
+                CreatedAt = user.CreatedAt,
+                UpdatedAt = user.UpdatedAt,
+                SyncStatus = user.SyncStatus,
+                LastSync = user.LastSync,
+                RoleName = user.RoleName,
+            };
+
+            var formVm = new UserFormViewModel(appUserService, isAdminMode, _viewModel.CurrentBranchId, userCopy);
             var formView = new UserFormView
             {
                 DataContext = formVm

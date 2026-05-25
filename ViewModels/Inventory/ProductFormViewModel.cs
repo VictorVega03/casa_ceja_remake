@@ -94,14 +94,12 @@ namespace CasaCejaRemake.ViewModels.Inventory
         public event EventHandler? StartSaveConfirmation;
 
         private readonly int _currentBranchId;
-        private readonly bool _isAdminMode;
 
-        public ProductFormViewModel(InventoryService inventoryService, ApiClient apiClient, int branchId, Product? product = null, bool isAdminMode = false)
+        public ProductFormViewModel(InventoryService inventoryService, ApiClient apiClient, int branchId, Product? product = null)
         {
             _inventoryService = inventoryService;
             _apiClient = apiClient;
             _currentBranchId = branchId;
-            _isAdminMode = isAdminMode;
             
             if (product != null)
             {
@@ -171,7 +169,7 @@ namespace CasaCejaRemake.ViewModels.Inventory
 
             if (CategoryId == 0 || UnitId == 0)
             {
-                StatusMessage = "Seleccione Categoría y Universo.";
+                StatusMessage = "Seleccione Categoría y Medida.";
                 return false;
             }
 
@@ -251,55 +249,7 @@ namespace CasaCejaRemake.ViewModels.Inventory
 
         public async Task ConfirmSaveAsync()
         {
-            if (_isAdminMode)
-            {
-                await ConfirmAdminSaveAsync();
-                return;
-            }
-
-            try
-            {
-                if (IsMultipleMode)
-                {
-                    if (PendingProducts.Count == 0)
-                    {
-                        StatusMessage = "No hay productos en la lista para agregar.";
-                        return;
-                    }
-
-                    foreach (var pendingEntry in PendingProducts)
-                    {
-                        var result = await _inventoryService.SaveProductAsync(pendingEntry.Product, _isAdminMode);
-                        if (!result.Success)
-                        {
-                            StatusMessage = $"Error en '{pendingEntry.Name}': {result.Message}";
-                            return;
-                        }
-                    }
-                    StatusMessage = $"{PendingProducts.Count} productos guardados.";
-                    PendingProducts.Clear();
-                    SaveCompleted?.Invoke(this, EventArgs.Empty);
-                }
-                else
-                {
-                    if (!await ValidateCurrentProductAsync()) return;
-
-                    var singleProduct = CreateProductFromForm();
-                    var result = await _inventoryService.SaveProductAsync(singleProduct, _isAdminMode);
-                    if (!result.Success)
-                    {
-                        StatusMessage = result.Message;
-                        return;
-                    }
-
-                    StatusMessage = "Guardado correctamente.";
-                    SaveCompleted?.Invoke(this, EventArgs.Empty);
-                }
-            }
-            catch (Exception ex)
-            {
-                StatusMessage = $"Error al guardar: {ex.Message}";
-            }
+            await ConfirmAdminSaveAsync();
         }
 
         private async Task ConfirmAdminSaveAsync()
@@ -328,7 +278,7 @@ namespace CasaCejaRemake.ViewModels.Inventory
 
                         foreach (var pendingEntry in PendingProducts)
                         {
-                            var result = await _inventoryService.SaveProductAsync(pendingEntry.Product, true);
+                            var result = await _inventoryService.SaveProductAsync(pendingEntry.Product);
                             if (!result.Success)
                             {
                                 operationMessage = $"Error en '{pendingEntry.Name}': {result.Message}";
@@ -347,7 +297,7 @@ namespace CasaCejaRemake.ViewModels.Inventory
                     }
 
                     var singleProduct = CreateProductFromForm();
-                    var saveResult = await _inventoryService.SaveProductAsync(singleProduct, true);
+                    var saveResult = await _inventoryService.SaveProductAsync(singleProduct);
                     operationMessage = saveResult.Message;
                     return (saveResult.Success, saveResult.Message);
                 },
