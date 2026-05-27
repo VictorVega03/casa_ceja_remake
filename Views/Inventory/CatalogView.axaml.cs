@@ -100,6 +100,13 @@ namespace CasaCejaRemake.Views.Inventory
                     return;
                 }
 
+                if (e.Key == Key.F6)
+                {
+                    vm.EditProductCommand.Execute(null);
+                    e.Handled = true;
+                    return;
+                }
+
                 if (e.Key == Key.Enter)
                 {
                     // Si el foco está en el TextBox de búsqueda, no queremos interceptar el Enter

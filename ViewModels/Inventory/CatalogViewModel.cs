@@ -62,16 +62,19 @@ namespace CasaCejaRemake.ViewModels.Inventory
         public ObservableCollection<Category> Categories { get; } = new();
         public ObservableCollection<Unit> Units { get; } = new();
 
+        public bool IsAdminMode { get; }
+
         public event EventHandler? GoBackRequested;
         public event EventHandler<Product?>? ProductFormRequested;
         public event EventHandler<Product>? ProductDetailRequested;
         public event EventHandler<(Product Product, List<ProductStockItem> Items, bool IsFromCache, List<Branch> AllBranches)>? StockDataReady;
 
-        public CatalogViewModel(InventoryService inventoryService, int branchId)
+        public CatalogViewModel(InventoryService inventoryService, int branchId, bool isAdminMode = false)
         {
             _inventoryService = inventoryService;
             _currentBranchId = branchId;
-            
+            IsAdminMode = isAdminMode;
+
             _ = InitializeAsync();
         }
 
@@ -210,6 +213,13 @@ namespace CasaCejaRemake.ViewModels.Inventory
         private void CreateProduct()
         {
             ProductFormRequested?.Invoke(this, null);
+        }
+
+        [RelayCommand]
+        private void EditProduct()
+        {
+            if (SelectedProduct == null) return;
+            RequestProductForm(SelectedProduct);
         }
 
         [RelayCommand]

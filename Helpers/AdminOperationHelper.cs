@@ -58,77 +58,109 @@ namespace CasaCejaRemake.Helpers
             }
         }
 
-        private static async Task ShowResultDialogAsync(Window parentWindow, string title, string message, string backgroundColor, string icon)
+        private static async Task ShowResultDialogAsync(Window parentWindow, string title, string message, string accentColor, string icon)
         {
+            var accent = Color.Parse(accentColor);
+
             var dialog = new Window
             {
                 Title = title,
-                Width = 360,
-                Height = 160,
+                Width = 420,
+                Height = 210,
                 WindowStartupLocation = WindowStartupLocation.CenterOwner,
                 CanResize = false,
                 ShowInTaskbar = false,
-                Background = new SolidColorBrush(Color.Parse(backgroundColor)),
+                Background = new SolidColorBrush(Color.Parse("#1A1A1A")),
             };
 
-            var root = new Border
+            // Card border with accent outline
+            var card = new Border
             {
-                Background = new SolidColorBrush(Color.Parse(backgroundColor)),
-                Padding = new Thickness(18),
-                CornerRadius = new CornerRadius(10)
+                Background = new SolidColorBrush(Color.Parse("#242424")),
+                BorderBrush = new SolidColorBrush(accent),
+                BorderThickness = new Thickness(1),
+                CornerRadius = new CornerRadius(10),
+                Padding = new Thickness(24),
+                Margin = new Thickness(16)
             };
 
-            var content = new Grid
+            var layout = new Grid
             {
-                RowDefinitions = new RowDefinitions("Auto,*,Auto"),
+                RowDefinitions = new RowDefinitions("Auto,*,Auto")
+            };
+
+            // Header row: circle icon + title
+            var headerRow = new Grid
+            {
                 ColumnDefinitions = new ColumnDefinitions("Auto,*")
             };
 
-            var iconText = new TextBlock
+            var iconCircle = new Border
+            {
+                Width = 40,
+                Height = 40,
+                CornerRadius = new CornerRadius(20),
+                Background = new SolidColorBrush(accent),
+                VerticalAlignment = VerticalAlignment.Center
+            };
+            iconCircle.Child = new TextBlock
             {
                 Text = icon,
-                FontSize = 30,
+                FontSize = 18,
+                FontWeight = FontWeight.Bold,
+                Foreground = Brushes.White,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center
+            };
+            Grid.SetColumn(iconCircle, 0);
+            headerRow.Children.Add(iconCircle);
+
+            var titleText = new TextBlock
+            {
+                Text = title,
+                FontSize = 16,
                 FontWeight = FontWeight.Bold,
                 Foreground = Brushes.White,
                 VerticalAlignment = VerticalAlignment.Center,
-                HorizontalAlignment = HorizontalAlignment.Center,
-                Margin = new Thickness(0, 0, 14, 0)
+                Margin = new Thickness(14, 0, 0, 0)
             };
-            Grid.SetRowSpan(iconText, 2);
-            content.Children.Add(iconText);
+            Grid.SetColumn(titleText, 1);
+            headerRow.Children.Add(titleText);
 
+            Grid.SetRow(headerRow, 0);
+            layout.Children.Add(headerRow);
+
+            // Message
             var messageText = new TextBlock
             {
                 Text = message,
-                Foreground = Brushes.White,
-                FontSize = 14,
+                Foreground = new SolidColorBrush(Color.Parse("#CCCCCC")),
+                FontSize = 13,
                 TextWrapping = TextWrapping.Wrap,
-                VerticalAlignment = VerticalAlignment.Center,
-                Margin = new Thickness(0, 0, 0, 10)
+                Margin = new Thickness(0, 14, 0, 0),
+                VerticalAlignment = VerticalAlignment.Top
             };
-            Grid.SetColumn(messageText, 1);
-            Grid.SetRow(messageText, 0);
-            Grid.SetRowSpan(messageText, 2);
-            content.Children.Add(messageText);
+            Grid.SetRow(messageText, 1);
+            layout.Children.Add(messageText);
 
+            // Accept button
             var button = new Button
             {
                 Content = "Aceptar",
-                Width = 92,
                 HorizontalAlignment = HorizontalAlignment.Right,
-                Background = new SolidColorBrush(Colors.White),
-                Foreground = new SolidColorBrush(Color.Parse(backgroundColor)),
+                Background = new SolidColorBrush(accent),
+                Foreground = Brushes.White,
                 BorderThickness = new Thickness(0),
-                CornerRadius = new CornerRadius(4),
-                Padding = new Thickness(14, 6)
+                CornerRadius = new CornerRadius(6),
+                Padding = new Thickness(20, 8),
+                Margin = new Thickness(0, 14, 0, 0)
             };
             button.Click += (_, _) => dialog.Close();
-            Grid.SetColumn(button, 1);
             Grid.SetRow(button, 2);
-            content.Children.Add(button);
+            layout.Children.Add(button);
 
-            root.Child = content;
-            dialog.Content = root;
+            card.Child = layout;
+            dialog.Content = card;
 
             dialog.KeyDown += (_, e) =>
             {

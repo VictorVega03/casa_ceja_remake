@@ -89,6 +89,8 @@ namespace CasaCejaRemake.ViewModels.Inventory
         public ObservableCollection<Unit> Units { get; } = new();
         public ObservableCollection<PendingProductEntry> PendingProducts { get; } = new();
 
+        public bool IsNewProduct => _product.Id == 0;
+
         public event EventHandler? SaveCompleted;
         public event EventHandler? CancelRequested;
         public event EventHandler? StartSaveConfirmation;
@@ -141,6 +143,13 @@ namespace CasaCejaRemake.ViewModels.Inventory
             var units = await _inventoryService.GetUnitsAsync();
             Units.Clear();
             foreach (var u in units) Units.Add(u);
+
+            // Re-notify after collections are populated so the ComboBox re-evaluates SelectedValue
+            if (!IsNewProduct)
+            {
+                OnPropertyChanged(nameof(CategoryId));
+                OnPropertyChanged(nameof(UnitId));
+            }
         }
 
         [RelayCommand]

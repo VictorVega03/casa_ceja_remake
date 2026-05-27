@@ -162,6 +162,22 @@
                             <TextBlock Text="Nuevo Producto (F2)" FontSize="13" VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
+
+                    <Button Command="{Binding EditProductCommand}"
+                            IsEnabled="{Binding SelectedProduct, Converter={x:Static ObjectConverters.IsNotNull}}"
+                            IsVisible="{Binding IsAdminMode}"
+                            Background="#1565C0"
+                            Foreground="White"
+                            Padding="12,7"
+                            CornerRadius="4"
+                            FontWeight="Bold"
+                            Margin="8,0,0,0"
+                            ToolTip.Tip="Editar producto seleccionado (F6)">
+                        <StackPanel Orientation="Horizontal" Spacing="4">
+                            <TextBlock Text="✏" FontSize="13" VerticalAlignment="Center"/>
+                            <TextBlock Text="Editar (F6)" FontSize="13" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
                 </StackPanel>
             </Grid>
         </Border>
@@ -197,8 +213,13 @@
 
                 <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="16" VerticalAlignment="Center">
                     <TextBlock Text="{Binding StatusMessage}" Foreground="#BDBDBD" VerticalAlignment="Center" />
-                    <TextBlock Text="F1: Buscador   |   F2: Nuevo   |   F3: Ver existencia   |   F4: Limpiar   |   F5: Buscar"
-                               FontSize="11" Foreground="#555" VerticalAlignment="Center"/>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="F1: Buscador   |   F2: Nuevo   |   F3: Ver existencia   |   F4: Limpiar   |   F5: Buscar"
+                                   FontSize="11" Foreground="#555" VerticalAlignment="Center"/>
+                        <TextBlock Text="   |   F6: Editar"
+                                   FontSize="11" Foreground="#555" VerticalAlignment="Center"
+                                   IsVisible="{Binding IsAdminMode}"/>
+                    </StackPanel>
                 </StackPanel>
 
                 <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">

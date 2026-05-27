@@ -987,7 +987,7 @@ namespace CasaCejaRemake
 
             // branchId = 0 → modo global (CatalogViewModel no filtra por sucursal)
             const int branchId = 0;
-            var viewModel = new ViewModels.Inventory.CatalogViewModel(_inventoryService, branchId);
+            var viewModel = new ViewModels.Inventory.CatalogViewModel(_inventoryService, branchId, isAdminMode: true);
 
             var catalogView = new Views.Inventory.CatalogView
             {
@@ -1004,18 +1004,21 @@ namespace CasaCejaRemake
             viewModel.ProductFormRequested += (s, product) =>
             {
                 var formViewModel = new ViewModels.Inventory.ProductFormViewModel(_inventoryService, ApiClient!, branchId, product);
-                var formView = new Views.Inventory.ProductFormView
-                {
-                    DataContext = formViewModel
-                };
 
-                formViewModel.SaveCompleted += (s2, e2) =>
+                if (product != null)
                 {
-                    formView.Close();
-                    viewModel.RefreshData();
-                };
-
-                formView.ShowDialog(catalogView);
+                    // Editar producto existente → vista dedicada, full-width
+                    var editView = new Views.Inventory.ProductEditView { DataContext = formViewModel };
+                    formViewModel.SaveCompleted += (s2, e2) => { editView.Close(); viewModel.RefreshData(); };
+                    editView.ShowDialog(catalogView);
+                }
+                else
+                {
+                    // Nuevo producto → vista de creación con modo múltiple
+                    var formView = new Views.Inventory.ProductFormView { DataContext = formViewModel };
+                    formViewModel.SaveCompleted += (s2, e2) => { formView.Close(); viewModel.RefreshData(); };
+                    formView.ShowDialog(catalogView);
+                }
             };
 
             viewModel.ProductDetailRequested += (s, product) =>

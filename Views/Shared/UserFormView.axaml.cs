@@ -86,6 +86,23 @@ namespace CasaCejaRemake.Views.Shared
             }
         }
 
+        private void OnPasswordFieldFocused(object? sender, GotFocusEventArgs e)
+        {
+            _viewModel?.OnPasswordFieldFocused();
+        }
+
+        private void OnPasswordTextChanging(object? sender, TextChangingEventArgs e)
+        {
+            if (sender is not TextBox textBox) return;
+            var text = textBox.Text ?? string.Empty;
+            if (text.Contains(' '))
+            {
+                var filtered = text.Replace(" ", "");
+                textBox.Text = filtered;
+                textBox.CaretIndex = filtered.Length;
+            }
+        }
+
         protected override void OnKeyDown(KeyEventArgs e)
         {
             if (DataContext is UserFormViewModel vm)

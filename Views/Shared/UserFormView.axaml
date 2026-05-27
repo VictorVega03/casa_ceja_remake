@@ -131,22 +131,26 @@
                                 <TextBlock Classes="label" Text="CONTRASEÑA"/>
                                 <TextBlock Classes="label" Text=" *" Foreground="#D32F2F" IsVisible="{Binding !IsEditing}"/>
                             </StackPanel>
-                            <TextBox Text="{Binding Password}" 
-                                     PasswordChar="•" 
+                            <TextBox Text="{Binding Password}"
+                                     PasswordChar="•"
                                      Watermark="{Binding PasswordWatermark}"
                                      IsTabStop="{Binding IsPasswordEnabled}"
-                                     IsEnabled="{Binding IsPasswordEnabled}"/>
+                                     IsEnabled="{Binding IsPasswordEnabled}"
+                                     GotFocus="OnPasswordFieldFocused"
+                                     TextChanging="OnPasswordTextChanging"/>
                         </StackPanel>
                         <StackPanel Grid.Column="2">
                             <StackPanel Orientation="Horizontal" Spacing="0">
                                 <TextBlock Classes="label" Text="CONFIRMAR CONTRASEÑA"/>
                                 <TextBlock Classes="label" Text=" *" Foreground="#D32F2F" IsVisible="{Binding !IsEditing}"/>
                             </StackPanel>
-                            <TextBox Text="{Binding ConfirmPassword}" 
-                                     PasswordChar="•" 
+                            <TextBox Text="{Binding ConfirmPassword}"
+                                     PasswordChar="•"
                                      Watermark="{Binding PasswordWatermark}"
                                      IsTabStop="{Binding IsPasswordEnabled}"
-                                     IsEnabled="{Binding IsPasswordEnabled}"/>
+                                     IsEnabled="{Binding IsPasswordEnabled}"
+                                     GotFocus="OnPasswordFieldFocused"
+                                     TextChanging="OnPasswordTextChanging"/>
                         </StackPanel>
                     </Grid>
 

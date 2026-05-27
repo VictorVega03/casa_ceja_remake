@@ -23,6 +23,7 @@ namespace CasaCejaRemake.ViewModels.Shared
         private readonly User? _existingUser;
         private readonly ApiClient? _apiClient;
         private Avalonia.Controls.Window? _parentWindow;
+        private bool _passwordActivated = false;
 
         // ============ CAMPOS DEL FORMULARIO ============
 
@@ -51,13 +52,13 @@ namespace CasaCejaRemake.ViewModels.Shared
         /// <summary>La sección de contraseña ahora siempre es visible.</summary>
         public bool ShowPasswordSection => true;
 
-        /// <summary>El campo se puede editar, pero es opcional al actualizar.</summary>
-        public bool IsPasswordEnabled => !IsEditing;
+        /// <summary>Editable al crear, o al editar en modo admin.</summary>
+        public bool IsPasswordEnabled => !IsEditing || _isAdminMode;
 
-        /// <summary>El campo de contraseña tiene texto informativo diferente en edición.</summary>
-        public string PasswordWatermark => IsEditing
+        /// <summary>Watermark según contexto de edición y modo.</summary>
+        public string PasswordWatermark => (IsEditing && !_isAdminMode)
             ? "Bloqueado, solo disponible en modulo Administrador"
-            : "Mínimo 4 caracteres";
+            : (IsEditing ? "Vacío = sin cambios (mín. 4 chars)" : "Mínimo 4 caracteres");
 
         /// <summary>Título dinámico del formulario.</summary>
         public string FormTitle => IsReadOnly
@@ -94,6 +95,20 @@ namespace CasaCejaRemake.ViewModels.Shared
         public void SetParentWindow(Avalonia.Controls.Window parentWindow)
         {
             _parentWindow = parentWindow;
+        }
+
+        /// <summary>
+        /// Llamado cuando el usuario hace clic/focus en el campo de contraseña en modo edición admin.
+        /// Limpia ambos campos la primera vez para que pueda escribir una nueva contraseña.
+        /// </summary>
+        public void OnPasswordFieldFocused()
+        {
+            if (IsEditing && _isAdminMode && !_passwordActivated)
+            {
+                Password = string.Empty;
+                ConfirmPassword = string.Empty;
+                _passwordActivated = true;
+            }
         }
 
         private void LoadRoles()
@@ -134,11 +149,11 @@ namespace CasaCejaRemake.ViewModels.Shared
             Phone = user.Phone;
             Username = user.Username;
 
-            // Al editar, dejamos las contraseñas cargadas con un texto falso ("********")
-            // De esa manera el textbox con PasswordChar="•" muestra puntos y se ve como si hubiera algo.
             if (_isEditing)
             {
-                Password = "        "; // 8 espacios para que renderice 8 asteriscos
+                // 8 chars = 8 puntos visuales. En admin, se limpia al hacer clic (OnPasswordFieldFocused).
+                // En POS (no admin), el campo está deshabilitado de todas formas.
+                Password = "        ";
                 ConfirmPassword = "        ";
             }
         }
@@ -206,7 +221,8 @@ namespace CasaCejaRemake.ViewModels.Shared
 
                         Console.WriteLine($"[UserFormVM] userToUpdate construido — Name='{userToUpdate.Name}', Username='{userToUpdate.Username}'");
 
-                        string? newPlainPassword = string.IsNullOrWhiteSpace(Password) ? null : Password;
+                        // Solo enviar contraseña si el admin activó el campo (hizo clic en él)
+                        string? newPlainPassword = (_passwordActivated && !string.IsNullOrWhiteSpace(Password)) ? Password : null;
                         var updateResult = await _userService.UpdateUserAsync(userToUpdate, newPlainPassword);
                         Console.WriteLine($"[UserFormVM] UpdateUserAsync retornó — Success={updateResult.Success}, Message='{updateResult.Message}'");
                         operationMessage = updateResult.Message;
@@ -285,9 +301,14 @@ namespace CasaCejaRemake.ViewModels.Shared
                 }
                 else
                 {
-                    // Al editar, si se pone contraseña, validar longitud
-                    if (!string.IsNullOrEmpty(Password) && Password.Length < 4)
-                        return "La contraseña debe tener al menos 4 caracteres.";
+                    // Al editar, si se pone contraseña, validar que no sea solo espacios y longitud mínima
+                    if (!string.IsNullOrEmpty(Password))
+                    {
+                        if (string.IsNullOrWhiteSpace(Password))
+                            return "La contraseña no puede contener solo espacios.";
+                        if (Password.Length < 4)
+                            return "La contraseña debe tener al menos 4 caracteres.";
+                    }
                 }
 
                 // Confirmar contraseña si se proporcionó
