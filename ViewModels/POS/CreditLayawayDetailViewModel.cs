@@ -102,6 +102,8 @@ namespace CasaCejaRemake.ViewModels.POS
         public event EventHandler? PrintRequested;
         public event EventHandler? CloseRequested;
 
+        public bool IsViewOnly { get; set; }
+
         public CreditLayawayDetailViewModel(
             CreditService creditService,
             LayawayService layawayService,

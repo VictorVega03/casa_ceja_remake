@@ -1248,6 +1248,8 @@ namespace CasaCejaRemake.Views.POS
             var historyViewModel = new SalesHistoryViewModel(
                 salesService,
                 app.GetTicketService()!,
+                app.GetCreditService()!,
+                app.GetLayawayService()!,
                 _viewModel?.BranchId ?? 1);
 
             historyView.DataContext = historyViewModel;

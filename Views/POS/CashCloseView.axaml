@@ -233,17 +233,35 @@
                     <Border Background="#1B5E20" CornerRadius="4" Padding="12" Margin="0,0,0,10">
                         <StackPanel>
                             <TextBlock Text="EFECTIVO ESPERADO EN CAJA" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center"/>
-                            <TextBlock Text="{Binding ExpectedAmount, StringFormat='${0:N2}'}" 
-                                       FontSize="26" 
-                                       FontWeight="Bold" 
-                                       Foreground="#81C784"
-                                       HorizontalAlignment="Center"
-                                       Margin="0,5,0,0"/>
-                            <TextBlock Text="Fondo + Efectivo Ventas + Efectivo Abonos + Ingresos - Gastos" 
-                                       FontSize="9" 
-                                       Foreground="#A5D6A7" 
-                                       HorizontalAlignment="Center"
-                                       TextWrapping="Wrap"/>
+
+                            <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto"
+                                  Margin="0,10,0,0">
+                                <TextBlock Grid.Row="0" Grid.Column="0" Text="Fondo apertura:" Foreground="#A5D6A7" FontSize="12"/>
+                                <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding OpeningAmount, StringFormat='+${0:N2}'}" Foreground="White" FontSize="12"/>
+
+                                <TextBlock Grid.Row="1" Grid.Column="0" Text="Ventas (efectivo):" Foreground="#A5D6A7" FontSize="12"/>
+                                <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding TotalCash, StringFormat='+${0:N2}'}" Foreground="White" FontSize="12"/>
+
+                                <TextBlock Grid.Row="2" Grid.Column="0" Text="Abonos créditos:" Foreground="#A5D6A7" FontSize="12"/>
+                                <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding CreditCash, StringFormat='+${0:N2}'}" Foreground="White" FontSize="12"/>
+
+                                <TextBlock Grid.Row="3" Grid.Column="0" Text="Abonos apartados:" Foreground="#A5D6A7" FontSize="12"/>
+                                <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding LayawayCash, StringFormat='+${0:N2}'}" Foreground="White" FontSize="12"/>
+
+                                <TextBlock Grid.Row="4" Grid.Column="0" Text="Ingresos:" Foreground="#A5D6A7" FontSize="12"/>
+                                <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding TotalIncome, StringFormat='+${0:N2}'}" Foreground="White" FontSize="12"/>
+
+                                <TextBlock Grid.Row="5" Grid.Column="0" Text="Gastos:" Foreground="#EF9A9A" FontSize="12"/>
+                                <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding TotalExpenses, StringFormat='-${0:N2}'}" Foreground="#EF9A9A" FontSize="12"/>
+
+                                <Border Grid.Row="6" Grid.ColumnSpan="2" BorderThickness="0,1,0,0" BorderBrush="#4CAF50" Margin="0,6,0,0" Padding="0,6,0,0">
+                                    <Grid ColumnDefinitions="*,Auto">
+                                        <TextBlock Grid.Column="0" Text="Total esperado:" FontWeight="Bold" Foreground="White" FontSize="13"/>
+                                        <TextBlock Grid.Column="1" Text="{Binding ExpectedAmount, StringFormat='${0:N2}'}"
+                                                   FontSize="22" FontWeight="Bold" Foreground="#81C784"/>
+                                    </Grid>
+                                </Border>
+                            </Grid>
                         </StackPanel>
                     </Border>
 

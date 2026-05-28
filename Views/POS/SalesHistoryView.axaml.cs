@@ -1,9 +1,12 @@
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using CasaCejaRemake.ViewModels.POS;
+using CasaCejaRemake.Models;
+using CasaCejaRemake.Views.POS;
 using casa_ceja_remake.Helpers;
 
 namespace CasaCejaRemake.Views.POS
@@ -28,12 +31,24 @@ namespace CasaCejaRemake.Views.POS
                 _viewModel.ItemSelected += OnItemSelected;
                 _viewModel.ReprintRequested += OnReprintRequested;
                 _viewModel.ExportRequested += OnExportRequested;
+                _viewModel.CreditSelected += OnCreditSelected;
+                _viewModel.LayawaySelected += OnLayawaySelected;
             }
 
             // Configurar PreviewKeyDown en DataGrid para interceptar Enter ANTES del DataGrid
             if (DataGridItems != null)
             {
                 DataGridItems.AddHandler(KeyDownEvent, DataGrid_PreviewKeyDown, Avalonia.Interactivity.RoutingStrategies.Tunnel);
+            }
+
+            if (CreditsGrid != null)
+            {
+                CreditsGrid.AddHandler(KeyDownEvent, CreditsGrid_PreviewKeyDown, Avalonia.Interactivity.RoutingStrategies.Tunnel);
+            }
+
+            if (LayawaysGrid != null)
+            {
+                LayawaysGrid.AddHandler(KeyDownEvent, LayawaysGrid_PreviewKeyDown, Avalonia.Interactivity.RoutingStrategies.Tunnel);
             }
 
             // Enfocar el campo de búsqueda
@@ -137,6 +152,74 @@ namespace CasaCejaRemake.Views.POS
             await DialogHelper.ShowTicketDialog(this, args.Sale.Folio, args.TicketText);
         }
 
+        private void CreditsGrid_PreviewKeyDown(object? sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Enter && _viewModel?.SelectedCredit != null)
+            {
+                _viewModel.ViewCreditDetailCommand.Execute(null);
+                e.Handled = true;
+            }
+        }
+
+        private void CreditsGrid_DoubleTapped(object? sender, Avalonia.Input.TappedEventArgs e)
+        {
+            if (DataContext is SalesHistoryViewModel vm)
+                vm.ViewCreditDetailCommand.Execute(null);
+        }
+
+        private void LayawaysGrid_PreviewKeyDown(object? sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Enter && _viewModel?.SelectedLayaway != null)
+            {
+                _viewModel.ViewLayawayDetailCommand.Execute(null);
+                e.Handled = true;
+            }
+        }
+
+        private void LayawaysGrid_DoubleTapped(object? sender, Avalonia.Input.TappedEventArgs e)
+        {
+            if (DataContext is SalesHistoryViewModel vm)
+                vm.ViewLayawayDetailCommand.Execute(null);
+        }
+
+        private async void OnCreditSelected(object? sender, Credit credit)
+        {
+            var app = App.Current as App;
+            if (app == null) return;
+
+            var detailVm = new CreditLayawayDetailViewModel(
+                app.GetCreditService()!,
+                app.GetLayawayService()!,
+                app.GetCustomerService()!,
+                app.GetAuthService()!)
+            {
+                IsViewOnly = true
+            };
+            await detailVm.InitializeForCreditAsync(credit.Id);
+            var detailView = new CreditLayawayDetailView { DataContext = detailVm };
+            detailVm.CloseRequested += (s, e) => detailView.Close();
+            await detailView.ShowDialog(this);
+        }
+
+        private async void OnLayawaySelected(object? sender, Layaway layaway)
+        {
+            var app = App.Current as App;
+            if (app == null) return;
+
+            var detailVm = new CreditLayawayDetailViewModel(
+                app.GetCreditService()!,
+                app.GetLayawayService()!,
+                app.GetCustomerService()!,
+                app.GetAuthService()!)
+            {
+                IsViewOnly = true
+            };
+            await detailVm.InitializeForLayawayAsync(layaway.Id);
+            var detailView = new CreditLayawayDetailView { DataContext = detailVm };
+            detailVm.CloseRequested += (s, e) => detailView.Close();
+            await detailView.ShowDialog(this);
+        }
+
         protected override void OnClosed(EventArgs e)
         {
             if (_viewModel != null)
@@ -145,8 +228,10 @@ namespace CasaCejaRemake.Views.POS
                 _viewModel.ItemSelected -= OnItemSelected;
                 _viewModel.ReprintRequested -= OnReprintRequested;
                 _viewModel.ExportRequested -= OnExportRequested;
+                _viewModel.CreditSelected -= OnCreditSelected;
+                _viewModel.LayawaySelected -= OnLayawaySelected;
             }
-            
+
             base.OnClosed(e);
         }
 

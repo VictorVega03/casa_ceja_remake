@@ -56,6 +56,8 @@ namespace CasaCejaRemake.ViewModels.POS
     {
         private readonly SalesService _salesService;
         private readonly TicketService _ticketService;
+        private readonly CreditService _creditService;
+        private readonly LayawayService _layawayService;
         private readonly int _branchId;
 
         private const int PageSize = 50;
@@ -102,6 +104,20 @@ namespace CasaCejaRemake.ViewModels.POS
         private DateTime? _filterDateTo;
 
         public ObservableCollection<SaleListItemWrapper> Items { get; } = new();
+        public ObservableCollection<Credit> Credits { get; } = new();
+        public ObservableCollection<Layaway> Layaways { get; } = new();
+
+        [ObservableProperty]
+        private Credit? _selectedCredit;
+
+        [ObservableProperty]
+        private Layaway? _selectedLayaway;
+
+        public int CreditsCount => Credits.Count;
+        public int LayawaysCount => Layaways.Count;
+
+        public event EventHandler<Credit>? CreditSelected;
+        public event EventHandler<Layaway>? LayawaySelected;
 
         public bool HasSelectedItem => SelectedItem != null;
         public bool CanGoBack => CurrentPage > 1;
@@ -116,10 +132,14 @@ namespace CasaCejaRemake.ViewModels.POS
         public SalesHistoryViewModel(
             SalesService salesService,
             TicketService ticketService,
+            CreditService creditService,
+            LayawayService layawayService,
             int branchId)
         {
             _salesService = salesService;
             _ticketService = ticketService;
+            _creditService = creditService;
+            _layawayService = layawayService;
             _branchId = branchId;
 
             // Arrancar sin filtros para que la tabla esté vacía al abrir
@@ -142,11 +162,49 @@ namespace CasaCejaRemake.ViewModels.POS
                 FilterDateFrom = _cashCloseFrom;
                 FilterDateTo = _cashCloseTo;
                 await LoadDataAsync();
+                await LoadCreditsAndLayawaysAsync(cashCloseFrom.Value, _cashCloseTo!.Value);
             }
             else
             {
                 OnPropertyChanged(nameof(ShowEmptyState));
             }
+        }
+
+        private async Task LoadCreditsAndLayawaysAsync(DateTime from, DateTime to)
+        {
+            try
+            {
+                var allCredits = await _creditService.SearchAsync(null, null, _branchId);
+                Credits.Clear();
+                foreach (var c in allCredits.Where(c => c.CreditDate >= from && c.CreditDate <= to))
+                    Credits.Add(c);
+
+                var allLayaways = await _layawayService.SearchAsync(null, null, _branchId);
+                Layaways.Clear();
+                foreach (var l in allLayaways.Where(l => l.LayawayDate >= from && l.LayawayDate <= to))
+                    Layaways.Add(l);
+
+                OnPropertyChanged(nameof(CreditsCount));
+                OnPropertyChanged(nameof(LayawaysCount));
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Error al cargar créditos/apartados: {ex.Message}";
+            }
+        }
+
+        [RelayCommand]
+        private void ViewCreditDetail()
+        {
+            if (SelectedCredit != null)
+                CreditSelected?.Invoke(this, SelectedCredit);
+        }
+
+        [RelayCommand]
+        private void ViewLayawayDetail()
+        {
+            if (SelectedLayaway != null)
+                LayawaySelected?.Invoke(this, SelectedLayaway);
         }
 
         [RelayCommand]
