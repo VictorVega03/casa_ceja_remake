@@ -64,7 +64,7 @@ public static class DialogHelper
         await dialog.ShowDialog(parentWindow);
     }
 
-    public static async Task ShowTicketDialog(Window parentWindow, string folio, string ticketText)
+    public static async Task ShowTicketDialog(Window parentWindow, string folio, string ticketText, Action<Window>? onDialogCreated = null)
     {
         // ── Construir el diálogo ──────────────────────────────────────────────
         var dialog = new Window
@@ -79,7 +79,7 @@ public static class DialogHelper
             ShowInTaskbar = false
         };
 
-        var mainPanel = new DockPanel { LastChildFill = true };
+        var mainPanel = new DockPanel { LastChildFill = true, Focusable = true };
 
         // ── Banner de estado de impresión (anclado arriba) ───────────────────
         // Muestra el resultado de impresión automática y del botón Reimprimir.
@@ -131,7 +131,7 @@ public static class DialogHelper
             Foreground = new SolidColorBrush(Colors.White),
             FontSize = 14,
             CornerRadius = new Avalonia.CornerRadius(6),
-            Focusable = false
+            Focusable = true
         };
 
         closeButton.Click += (s, e) => dialog.Close();
@@ -224,7 +224,7 @@ public static class DialogHelper
             }
         };
 
-        // ── Shortcut Esc ─────────────────────────────────────────────────────
+        // ── Shortcuts: Esc cierra, Ctrl+P reimprime ──────────────────────────
         dialog.KeyDown += (s, e) =>
         {
             if (e.Key == Avalonia.Input.Key.Escape)
@@ -232,50 +232,58 @@ public static class DialogHelper
                 dialog.Close();
                 e.Handled = true;
             }
+            else if (e.Key == Avalonia.Input.Key.P && e.KeyModifiers == Avalonia.Input.KeyModifiers.Control)
+            {
+                printButton.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+                e.Handled = true;
+            }
         };
 
-        // ── Mostrar el diálogo ────────────────────────────────────────────────
-        var tcs = new System.Threading.Tasks.TaskCompletionSource<bool>();
-        dialog.Closed += (s, e) => tcs.TrySetResult(true);
-        dialog.Show(parentWindow);
-        dialog.Activate();
-        dialog.Topmost = true;
-
-        // ── Impresión automática (después de mostrar el diálogo) ─────────────
-        try
+        // ── Impresión automática al abrirse el diálogo ───────────────────────
+        dialog.Opened += async (s, e) =>
         {
-            var app = (CasaCejaRemake.App)Avalonia.Application.Current!;
-            var configService = app.GetConfigService();
-            var printService  = app.GetPrintService();
+            // Activar la ventana y poner el focus en el botón Cerrar
+            dialog.Activate();
+            closeButton.Focus();
 
-            if (configService == null || printService == null)
+            try
+            {
+                var app = (CasaCejaRemake.App)Avalonia.Application.Current!;
+                var configService = app.GetConfigService();
+                var printService  = app.GetPrintService();
+
+                if (configService == null || printService == null)
+                {
+                    printStatusBar.Background = new SolidColorBrush(Color.Parse("#B71C1C"));
+                    printStatusText.Text = "✗ Servicio de impresión no disponible";
+                }
+                else if (!configService.PosTerminalConfig.AutoPrint)
+                {
+                    printStatusBar.Background = new SolidColorBrush(Color.Parse("#455A64"));
+                    printStatusText.Text = "Impresión automática desactivada";
+                    Console.WriteLine("[DialogHelper] AutoPrint desactivado");
+                }
+                else
+                {
+                    Console.WriteLine("[DialogHelper] Imprimiendo automáticamente...");
+                    var result = await printService.PrintAsync(ticketText);
+                    UpdateStatusBar(result, isAuto: true);
+                    Console.WriteLine($"[DialogHelper] Auto-print: {(result.Success ? "OK" : result.ErrorMessage)}");
+                }
+            }
+            catch (Exception ex)
             {
                 printStatusBar.Background = new SolidColorBrush(Color.Parse("#B71C1C"));
-                printStatusText.Text = "✗ Servicio de impresión no disponible";
+                printStatusText.Text = $"✗ Error inesperado: {ex.Message}";
+                Console.WriteLine($"[DialogHelper] Excepción en impresión automática: {ex.Message}");
             }
-            else if (!configService.PosTerminalConfig.AutoPrint)
-            {
-                // AutoPrint desactivado — el usuario puede usar Reimprimir si quiere
-                printStatusBar.Background = new SolidColorBrush(Color.Parse("#455A64"));
-                printStatusText.Text = "Impresión automática desactivada";
-                Console.WriteLine("[DialogHelper] AutoPrint desactivado");
-            }
-            else
-            {
-                Console.WriteLine("[DialogHelper] Imprimiendo automáticamente...");
-                var result = await printService.PrintAsync(ticketText);
-                UpdateStatusBar(result, isAuto: true);
-                Console.WriteLine($"[DialogHelper] Auto-print: {(result.Success ? "OK" : result.ErrorMessage)}");
-            }
-        }
-        catch (Exception ex)
-        {
-            printStatusBar.Background = new SolidColorBrush(Color.Parse("#B71C1C"));
-            printStatusText.Text = $"✗ Error inesperado: {ex.Message}";
-            Console.WriteLine($"[DialogHelper] Excepción en impresión automática: {ex.Message}");
-        }
+        };
 
-        await tcs.Task;
+        // ── Notificar al caller con la referencia del dialog ─────────────────
+        onDialogCreated?.Invoke(dialog);
+
+        // ── Mostrar como modal — bloquea input a la ventana padre ────────────
+        await dialog.ShowDialog(parentWindow);
     }
 
     public static async Task<string?> ShowInputDialog(Window parentWindow, string title, string prompt, string defaultValue = "")

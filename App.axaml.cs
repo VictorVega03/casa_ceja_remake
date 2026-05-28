@@ -376,10 +376,6 @@ namespace CasaCejaRemake
                     if (!result) return;
                 }
                 
-                // Verificación de PIN
-                var pinVerified = await AdminPinVerificationHelper.VerifyPinAsync(selectorView, ConfigService.AppConfig);
-                if (!pinVerified) return;
-
                 selectorView.Tag = "module_selected";
                 ShowAdmin(selectorView);
             };

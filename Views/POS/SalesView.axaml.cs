@@ -25,6 +25,7 @@ namespace CasaCejaRemake.Views.POS
         private SalesViewModel? _viewModel;
         private DispatcherTimer? _timer;
         private bool _hasOpenDialog = false;
+        private Window? _activeTicketDialog;
 
         public SalesView()
         {
@@ -84,6 +85,10 @@ namespace CasaCejaRemake.Views.POS
                 _viewModel.RequestShowGeneralDiscount += OnRequestShowGeneralDiscount;
                 _viewModel.RequestAdminVerification += OnRequestAdminVerification;
             }
+
+            // Tunnel handler: intercepta Esc antes de que cualquier control (TxtBarcode, etc.)
+            // lo procese. Si hay un ticket dialog abierto, lo cierra directamente.
+            this.AddHandler(InputElement.KeyDownEvent, OnWindowTunnelKeyDown, Avalonia.Interactivity.RoutingStrategies.Tunnel);
 
             // Configurar botones de cobranza
             SetupCollectionButtons();
@@ -866,16 +871,28 @@ namespace CasaCejaRemake.Views.POS
             Close();
         }
 
-        private async void ShowTicketDialog(string folio, string ticketText)
+        private void OnWindowTunnelKeyDown(object? sender, KeyEventArgs e)
         {
-            await DialogHelper.ShowTicketDialog(this, folio, ticketText);
+            if (_activeTicketDialog != null && e.Key == Key.Escape)
+            {
+                _activeTicketDialog.Close();
+                e.Handled = true;
+            }
+        }
+
+        private async Task ShowTicketDialog(string folio, string ticketText)
+        {
+            _hasOpenDialog = true;
+            await DialogHelper.ShowTicketDialog(this, folio, ticketText, d => _activeTicketDialog = d);
+            _activeTicketDialog = null;
+            _hasOpenDialog = false;
         }
 
         private async void OnSaleCompleted(object? sender, SaleResult result)
         {
             if (result.Success && result.TicketText != null)
             {
-                ShowTicketDialog(result.Sale?.Folio ?? "N/A", result.TicketText);
+                await ShowTicketDialog(result.Sale?.Folio ?? "N/A", result.TicketText);
             }
 
             TxtBarcode.Focus();
