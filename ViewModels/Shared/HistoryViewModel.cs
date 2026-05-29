@@ -9,7 +9,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using casa_ceja_remake.Helpers;
 
-namespace CasaCejaRemake.ViewModels.Inventory
+namespace CasaCejaRemake.ViewModels.Shared
 {
     public class HistoryItem
     {

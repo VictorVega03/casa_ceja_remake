@@ -7,7 +7,7 @@ using CasaCejaRemake.Helpers;
 using CasaCejaRemake.Services;
 using casa_ceja_remake.Helpers;
 
-namespace CasaCejaRemake.Views.POS
+namespace CasaCejaRemake.Helpers
 {
     /// <summary>
     /// Helper estático para manejar el flujo de exportación a Excel desde las vistas.

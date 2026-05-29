@@ -142,8 +142,6 @@ namespace CasaCejaRemake.ViewModels.Shared
 
         private void PopulateFromUser(User user)
         {
-            Console.WriteLine($"[UserFormVM] PopulateFromUser — user.Name='{user.Name}', user.Username='{user.Username}'");
-
             Name = user.Name;
             Email = user.Email;
             Phone = user.Phone;
@@ -179,8 +177,6 @@ namespace CasaCejaRemake.ViewModels.Shared
 
         private async Task SaveServerFirstAsync()
         {
-            Console.WriteLine($"[UserFormVM] SaveServerFirstAsync — IsEditing={IsEditing}, _parentWindow={(_parentWindow != null ? "OK" : "NULL")}, _apiClient={(_apiClient != null ? "OK" : "NULL")}");
-
             if (_parentWindow == null || _apiClient == null)
             {
                 HasError = true;
@@ -198,9 +194,6 @@ namespace CasaCejaRemake.ViewModels.Shared
                 {
                     if (isUpdating)
                     {
-                        Console.WriteLine($"[UserFormVM] Formulario actual — Name='{Name}', Username='{Username}'");
-                        Console.WriteLine($"[UserFormVM] _existingUser actual — Name='{_existingUser?.Name}', Username='{_existingUser?.Username}'");
-
                         var userToUpdate = new User
                         {
                             Id         = _existingUser!.Id,
@@ -219,12 +212,9 @@ namespace CasaCejaRemake.ViewModels.Shared
                             RoleName   = _existingUser.RoleName,
                         };
 
-                        Console.WriteLine($"[UserFormVM] userToUpdate construido — Name='{userToUpdate.Name}', Username='{userToUpdate.Username}'");
-
                         // Solo enviar contraseña si el admin activó el campo (hizo clic en él)
                         string? newPlainPassword = (_passwordActivated && !string.IsNullOrWhiteSpace(Password)) ? Password : null;
                         var updateResult = await _userService.UpdateUserAsync(userToUpdate, newPlainPassword);
-                        Console.WriteLine($"[UserFormVM] UpdateUserAsync retornó — Success={updateResult.Success}, Message='{updateResult.Message}'");
                         operationMessage = updateResult.Message;
                         return updateResult;
                     }
@@ -252,7 +242,6 @@ namespace CasaCejaRemake.ViewModels.Shared
             {
                 StatusMessage = operationMessage ?? string.Empty;
                 HasError = false;
-                Console.WriteLine($"[UserFormVM] Éxito — operación completada para Name='{Name}'");
                 SaveCompleted?.Invoke(this, EventArgs.Empty);
                 CloseRequested?.Invoke(this, EventArgs.Empty);
             }
@@ -260,7 +249,6 @@ namespace CasaCejaRemake.ViewModels.Shared
             {
                 StatusMessage = operationMessage ?? StatusMessage;
                 HasError = true;
-                Console.WriteLine($"[UserFormVM] Fallo — operación no completada");
             }
         }
 

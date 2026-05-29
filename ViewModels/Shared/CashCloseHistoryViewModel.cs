@@ -9,7 +9,7 @@ using CasaCejaRemake.Models;
 using CasaCejaRemake.Services;
 using CasaCejaRemake.Data.Repositories;
 
-namespace CasaCejaRemake.ViewModels.POS
+namespace CasaCejaRemake.ViewModels.Shared
 {
     /// <summary>
     /// Wrapper para mostrar datos de cortes de caja en la lista.

@@ -10,7 +10,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace CasaCejaRemake.ViewModels.Inventory
+namespace CasaCejaRemake.ViewModels.Shared
 {
     public partial class CatalogsManagementViewModel : ViewModelBase
     {

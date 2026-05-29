@@ -54,7 +54,7 @@ namespace CasaCejaRemake
         private AdminMainView? _currentAdminView;
 
         // Referencia al diálogo de categorías/medidas para evitar múltiples instancias
-        private Views.Inventory.CatalogsManagementView? _currentCatalogsManagementView;
+        private Views.Shared.CatalogsManagementView? _currentCatalogsManagementView;
 
         public override void Initialize()
         {
@@ -558,8 +558,8 @@ namespace CasaCejaRemake
                     return;
                 }
 
-                var catalogsViewModel = new ViewModels.Inventory.CatalogsManagementViewModel(_inventoryService!, ApiClient!);
-                var catalogsView = new Views.Inventory.CatalogsManagementView
+                var catalogsViewModel = new ViewModels.Shared.CatalogsManagementViewModel(_inventoryService!, ApiClient!);
+                var catalogsView = new Views.Shared.CatalogsManagementView
                 {
                     DataContext = catalogsViewModel
                 };
@@ -771,9 +771,9 @@ namespace CasaCejaRemake
             if (_inventoryService == null) return;
 
             var branchId = ConfigService.AppConfig.CurrentBranchId ?? 0;
-            var viewModel = new ViewModels.Inventory.CatalogViewModel(_inventoryService, branchId);
+            var viewModel = new ViewModels.Shared.CatalogViewModel(_inventoryService, branchId);
             
-            var catalogView = new Views.Inventory.CatalogView
+            var catalogView = new Views.Shared.CatalogView
             {
                 DataContext = viewModel
             };
@@ -786,8 +786,8 @@ namespace CasaCejaRemake
 
             viewModel.ProductFormRequested += (s, product) =>
             {
-                var formViewModel = new ViewModels.Inventory.ProductFormViewModel(_inventoryService, ApiClient!, branchId, product);
-                var formView = new Views.Inventory.ProductFormView
+                var formViewModel = new ViewModels.Shared.ProductFormViewModel(_inventoryService, ApiClient!, branchId, product);
+                var formView = new Views.Shared.ProductFormView
                 {
                     DataContext = formViewModel
                 };
@@ -806,8 +806,8 @@ namespace CasaCejaRemake
 
             viewModel.ProductDetailRequested += (s, product) =>
             {
-                var detailViewModel = new ViewModels.Inventory.ProductDetailViewModel(product);
-                var detailView = new Views.Inventory.ProductDetailView
+                var detailViewModel = new ViewModels.Shared.ProductDetailViewModel(product);
+                var detailView = new Views.Shared.ProductDetailView
                 {
                     DataContext = detailViewModel
                 };
@@ -835,9 +835,9 @@ namespace CasaCejaRemake
             if (_inventoryService == null) return;
 
             var branchId = ConfigService.AppConfig.CurrentBranchId ?? 0;
-            var viewModel = new ViewModels.Inventory.HistoryViewModel(_inventoryService, branchId);
+            var viewModel = new ViewModels.Shared.HistoryViewModel(_inventoryService, branchId);
             
-            var historyView = new Views.Inventory.HistoryView
+            var historyView = new Views.Shared.HistoryView
             {
                 DataContext = viewModel
             };
@@ -983,9 +983,9 @@ namespace CasaCejaRemake
 
             // branchId = 0 → modo global (CatalogViewModel no filtra por sucursal)
             const int branchId = 0;
-            var viewModel = new ViewModels.Inventory.CatalogViewModel(_inventoryService, branchId, isAdminMode: true);
+            var viewModel = new ViewModels.Shared.CatalogViewModel(_inventoryService, branchId, isAdminMode: true);
 
-            var catalogView = new Views.Inventory.CatalogView
+            var catalogView = new Views.Shared.CatalogView
             {
                 DataContext = viewModel
             };
@@ -999,7 +999,7 @@ namespace CasaCejaRemake
 
             viewModel.ProductFormRequested += (s, product) =>
             {
-                var formViewModel = new ViewModels.Inventory.ProductFormViewModel(_inventoryService, ApiClient!, branchId, product);
+                var formViewModel = new ViewModels.Shared.ProductFormViewModel(_inventoryService, ApiClient!, branchId, product);
 
                 if (product != null)
                 {
@@ -1011,7 +1011,7 @@ namespace CasaCejaRemake
                 else
                 {
                     // Nuevo producto → vista de creación con modo múltiple
-                    var formView = new Views.Inventory.ProductFormView { DataContext = formViewModel };
+                    var formView = new Views.Shared.ProductFormView { DataContext = formViewModel };
                     formViewModel.SaveCompleted += (s2, e2) => { formView.Close(); viewModel.RefreshData(); };
                     formView.ShowDialog(catalogView);
                 }
@@ -1019,8 +1019,8 @@ namespace CasaCejaRemake
 
             viewModel.ProductDetailRequested += (s, product) =>
             {
-                var detailViewModel = new ViewModels.Inventory.ProductDetailViewModel(product);
-                var detailView = new Views.Inventory.ProductDetailView
+                var detailViewModel = new ViewModels.Shared.ProductDetailViewModel(product);
+                var detailView = new Views.Shared.ProductDetailView
                 {
                     DataContext = detailViewModel
                 };
@@ -1058,8 +1058,8 @@ namespace CasaCejaRemake
                 return;
             }
 
-            var catalogsViewModel = new ViewModels.Inventory.CatalogsManagementViewModel(_inventoryService, ApiClient!, isAdminMode: true);
-            var catalogsView = new Views.Inventory.CatalogsManagementView
+            var catalogsViewModel = new ViewModels.Shared.CatalogsManagementViewModel(_inventoryService, ApiClient!, isAdminMode: true);
+            var catalogsView = new Views.Shared.CatalogsManagementView
             {
                 DataContext = catalogsViewModel
             };

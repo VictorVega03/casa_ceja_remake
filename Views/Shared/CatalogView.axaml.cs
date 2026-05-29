@@ -1,10 +1,10 @@
 using Avalonia.Controls;
 using Avalonia.Input;
-using CasaCejaRemake.ViewModels.Inventory;
+using CasaCejaRemake.ViewModels.Shared;
 using System;
 using casa_ceja_remake.Helpers;
 
-namespace CasaCejaRemake.Views.Inventory
+namespace CasaCejaRemake.Views.Shared
 {
     public partial class CatalogView : Window
     {

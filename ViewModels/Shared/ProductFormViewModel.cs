@@ -8,7 +8,7 @@ using CasaCejaRemake.Helpers;
 using CasaCejaRemake.Services;
 using Avalonia.Controls;
 
-namespace CasaCejaRemake.ViewModels.Inventory
+namespace CasaCejaRemake.ViewModels.Shared
 {
     /// <summary>
     /// Producto pendiente en modo captura múltiple, con su cantidad inicial de stock.

@@ -1,13 +1,13 @@
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
-using CasaCejaRemake.ViewModels.Inventory;
+using CasaCejaRemake.ViewModels.Shared;
 using CasaCejaRemake.Helpers;
-using CasaCejaRemake.Views.POS;
+
 using static CasaCejaRemake.Helpers.FileHelper;
 using System.Collections.Generic;
 
-namespace CasaCejaRemake.Views.Inventory
+namespace CasaCejaRemake.Views.Shared
 {
     public partial class HistoryView : Window
     {

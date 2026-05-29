@@ -3,7 +3,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System;
 
-namespace CasaCejaRemake.ViewModels.Inventory
+namespace CasaCejaRemake.ViewModels.Shared
 {
     public partial class ProductDetailViewModel : ViewModelBase
     {

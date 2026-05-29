@@ -7,6 +7,7 @@ using Avalonia.Interactivity;
 using Avalonia.Media;
 using CasaCejaRemake.ViewModels.POS;
 using casa_ceja_remake.Helpers;
+using CasaCejaRemake.Helpers;
 
 namespace CasaCejaRemake.Views.POS
 {

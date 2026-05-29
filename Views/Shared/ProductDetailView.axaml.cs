@@ -1,8 +1,8 @@
 using Avalonia.Controls;
 using Avalonia.Input;
-using CasaCejaRemake.ViewModels.Inventory;
+using CasaCejaRemake.ViewModels.Shared;
 
-namespace CasaCejaRemake.Views.Inventory
+namespace CasaCejaRemake.Views.Shared
 {
     public partial class ProductDetailView : Window
     {

@@ -8,7 +8,7 @@ using CasaCejaRemake.Services;
 using System.Linq;
 using System.Collections.Generic;
 
-namespace CasaCejaRemake.ViewModels.Inventory
+namespace CasaCejaRemake.ViewModels.Shared
 {
     public partial class CatalogViewModel : ViewModelBase
     {

@@ -1,6 +1,6 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:vm="using:CasaCejaRemake.ViewModels.Inventory"
+        xmlns:vm="using:CasaCejaRemake.ViewModels.Shared"
         x:Class="CasaCejaRemake.Views.Inventory.ProductEditView"
         x:DataType="vm:ProductFormViewModel"
         Title="{Binding Title}"

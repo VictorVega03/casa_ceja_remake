@@ -1,6 +1,7 @@
 using Avalonia.Controls;
 using Avalonia.Input;
 using CasaCejaRemake.ViewModels.Inventory;
+using CasaCejaRemake.ViewModels.Shared;
 using casa_ceja_remake.Helpers;
 using System;
 using System.Collections.Generic;

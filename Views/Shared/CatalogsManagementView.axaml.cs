@@ -2,13 +2,13 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Threading;
-using CasaCejaRemake.ViewModels.Inventory;
+using CasaCejaRemake.ViewModels.Shared;
 using casa_ceja_remake.Helpers;
 using System.Collections;
 using System.Collections.Specialized;
 using System.Linq;
 
-namespace CasaCejaRemake.Views.Inventory
+namespace CasaCejaRemake.Views.Shared
 {
     public partial class CatalogsManagementView : Window
     {

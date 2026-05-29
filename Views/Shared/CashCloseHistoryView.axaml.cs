@@ -3,10 +3,11 @@ using System.Collections.Generic;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
-using CasaCejaRemake.ViewModels.POS;
+using CasaCejaRemake.ViewModels.Shared;
 using casa_ceja_remake.Helpers;
+using CasaCejaRemake.Helpers;
 
-namespace CasaCejaRemake.Views.POS
+namespace CasaCejaRemake.Views.Shared
 {
     public partial class CashCloseHistoryView : Window
     {
