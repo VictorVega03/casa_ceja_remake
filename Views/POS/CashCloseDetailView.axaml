@@ -418,6 +418,7 @@
                 <Button Grid.Column="1"
                         Content="Reimprimir (F7)"
                         Command="{Binding PrintCommand}"
+                        IsVisible="{Binding CanReprint}"
                         Background="#3D3D3D"
                         Foreground="White"
                         Padding="30,10"

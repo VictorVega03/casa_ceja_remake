@@ -1,10 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
 using System.Threading.Tasks;
 using CasaCejaRemake.Data.Repositories;
 using CasaCejaRemake.Models;
-using CasaCejaRemake.Models.DTOs;
 using CasaCejaRemake.Models.Results;
 
 namespace CasaCejaRemake.Services
@@ -516,40 +516,152 @@ namespace CasaCejaRemake.Services
             if (_apiClient == null)
                 return await GetHistoryAsync(branchId, limit);
 
-            var all = new List<CashClose>();
-            var page = 1;
-
             try
             {
-                while (true)
-                {
-                    var endpoint = $"/api/v1/sync/pull/cash-closes?since=0&page={page}&branch_id={branchId}";
-                    var response = await _apiClient.GetAsync<PullResponse<CashClose>>(endpoint);
+                var all = await PullCashClosesFromServerAsync(branchId);
+                if (all.Count == 0)
+                    return await GetHistoryAsync(branchId, limit);
 
-                    if (response?.IsSuccess != true || response.Data == null)
-                        break;
-
-                    all.AddRange(response.Data.Data);
-
-                    if (!response.Data.HasMorePages)
-                        break;
-
-                    page++;
-                }
+                return all
+                    .Where(c => c.CloseDate > c.OpeningDate.AddSeconds(1))
+                    .OrderByDescending(c => c.CloseDate)
+                    .Take(limit)
+                    .ToList();
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"[CashCloseService] Error historial servidor: {ex.Message}");
+                return await GetHistoryAsync(branchId, limit);
+            }
+        }
+
+        private async Task<List<CashClose>> PullCashClosesFromServerAsync(int branchId)
+        {
+            var result = new List<CashClose>();
+            var page = 1;
+
+            while (true)
+            {
+                var endpoint = $"/api/v1/sync/pull/cash-closes?since=0&page={page}&branch_id={branchId}";
+                var response = await _apiClient!.GetAsync<JsonElement>(endpoint);
+
+                if (response?.IsSuccess != true)
+                    break;
+
+                var data = response.Data;
+                if (!data.TryGetProperty("data", out var items) || items.ValueKind != JsonValueKind.Array)
+                    break;
+
+                foreach (var item in items.EnumerateArray())
+                {
+                    result.Add(MapCashClose(item));
+                }
+
+                var currentPage = GetInt(data, "current_page", page);
+                var lastPage = GetInt(data, "last_page", currentPage);
+                if (currentPage >= lastPage)
+                    break;
+
+                page++;
             }
 
-            if (all.Count == 0)
-                return await GetHistoryAsync(branchId, limit);
+            return result;
+        }
 
-            return all
-                .Where(c => c.CloseDate > c.OpeningDate.AddSeconds(1))
-                .OrderByDescending(c => c.CloseDate)
-                .Take(limit)
-                .ToList();
+        private static CashClose MapCashClose(JsonElement item)
+        {
+            return new CashClose
+            {
+                Id = GetInt(item, "id", 0),
+                Folio = GetString(item, "folio"),
+                BranchId = GetInt(item, "branch_id", 0),
+                UserId = GetInt(item, "user_id", 0),
+                OpeningCash = GetDecimal(item, "opening_cash", 0),
+                TotalCash = GetDecimal(item, "total_cash", 0),
+                TotalDebitCard = GetDecimal(item, "total_debit_card", 0),
+                TotalCreditCard = GetDecimal(item, "total_credit_card", 0),
+                TotalChecks = GetDecimal(item, "total_checks", 0),
+                TotalTransfers = GetDecimal(item, "total_transfers", 0),
+                LayawayCash = GetDecimal(item, "layaway_cash", 0),
+                CreditCash = GetDecimal(item, "credit_cash", 0),
+                CreditTotalCreated = GetDecimal(item, "credit_total_created", 0),
+                LayawayTotalCreated = GetDecimal(item, "layaway_total_created", 0),
+                Expenses = GetDecimal(item, "expenses", 0),
+                Income = GetDecimal(item, "income", 0),
+                Surplus = GetDecimal(item, "surplus", 0),
+                ExpectedCash = GetDecimal(item, "expected_cash", 0),
+                TotalSales = GetDecimal(item, "total_sales", 0),
+                Notes = GetString(item, "notes"),
+                OpeningDate = GetDateTime(item, "opening_date", DateTime.Now),
+                CloseDate = GetDateTime(item, "close_date", DateTime.Now),
+                CreatedAt = GetDateTime(item, "created_at", DateTime.Now),
+                UpdatedAt = GetDateTime(item, "updated_at", DateTime.Now),
+                SyncStatus = 2,
+                LastSync = DateTime.Now,
+            };
+        }
+
+        private static int GetInt(JsonElement item, string propertyName, int fallback)
+        {
+            var value = GetProperty(item, propertyName);
+            if (value == null || value.Value.ValueKind == JsonValueKind.Null)
+                return fallback;
+
+            if (value.Value.ValueKind == JsonValueKind.Number && value.Value.TryGetInt32(out var number))
+                return number;
+
+            if (value.Value.ValueKind == JsonValueKind.String &&
+                int.TryParse(value.Value.GetString(), out var parsed))
+                return parsed;
+
+            return fallback;
+        }
+
+        private static decimal GetDecimal(JsonElement item, string propertyName, decimal fallback)
+        {
+            var value = GetProperty(item, propertyName);
+            if (value == null || value.Value.ValueKind == JsonValueKind.Null)
+                return fallback;
+
+            if (value.Value.ValueKind == JsonValueKind.Number && value.Value.TryGetDecimal(out var number))
+                return number;
+
+            if (value.Value.ValueKind == JsonValueKind.String &&
+                decimal.TryParse(value.Value.GetString(), out var parsed))
+                return parsed;
+
+            return fallback;
+        }
+
+        private static string GetString(JsonElement item, string propertyName, string fallback = "")
+        {
+            var value = GetProperty(item, propertyName);
+            if (value == null || value.Value.ValueKind == JsonValueKind.Null)
+                return fallback;
+
+            return value.Value.ValueKind == JsonValueKind.String
+                ? value.Value.GetString() ?? fallback
+                : value.Value.ToString();
+        }
+
+        private static DateTime GetDateTime(JsonElement item, string propertyName, DateTime fallback)
+        {
+            var value = GetProperty(item, propertyName);
+            if (value == null || value.Value.ValueKind == JsonValueKind.Null)
+                return fallback;
+
+            if (value.Value.ValueKind == JsonValueKind.String &&
+                DateTime.TryParse(value.Value.GetString(), out var parsed))
+                return parsed;
+
+            return fallback;
+        }
+
+        private static JsonElement? GetProperty(JsonElement item, string propertyName)
+        {
+            return item.TryGetProperty(propertyName, out var value)
+                ? value
+                : null;
         }
 
         /// <summary>Genera un folio único para el corte usando FolioService.</summary>

@@ -68,6 +68,9 @@ namespace CasaCejaRemake.Views.Shared
 
         private void OnItemSelected(object? sender, CashCloseListItemWrapper item)
         {
+            if (_viewModel?.IsAdminMode == true)
+                return;
+
             Tag = ("ItemSelected", item);
             Close();
         }

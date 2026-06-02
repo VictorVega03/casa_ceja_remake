@@ -42,6 +42,9 @@ namespace CasaCejaRemake.ViewModels.POS
         [ObservableProperty]
         private bool _isLoading;
 
+        [ObservableProperty]
+        private bool _canReprint = true;
+
         // ============ PROPIEDADES DE SOLO LECTURA ============
         
         public string Folio => CashClose?.Folio ?? string.Empty;
@@ -226,6 +229,7 @@ namespace CasaCejaRemake.ViewModels.POS
         [RelayCommand]
         private void Print()
         {
+            if (!CanReprint) return;
             if (CashClose == null) return;
             try
             {

@@ -911,6 +911,8 @@ namespace CasaCejaRemake
             };
 
             // ── Tarjetas con placeholder (etapas futuras) ──
+            var isOpeningMovements = false;
+            var isOpeningCashCloseHistory = false;
 
             viewModel.BranchesSelected += async (s, e) =>
             {
@@ -924,73 +926,110 @@ namespace CasaCejaRemake
 
             viewModel.MovementsSelected += async (s, e) =>
             {
-                var branches = await _inventoryService!.GetBranchesAsync();
-                var historyVm = new ViewModels.Shared.HistoryViewModel(
-                    _inventoryService!, branchId: 0,
-                    isAdminMode: true, allBranches: branches);
-                var historyView = new Views.Shared.HistoryView { DataContext = historyVm };
+                if (isOpeningMovements)
+                    return;
 
-                historyVm.GoBackRequested += (_, _) =>
+                isOpeningMovements = true;
+                try
                 {
-                    historyView.Tag = "back";
-                    historyView.Close();
-                };
+                    var branches = await _inventoryService!.GetBranchesAsync();
+                    var historyVm = new ViewModels.Shared.HistoryViewModel(
+                        _inventoryService!, branchId: 0,
+                        isAdminMode: true, allBranches: branches);
+                    var historyView = new Views.Shared.HistoryView { DataContext = historyVm };
 
-                historyVm.MovementDetailRequested += async (_, historyItem) =>
+                    historyVm.GoBackRequested += (_, _) =>
+                    {
+                        historyView.Tag = "back";
+                        historyView.Close();
+                    };
+
+                    historyVm.MovementDetailRequested += async (_, historyItem) =>
+                    {
+                        historyView.IsDetailOpen = true;
+                        var detailVm = new ViewModels.Inventory.MovementDetailViewModel(_inventoryService!, historyItem);
+                        var detailView = new Views.Inventory.MovementDetailView { DataContext = detailVm };
+                        detailVm.CloseRequested += (_, _) => detailView.Close();
+                        await detailView.ShowDialog(historyView);
+                        historyView.IsDetailOpen = false;
+                    };
+
+                    historyView.Closed += (_, _) => ShowAdmin();
+                    desktop.MainWindow = historyView;
+                    historyView.Show();
+                    adminView.Close();
+                }
+                catch (Exception ex)
                 {
-                    historyView.IsDetailOpen = true;
-                    var detailVm = new ViewModels.Inventory.MovementDetailViewModel(_inventoryService!, historyItem);
-                    var detailView = new Views.Inventory.MovementDetailView { DataContext = detailVm };
-                    detailVm.CloseRequested += (_, _) => detailView.Close();
-                    await detailView.ShowDialog(historyView);
-                    historyView.IsDetailOpen = false;
-                };
-
-                historyView.Closed += (_, _) => ShowAdmin();
-                desktop.MainWindow = historyView;
-                historyView.Show();
-                adminView.Close();
+                    Console.WriteLine($"[Admin] Error abriendo historial de movimientos: {ex.Message}");
+                    isOpeningMovements = false;
+                }
             };
 
             viewModel.CashCloseHistorySelected += async (s, e) =>
             {
-                var branches = await _inventoryService!.GetBranchesAsync();
-                var userRepo = new BaseRepository<Models.User>(DatabaseService!);
-                var branchRepo = new BaseRepository<Models.Branch>(DatabaseService!);
-                var historyVm = new ViewModels.Shared.CashCloseHistoryViewModel(
-                    _cashCloseService!,
-                    AuthService,
-                    userRepo,
-                    branchRepo,
-                    branchId: 0,
-                    isAdminMode: true,
-                    allBranches: branches);
-                var historyView = new Views.Shared.CashCloseHistoryView { DataContext = historyVm };
+                if (isOpeningCashCloseHistory)
+                    return;
 
-                historyVm.CloseRequested += (_, _) =>
+                isOpeningCashCloseHistory = true;
+                try
                 {
-                    historyView.Tag = "back";
-                    historyView.Close();
-                };
+                    var branches = await _inventoryService!.GetBranchesAsync();
+                    var userRepo = new BaseRepository<Models.User>(DatabaseService!);
+                    var branchRepo = new BaseRepository<Models.Branch>(DatabaseService!);
+                    var historyVm = new ViewModels.Shared.CashCloseHistoryViewModel(
+                        _cashCloseService!,
+                        AuthService,
+                        userRepo,
+                        branchRepo,
+                        branchId: 0,
+                        isAdminMode: true,
+                        allBranches: branches);
+                    var historyView = new Views.Shared.CashCloseHistoryView { DataContext = historyVm };
+                    var isOpeningCashCloseDetail = false;
 
-                historyView.Closed += async (_, _) =>
-                {
-                    ShowAdmin();
-
-                    if (historyView.Tag is ValueTuple<string, CashCloseListItemWrapper> result && result.Item1 == "ItemSelected")
+                    historyVm.CloseRequested += (_, _) =>
                     {
-                        var detailView = new CashCloseDetailView();
-                        var detailVm = new CashCloseDetailViewModel(_cashCloseService!, _ticketService!);
-                        await detailVm.InitializeAsync(result.Item2.CashClose, result.Item2.UserName, result.Item2.BranchName);
-                        detailView.DataContext = detailVm;
-                        await detailView.ShowDialog(desktop.MainWindow);
-                    }
-                };
+                        historyView.Tag = "back";
+                        historyView.Close();
+                    };
 
-                desktop.MainWindow = historyView;
-                await historyVm.InitializeAsync();
-                historyView.Show();
-                adminView.Close();
+                    historyVm.ItemSelected += async (_, item) =>
+                    {
+                        if (isOpeningCashCloseDetail)
+                            return;
+
+                        isOpeningCashCloseDetail = true;
+                        try
+                        {
+                            var detailView = new CashCloseDetailView();
+                            var detailVm = new CashCloseDetailViewModel(_cashCloseService!, _ticketService!);
+                            detailVm.CanReprint = false;
+                            await detailVm.InitializeAsync(item.CashClose, item.UserName, item.BranchName);
+                            detailView.DataContext = detailVm;
+                            await detailView.ShowDialog(historyView);
+                        }
+                        finally
+                        {
+                            isOpeningCashCloseDetail = false;
+                        }
+                    };
+
+                    historyView.Closed += (_, _) =>
+                    {
+                        ShowAdmin();
+                    };
+
+                    desktop.MainWindow = historyView;
+                    historyView.Show();
+                    adminView.Close();
+                    await historyVm.InitializeAsync();
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[Admin] Error abriendo historial de cortes: {ex.Message}");
+                    isOpeningCashCloseHistory = false;
+                }
             };
 
             viewModel.GlobalStockSelected += async (s, e) =>

@@ -1,8 +1,6 @@
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
-using Avalonia.Media;
-using Avalonia.Threading;
 using CasaCejaRemake.ViewModels.Shared;
 using CasaCejaRemake.Helpers;
 
@@ -14,8 +12,6 @@ namespace CasaCejaRemake.Views.Shared
     public partial class HistoryView : Window
     {
         private HistoryViewModel? _viewModel;
-        private DispatcherTimer? _loadingSpinnerTimer;
-        private double _loadingSpinnerAngle;
         internal bool IsDetailOpen { get; set; }
 
         public HistoryView()
@@ -37,34 +33,6 @@ namespace CasaCejaRemake.Views.Shared
             {
                 ExportButton.Click += async (_, __) => await OnExportRequestedAsync();
             }
-
-            StartLoadingSpinnerAnimation();
-        }
-
-        private void StartLoadingSpinnerAnimation()
-        {
-            TopLoadingSpinner.RenderTransform ??= new RotateTransform();
-            CenterLoadingSpinner.RenderTransform ??= new RotateTransform();
-
-            _loadingSpinnerTimer ??= new DispatcherTimer
-            {
-                Interval = System.TimeSpan.FromMilliseconds(45)
-            };
-
-            _loadingSpinnerTimer.Tick -= LoadingSpinnerTimer_Tick;
-            _loadingSpinnerTimer.Tick += LoadingSpinnerTimer_Tick;
-            _loadingSpinnerTimer.Start();
-        }
-
-        private void LoadingSpinnerTimer_Tick(object? sender, System.EventArgs e)
-        {
-            _loadingSpinnerAngle = (_loadingSpinnerAngle + 18) % 360;
-
-            if (TopLoadingSpinner.RenderTransform is RotateTransform topTransform)
-                topTransform.Angle = _loadingSpinnerAngle;
-
-            if (CenterLoadingSpinner.RenderTransform is RotateTransform centerTransform)
-                centerTransform.Angle = _loadingSpinnerAngle;
         }
 
         private async System.Threading.Tasks.Task OnExportRequestedAsync()
@@ -126,11 +94,5 @@ namespace CasaCejaRemake.Views.Shared
             base.OnKeyDown(e);
         }
 
-        protected override void OnClosed(System.EventArgs e)
-        {
-            _loadingSpinnerTimer?.Stop();
-            _loadingSpinnerTimer = null;
-            base.OnClosed(e);
-        }
     }
 }

@@ -54,8 +54,10 @@ namespace CasaCejaRemake.ViewModels.Shared
         private readonly BaseRepository<User> _userRepository;
         private readonly BaseRepository<Branch> _branchRepository;
         private readonly int _branchId;
-        private ObservableCollection<CashCloseListItemWrapper> _allItems = new();
+        private List<CashCloseListItemWrapper> _allItems = new();
+        private List<CashCloseListItemWrapper> _filteredItems = new();
         private const int HistoryLimit = 200;
+        private bool _isUpdatingFilters;
 
         [ObservableProperty]
         private CashCloseListItemWrapper? _selectedItem;
@@ -73,10 +75,25 @@ namespace CasaCejaRemake.ViewModels.Shared
         private string _searchText = string.Empty;
 
         [ObservableProperty]
-        private DateTime? _filterDateFrom;
+        private DateTimeOffset? _filterDateFrom;
 
         [ObservableProperty]
-        private DateTime? _filterDateTo;
+        private DateTimeOffset? _filterDateTo;
+
+        [ObservableProperty]
+        private int _currentPage = 1;
+
+        [ObservableProperty]
+        private int _totalPages = 1;
+
+        [ObservableProperty]
+        private string _paginationInfo = "Página 1 de 1";
+
+        [ObservableProperty]
+        private bool _canGoPrevious;
+
+        [ObservableProperty]
+        private bool _canGoNext;
 
         [ObservableProperty]
         private bool _isAdminMode;
@@ -86,6 +103,8 @@ namespace CasaCejaRemake.ViewModels.Shared
 
         [ObservableProperty]
         private Branch? _selectedBranch;
+
+        private const int PageSize = 50;
 
         public ObservableCollection<CashCloseListItemWrapper> Items { get; } = new();
 
@@ -124,8 +143,8 @@ namespace CasaCejaRemake.ViewModels.Shared
             }
 
             // Filtros por defecto: último mes
-            _filterDateTo = DateTime.Today;
-            _filterDateFrom = DateTime.Today.AddDays(-30);
+            _filterDateTo = DateTimeOffset.Now;
+            _filterDateFrom = DateTimeOffset.Now.AddDays(-30);
         }
 
         public async Task InitializeAsync()
@@ -147,11 +166,11 @@ namespace CasaCejaRemake.ViewModels.Shared
                 // Aplicar filtro de fechas si está configurado
                 if (FilterDateFrom.HasValue)
                 {
-                    cashCloses = cashCloses.Where(c => c.CloseDate.Date >= FilterDateFrom.Value.Date).ToList();
+                    cashCloses = cashCloses.Where(c => c.CloseDate.Date >= FilterDateFrom.Value.DateTime.Date).ToList();
                 }
                 if (FilterDateTo.HasValue)
                 {
-                    cashCloses = cashCloses.Where(c => c.CloseDate.Date <= FilterDateTo.Value.Date).ToList();
+                    cashCloses = cashCloses.Where(c => c.CloseDate.Date <= FilterDateTo.Value.DateTime.Date).ToList();
                 }
 
                 // Cargar todos los usuarios y sucursales de una vez para eficiencia
@@ -224,8 +243,6 @@ namespace CasaCejaRemake.ViewModels.Shared
 
         private void ApplySearch()
         {
-            Items.Clear();
-
             var filtered = _allItems.AsEnumerable();
 
             if (!string.IsNullOrWhiteSpace(SearchText))
@@ -237,13 +254,28 @@ namespace CasaCejaRemake.ViewModels.Shared
                     item.BranchName.ToLower().Contains(search));
             }
 
-            foreach (var item in filtered)
+            _filteredItems = filtered.ToList();
+            CurrentPage = 1;
+            TotalPages = Math.Max(1, (int)Math.Ceiling((double)_filteredItems.Count / PageSize));
+            LoadCurrentPage();
+
+            TotalCount = _filteredItems.Count;
+            StatusMessage = $"{TotalCount} corte(s) encontrado(s)";
+        }
+
+        private void LoadCurrentPage()
+        {
+            Items.Clear();
+
+            var pageItems = _filteredItems.Skip((CurrentPage - 1) * PageSize).Take(PageSize);
+            foreach (var item in pageItems)
             {
                 Items.Add(item);
             }
 
-            TotalCount = Items.Count;
-            StatusMessage = $"{TotalCount} corte(s) encontrado(s)";
+            CanGoPrevious = CurrentPage > 1;
+            CanGoNext = CurrentPage < TotalPages;
+            PaginationInfo = $"Página {CurrentPage} de {TotalPages}";
         }
 
         [RelayCommand]
@@ -261,10 +293,39 @@ namespace CasaCejaRemake.ViewModels.Shared
         [RelayCommand]
         private async Task ClearFilters()
         {
-            FilterDateFrom = DateTime.Today.AddDays(-30);
-            FilterDateTo = DateTime.Today;
-            SearchText = string.Empty;
+            try
+            {
+                _isUpdatingFilters = true;
+                FilterDateFrom = DateTimeOffset.Now.AddDays(-30);
+                FilterDateTo = DateTimeOffset.Now;
+                SearchText = string.Empty;
+            }
+            finally
+            {
+                _isUpdatingFilters = false;
+            }
+
             await LoadDataAsync();
+        }
+
+        [RelayCommand]
+        private void NextPage()
+        {
+            if (CurrentPage < TotalPages)
+            {
+                CurrentPage++;
+                LoadCurrentPage();
+            }
+        }
+
+        [RelayCommand]
+        private void PreviousPage()
+        {
+            if (CurrentPage > 1)
+            {
+                CurrentPage--;
+                LoadCurrentPage();
+            }
         }
 
         partial void OnSelectedItemChanged(CashCloseListItemWrapper? value)
@@ -275,6 +336,24 @@ namespace CasaCejaRemake.ViewModels.Shared
         partial void OnSelectedBranchChanged(Branch? value)
         {
             _ = LoadDataAsync();
+        }
+
+        partial void OnFilterDateFromChanged(DateTimeOffset? value)
+        {
+            if (!_isUpdatingFilters && value != null && FilterDateTo != null)
+                _ = LoadDataAsync();
+        }
+
+        partial void OnFilterDateToChanged(DateTimeOffset? value)
+        {
+            if (!_isUpdatingFilters && value != null && FilterDateFrom != null)
+                _ = LoadDataAsync();
+        }
+
+        partial void OnSearchTextChanged(string value)
+        {
+            if (!_isUpdatingFilters)
+                ApplySearch();
         }
 
         [RelayCommand]
@@ -314,8 +393,10 @@ namespace CasaCejaRemake.ViewModels.Shared
                 new() { Header = "Resultado", ValueSelector = i => i.SurplusStatus, Width = 15 }
             };
 
+            var exportItems = _filteredItems.Count > 0 ? _filteredItems : Items.ToList();
+
             sheets.Add(exportService.CreateSheetData(
-                Items,
+                exportItems,
                 summaryColumns,
                 "Resumen",
                 "Resumen de Cortes de Caja"));
@@ -323,7 +404,7 @@ namespace CasaCejaRemake.ViewModels.Shared
             // ==== HOJA 2: DETALLES DE TODOS LOS CORTES EN UNA SOLA HOJA ====
             var allDetails = new List<(string Label, object Value)>();
 
-            foreach (var item in Items)
+            foreach (var item in exportItems)
             {
                 var cashClose = item.CashClose;
 
