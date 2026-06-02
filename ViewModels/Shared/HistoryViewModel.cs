@@ -116,7 +116,7 @@ namespace CasaCejaRemake.ViewModels.Shared
         private async Task SearchAsync()
         {
             IsSearching = true;
-            StatusMessage = "Cargando historial...";
+            StatusMessage = "Cargando registros";
             try
             {
                 var start = StartDate?.DateTime ?? DateTime.Today.AddDays(-30);
@@ -136,9 +136,7 @@ namespace CasaCejaRemake.ViewModels.Shared
                         var supplierName = e.SupplierId > 0
                             ? (supplierMap.TryGetValue(e.SupplierId, out var name) ? name : "Desconocido")
                             : "Sin proveedor";
-                        var estado = e.EntryType == StockEntryType.Transfer
-                            ? (e.ConfirmedAt != null ? "CONFIRMADO" : "PENDIENTE")
-                            : (e.SyncStatus == 2 ? "SINCRONIZADO" : "PENDIENTE SYNC");
+                        var estado = GetEntryStatus(e);
 
                         _allItems.Add(new HistoryItem
                         {
@@ -168,7 +166,7 @@ namespace CasaCejaRemake.ViewModels.Shared
                             Fecha = o.OutputDate,
                             DestinoOrigen = $"Sucursal: {branchName}",
                             Total = o.TotalAmount,
-                            Estado = o.Status,
+                            Estado = NormalizeMovementStatus(o.Status),
                             Output = o
                         });
                     }
@@ -194,6 +192,12 @@ namespace CasaCejaRemake.ViewModels.Shared
             {
                 IsSearching = false;
             }
+        }
+
+        [RelayCommand]
+        private async Task RefreshAsync()
+        {
+            await SearchAsync();
         }
 
         private Task<List<StockEntry>> GetEntriesForCurrentSelectionAsync(DateTime start, DateTime end)
@@ -265,6 +269,27 @@ namespace CasaCejaRemake.ViewModels.Shared
                 .Where(o => o.OriginBranchId == branchId || o.DestinationBranchId == branchId)
                 .OrderByDescending(o => o.OutputDate)
                 .ToList();
+        }
+
+        private static string GetEntryStatus(StockEntry entry)
+        {
+            if (entry.EntryType == StockEntryType.Transfer)
+                return entry.ConfirmedAt != null ? "CONFIRMADO" : "PENDIENTE";
+
+            return entry.SyncStatus == 2 ? "SINCRONIZADO" : "PENDIENTE";
+        }
+
+        private static string NormalizeMovementStatus(string? status)
+        {
+            return status?.Trim().ToUpperInvariant() switch
+            {
+                "PENDING" or "PENDIENTE" or "PENDIENTE SYNC" => "PENDIENTE",
+                "CONFIRMED" or "CONFIRMADO" => "CONFIRMADO",
+                "SYNCED" or "SINCRONIZADO" => "SINCRONIZADO",
+                "CANCELLED" or "CANCELADO" => "CANCELADO",
+                "" or null => "PENDIENTE",
+                var value => value
+            };
         }
 
         partial void OnSelectedBranchChanged(Branch? value)
@@ -362,9 +387,7 @@ namespace CasaCejaRemake.ViewModels.Shared
                     var proveedor = e.EntryType == StockEntryType.Transfer
                         ? (supplierMap.TryGetValue(e.SupplierId, out var sn) ? $"Traspaso desde: {sn}" : "Traspaso")
                         : (supplierMap.TryGetValue(e.SupplierId, out var sn2) ? sn2 : "-");
-                    var estado = e.EntryType == StockEntryType.Transfer
-                        ? (e.ConfirmedAt != null ? "CONFIRMADO" : "PENDIENTE")
-                        : (e.SyncStatus == 2 ? "SINCRONIZADO" : "PENDIENTE SYNC");
+                    var estado = GetEntryStatus(e);
                     return new EntryExportRow(
                         e.Folio, e.EntryDate, proveedor,
                         e.EntryType == StockEntryType.Transfer ? "TRASPASO" : "COMPRA",
@@ -394,9 +417,7 @@ namespace CasaCejaRemake.ViewModels.Shared
                     var proveedor = entry.EntryType == StockEntryType.Transfer
                         ? (supplierMap.TryGetValue(entry.SupplierId, out var sn) ? $"Traspaso desde: {sn}" : "Traspaso")
                         : (supplierMap.TryGetValue(entry.SupplierId, out var sn2) ? sn2 : "-");
-                    var estado = entry.EntryType == StockEntryType.Transfer
-                        ? (entry.ConfirmedAt != null ? "CONFIRMADO" : "PENDIENTE")
-                        : (entry.SyncStatus == 2 ? "SINCRONIZADO" : "PENDIENTE SYNC");
+                    var estado = GetEntryStatus(entry);
 
                     entryDetailRows.Add((sep, ""));
                     entryDetailRows.Add(($"ENTRADA: {entry.Folio}", ""));
@@ -450,7 +471,7 @@ namespace CasaCejaRemake.ViewModels.Shared
                     var destino = branchMap.TryGetValue(o.DestinationBranchId, out var bn) ? bn : "Desconocido";
                     return new OutputExportRow(
                         o.Folio, o.OutputDate, destino,
-                        o.TotalAmount, o.Status, o.Notes ?? "");
+                        o.TotalAmount, NormalizeMovementStatus(o.Status), o.Notes ?? "");
                 }).ToList();
 
                 sheets.Add(exportService.CreateSheetData(
@@ -481,7 +502,7 @@ namespace CasaCejaRemake.ViewModels.Shared
                     outputDetailRows.Add(("Fecha",            output.OutputDate.ToString("dd/MM/yyyy HH:mm")));
                     outputDetailRows.Add(("Sucursal Destino", destino));
                     outputDetailRows.Add(("Total",            output.TotalAmount.ToString("C2")));
-                    outputDetailRows.Add(("Estado",           output.Status));
+                    outputDetailRows.Add(("Estado",           NormalizeMovementStatus(output.Status)));
                     if (!string.IsNullOrWhiteSpace(output.Notes))
                         outputDetailRows.Add(("Notas", output.Notes));
                     outputDetailRows.Add(("", ""));

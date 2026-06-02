@@ -535,11 +535,8 @@ namespace CasaCejaRemake.Services
             if (all.Count == 0)
                 return await GetEntriesAsync(branchId, startDate, endDate);
 
-            var endOfDay = endDate.Date.AddDays(1).AddSeconds(-1);
-            return all
-                .Where(x => x.EntryDate >= startDate.Date && x.EntryDate <= endOfDay)
-                .OrderByDescending(x => x.EntryDate)
-                .ToList();
+            await CacheServerEntriesAsync(all);
+            return await GetEntriesAsync(branchId, startDate, endDate);
         }
 
         public async Task<List<StockOutput>> GetOutputsAsync(int branchId, DateTime startDate, DateTime endDate)
@@ -561,11 +558,53 @@ namespace CasaCejaRemake.Services
             if (all.Count == 0)
                 return await GetOutputsAsync(branchId, startDate, endDate);
 
+            await CacheServerOutputsAsync(all);
+            return await GetOutputsAsync(branchId, startDate, endDate);
+        }
+
+        public async Task<List<StockOutput>> GetOutputsInvolvingBranchFromServerAsync(int branchId, DateTime startDate, DateTime endDate)
+        {
+            var all = await PullStockOutputsFromServerAsync(branchId);
+            if (all.Count > 0)
+                await CacheServerOutputsAsync(all);
+
             var endOfDay = endDate.Date.AddDays(1).AddSeconds(-1);
-            return all
-                .Where(x => x.OutputDate >= startDate.Date && x.OutputDate <= endOfDay)
-                .OrderByDescending(x => x.OutputDate)
-                .ToList();
+            return await _outputRepo.FindAsync(x =>
+                (x.OriginBranchId == branchId || x.DestinationBranchId == branchId)
+                && x.OutputDate >= startDate.Date
+                && x.OutputDate <= endOfDay);
+        }
+
+        private async Task CacheServerEntriesAsync(List<StockEntry> entries)
+        {
+            foreach (var entry in entries.Where(e => !string.IsNullOrWhiteSpace(e.Folio)))
+            {
+                var existing = (await _entryRepo.FindAsync(e => e.Folio == entry.Folio)).FirstOrDefault();
+                entry.Id = existing?.Id ?? 0;
+                entry.SyncStatus = 2;
+                entry.LastSync = DateTime.Now;
+
+                if (existing == null)
+                    await _entryRepo.AddAsync(entry);
+                else
+                    await _entryRepo.UpdateAsync(entry);
+            }
+        }
+
+        private async Task CacheServerOutputsAsync(List<StockOutput> outputs)
+        {
+            foreach (var output in outputs.Where(o => !string.IsNullOrWhiteSpace(o.Folio)))
+            {
+                var existing = (await _outputRepo.FindAsync(o => o.Folio == output.Folio)).FirstOrDefault();
+                output.Id = existing?.Id ?? 0;
+                output.SyncStatus = 2;
+                output.LastSync = DateTime.Now;
+
+                if (existing == null)
+                    await _outputRepo.AddAsync(output);
+                else
+                    await _outputRepo.UpdateAsync(output);
+            }
         }
 
         private async Task<List<StockEntry>> PullStockEntriesFromServerAsync(int branchId)
