@@ -73,15 +73,41 @@ namespace CasaCejaRemake.ViewModels.Shared
         [ObservableProperty]
         private int _totalOutputs;
 
+        [ObservableProperty]
+        private bool _isAdminMode;
+
+        [ObservableProperty]
+        private ObservableCollection<Branch> _availableBranches = new();
+
+        [ObservableProperty]
+        private Branch? _selectedBranch;
+
         private const int PageSize = 50;
         private List<HistoryItem> _allItems = new();
 
         public ObservableCollection<HistoryItem> Items { get; } = new();
 
-        public HistoryViewModel(InventoryService inventoryService, int branchId)
+        public HistoryViewModel(
+            InventoryService inventoryService,
+            int branchId,
+            bool isAdminMode = false,
+            List<Branch>? allBranches = null)
         {
             _inventoryService = inventoryService;
             _currentBranchId = branchId;
+            _isAdminMode = isAdminMode;
+
+            if (isAdminMode)
+            {
+                AvailableBranches.Add(new Branch { Id = 0, Name = "Todas las sucursales" });
+                foreach (var branch in allBranches ?? new List<Branch>())
+                {
+                    AvailableBranches.Add(branch);
+                }
+
+                _selectedBranch = AvailableBranches.FirstOrDefault();
+                OnPropertyChanged(nameof(SelectedBranch));
+            }
 
             _ = SearchAsync();
         }
@@ -104,7 +130,7 @@ namespace CasaCejaRemake.ViewModels.Shared
 
                 if (SelectedFilterIndex == 0 || SelectedFilterIndex == 1)
                 {
-                    var entries = await _inventoryService.GetEntriesAsync(_currentBranchId, start, end);
+                    var entries = await GetEntriesForCurrentSelectionAsync(start, end);
                     foreach (var e in entries)
                     {
                         var supplierName = e.SupplierId > 0
@@ -131,7 +157,7 @@ namespace CasaCejaRemake.ViewModels.Shared
 
                 if (SelectedFilterIndex == 0 || SelectedFilterIndex == 2)
                 {
-                    var outputs = await _inventoryService.GetOutputsAsync(_currentBranchId, start, end);
+                    var outputs = await GetOutputsForCurrentSelectionAsync(start, end);
                     foreach (var o in outputs)
                     {
                         var branchName = branchMap.TryGetValue(o.DestinationBranchId, out var bName) ? bName : "Desconocido";
@@ -168,6 +194,82 @@ namespace CasaCejaRemake.ViewModels.Shared
             {
                 IsSearching = false;
             }
+        }
+
+        private Task<List<StockEntry>> GetEntriesForCurrentSelectionAsync(DateTime start, DateTime end)
+        {
+            if (!IsAdminMode)
+                return _inventoryService.GetEntriesFromServerAsync(_currentBranchId, start, end);
+
+            var branchId = SelectedBranch?.Id ?? 0;
+            return branchId <= 0
+                ? GetAllEntriesFromServerAsync(start, end)
+                : _inventoryService.GetEntriesFromServerAsync(branchId, start, end);
+        }
+
+        private Task<List<StockOutput>> GetOutputsForCurrentSelectionAsync(DateTime start, DateTime end)
+        {
+            if (!IsAdminMode)
+                return _inventoryService.GetOutputsFromServerAsync(_currentBranchId, start, end);
+
+            var branchId = SelectedBranch?.Id ?? 0;
+            return branchId <= 0
+                ? GetAllOutputsFromServerAsync(start, end)
+                : GetOutputsInvolvingBranchFromServerAsync(branchId, start, end);
+        }
+
+        private async Task<List<StockEntry>> GetAllEntriesFromServerAsync(DateTime start, DateTime end)
+        {
+            var branchIds = AvailableBranches.Where(b => b.Id > 0).Select(b => b.Id).Distinct().ToList();
+            if (branchIds.Count == 0)
+                return await _inventoryService.GetAllEntriesAsync(start, end);
+
+            var result = new Dictionary<string, StockEntry>();
+            foreach (var branchId in branchIds)
+            {
+                var entries = await _inventoryService.GetEntriesFromServerAsync(branchId, start, end);
+                foreach (var entry in entries)
+                {
+                    if (!string.IsNullOrWhiteSpace(entry.Folio))
+                        result[entry.Folio] = entry;
+                }
+            }
+
+            return result.Values.OrderByDescending(x => x.EntryDate).ToList();
+        }
+
+        private async Task<List<StockOutput>> GetAllOutputsFromServerAsync(DateTime start, DateTime end)
+        {
+            var branchIds = AvailableBranches.Where(b => b.Id > 0).Select(b => b.Id).Distinct().ToList();
+            if (branchIds.Count == 0)
+                return await _inventoryService.GetAllOutputsAsync(start, end);
+
+            var result = new Dictionary<string, StockOutput>();
+            foreach (var branchId in branchIds)
+            {
+                var outputs = await _inventoryService.GetOutputsFromServerAsync(branchId, start, end);
+                foreach (var output in outputs)
+                {
+                    if (!string.IsNullOrWhiteSpace(output.Folio))
+                        result[output.Folio] = output;
+                }
+            }
+
+            return result.Values.OrderByDescending(x => x.OutputDate).ToList();
+        }
+
+        private async Task<List<StockOutput>> GetOutputsInvolvingBranchFromServerAsync(int branchId, DateTime start, DateTime end)
+        {
+            var outputs = await GetAllOutputsFromServerAsync(start, end);
+            return outputs
+                .Where(o => o.OriginBranchId == branchId || o.DestinationBranchId == branchId)
+                .OrderByDescending(o => o.OutputDate)
+                .ToList();
+        }
+
+        partial void OnSelectedBranchChanged(Branch? value)
+        {
+            _ = SearchAsync();
         }
 
         partial void OnSelectedFilterIndexChanged(int value)
@@ -253,7 +355,7 @@ namespace CasaCejaRemake.ViewModels.Shared
 
             if (includeEntries)
             {
-                var entries = await _inventoryService.GetEntriesAsync(_currentBranchId, start, end);
+                var entries = await GetEntriesForCurrentSelectionAsync(start, end);
 
                 var entryRows = entries.Select(e =>
                 {
@@ -341,7 +443,7 @@ namespace CasaCejaRemake.ViewModels.Shared
 
             if (includeOutputs)
             {
-                var outputs = await _inventoryService.GetOutputsAsync(_currentBranchId, start, end);
+                var outputs = await GetOutputsForCurrentSelectionAsync(start, end);
 
                 var outputRows = outputs.Select(o =>
                 {

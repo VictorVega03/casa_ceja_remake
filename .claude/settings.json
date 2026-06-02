@@ -3,7 +3,8 @@
     "allow": [
       "Bash(xargs ls -lh)",
       "Bash(xargs find)",
-      "Bash(dotnet build *)"
+      "Bash(dotnet build *)",
+      "Bash(grep -E \"\\\\.\\(cs|axaml\\)$\")"
     ]
   }
 }

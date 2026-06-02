@@ -80,14 +80,31 @@
                         CornerRadius="5" 
                         Padding="10"
                         Margin="0,0,0,10">
-                    <Grid ColumnDefinitions="Auto,*,Auto,Auto,Auto,Auto,Auto">
-                        <TextBlock Grid.Column="0"
+                    <Grid ColumnDefinitions="Auto,Auto,*,Auto,Auto,Auto,Auto,Auto">
+                        <StackPanel Grid.Column="0"
+                                    Orientation="Horizontal"
+                                    IsVisible="{Binding IsAdminMode}"
+                                    VerticalAlignment="Center"
+                                    Margin="0,0,15,0">
+                            <TextBlock Text="Sucursal:"
+                                       Foreground="#AAAAAA"
+                                       VerticalAlignment="Center"
+                                       Margin="0,0,10,0"/>
+                            <ComboBox ItemsSource="{Binding AvailableBranches}"
+                                      SelectedItem="{Binding SelectedBranch}"
+                                      Width="200"
+                                      DisplayMemberBinding="{Binding Name}"
+                                      Background="#3D3D3D"
+                                      Foreground="White"
+                                      BorderBrush="#555555"/>
+                        </StackPanel>
+                        <TextBlock Grid.Column="1"
                                    Text="Buscar:" 
                                    Foreground="#AAAAAA" 
                                    VerticalAlignment="Center"
                                    Margin="0,0,10,0"/>
                         <TextBox x:Name="SearchTextBox"
-                                 Grid.Column="1"
+                                 Grid.Column="2"
                                  Text="{Binding SearchText, Mode=TwoWay}"
                                  Watermark="Buscar por folio o usuario... (presione Enter)"
                                  Background="#3D3D3D"
@@ -97,29 +114,29 @@
                                  Margin="0,0,15,0"/>
                         
                         <!-- Date Filters -->
-                        <TextBlock Grid.Column="2"
+                        <TextBlock Grid.Column="3"
                                    Text="Desde:" 
                                    Foreground="#AAAAAA" 
                                    VerticalAlignment="Center"
                                    Margin="0,0,5,0"/>
-                        <CalendarDatePicker Grid.Column="3"
+                        <CalendarDatePicker Grid.Column="4"
                                             SelectedDate="{Binding FilterDateFrom}"
                                             Background="#3D3D3D"
                                             Foreground="White"
                                             Margin="0,0,10,0"/>
                         
-                        <TextBlock Grid.Column="4"
+                        <TextBlock Grid.Column="5"
                                    Text="Hasta:" 
                                    Foreground="#AAAAAA" 
                                    VerticalAlignment="Center"
                                    Margin="0,0,5,0"/>
-                        <CalendarDatePicker Grid.Column="5"
+                        <CalendarDatePicker Grid.Column="6"
                                             SelectedDate="{Binding FilterDateTo}"
                                             Background="#3D3D3D"
                                             Foreground="White"
                                             Margin="0,0,10,0"/>
                         
-                        <Button Grid.Column="6"
+                        <Button Grid.Column="7"
                                 Content="Aplicar Filtros (F5)"
                                 Command="{Binding ApplyDateFilterCommand}"
                                 Classes="filter"
@@ -158,6 +175,7 @@
             <DataGrid.Columns>
                 <DataGridTextColumn Header="FOLIO" Binding="{Binding Folio}" Width="260"/>
                 <DataGridTextColumn Header="USUARIO" Binding="{Binding UserName}" Width="180"/>
+                <DataGridTextColumn Header="SUCURSAL" Binding="{Binding BranchName}" Width="180"/>
                 <DataGridTextColumn Header="FECHA CIERRE" Binding="{Binding CloseDate, StringFormat='{}{0:dd/MM/yyyy HH:mm}'}" Width="160"/>
                 <DataGridTextColumn Header="FONDO" Binding="{Binding OpeningCash, StringFormat='{}{0:C2}'}" Width="130"/>
                 <DataGridTextColumn Header="TOTAL CORTE" Binding="{Binding TotalDelCorte, StringFormat='{}{0:C2}'}" Width="140"/>

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using CasaCejaRemake.Data.Repositories;
 using CasaCejaRemake.Models;
+using CasaCejaRemake.Models.DTOs;
 using CasaCejaRemake.Models.Results;
 
 namespace CasaCejaRemake.Services
@@ -23,6 +24,7 @@ namespace CasaCejaRemake.Services
         private readonly BaseRepository<CreditPayment> _creditPaymentRepository;
         private readonly FolioService _folioService;
         private readonly ConfigService _configService;
+        private readonly ApiClient? _apiClient;
 
         public CashCloseService(
             CashCloseRepository cashCloseRepository,
@@ -33,7 +35,8 @@ namespace CasaCejaRemake.Services
             BaseRepository<LayawayPayment> layawayPaymentRepository,
             BaseRepository<CreditPayment> creditPaymentRepository,
             FolioService folioService,
-            ConfigService configService)
+            ConfigService configService,
+            ApiClient? apiClient = null)
         {
             _cashCloseRepository = cashCloseRepository;
             _movementRepository = movementRepository;
@@ -44,6 +47,7 @@ namespace CasaCejaRemake.Services
             _creditPaymentRepository = creditPaymentRepository;
             _folioService = folioService;
             _configService = configService;
+            _apiClient = apiClient;
         }
 
         /// <summary>Abre una nueva caja con el fondo inicial especificado.</summary>
@@ -487,6 +491,65 @@ namespace CasaCejaRemake.Services
                 Console.WriteLine($"[CashCloseService] Error al obtener historial: {ex.Message}");
                 return new List<CashClose>();
             }
+        }
+
+        /// <summary>
+        /// Obtiene el historial de cortes cerrados de todas las sucursales.
+        /// </summary>
+        public async Task<List<CashClose>> GetAllBranchesHistoryAsync(int limit = 200)
+        {
+            try
+            {
+                var all = await _cashCloseRepository.FindAsync(
+                    c => c.CloseDate > c.OpeningDate.AddSeconds(1));
+                return all.OrderByDescending(c => c.CloseDate).Take(limit).ToList();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[CashCloseService] Error historial global: {ex.Message}");
+                return new List<CashClose>();
+            }
+        }
+
+        public async Task<List<CashClose>> GetHistoryFromServerAsync(int branchId, int limit = 200)
+        {
+            if (_apiClient == null)
+                return await GetHistoryAsync(branchId, limit);
+
+            var all = new List<CashClose>();
+            var page = 1;
+
+            try
+            {
+                while (true)
+                {
+                    var endpoint = $"/api/v1/sync/pull/cash-closes?since=0&page={page}&branch_id={branchId}";
+                    var response = await _apiClient.GetAsync<PullResponse<CashClose>>(endpoint);
+
+                    if (response?.IsSuccess != true || response.Data == null)
+                        break;
+
+                    all.AddRange(response.Data.Data);
+
+                    if (!response.Data.HasMorePages)
+                        break;
+
+                    page++;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[CashCloseService] Error historial servidor: {ex.Message}");
+            }
+
+            if (all.Count == 0)
+                return await GetHistoryAsync(branchId, limit);
+
+            return all
+                .Where(c => c.CloseDate > c.OpeningDate.AddSeconds(1))
+                .OrderByDescending(c => c.CloseDate)
+                .Take(limit)
+                .ToList();
         }
 
         /// <summary>Genera un folio único para el corte usando FolioService.</summary>

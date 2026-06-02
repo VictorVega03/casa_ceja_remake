@@ -105,6 +105,15 @@
             <Grid ColumnDefinitions="Auto,*,Auto">
                 <!-- Filter controls -->
                 <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="14" VerticalAlignment="Center">
+                    <!-- Selector de sucursal - solo visible en modo Admin -->
+                    <StackPanel Spacing="4" IsVisible="{Binding IsAdminMode}">
+                        <TextBlock Text="SUCURSAL" FontSize="10" FontWeight="Bold"
+                                   Foreground="#666" LetterSpacing="1"/>
+                        <ComboBox ItemsSource="{Binding AvailableBranches}"
+                                  SelectedItem="{Binding SelectedBranch}"
+                                  Width="200"
+                                  DisplayMemberBinding="{Binding Name}"/>
+                    </StackPanel>
                     <StackPanel Spacing="4">
                         <TextBlock Text="TIPO" FontSize="10" FontWeight="Bold" Foreground="#666" LetterSpacing="1"/>
                         <ComboBox SelectedIndex="{Binding SelectedFilterIndex}" Width="130">

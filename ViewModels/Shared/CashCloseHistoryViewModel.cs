@@ -55,6 +55,7 @@ namespace CasaCejaRemake.ViewModels.Shared
         private readonly BaseRepository<Branch> _branchRepository;
         private readonly int _branchId;
         private ObservableCollection<CashCloseListItemWrapper> _allItems = new();
+        private const int HistoryLimit = 200;
 
         [ObservableProperty]
         private CashCloseListItemWrapper? _selectedItem;
@@ -77,6 +78,15 @@ namespace CasaCejaRemake.ViewModels.Shared
         [ObservableProperty]
         private DateTime? _filterDateTo;
 
+        [ObservableProperty]
+        private bool _isAdminMode;
+
+        [ObservableProperty]
+        private ObservableCollection<Branch> _availableBranches = new();
+
+        [ObservableProperty]
+        private Branch? _selectedBranch;
+
         public ObservableCollection<CashCloseListItemWrapper> Items { get; } = new();
 
         public bool HasSelectedItem => SelectedItem != null;
@@ -90,13 +100,28 @@ namespace CasaCejaRemake.ViewModels.Shared
             AuthService authService,
             BaseRepository<User> userRepository,
             BaseRepository<Branch> branchRepository,
-            int branchId)
+            int branchId,
+            bool isAdminMode = false,
+            List<Branch>? allBranches = null)
         {
             _cashCloseService = cashCloseService;
             _authService = authService;
             _userRepository = userRepository;
             _branchRepository = branchRepository;
             _branchId = branchId;
+            _isAdminMode = isAdminMode;
+
+            if (isAdminMode)
+            {
+                AvailableBranches.Add(new Branch { Id = 0, Name = "Todas las sucursales" });
+                foreach (var branch in allBranches ?? new List<Branch>())
+                {
+                    AvailableBranches.Add(branch);
+                }
+
+                _selectedBranch = AvailableBranches.FirstOrDefault();
+                OnPropertyChanged(nameof(SelectedBranch));
+            }
 
             // Filtros por defecto: último mes
             _filterDateTo = DateTime.Today;
@@ -117,7 +142,7 @@ namespace CasaCejaRemake.ViewModels.Shared
                 _allItems.Clear();
 
                 // Obtener historial de cortes
-                var cashCloses = await _cashCloseService.GetHistoryAsync(_branchId, 100);
+                var cashCloses = await GetHistoryForCurrentSelectionAsync();
 
                 // Aplicar filtro de fechas si está configurado
                 if (FilterDateFrom.HasValue)
@@ -163,6 +188,40 @@ namespace CasaCejaRemake.ViewModels.Shared
             }
         }
 
+        private Task<List<CashClose>> GetHistoryForCurrentSelectionAsync()
+        {
+            if (!IsAdminMode)
+                return _cashCloseService.GetHistoryAsync(_branchId, HistoryLimit);
+
+            var branchId = SelectedBranch?.Id ?? 0;
+            return branchId <= 0
+                ? GetAllBranchesHistoryFromServerAsync()
+                : _cashCloseService.GetHistoryFromServerAsync(branchId, HistoryLimit);
+        }
+
+        private async Task<List<CashClose>> GetAllBranchesHistoryFromServerAsync()
+        {
+            var branchIds = AvailableBranches.Where(b => b.Id > 0).Select(b => b.Id).Distinct().ToList();
+            if (branchIds.Count == 0)
+                return await _cashCloseService.GetAllBranchesHistoryAsync(HistoryLimit);
+
+            var result = new Dictionary<string, CashClose>();
+            foreach (var branchId in branchIds)
+            {
+                var history = await _cashCloseService.GetHistoryFromServerAsync(branchId, HistoryLimit);
+                foreach (var cashClose in history)
+                {
+                    if (!string.IsNullOrWhiteSpace(cashClose.Folio))
+                        result[cashClose.Folio] = cashClose;
+                }
+            }
+
+            return result.Values
+                .OrderByDescending(c => c.CloseDate)
+                .Take(HistoryLimit)
+                .ToList();
+        }
+
         private void ApplySearch()
         {
             Items.Clear();
@@ -174,7 +233,8 @@ namespace CasaCejaRemake.ViewModels.Shared
                 var search = SearchText.Trim().ToLower();
                 filtered = filtered.Where(item =>
                     item.Folio.ToLower().Contains(search) ||
-                    item.UserName.ToLower().Contains(search));
+                    item.UserName.ToLower().Contains(search) ||
+                    item.BranchName.ToLower().Contains(search));
             }
 
             foreach (var item in filtered)
@@ -210,6 +270,11 @@ namespace CasaCejaRemake.ViewModels.Shared
         partial void OnSelectedItemChanged(CashCloseListItemWrapper? value)
         {
             OnPropertyChanged(nameof(HasSelectedItem));
+        }
+
+        partial void OnSelectedBranchChanged(Branch? value)
+        {
+            _ = LoadDataAsync();
         }
 
         [RelayCommand]
@@ -350,5 +415,3 @@ namespace CasaCejaRemake.ViewModels.Shared
         }
     }
 }
-
-

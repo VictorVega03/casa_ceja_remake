@@ -179,7 +179,7 @@ namespace CasaCejaRemake
                     cashCloseRepo, cashMovementRepo,
                     saleRepo, creditRepo, layawayRepo,
                     layawayPaymentRepo, creditPaymentRepo,
-                    FolioService, ConfigService);
+                    FolioService, ConfigService, ApiClient);
                 var entryProductRepo = new BaseRepository<Models.EntryProduct>(DatabaseService);
                 var outputProductRepo = new BaseRepository<Models.OutputProduct>(DatabaseService);
                 var supplierRepo = new BaseRepository<Models.Supplier>(DatabaseService);
@@ -924,12 +924,73 @@ namespace CasaCejaRemake
 
             viewModel.MovementsSelected += async (s, e) =>
             {
-                await ShowAdminComingSoon(adminView, "Entradas y Salidas", "Etapa 2");
+                var branches = await _inventoryService!.GetBranchesAsync();
+                var historyVm = new ViewModels.Shared.HistoryViewModel(
+                    _inventoryService!, branchId: 0,
+                    isAdminMode: true, allBranches: branches);
+                var historyView = new Views.Shared.HistoryView { DataContext = historyVm };
+
+                historyVm.GoBackRequested += (_, _) =>
+                {
+                    historyView.Tag = "back";
+                    historyView.Close();
+                };
+
+                historyVm.MovementDetailRequested += async (_, historyItem) =>
+                {
+                    historyView.IsDetailOpen = true;
+                    var detailVm = new ViewModels.Inventory.MovementDetailViewModel(_inventoryService!, historyItem);
+                    var detailView = new Views.Inventory.MovementDetailView { DataContext = detailVm };
+                    detailVm.CloseRequested += (_, _) => detailView.Close();
+                    await detailView.ShowDialog(historyView);
+                    historyView.IsDetailOpen = false;
+                };
+
+                historyView.Closed += (_, _) => ShowAdmin();
+                desktop.MainWindow = historyView;
+                historyView.Show();
+                adminView.Close();
             };
 
             viewModel.CashCloseHistorySelected += async (s, e) =>
             {
-                await ShowAdminComingSoon(adminView, "Historial de Cortes", "Etapa 2");
+                var branches = await _inventoryService!.GetBranchesAsync();
+                var userRepo = new BaseRepository<Models.User>(DatabaseService!);
+                var branchRepo = new BaseRepository<Models.Branch>(DatabaseService!);
+                var historyVm = new ViewModels.Shared.CashCloseHistoryViewModel(
+                    _cashCloseService!,
+                    AuthService,
+                    userRepo,
+                    branchRepo,
+                    branchId: 0,
+                    isAdminMode: true,
+                    allBranches: branches);
+                var historyView = new Views.Shared.CashCloseHistoryView { DataContext = historyVm };
+
+                historyVm.CloseRequested += (_, _) =>
+                {
+                    historyView.Tag = "back";
+                    historyView.Close();
+                };
+
+                historyView.Closed += async (_, _) =>
+                {
+                    ShowAdmin();
+
+                    if (historyView.Tag is ValueTuple<string, CashCloseListItemWrapper> result && result.Item1 == "ItemSelected")
+                    {
+                        var detailView = new CashCloseDetailView();
+                        var detailVm = new CashCloseDetailViewModel(_cashCloseService!, _ticketService!);
+                        await detailVm.InitializeAsync(result.Item2.CashClose, result.Item2.UserName, result.Item2.BranchName);
+                        detailView.DataContext = detailVm;
+                        await detailView.ShowDialog(desktop.MainWindow);
+                    }
+                };
+
+                desktop.MainWindow = historyView;
+                await historyVm.InitializeAsync();
+                historyView.Show();
+                adminView.Close();
             };
 
             viewModel.GlobalStockSelected += async (s, e) =>

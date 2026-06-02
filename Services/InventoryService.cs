@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
 using System.Threading.Tasks;
 using CasaCejaRemake.Data.Repositories;
 using CasaCejaRemake.Models;
@@ -521,10 +522,234 @@ namespace CasaCejaRemake.Services
             return await _entryRepo.FindAsync(x => x.BranchId == branchId && x.EntryDate >= startDate.Date && x.EntryDate <= endOfDay);
         }
 
+        public async Task<List<StockEntry>> GetAllEntriesAsync(DateTime startDate, DateTime endDate)
+        {
+            var endOfDay = endDate.Date.AddDays(1).AddSeconds(-1);
+            return await _entryRepo.FindAsync(x =>
+                x.EntryDate >= startDate.Date && x.EntryDate <= endOfDay);
+        }
+
+        public async Task<List<StockEntry>> GetEntriesFromServerAsync(int branchId, DateTime startDate, DateTime endDate)
+        {
+            var all = await PullStockEntriesFromServerAsync(branchId);
+            if (all.Count == 0)
+                return await GetEntriesAsync(branchId, startDate, endDate);
+
+            var endOfDay = endDate.Date.AddDays(1).AddSeconds(-1);
+            return all
+                .Where(x => x.EntryDate >= startDate.Date && x.EntryDate <= endOfDay)
+                .OrderByDescending(x => x.EntryDate)
+                .ToList();
+        }
+
         public async Task<List<StockOutput>> GetOutputsAsync(int branchId, DateTime startDate, DateTime endDate)
         {
             var endOfDay = endDate.Date.AddDays(1).AddSeconds(-1);
             return await _outputRepo.FindAsync(x => x.OriginBranchId == branchId && x.OutputDate >= startDate.Date && x.OutputDate <= endOfDay);
+        }
+
+        public async Task<List<StockOutput>> GetAllOutputsAsync(DateTime startDate, DateTime endDate)
+        {
+            var endOfDay = endDate.Date.AddDays(1).AddSeconds(-1);
+            return await _outputRepo.FindAsync(x =>
+                x.OutputDate >= startDate.Date && x.OutputDate <= endOfDay);
+        }
+
+        public async Task<List<StockOutput>> GetOutputsFromServerAsync(int branchId, DateTime startDate, DateTime endDate)
+        {
+            var all = await PullStockOutputsFromServerAsync(branchId);
+            if (all.Count == 0)
+                return await GetOutputsAsync(branchId, startDate, endDate);
+
+            var endOfDay = endDate.Date.AddDays(1).AddSeconds(-1);
+            return all
+                .Where(x => x.OutputDate >= startDate.Date && x.OutputDate <= endOfDay)
+                .OrderByDescending(x => x.OutputDate)
+                .ToList();
+        }
+
+        private async Task<List<StockEntry>> PullStockEntriesFromServerAsync(int branchId)
+        {
+            var elements = await PullJsonPagesAsync("stock-entries", branchId);
+            return elements.Select(MapStockEntry).ToList();
+        }
+
+        private async Task<List<StockOutput>> PullStockOutputsFromServerAsync(int branchId)
+        {
+            var elements = await PullJsonPagesAsync("stock-outputs", branchId);
+            return elements.Select(MapStockOutput).ToList();
+        }
+
+        private async Task<List<JsonElement>> PullJsonPagesAsync(string entity, int branchId)
+        {
+            var result = new List<JsonElement>();
+            var page = 1;
+
+            try
+            {
+                while (true)
+                {
+                    var endpoint = $"/api/v1/sync/pull/{entity}?since=0&page={page}&branch_id={branchId}";
+                    var response = await _apiClient.GetAsync<JsonElement>(endpoint);
+
+                    if (response?.IsSuccess != true)
+                        break;
+
+                    var data = response.Data;
+                    if (!data.TryGetProperty("data", out var items) || items.ValueKind != JsonValueKind.Array)
+                        break;
+
+                    foreach (var item in items.EnumerateArray())
+                    {
+                        result.Add(item.Clone());
+                    }
+
+                    var currentPage = GetInt(data, "current_page", page);
+                    var lastPage = GetInt(data, "last_page", currentPage);
+                    if (currentPage >= lastPage)
+                        break;
+
+                    page++;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[InventoryService] Error leyendo {entity} desde servidor: {ex.Message}");
+            }
+
+            return result;
+        }
+
+        private static StockEntry MapStockEntry(JsonElement item)
+        {
+            return new StockEntry
+            {
+                Id = GetInt(item, "id", 0),
+                Folio = GetString(item, "folio"),
+                FolioOutput = GetNullableString(item, "folio_output"),
+                BranchId = GetInt(item, "branch_id", 0),
+                SupplierId = GetInt(item, "supplier_id", 0),
+                UserId = GetInt(item, "user_id", 0),
+                TotalAmount = GetDecimal(item, "total_amount", 0),
+                EntryDate = GetDateTime(item, "entry_date", DateTime.Now),
+                EntryType = GetString(item, "entry_type", StockEntryType.Purchase),
+                Notes = GetNullableString(item, "notes"),
+                ConfirmedByUserId = GetNullableInt(item, "confirmed_by_user_id"),
+                ConfirmedAt = GetNullableDateTime(item, "confirmed_at"),
+                CreatedAt = GetDateTime(item, "created_at", DateTime.Now),
+                UpdatedAt = GetDateTime(item, "updated_at", DateTime.Now),
+                SyncStatus = 2,
+                LastSync = DateTime.Now,
+            };
+        }
+
+        private static StockOutput MapStockOutput(JsonElement item)
+        {
+            return new StockOutput
+            {
+                Id = GetInt(item, "id", 0),
+                Folio = GetString(item, "folio"),
+                OriginBranchId = GetInt(item, "origin_branch_id", 0),
+                DestinationBranchId = GetInt(item, "destination_branch_id", 0),
+                UserId = GetInt(item, "user_id", 0),
+                TotalAmount = GetDecimal(item, "total_amount", 0),
+                OutputDate = GetDateTime(item, "output_date", DateTime.Now),
+                Notes = GetNullableString(item, "notes"),
+                Status = GetString(item, "status", "PENDING"),
+                ConfirmedByUserId = GetNullableInt(item, "confirmed_by_user_id"),
+                ConfirmedAt = GetNullableDateTime(item, "confirmed_at"),
+                CreatedAt = GetDateTime(item, "created_at", DateTime.Now),
+                UpdatedAt = GetDateTime(item, "updated_at", DateTime.Now),
+                SyncStatus = 2,
+                LastSync = DateTime.Now,
+            };
+        }
+
+        private static int GetInt(JsonElement item, string propertyName, int fallback)
+        {
+            var value = GetProperty(item, propertyName);
+            if (value == null || value.Value.ValueKind == JsonValueKind.Null)
+                return fallback;
+
+            if (value.Value.ValueKind == JsonValueKind.Number && value.Value.TryGetInt32(out var number))
+                return number;
+
+            if (value.Value.ValueKind == JsonValueKind.String &&
+                int.TryParse(value.Value.GetString(), out var parsed))
+                return parsed;
+
+            return fallback;
+        }
+
+        private static int? GetNullableInt(JsonElement item, string propertyName)
+        {
+            var value = GetProperty(item, propertyName);
+            if (value == null || value.Value.ValueKind == JsonValueKind.Null)
+                return null;
+
+            if (value.Value.ValueKind == JsonValueKind.Number && value.Value.TryGetInt32(out var number))
+                return number;
+
+            if (value.Value.ValueKind == JsonValueKind.String &&
+                int.TryParse(value.Value.GetString(), out var parsed))
+                return parsed;
+
+            return null;
+        }
+
+        private static decimal GetDecimal(JsonElement item, string propertyName, decimal fallback)
+        {
+            var value = GetProperty(item, propertyName);
+            if (value == null || value.Value.ValueKind == JsonValueKind.Null)
+                return fallback;
+
+            if (value.Value.ValueKind == JsonValueKind.Number && value.Value.TryGetDecimal(out var number))
+                return number;
+
+            if (value.Value.ValueKind == JsonValueKind.String &&
+                decimal.TryParse(value.Value.GetString(), out var parsed))
+                return parsed;
+
+            return fallback;
+        }
+
+        private static string GetString(JsonElement item, string propertyName, string fallback = "")
+        {
+            return GetNullableString(item, propertyName) ?? fallback;
+        }
+
+        private static string? GetNullableString(JsonElement item, string propertyName)
+        {
+            var value = GetProperty(item, propertyName);
+            if (value == null || value.Value.ValueKind == JsonValueKind.Null)
+                return null;
+
+            return value.Value.ValueKind == JsonValueKind.String
+                ? value.Value.GetString()
+                : value.Value.ToString();
+        }
+
+        private static DateTime GetDateTime(JsonElement item, string propertyName, DateTime fallback)
+        {
+            return GetNullableDateTime(item, propertyName) ?? fallback;
+        }
+
+        private static DateTime? GetNullableDateTime(JsonElement item, string propertyName)
+        {
+            var value = GetProperty(item, propertyName);
+            if (value == null || value.Value.ValueKind == JsonValueKind.Null)
+                return null;
+
+            if (value.Value.ValueKind == JsonValueKind.String &&
+                DateTime.TryParse(value.Value.GetString(), out var parsed))
+                return parsed;
+
+            return null;
+        }
+
+        private static JsonElement? GetProperty(JsonElement item, string propertyName)
+        {
+            return item.TryGetProperty(propertyName, out var value) ? value : null;
         }
 
         public async Task<List<EntryProduct>> GetEntryProductsAsync(int entryId)
