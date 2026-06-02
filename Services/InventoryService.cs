@@ -531,7 +531,7 @@ namespace CasaCejaRemake.Services
 
         public async Task<List<StockEntry>> GetEntriesFromServerAsync(int branchId, DateTime startDate, DateTime endDate)
         {
-            var all = await PullStockEntriesFromServerAsync(branchId);
+            var all = await PullStockEntriesFromServerAsync(branchId, startDate, endDate);
             if (all.Count == 0)
                 return await GetEntriesAsync(branchId, startDate, endDate);
 
@@ -554,7 +554,7 @@ namespace CasaCejaRemake.Services
 
         public async Task<List<StockOutput>> GetOutputsFromServerAsync(int branchId, DateTime startDate, DateTime endDate)
         {
-            var all = await PullStockOutputsFromServerAsync(branchId);
+            var all = await PullStockOutputsFromServerAsync(branchId, startDate, endDate);
             if (all.Count == 0)
                 return await GetOutputsAsync(branchId, startDate, endDate);
 
@@ -564,7 +564,7 @@ namespace CasaCejaRemake.Services
 
         public async Task<List<StockOutput>> GetOutputsInvolvingBranchFromServerAsync(int branchId, DateTime startDate, DateTime endDate)
         {
-            var all = await PullStockOutputsFromServerAsync(branchId);
+            var all = await PullStockOutputsFromServerAsync(branchId, startDate, endDate, includeDestination: true);
             if (all.Count > 0)
                 await CacheServerOutputsAsync(all);
 
@@ -607,28 +607,35 @@ namespace CasaCejaRemake.Services
             }
         }
 
-        private async Task<List<StockEntry>> PullStockEntriesFromServerAsync(int branchId)
+        private async Task<List<StockEntry>> PullStockEntriesFromServerAsync(int branchId, DateTime? startDate = null, DateTime? endDate = null)
         {
-            var elements = await PullJsonPagesAsync("stock-entries", branchId);
+            var elements = await PullJsonPagesAsync("stock-entries", branchId, startDate, endDate);
             return elements.Select(MapStockEntry).ToList();
         }
 
-        private async Task<List<StockOutput>> PullStockOutputsFromServerAsync(int branchId)
+        private async Task<List<StockOutput>> PullStockOutputsFromServerAsync(int branchId, DateTime? startDate = null, DateTime? endDate = null, bool includeDestination = false)
         {
-            var elements = await PullJsonPagesAsync("stock-outputs", branchId);
+            var elements = await PullJsonPagesAsync("stock-outputs", branchId, startDate, endDate, includeDestination);
             return elements.Select(MapStockOutput).ToList();
         }
 
-        private async Task<List<JsonElement>> PullJsonPagesAsync(string entity, int branchId)
+        private async Task<List<JsonElement>> PullJsonPagesAsync(string entity, int branchId, DateTime? startDate = null, DateTime? endDate = null, bool includeDestination = false)
         {
             var result = new List<JsonElement>();
             var page = 1;
+            var extraParams = "";
+            if (startDate.HasValue)
+                extraParams += $"&start_date={startDate.Value:yyyy-MM-dd}";
+            if (endDate.HasValue)
+                extraParams += $"&end_date={endDate.Value:yyyy-MM-dd}";
+            if (includeDestination)
+                extraParams += "&include_destination=true";
 
             try
             {
                 while (true)
                 {
-                    var endpoint = $"/api/v1/sync/pull/{entity}?since=0&page={page}&branch_id={branchId}";
+                    var endpoint = $"/api/v1/sync/pull/{entity}?since=0&page={page}&branch_id={branchId}{extraParams}";
                     var response = await _apiClient.GetAsync<JsonElement>(endpoint);
 
                     if (response?.IsSuccess != true)
