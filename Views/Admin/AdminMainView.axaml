@@ -343,7 +343,7 @@
                 </Button.Effect>
                 <StackPanel Spacing="12" HorizontalAlignment="Center" VerticalAlignment="Center">
                     <Border Width="70" Height="70" Background="#BF360C" CornerRadius="35" HorizontalAlignment="Center">
-                        <TextBlock Text="🏪" FontSize="32" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        <TextBlock Text="🏢" FontSize="32" HorizontalAlignment="Center" VerticalAlignment="Center" />
                     </Border>
                     <TextBlock Text="SUCURSALES" FontSize="14" FontWeight="Bold"
                                Foreground="#212121" HorizontalAlignment="Center"

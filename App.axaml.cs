@@ -31,7 +31,8 @@ namespace CasaCejaRemake
         public static ExportService? ExportService { get; private set; }
         public static FolioService? FolioService { get; private set; }
         public static UserService? UserService { get; private set; }
-        
+        public static Services.BranchService? BranchService { get; private set; }
+
         // Servicios del POS
         private CartService? _cartService;
         private SalesService? _salesService;
@@ -125,8 +126,11 @@ namespace CasaCejaRemake
                 ApiClient   = new ApiClient(ConfigService);
                 SyncService = new SyncService(ApiClient, ConfigService, DatabaseService);
 
-                AuthService = new AuthService(userRepo, RoleService);
-                UserService = new UserService(userRepo, RoleService, SyncService, ApiClient);
+                AuthService   = new AuthService(userRepo, RoleService);
+                UserService   = new UserService(userRepo, RoleService, SyncService, ApiClient);
+                BranchService = new Services.BranchService(
+                    new BaseRepository<Models.Branch>(DatabaseService),
+                    ApiClient);
 
                 // Sincronizar la sucursal inicial en AuthService desde ConfigService
                 if (AuthService != null && ConfigService != null)
@@ -914,9 +918,9 @@ namespace CasaCejaRemake
             var isOpeningMovements = false;
             var isOpeningCashCloseHistory = false;
 
-            viewModel.BranchesSelected += async (s, e) =>
+            viewModel.BranchesSelected += (s, e) =>
             {
-                await ShowAdminComingSoon(adminView, "Sucursales", "Etapa 3");
+                ShowAdminBranches(adminView);
             };
 
             viewModel.SuppliersSelected += async (s, e) =>
@@ -1199,6 +1203,59 @@ namespace CasaCejaRemake
             };
 
             userManagementView.ShowDialog(parentWindow);
+        }
+
+        /// <summary>
+        /// Abre BranchListView en modo Admin como diálogo modal sobre el menú del Admin.
+        /// </summary>
+        private void ShowAdminBranches(Window parentWindow)
+        {
+            if (BranchService == null) return;
+
+            var listVm   = new ViewModels.Admin.BranchListViewModel(BranchService);
+            var listView = new Views.Admin.BranchListView { DataContext = listVm };
+
+            listVm.AddRequested += async (s, e) =>
+            {
+                var formVm   = new ViewModels.Admin.BranchFormViewModel(BranchService);
+                var formView = new Views.Admin.BranchFormView { DataContext = formVm };
+
+                formVm.SaveCompleted += async (_, _) =>
+                {
+                    await listVm.LoadCommand.ExecuteAsync(null);
+                };
+
+                await formView.ShowDialog(listView);
+            };
+
+            listVm.EditRequested += async (s, branch) =>
+            {
+                var branchCopy = new Models.Branch
+                {
+                    Id          = branch.Id,
+                    Name        = branch.Name,
+                    Address     = branch.Address,
+                    Email       = branch.Email,
+                    RazonSocial = branch.RazonSocial,
+                    Active      = branch.Active,
+                    CreatedAt   = branch.CreatedAt,
+                    UpdatedAt   = branch.UpdatedAt,
+                    SyncStatus  = branch.SyncStatus,
+                    LastSync    = branch.LastSync,
+                };
+
+                var formVm   = new ViewModels.Admin.BranchFormViewModel(BranchService, branchCopy);
+                var formView = new Views.Admin.BranchFormView { DataContext = formVm };
+
+                formVm.SaveCompleted += async (_, _) =>
+                {
+                    await listVm.LoadCommand.ExecuteAsync(null);
+                };
+
+                await formView.ShowDialog(listView);
+            };
+
+            listView.ShowDialog(parentWindow);
         }
 
         /// <summary>

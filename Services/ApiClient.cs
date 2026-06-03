@@ -299,5 +299,40 @@ namespace CasaCejaRemake.Services
             }
             return null;
         }
+
+        public async Task<ApiResult<bool>> DeleteAsync(string endpoint, CancellationToken ct = default)
+        {
+            try
+            {
+                var request  = CreateRequest(HttpMethod.Delete, endpoint);
+                var response = await _httpClient.SendAsync(request, ct);
+                var json     = await response.Content.ReadAsStringAsync(ct);
+
+                if (response.IsSuccessStatusCode)
+                    return new ApiResult<bool> { IsSuccess = true, Data = true };
+
+                string? serverMsg = null;
+                try
+                {
+                    var err = JsonSerializer.Deserialize<ApiResponse<object>>(json, _jsonOptions);
+                    serverMsg = err?.Message;
+                }
+                catch { }
+
+                return new ApiResult<bool>
+                {
+                    IsServerError = true,
+                    ServerMessage = serverMsg ?? $"Error del servidor ({(int)response.StatusCode})."
+                };
+            }
+            catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
+            {
+                return new ApiResult<bool>
+                {
+                    IsNetworkError = true,
+                    ServerMessage  = "Sin conexión al servidor."
+                };
+            }
+        }
     }
 }

@@ -1,12 +1,15 @@
 using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.Threading;
 using casa_ceja_remake.Helpers;
 using CasaCejaRemake.Models;
 using CasaCejaRemake.Services;
 using CasaCejaRemake.ViewModels.Shared;
-using System.Collections.Generic;
 
 namespace CasaCejaRemake.Views.Shared
 {
@@ -18,8 +21,18 @@ namespace CasaCejaRemake.Views.Shared
         public UserManagementView()
         {
             InitializeComponent();
+            this.AddHandler(InputElement.KeyDownEvent, OnPreviewKeyDown, RoutingStrategies.Tunnel, handledEventsToo: true);
             Loaded += OnLoaded;
             Activated += OnActivated;
+        }
+
+        private void OnPreviewKeyDown(object? sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Escape && !_isDialogOpen)
+            {
+                Close();
+                e.Handled = true;
+            }
         }
         
         private void OnActivated(object? sender, EventArgs e)
@@ -48,7 +61,31 @@ namespace CasaCejaRemake.Views.Shared
                 {
                     dataGrid.AddHandler(KeyDownEvent, DataGrid_PreviewKeyDown, RoutingStrategies.Tunnel);
                 }
+
+                Dispatcher.UIThread.Post(() =>
+                {
+                    EnsureFirstRowSelected(this.FindControl<DataGrid>("UsersGrid"));
+                }, DispatcherPriority.Loaded);
             }
+        }
+
+        private static void EnsureFirstRowSelected(DataGrid? grid)
+        {
+            if (grid == null) return;
+
+            var hasItems = grid.ItemsSource switch
+            {
+                ICollection col => col.Count > 0,
+                IEnumerable en  => en.Cast<object>().Any(),
+                _               => false
+            };
+
+            if (!hasItems) return;
+
+            if (grid.SelectedIndex < 0)
+                grid.SelectedIndex = 0;
+
+            grid.Focus();
         }
 
         private void DataGrid_PreviewKeyDown(object? sender, KeyEventArgs e)

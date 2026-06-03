@@ -1,0 +1,186 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="using:CasaCejaRemake.ViewModels.Admin"
+        mc:Ignorable="d"
+        d:DesignWidth="1150" d:DesignHeight="640"
+        x:Class="CasaCejaRemake.Views.Admin.BranchListView"
+        x:DataType="vm:BranchListViewModel"
+        Title="SUCURSALES"
+        Width="1150" Height="640"
+        WindowStartupLocation="CenterOwner"
+        Icon="/Assets/avalonia-logo.ico"
+        Background="#141414">
+
+    <Window.Styles>
+        <Style Selector="TextBox">
+            <Setter Property="Height" Value="35"/>
+            <Setter Property="Background" Value="#2D2D2D"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderBrush" Value="#404040"/>
+            <Setter Property="CornerRadius" Value="4"/>
+            <Setter Property="Padding" Value="10,8"/>
+        </Style>
+        <Style Selector="TextBox:pointerover">
+            <Setter Property="BorderBrush" Value="#4FC3F7"/>
+        </Style>
+        <Style Selector="Button">
+            <Setter Property="CornerRadius" Value="4"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+        </Style>
+        <Style Selector="Button.nav">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="6,4"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+        <Style Selector="Button.nav:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="Transparent"/>
+        </Style>
+        <Style Selector="Button.primary">
+            <Setter Property="Background" Value="#2196F3"/>
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+        <Style Selector="Button.primary:pointerover">
+            <Setter Property="Background" Value="#42A5F5"/>
+        </Style>
+        <Style Selector="Button.edit-btn">
+            <Setter Property="Background" Value="#37474F"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="Padding" Value="8,3"/>
+        </Style>
+        <Style Selector="Button.edit-btn:pointerover">
+            <Setter Property="Background" Value="#546E7A"/>
+        </Style>
+        <Style Selector="Button.delete-btn">
+            <Setter Property="Background" Value="#C62828"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="Padding" Value="8,3"/>
+        </Style>
+        <Style Selector="Button.delete-btn:pointerover">
+            <Setter Property="Background" Value="#E53935"/>
+        </Style>
+        <Style Selector="DataGridColumnHeader">
+            <Setter Property="Background" Value="#252525"/>
+            <Setter Property="Foreground" Value="#B0B0B0"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Padding" Value="10,8"/>
+        </Style>
+        <Style Selector="DataGridRow">
+            <Setter Property="Background" Value="#1E1E1E"/>
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+        <Style Selector="DataGridRow:pointerover">
+            <Setter Property="Background" Value="#2A2A2A"/>
+        </Style>
+        <Style Selector="DataGridRow:selected">
+            <Setter Property="Background" Value="#404040"/>
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+    </Window.Styles>
+
+    <Grid RowDefinitions="Auto,Auto,Auto,*,Auto">
+
+        <!-- HEADER -->
+        <Border Grid.Row="0" Background="#1E1E1E" BorderBrush="#2A2A2A" BorderThickness="0,0,0,1" Padding="20,10">
+            <Grid ColumnDefinitions="Auto,*">
+                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                    <Button Classes="nav" Command="{Binding GoBackCommand}" ToolTip.Tip="Volver (Esc)">
+                        <TextBlock Text="←" FontSize="15" Foreground="#FF9800" FontWeight="Bold"/>
+                    </Button>
+                    <Border Width="4" Height="18" CornerRadius="2" Background="#BF360C"/>
+                    <TextBlock Text="🏢" FontSize="20" VerticalAlignment="Center"/>
+                    <TextBlock Text="SUCURSALES" FontSize="16" FontWeight="Bold" Foreground="White" VerticalAlignment="Center"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- TOOLBAR -->
+        <Border Grid.Row="1" Padding="20,12" Background="#1A1A1A" BorderBrush="#2A2A2A" BorderThickness="0,0,0,1">
+            <Grid ColumnDefinitions="Auto,*,Auto">
+                <TextBox Grid.Column="0"
+                         Width="300"
+                         Watermark="Buscar por nombre..."
+                         Text="{Binding SearchText, Mode=TwoWay}"/>
+
+                <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="10">
+                    <Button Classes="primary"
+                            Command="{Binding AddCommand}"
+                            Padding="14,8">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <TextBlock Text="+" FontWeight="Bold" FontSize="14"/>
+                            <TextBlock Text="NUEVA SUCURSAL"/>
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- HINT -->
+        <Border Grid.Row="2" Padding="20,6" Background="#161616">
+            <TextBlock Text="Presiona Enter sobre una sucursal para ver su detalle completo"
+                       Foreground="#555" FontSize="11" FontStyle="Italic"/>
+        </Border>
+
+        <!-- CONTENT -->
+        <DataGrid Grid.Row="3"
+                  x:Name="BranchesGrid"
+                  Margin="20,8,20,0"
+                  ItemsSource="{Binding Branches}"
+                  SelectedItem="{Binding SelectedBranch}"
+                  AutoGenerateColumns="False"
+                  IsReadOnly="True"
+                  GridLinesVisibility="Horizontal"
+                  BorderThickness="1"
+                  BorderBrush="#2A2A2A">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="NOMBRE" Binding="{Binding Name}" Width="2*"/>
+                <DataGridTextColumn Header="DIRECCIÓN" Binding="{Binding Address}" Width="2*"/>
+                <DataGridTextColumn Header="CORREO" Binding="{Binding Email}" Width="*"/>
+                <DataGridTextColumn Header="RAZÓN SOCIAL" Binding="{Binding RazonSocial}" Width="*"/>
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <!-- FOOTER -->
+        <Border Grid.Row="4" Background="#1E1E1E" BorderBrush="#2A2A2A" BorderThickness="0,1,0,0" Padding="20,10">
+            <Grid ColumnDefinitions="*,Auto,Auto">
+                <TextBlock Grid.Column="0"
+                           Text="{Binding StatusMessage}"
+                           Foreground="#4FC3F7"
+                           FontSize="12"
+                           VerticalAlignment="Center"/>
+
+                <TextBlock Grid.Column="1"
+                           Text="Enter: Ver detalle   |   F2: Editar   |   Esc: Cerrar"
+                           Foreground="#555" FontSize="12" VerticalAlignment="Center"
+                           Margin="0,0,20,0"/>
+
+                <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8">
+                    <Button Classes="delete-btn"
+                            Command="{Binding DeactivateCommand}"
+                            IsEnabled="{Binding SelectedBranch, Converter={x:Static ObjectConverters.IsNotNull}}"
+                            Content="Eliminar"
+                            Padding="14,7"/>
+                    <Button Classes="edit-btn"
+                            Command="{Binding EditCommand}"
+                            IsEnabled="{Binding SelectedBranch, Converter={x:Static ObjectConverters.IsNotNull}}"
+                            Content="Editar (F2)"
+                            Padding="14,7"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Loading Overlay -->
+        <Border Grid.RowSpan="5"
+                Background="#80000000"
+                IsVisible="{Binding IsLoading}">
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="10">
+                <ProgressBar IsIndeterminate="True"/>
+                <TextBlock Text="Cargando..." Foreground="White"/>
+            </StackPanel>
+        </Border>
+    </Grid>
+</Window>
