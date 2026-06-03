@@ -291,6 +291,12 @@ namespace CasaCejaRemake.ViewModels.Shared
         }
 
         [RelayCommand]
+        private async Task Refresh()
+        {
+            await LoadDataAsync();
+        }
+
+        [RelayCommand]
         private async Task ClearFilters()
         {
             try

@@ -79,6 +79,9 @@ namespace CasaCejaRemake.Views.Shared
             var shortcuts = new Dictionary<Key, System.Action>
             {
                 { Key.Escape, () => _viewModel.GoBackCommand.Execute(null) },
+                { Key.F5, () => _viewModel.SearchCommand.Execute(null) },
+                { Key.F6, () => _viewModel.ClearFiltersCommand.Execute(null) },
+                { Key.F7, () => _viewModel.RefreshCommand.Execute(null) },
                 { Key.Enter, () => {
                     if (_viewModel.SelectedItem != null)
                         _viewModel.RequestDetail(_viewModel.SelectedItem);

@@ -83,6 +83,7 @@ namespace CasaCejaRemake.ViewModels.Shared
         private Branch? _selectedBranch;
 
         private const int PageSize = 50;
+        private bool _isUpdatingFilters;
         private List<HistoryItem> _allItems = new();
 
         public ObservableCollection<HistoryItem> Items { get; } = new();
@@ -200,6 +201,24 @@ namespace CasaCejaRemake.ViewModels.Shared
             await SearchAsync();
         }
 
+        [RelayCommand]
+        private async Task ClearFiltersAsync()
+        {
+            try
+            {
+                _isUpdatingFilters = true;
+                StartDate = DateTimeOffset.Now.AddDays(-30);
+                EndDate = DateTimeOffset.Now;
+                SelectedFilterIndex = 0;
+            }
+            finally
+            {
+                _isUpdatingFilters = false;
+            }
+
+            await SearchAsync();
+        }
+
         private Task<List<StockEntry>> GetEntriesForCurrentSelectionAsync(DateTime start, DateTime end)
         {
             if (!IsAdminMode)
@@ -294,22 +313,26 @@ namespace CasaCejaRemake.ViewModels.Shared
 
         partial void OnSelectedBranchChanged(Branch? value)
         {
-            _ = SearchAsync();
+            if (!_isUpdatingFilters)
+                _ = SearchAsync();
         }
 
         partial void OnSelectedFilterIndexChanged(int value)
         {
-            _ = SearchAsync();
+            if (!_isUpdatingFilters)
+                _ = SearchAsync();
         }
 
         partial void OnStartDateChanged(DateTimeOffset? value)
         {
-            if (value != null && EndDate != null) _ = SearchAsync();
+            if (!_isUpdatingFilters && value != null && EndDate != null)
+                _ = SearchAsync();
         }
 
         partial void OnEndDateChanged(DateTimeOffset? value)
         {
-            if (value != null && StartDate != null) _ = SearchAsync();
+            if (!_isUpdatingFilters && value != null && StartDate != null)
+                _ = SearchAsync();
         }
 
         private void LoadCurrentPage()

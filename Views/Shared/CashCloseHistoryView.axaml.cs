@@ -47,7 +47,7 @@ namespace CasaCejaRemake.Views.Shared
             var searchTextBox = this.FindControl<TextBox>("SearchTextBox");
             if (searchTextBox != null)
             {
-                searchTextBox.KeyDown += SearchTextBox_KeyDown;
+                searchTextBox.AddHandler(KeyDownEvent, SearchTextBox_KeyDown, Avalonia.Interactivity.RoutingStrategies.Tunnel);
             }
             
             // Establecer focus en el DataGrid
@@ -77,8 +77,9 @@ namespace CasaCejaRemake.Views.Shared
 
         private void SearchTextBox_KeyDown(object? sender, KeyEventArgs e)
         {
-            if (e.Key == Key.Enter && _viewModel != null)
+            if (e.Key == Key.Enter && _viewModel != null && sender is TextBox searchTextBox)
             {
+                _viewModel.SearchText = searchTextBox.Text ?? string.Empty;
                 _viewModel.ExecuteSearchCommand.Execute(null);
                 e.Handled = true;
                 
@@ -107,11 +108,7 @@ namespace CasaCejaRemake.Views.Shared
                     { Key.Escape, () => _viewModel.CloseCommand.Execute(null) },
                     { Key.F5, () => _viewModel.ApplyDateFilterCommand.Execute(null) },
                     { Key.F6, () => _viewModel.ClearFiltersCommand.Execute(null) },
-                    { Key.F7, () => {
-                        var searchTextBox = this.FindControl<TextBox>("SearchTextBox");
-                        searchTextBox?.Focus();
-                        searchTextBox?.SelectAll();
-                    }},
+                    { Key.F7, () => _viewModel.RefreshCommand.Execute(null) },
                     { Key.F8, () => _viewModel.ExportToExcelCommand.Execute(null) }
                 };
 
