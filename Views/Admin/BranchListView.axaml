@@ -23,7 +23,7 @@
             <Setter Property="Padding" Value="10,8"/>
         </Style>
         <Style Selector="TextBox:pointerover">
-            <Setter Property="BorderBrush" Value="#4FC3F7"/>
+            <Setter Property="BorderBrush" Value="#BF360C"/>
         </Style>
         <Style Selector="Button">
             <Setter Property="CornerRadius" Value="4"/>
@@ -89,7 +89,7 @@
             <Grid ColumnDefinitions="Auto,*">
                 <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
                     <Button Classes="nav" Command="{Binding GoBackCommand}" ToolTip.Tip="Volver (Esc)">
-                        <TextBlock Text="←" FontSize="15" Foreground="#FF9800" FontWeight="Bold"/>
+                        <TextBlock Text="←" FontSize="15" Foreground="#BF360C" FontWeight="Bold"/>
                     </Button>
                     <Border Width="4" Height="18" CornerRadius="2" Background="#BF360C"/>
                     <TextBlock Text="🏢" FontSize="20" VerticalAlignment="Center"/>
@@ -149,7 +149,7 @@
             <Grid ColumnDefinitions="*,Auto,Auto">
                 <TextBlock Grid.Column="0"
                            Text="{Binding StatusMessage}"
-                           Foreground="#4FC3F7"
+                           Foreground="#FFAB91"
                            FontSize="12"
                            VerticalAlignment="Center"/>
 

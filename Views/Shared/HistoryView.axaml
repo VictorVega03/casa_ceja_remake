@@ -24,7 +24,7 @@
             <Setter Property="Background" Value="#2A2A2A"/>
         </Style>
         <Style Selector="Button.filter-btn">
-            <Setter Property="Background" Value="#1565C0"/>
+            <Setter Property="Background" Value="#2E7D32"/>
             <Setter Property="Foreground" Value="White"/>
             <Setter Property="Padding" Value="20,8"/>
             <Setter Property="CornerRadius" Value="5"/>
@@ -33,7 +33,7 @@
             <Setter Property="Cursor" Value="Hand"/>
         </Style>
         <Style Selector="Button.filter-btn:pointerover">
-            <Setter Property="Background" Value="#1976D2"/>
+            <Setter Property="Background" Value="#388E3C"/>
         </Style>
         <Style Selector="Button.page-btn">
             <Setter Property="Background" Value="#2A2A2A"/>
@@ -92,9 +92,9 @@
             <Grid ColumnDefinitions="Auto,*">
                 <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
                     <Button Classes="nav" Command="{Binding GoBackCommand}" ToolTip.Tip="Volver (Esc)">
-                        <TextBlock Text="←" FontSize="15" Foreground="#FF9800" FontWeight="Bold"/>
+                        <TextBlock Text="←" FontSize="15" Foreground="#2E7D32" FontWeight="Bold"/>
                     </Button>
-                    <Border Width="4" Height="18" CornerRadius="2" Background="#FF9800"/>
+                    <Border Width="4" Height="18" CornerRadius="2" Background="#2E7D32"/>
                     <TextBlock Text="HISTORIAL DE MOVIMIENTOS" FontSize="16" FontWeight="Bold" Foreground="White" VerticalAlignment="Center"/>
                 </StackPanel>
             </Grid>
@@ -157,7 +157,7 @@
                     <StackPanel Spacing="4" IsVisible="{Binding IsSearching}">
                         <TextBlock Text=" " FontSize="10"/>
                         <TextBlock Text="Cargando registros" FontSize="12" FontWeight="SemiBold"
-                                   Foreground="#FFD18A" VerticalAlignment="Center" Margin="0,8,0,0"/>
+                                   Foreground="#A5D6A7" VerticalAlignment="Center" Margin="0,8,0,0"/>
                     </StackPanel>
                 </StackPanel>
 
@@ -246,8 +246,8 @@
 
             <Border HorizontalAlignment="Center"
                     VerticalAlignment="Center"
-                    Background="#2A2118"
-                    BorderBrush="#B56A12"
+                    Background="#142A18"
+                    BorderBrush="#2E7D32"
                     BorderThickness="1"
                     CornerRadius="6"
                     Padding="18,12"
@@ -260,8 +260,8 @@
                                HorizontalAlignment="Center"/>
                     <ProgressBar IsIndeterminate="True"
                                  Height="6"
-                                 Foreground="#FF9800"
-                                 Background="#3A3124"/>
+                                 Foreground="#2E7D32"
+                                 Background="#1F3A24"/>
                 </StackPanel>
             </Border>
         </Grid>

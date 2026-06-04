@@ -56,6 +56,7 @@ namespace CasaCejaRemake
 
         // Referencia al diálogo de categorías/medidas para evitar múltiples instancias
         private Views.Shared.CatalogsManagementView? _currentCatalogsManagementView;
+        private int? _currentCatalogsManagementLockedTabIndex;
 
         public override void Initialize()
         {
@@ -569,6 +570,7 @@ namespace CasaCejaRemake
                 };
 
                 _currentCatalogsManagementView = catalogsView;
+                _currentCatalogsManagementLockedTabIndex = null;
 
                 catalogsViewModel.GoBackRequested += (sender, args) =>
                 {
@@ -578,6 +580,7 @@ namespace CasaCejaRemake
                 catalogsView.Closed += (sender, args) =>
                 {
                     _currentCatalogsManagementView = null;
+                    _currentCatalogsManagementLockedTabIndex = null;
                 };
 
                 catalogsView.ShowDialog(inventoryView);
@@ -1158,8 +1161,15 @@ namespace CasaCejaRemake
             // Evitar múltiples instancias simultáneas
             if (_currentCatalogsManagementView != null)
             {
-                _currentCatalogsManagementView.Activate();
-                return;
+                if (_currentCatalogsManagementLockedTabIndex == initialTabIndex)
+                {
+                    _currentCatalogsManagementView.Activate();
+                    return;
+                }
+
+                _currentCatalogsManagementView.Close();
+                _currentCatalogsManagementView = null;
+                _currentCatalogsManagementLockedTabIndex = null;
             }
 
             var catalogsViewModel = new ViewModels.Shared.CatalogsManagementViewModel(_inventoryService, ApiClient!, isAdminMode: true);
@@ -1169,6 +1179,7 @@ namespace CasaCejaRemake
             };
 
             _currentCatalogsManagementView = catalogsView;
+            _currentCatalogsManagementLockedTabIndex = initialTabIndex;
 
             catalogsViewModel.GoBackRequested += (sender, args) =>
             {
@@ -1178,11 +1189,11 @@ namespace CasaCejaRemake
             catalogsView.Closed += (sender, args) =>
             {
                 _currentCatalogsManagementView = null;
+                _currentCatalogsManagementLockedTabIndex = null;
             };
 
-            // Establecer el tab después de mostrar el diálogo
+            catalogsView.LockToTab(initialTabIndex);
             catalogsView.ShowDialog(parentWindow);
-            catalogsView.SelectTab(initialTabIndex);
         }
 
         /// <summary>

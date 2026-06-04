@@ -28,18 +28,18 @@
             <Setter Property="Padding" Value="10,8"/>
         </Style>
         <Style Selector="TextBox:pointerover">
-            <Setter Property="BorderBrush" Value="#4FC3F7"/>
+            <Setter Property="BorderBrush" Value="#00695C"/>
         </Style>
         <Style Selector="Button">
             <Setter Property="CornerRadius" Value="4"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
         </Style>
         <Style Selector="Button.primary">
-            <Setter Property="Background" Value="#2196F3"/>
+            <Setter Property="Background" Value="#00695C"/>
             <Setter Property="Foreground" Value="White"/>
         </Style>
         <Style Selector="Button.primary:pointerover">
-            <Setter Property="Background" Value="#42A5F5"/>
+            <Setter Property="Background" Value="#00796B"/>
         </Style>
         <Style Selector="Button.danger">
             <Setter Property="Background" Value="#D32F2F"/>
@@ -77,7 +77,7 @@
                             Background="Transparent"
                             BorderThickness="0"
                             Padding="4,4">
-                        <TextBlock Text="←" FontSize="15" Foreground="#FF9800" FontWeight="Bold"/>
+                        <TextBlock Text="←" FontSize="15" Foreground="#00695C" FontWeight="Bold"/>
                     </Button>
                     <Border Width="4" Height="22" CornerRadius="2" Background="#00695C"/>
                     <TextBlock Text="{Binding TitleIcon}" FontSize="22" VerticalAlignment="Center"/>
@@ -108,7 +108,7 @@
                             BorderThickness="1">
                         <TextBlock Foreground="#B0B0B0" FontSize="11">
                             <Run Text="Presiona" />
-                            <Run Text="Enter" FontWeight="Bold" Foreground="#4FC3F7" />
+                            <Run Text="Enter" FontWeight="Bold" Foreground="#80CBC4" />
                             <Run Text="para ver detalles" />
                         </TextBlock>
                     </Border>
@@ -176,7 +176,7 @@
                 <!-- Status -->
                 <TextBlock Grid.Column="0"
                            Text="{Binding StatusMessage}"
-                           Foreground="#4FC3F7"
+                           Foreground="#80CBC4"
                            FontSize="12"
                            VerticalAlignment="Center"/>
 

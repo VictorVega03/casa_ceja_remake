@@ -25,7 +25,7 @@
             <Setter Property="Background" Value="#3A3A3A"/>
         </Style>
         <Style Selector="Button.filter">
-            <Setter Property="Background" Value="#00838F"/>
+            <Setter Property="Background" Value="#1565C0"/>
             <Setter Property="Foreground" Value="White"/>
             <Setter Property="Padding" Value="20,8"/>
             <Setter Property="CornerRadius" Value="5"/>
@@ -34,7 +34,7 @@
             <Setter Property="Cursor" Value="Hand"/>
         </Style>
         <Style Selector="Button.filter:pointerover">
-            <Setter Property="Background" Value="#0097A7"/>
+            <Setter Property="Background" Value="#1976D2"/>
         </Style>
         <Style Selector="Button.page-btn">
             <Setter Property="Background" Value="#2A2A2A"/>
@@ -69,7 +69,7 @@
             <Setter Property="FontWeight" Value="Bold"/>
         </Style>
         <Style Selector="DataGridRow:selected /template/ Rectangle#BackgroundRectangle">
-            <Setter Property="Fill" Value="#006064"/>
+            <Setter Property="Fill" Value="#0D47A1"/>
         </Style>
         <Style Selector="DatePicker">
             <Setter Property="Background" Value="#2A2A2A"/>
@@ -94,9 +94,9 @@
             <Grid ColumnDefinitions="*,Auto">
                 <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
                     <Button Classes="nav" Command="{Binding CloseCommand}" ToolTip.Tip="Volver (Esc)">
-                        <TextBlock Text="←" FontSize="15" Foreground="#00BCD4" FontWeight="Bold"/>
+                        <TextBlock Text="←" FontSize="15" Foreground="#1565C0" FontWeight="Bold"/>
                     </Button>
-                    <Border Width="4" Height="18" CornerRadius="2" Background="#00BCD4"/>
+                    <Border Width="4" Height="18" CornerRadius="2" Background="#1565C0"/>
                     <TextBlock Text="HISTORIAL DE CORTES DE CAJA"
                                FontSize="16"
                                FontWeight="Bold"
@@ -106,7 +106,7 @@
                 <StackPanel Grid.Column="1" Orientation="Horizontal">
                     <TextBlock Text="Total: " Foreground="#AAAAAA" VerticalAlignment="Center"/>
                     <TextBlock Text="{Binding TotalCount}" 
-                               Foreground="#4DD0E1" 
+                               Foreground="#90CAF9" 
                                FontWeight="Bold"
                                FontSize="16"
                                VerticalAlignment="Center"/>
@@ -168,7 +168,7 @@
                     <StackPanel Spacing="4" IsVisible="{Binding IsLoading}">
                         <TextBlock Text=" " FontSize="10"/>
                         <TextBlock Text="Cargando cortes" FontSize="12" FontWeight="SemiBold"
-                                   Foreground="#80DEEA" VerticalAlignment="Center" Margin="0,8,0,0"/>
+                                   Foreground="#90CAF9" VerticalAlignment="Center" Margin="0,8,0,0"/>
                     </StackPanel>
                 </StackPanel>
             </Grid>
@@ -204,22 +204,22 @@
 
             <Border HorizontalAlignment="Center"
                     VerticalAlignment="Center"
-                    Background="#102529"
-                    BorderBrush="#00BCD4"
+                    Background="#10233A"
+                    BorderBrush="#1565C0"
                     BorderThickness="1"
                     CornerRadius="6"
                     Padding="18,14"
                     IsVisible="{Binding IsLoading}">
                 <StackPanel Width="260" Spacing="10">
                     <TextBlock Text="Cargando cortes..."
-                               Foreground="#80DEEA"
+                               Foreground="#90CAF9"
                                FontWeight="Bold"
                                FontSize="15"
                                HorizontalAlignment="Center"/>
                     <ProgressBar IsIndeterminate="True"
                                  Height="6"
-                                 Foreground="#00BCD4"
-                                 Background="#1F3B40"/>
+                                 Foreground="#1565C0"
+                                 Background="#1B2B44"/>
                 </StackPanel>
             </Border>
         </Grid>

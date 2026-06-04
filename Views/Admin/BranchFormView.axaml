@@ -67,7 +67,9 @@
                             <Run Text="NOMBRE"/>
                             <Run Text=" *" Foreground="#D32F2F"/>
                         </TextBlock>
-                        <TextBox Text="{Binding Name}" Watermark="Ej. Sucursal Centro"/>
+                        <TextBox x:Name="NameTextBox"
+                                 Text="{Binding Name}"
+                                 Watermark="Ej. Sucursal Centro"/>
                     </StackPanel>
 
                     <!-- Dirección -->

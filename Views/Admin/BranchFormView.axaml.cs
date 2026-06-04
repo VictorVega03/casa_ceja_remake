@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.Threading;
 using casa_ceja_remake.Helpers;
 using CasaCejaRemake.ViewModels.Admin;
 
@@ -25,6 +26,12 @@ namespace CasaCejaRemake.Views.Admin
                 _viewModel = vm;
                 _viewModel.SetParentWindow(this);
                 _viewModel.CloseRequested += (_, _) => Close();
+
+                Dispatcher.UIThread.Post(() =>
+                {
+                    NameTextBox.Focus();
+                    NameTextBox.SelectAll();
+                }, DispatcherPriority.Loaded);
             }
         }
 

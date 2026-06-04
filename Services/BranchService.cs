@@ -110,7 +110,16 @@ namespace CasaCejaRemake.Services
 
             try
             {
-                var response = await _apiClient.DeleteAsync($"/api/v1/admin/branches/{branchId}");
+                var payload = new
+                {
+                    name         = branch.Name,
+                    address      = branch.Address,
+                    email        = branch.Email,
+                    razon_social = branch.RazonSocial,
+                    active       = false,
+                };
+
+                var response = await _apiClient.PutAsync<Branch>($"/api/v1/admin/branches/{branchId}", payload);
 
                 if (response.IsNetworkError)
                     return (false, "Sin conexión al servidor. Verifica tu red e intenta de nuevo.");

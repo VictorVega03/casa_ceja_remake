@@ -216,9 +216,9 @@
                 </StackPanel>
             </Button>
 
-            <!-- CARD 2: MEDIDAS -->
+            <!-- CARD 2: CATEGORÍAS -->
             <Button Grid.Row="0" Grid.Column="2"
-                    Command="{Binding OpenUnitsCommand}"
+                    Command="{Binding OpenCategoriesCommand}"
                     IsEnabled="{Binding IsOnline}"
                     VerticalAlignment="Stretch" HorizontalAlignment="Stretch"
                     Background="#D8D8D8"
@@ -239,20 +239,20 @@
                 </Button.Effect>
                 <StackPanel Spacing="12" HorizontalAlignment="Center" VerticalAlignment="Center">
                     <Border Width="70" Height="70" Background="#1565C0" CornerRadius="35" HorizontalAlignment="Center">
-                        <TextBlock Text="📏" FontSize="32" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        <TextBlock Text="🏷️" FontSize="32" HorizontalAlignment="Center" VerticalAlignment="Center" />
                     </Border>
-                    <TextBlock Text="MEDIDAS" FontSize="14" FontWeight="Bold"
+                    <TextBlock Text="CATEGORÍAS" FontSize="14" FontWeight="Bold"
                                Foreground="#212121" HorizontalAlignment="Center"
                                TextWrapping="Wrap" TextAlignment="Center" />
-                    <TextBlock Text="Gestión de unidades de medida" FontSize="12"
+                    <TextBlock Text="Agregar o modificar categorías de productos" FontSize="12"
                                Foreground="#757575" HorizontalAlignment="Center"
                                TextWrapping="Wrap" TextAlignment="Center" />
                 </StackPanel>
             </Button>
 
-            <!-- CARD 3: CATEGORÍAS -->
+            <!-- CARD 3: MEDIDAS -->
             <Button Grid.Row="0" Grid.Column="4"
-                    Command="{Binding OpenCategoriesCommand}"
+                    Command="{Binding OpenUnitsCommand}"
                     IsEnabled="{Binding IsOnline}"
                     VerticalAlignment="Stretch" HorizontalAlignment="Stretch"
                     Background="#D8D8D8"
@@ -273,12 +273,12 @@
                 </Button.Effect>
                 <StackPanel Spacing="12" HorizontalAlignment="Center" VerticalAlignment="Center">
                     <Border Width="70" Height="70" Background="#6A1B9A" CornerRadius="35" HorizontalAlignment="Center">
-                        <TextBlock Text="🏷️" FontSize="32" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        <TextBlock Text="📏" FontSize="32" HorizontalAlignment="Center" VerticalAlignment="Center" />
                     </Border>
-                    <TextBlock Text="CATEGORÍAS" FontSize="14" FontWeight="Bold"
+                    <TextBlock Text="MEDIDAS" FontSize="14" FontWeight="Bold"
                                Foreground="#212121" HorizontalAlignment="Center"
                                TextWrapping="Wrap" TextAlignment="Center" />
-                    <TextBlock Text="Agregar o modificar categorías de productos" FontSize="12"
+                    <TextBlock Text="Gestión de unidades de medida" FontSize="12"
                                Foreground="#757575" HorizontalAlignment="Center"
                                TextWrapping="Wrap" TextAlignment="Center" />
                 </StackPanel>

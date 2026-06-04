@@ -13,6 +13,8 @@ namespace CasaCejaRemake.Views.Shared
     public partial class CatalogsManagementView : Window
     {
         private CatalogsManagementViewModel? _viewModel;
+        private int? _lockedTabIndex;
+        private bool _isRevertingTabSelection;
 
         public CatalogsManagementView()
         {
@@ -27,12 +29,29 @@ namespace CasaCejaRemake.Views.Shared
         /// </summary>
         public void SelectTab(int tabIndex)
         {
-            var tabControl = this.FindControl<TabControl>("SectionsTabControl");
-            if (tabControl != null)
+            if (SectionsTabControl == null)
             {
-                tabControl.SelectedIndex = tabIndex;
+                return;
             }
+
+            SectionsTabControl.SelectedItem = tabIndex == 0
+                ? CategoriesTabItem
+                : UnitsTabItem;
         }
+
+        public void LockToTab(int tabIndex)
+        {
+            _lockedTabIndex = tabIndex;
+            CategoriesTabItem.IsVisible = tabIndex == 0;
+            UnitsTabItem.IsVisible = tabIndex == 1;
+            SelectTab(tabIndex);
+        }
+
+        private bool IsCategoryTabSelected => SectionsTabControl?.SelectedItem == CategoriesTabItem;
+        private bool IsUnitTabSelected => SectionsTabControl?.SelectedItem == UnitsTabItem;
+        private bool IsLockedTabSelected => !_lockedTabIndex.HasValue
+            || (_lockedTabIndex.Value == 0 && IsCategoryTabSelected)
+            || (_lockedTabIndex.Value == 1 && IsUnitTabSelected);
 
         private void OnLoaded(object? sender, System.EventArgs e)
         {
@@ -54,7 +73,7 @@ namespace CasaCejaRemake.Views.Shared
 
             Dispatcher.UIThread.Post(() =>
             {
-                EnsureFirstRowSelected(CategoryGrid, focusGrid: SectionsTabControl?.SelectedIndex == 0);
+                EnsureFirstRowSelected(CategoryGrid, focusGrid: IsCategoryTabSelected);
                 EnsureFirstRowSelected(UnitGrid, focusGrid: false);
             }, DispatcherPriority.Loaded);
         }
@@ -73,7 +92,7 @@ namespace CasaCejaRemake.Views.Shared
         {
             Dispatcher.UIThread.Post(() =>
             {
-                EnsureFirstRowSelected(CategoryGrid, focusGrid: SectionsTabControl?.SelectedIndex == 0);
+                EnsureFirstRowSelected(CategoryGrid, focusGrid: IsCategoryTabSelected);
             }, DispatcherPriority.Loaded);
         }
 
@@ -81,19 +100,30 @@ namespace CasaCejaRemake.Views.Shared
         {
             Dispatcher.UIThread.Post(() =>
             {
-                EnsureFirstRowSelected(UnitGrid, focusGrid: SectionsTabControl?.SelectedIndex == 1);
+                EnsureFirstRowSelected(UnitGrid, focusGrid: IsUnitTabSelected);
             }, DispatcherPriority.Loaded);
         }
 
         private void OnSectionsTabSelectionChanged(object? sender, SelectionChangedEventArgs e)
         {
-            if (SectionsTabControl?.SelectedIndex == 0)
+            if (_isRevertingTabSelection)
+                return;
+
+            if (_lockedTabIndex.HasValue && !IsLockedTabSelected)
+            {
+                _isRevertingTabSelection = true;
+                SelectTab(_lockedTabIndex.Value);
+                _isRevertingTabSelection = false;
+                return;
+            }
+
+            if (IsCategoryTabSelected)
             {
                 Dispatcher.UIThread.Post(() => EnsureFirstRowSelected(CategoryGrid, focusGrid: true), DispatcherPriority.Loaded);
                 return;
             }
 
-            if (SectionsTabControl?.SelectedIndex == 1)
+            if (IsUnitTabSelected)
             {
                 Dispatcher.UIThread.Post(() => EnsureFirstRowSelected(UnitGrid, focusGrid: true), DispatcherPriority.Loaded);
             }

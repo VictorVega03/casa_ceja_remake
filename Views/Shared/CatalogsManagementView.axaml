@@ -108,7 +108,14 @@
             <Grid ColumnDefinitions="Auto,*,Auto">
                 <!-- Title -->
                 <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="14" VerticalAlignment="Center">
-                    <Border Width="4" Height="22" CornerRadius="2" Background="#FF9800"/>
+                    <Button Background="Transparent"
+                            BorderThickness="0"
+                            Padding="4,4"
+                            Command="{Binding CloseCommand}"
+                            ToolTip.Tip="Volver (Esc)">
+                        <TextBlock Text="←" FontSize="15" Foreground="#1565C0" FontWeight="Bold"/>
+                    </Button>
+                    <Border Width="4" Height="22" CornerRadius="2" Background="#1565C0"/>
                     <TextBlock Text="Categorías y Medidas" FontSize="17" FontWeight="Bold" Foreground="White" VerticalAlignment="Center"/>
                 </StackPanel>
                 <!-- Close button -->
@@ -129,7 +136,7 @@
                 SelectionChanged="OnSectionsTabSelectionChanged">
 
             <!-- ═══ CATEGORÍAS ═══ -->
-            <TabItem>
+            <TabItem x:Name="CategoriesTabItem">
                 <TabItem.Header>
                     <StackPanel Orientation="Horizontal" Spacing="8">
                         <TextBlock Text="Categorías"/>
@@ -187,7 +194,7 @@
             </TabItem>
 
             <!-- ═══ UNIDADES DE MEDIDA ═══ -->
-            <TabItem>
+            <TabItem x:Name="UnitsTabItem">
                 <TabItem.Header>
                     <StackPanel Orientation="Horizontal" Spacing="8">
                         <TextBlock Text="Unidades de Medida"/>

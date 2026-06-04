@@ -17,6 +17,7 @@ namespace CasaCejaRemake.Views.Admin
     {
         private BranchListViewModel? _viewModel;
         private bool _isDetailOpen;
+        private Window? _activeDetailDialog;
 
         public BranchListView()
         {
@@ -77,6 +78,7 @@ namespace CasaCejaRemake.Views.Admin
                 Background = Brushes.Transparent,
                 TransparencyLevelHint = new[] { WindowTransparencyLevel.AcrylicBlur },
             };
+            _activeDetailDialog = dialog;
 
             var root = new Border
             {
@@ -139,7 +141,7 @@ namespace CasaCejaRemake.Views.Admin
                 CornerRadius = new CornerRadius(4),
                 Padding = new Thickness(18, 8),
             };
-            closeBtn.Click += (_, _) => dialog.Close();
+            closeBtn.Click += (_, _) => CloseBranchDetailDialog(dialog);
             footer.Child = closeBtn;
             Grid.SetRow(footer, 2);
             layout.Children.Add(footer);
@@ -147,17 +149,30 @@ namespace CasaCejaRemake.Views.Admin
             root.Child = layout;
             dialog.Content = root;
 
-            dialog.KeyDown += (_, e2) =>
+            dialog.AddHandler(InputElement.KeyDownEvent, (_, e2) =>
             {
                 if (e2.Key == Key.Escape || e2.Key == Key.Enter)
                 {
-                    dialog.Close();
+                    CloseBranchDetailDialog(dialog);
                     e2.Handled = true;
                 }
+            }, RoutingStrategies.Tunnel, handledEventsToo: true);
+
+            dialog.Opened += (_, _) =>
+            {
+                dialog.Focus();
+                closeBtn.Focus();
             };
 
             await dialog.ShowDialog(this);
             _isDetailOpen = false;
+            _activeDetailDialog = null;
+        }
+
+        private void CloseBranchDetailDialog(Window dialog)
+        {
+            if (dialog.IsVisible)
+                dialog.Close();
         }
 
         private static void AddDetailField(StackPanel parent, string label, string value)
@@ -200,7 +215,19 @@ namespace CasaCejaRemake.Views.Admin
 
         private void OnPreviewKeyDown(object? sender, KeyEventArgs e)
         {
-            if (e.Key == Key.Escape && !_isDetailOpen)
+            if (e.Key != Key.Escape)
+                return;
+
+            if (_isDetailOpen)
+            {
+                if (_activeDetailDialog != null)
+                    CloseBranchDetailDialog(_activeDetailDialog);
+
+                e.Handled = true;
+                return;
+            }
+
+            if (!_isDetailOpen)
             {
                 Close();
                 e.Handled = true;

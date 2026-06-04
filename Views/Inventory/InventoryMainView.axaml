@@ -194,7 +194,7 @@
                     </Style>
                     <Style Selector="Button[IsEnabled=true]:pointerover">
                         <Setter Property="Background" Value="#C4C4C4" />
-                        <Setter Property="BorderBrush" Value="#43A047" />
+                        <Setter Property="BorderBrush" Value="#FF9800" />
                         <Setter Property="BorderThickness" Value="2" />
                     </Style>
                 </Button.Styles>
@@ -204,7 +204,7 @@
                 <StackPanel Spacing="12" HorizontalAlignment="Center" VerticalAlignment="Center">
                     <Border Width="70" Height="70" CornerRadius="35" HorizontalAlignment="Center">
                         <Border.Background>
-                            <SolidColorBrush Color="#2E7D32" />
+                            <SolidColorBrush Color="#FF9800" />
                         </Border.Background>
                         <TextBlock Text="📥" FontSize="32" HorizontalAlignment="Center" VerticalAlignment="Center" />
                     </Border>
@@ -238,7 +238,7 @@
                     </Style>
                     <Style Selector="Button[IsEnabled=true]:pointerover">
                         <Setter Property="Background" Value="#C4C4C4" />
-                        <Setter Property="BorderBrush" Value="#E53935" />
+                        <Setter Property="BorderBrush" Value="#42A5F5" />
                         <Setter Property="BorderThickness" Value="2" />
                     </Style>
                 </Button.Styles>
@@ -248,7 +248,7 @@
                 <StackPanel Spacing="12" HorizontalAlignment="Center" VerticalAlignment="Center">
                     <Border Width="70" Height="70" CornerRadius="35" HorizontalAlignment="Center">
                         <Border.Background>
-                            <SolidColorBrush Color="#B71C1C" Opacity="{Binding IsOnline, Converter={StaticResource BoolToOpacityConverter}}" />
+                            <SolidColorBrush Color="#42A5F5" Opacity="{Binding IsOnline, Converter={StaticResource BoolToOpacityConverter}}" />
                         </Border.Background>
                         <Panel>
                             <TextBlock Text="📤" FontSize="32" HorizontalAlignment="Center" VerticalAlignment="Center"
@@ -289,7 +289,7 @@
                     </Style>
                     <Style Selector="Button[IsEnabled=true]:pointerover">
                         <Setter Property="Background" Value="#C4C4C4" />
-                        <Setter Property="BorderBrush" Value="#00897B" />
+                        <Setter Property="BorderBrush" Value="#1976D2" />
                         <Setter Property="BorderThickness" Value="2" />
                     </Style>
                 </Button.Styles>
@@ -299,7 +299,7 @@
                 <StackPanel Spacing="12" HorizontalAlignment="Center" VerticalAlignment="Center">
                     <Border Width="70" Height="70" CornerRadius="35" HorizontalAlignment="Center">
                         <Border.Background>
-                            <SolidColorBrush Color="#00695C" Opacity="{Binding IsOnline, Converter={StaticResource BoolToOpacityConverter}}" />
+                            <SolidColorBrush Color="#1976D2" Opacity="{Binding IsOnline, Converter={StaticResource BoolToOpacityConverter}}" />
                         </Border.Background>
                         <Panel>
                             <TextBlock Text="✅" FontSize="32" HorizontalAlignment="Center" VerticalAlignment="Center"
@@ -329,7 +329,7 @@
                 <Button.Styles>
                     <Style Selector="Button:pointerover">
                         <Setter Property="Background" Value="#C4C4C4" />
-                        <Setter Property="BorderBrush" Value="#1565C0" />
+                        <Setter Property="BorderBrush" Value="#7D4A1E" />
                         <Setter Property="BorderThickness" Value="2" />
                     </Style>
                     <Style Selector="Button:pointerover /template/ ContentPresenter">
@@ -340,7 +340,7 @@
                     <DropShadowEffect Color="#000000" Opacity="0.12" BlurRadius="12" OffsetX="0" OffsetY="3"/>
                 </Button.Effect>
                 <StackPanel Spacing="12" HorizontalAlignment="Center" VerticalAlignment="Center">
-                    <Border Width="70" Height="70" Background="#1565C0" CornerRadius="35" HorizontalAlignment="Center">
+                    <Border Width="70" Height="70" Background="#7D4A1E" CornerRadius="35" HorizontalAlignment="Center">
                         <TextBlock Text="📋" FontSize="32" HorizontalAlignment="Center" VerticalAlignment="Center" />
                     </Border>
                     <TextBlock Text="CATÁLOGO DE PRODUCTOS" FontSize="14" FontWeight="Bold"
@@ -395,7 +395,7 @@
                 <Button.Styles>
                     <Style Selector="Button:pointerover">
                         <Setter Property="Background" Value="#C4C4C4" />
-                        <Setter Property="BorderBrush" Value="#546E7A" />
+                        <Setter Property="BorderBrush" Value="#2E7D32" />
                         <Setter Property="BorderThickness" Value="2" />
                     </Style>
                     <Style Selector="Button:pointerover /template/ ContentPresenter">
@@ -406,7 +406,7 @@
                     <DropShadowEffect Color="#000000" Opacity="0.12" BlurRadius="12" OffsetX="0" OffsetY="3"/>
                 </Button.Effect>
                 <StackPanel Spacing="12" HorizontalAlignment="Center" VerticalAlignment="Center">
-                    <Border Width="70" Height="70" Background="#37474F" CornerRadius="35" HorizontalAlignment="Center">
+                    <Border Width="70" Height="70" Background="#2E7D32" CornerRadius="35" HorizontalAlignment="Center">
                         <TextBlock Text="📊" FontSize="32" HorizontalAlignment="Center" VerticalAlignment="Center" />
                     </Border>
                     <TextBlock Text="HISTORIAL" FontSize="14" FontWeight="Bold"
