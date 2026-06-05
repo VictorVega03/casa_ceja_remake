@@ -1,0 +1,298 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="using:CasaCejaRemake.ViewModels.Admin"
+        xmlns:dto="using:CasaCejaRemake.Models.DTOs"
+        xmlns:helpers="using:CasaCejaRemake.Helpers"
+        mc:Ignorable="d"
+        d:DesignWidth="1200" d:DesignHeight="680"
+        x:Class="CasaCejaRemake.Views.Admin.GlobalStockView"
+        x:DataType="vm:GlobalStockViewModel"
+        Title="EXISTENCIAS POR SUCURSAL"
+        Width="1200" Height="680"
+        WindowStartupLocation="CenterScreen"
+        Icon="/Assets/avalonia-logo.ico"
+        Background="#141414">
+
+    <Window.Resources>
+        <helpers:DecimalToColorConverter x:Key="DecimalToColorConverter"/>
+    </Window.Resources>
+
+    <Window.Styles>
+        <Style Selector="TextBox">
+            <Setter Property="Height" Value="35"/>
+            <Setter Property="Background" Value="#2D2D2D"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderBrush" Value="#404040"/>
+            <Setter Property="CornerRadius" Value="4"/>
+            <Setter Property="Padding" Value="10,8"/>
+        </Style>
+        <Style Selector="TextBox:pointerover">
+            <Setter Property="BorderBrush" Value="#1B5E20"/>
+        </Style>
+        <Style Selector="ComboBox">
+            <Setter Property="Height" Value="35"/>
+            <Setter Property="Background" Value="#2D2D2D"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderBrush" Value="#404040"/>
+            <Setter Property="CornerRadius" Value="4"/>
+            <Setter Property="Padding" Value="10,6"/>
+        </Style>
+        <Style Selector="Button">
+            <Setter Property="CornerRadius" Value="4"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+        </Style>
+        <Style Selector="Button.nav">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="6,4"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+        <Style Selector="Button.nav:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="Transparent"/>
+        </Style>
+        <Style Selector="Button.primary">
+            <Setter Property="Background" Value="#2E7D32"/>
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+        <Style Selector="Button.primary:pointerover">
+            <Setter Property="Background" Value="#388E3C"/>
+        </Style>
+
+        <!-- Botones de paginación: contraste mejorado -->
+        <Style Selector="Button.page-btn">
+            <Setter Property="Background" Value="#404040"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderBrush" Value="#606060"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="FontSize" Value="18"/>
+            <Setter Property="Width" Value="36"/>
+            <Setter Property="Height" Value="36"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="CornerRadius" Value="4"/>
+        </Style>
+        <Style Selector="Button.page-btn:pointerover">
+            <Setter Property="Background" Value="#555555"/>
+            <Setter Property="BorderBrush" Value="#888"/>
+        </Style>
+        <Style Selector="Button.page-btn:disabled">
+            <Setter Property="Background" Value="#282828"/>
+            <Setter Property="BorderBrush" Value="#383838"/>
+            <Setter Property="Foreground" Value="#444"/>
+        </Style>
+
+        <!-- Toggle "Solo críticos" -->
+        <Style Selector="ToggleButton.critical-toggle">
+            <Setter Property="Background" Value="#2D2D2D"/>
+            <Setter Property="Foreground" Value="#888"/>
+            <Setter Property="BorderBrush" Value="#404040"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="4"/>
+            <Setter Property="Height" Value="35"/>
+            <Setter Property="Padding" Value="12,0"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+        </Style>
+        <Style Selector="ToggleButton.critical-toggle:pointerover">
+            <Setter Property="BorderBrush" Value="#C62828"/>
+            <Setter Property="Foreground" Value="#EF5350"/>
+        </Style>
+        <Style Selector="ToggleButton.critical-toggle:checked">
+            <Setter Property="Background" Value="#4A1515"/>
+            <Setter Property="Foreground" Value="#EF5350"/>
+            <Setter Property="BorderBrush" Value="#C62828"/>
+        </Style>
+        <Style Selector="ToggleButton.critical-toggle:checked:pointerover">
+            <Setter Property="Background" Value="#5C1A1A"/>
+        </Style>
+
+        <Style Selector="DataGridColumnHeader">
+            <Setter Property="Background" Value="#252525"/>
+            <Setter Property="Foreground" Value="#B0B0B0"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Padding" Value="10,8"/>
+        </Style>
+        <Style Selector="DataGridRow">
+            <Setter Property="Background" Value="#1E1E1E"/>
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+        <Style Selector="DataGridRow:pointerover">
+            <Setter Property="Background" Value="#2A2A2A"/>
+        </Style>
+        <Style Selector="DataGridRow:selected">
+            <Setter Property="Background" Value="#2E3D2E"/>
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+    </Window.Styles>
+
+    <Grid RowDefinitions="Auto,Auto,*,Auto">
+
+        <!-- HEADER -->
+        <Border Grid.Row="0" Background="#1E1E1E" BorderBrush="#2A2A2A" BorderThickness="0,0,0,1" Padding="20,10">
+            <Grid ColumnDefinitions="Auto,*,Auto">
+                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                    <Button Classes="nav" Command="{Binding GoBackCommand}" ToolTip.Tip="Volver (Esc)">
+                        <TextBlock Text="←" FontSize="15" Foreground="#2E7D32" FontWeight="Bold"/>
+                    </Button>
+                    <Border Width="4" Height="18" CornerRadius="2" Background="#2E7D32"/>
+                    <TextBlock Text="📦" FontSize="20" VerticalAlignment="Center"/>
+                    <StackPanel Spacing="2" VerticalAlignment="Center">
+                        <TextBlock Text="EXISTENCIAS POR SUCURSAL"
+                                   FontSize="16" FontWeight="Bold" Foreground="White"/>
+                        <TextBlock Text="Productos con historial de existencias · usa 'Solo críticos' para ver qué comprar"
+                                   FontSize="11" Foreground="#555" FontStyle="Italic"/>
+                    </StackPanel>
+                </StackPanel>
+
+                <Button Grid.Column="2"
+                        Classes="primary"
+                        Command="{Binding ExportCommand}"
+                        Padding="14,8">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <TextBlock Text="📊" FontSize="13"/>
+                        <TextBlock Text="EXPORTAR EXCEL"/>
+                    </StackPanel>
+                </Button>
+            </Grid>
+        </Border>
+
+        <!-- FILTROS -->
+        <Border Grid.Row="1" Padding="20,12" Background="#1A1A1A" BorderBrush="#2A2A2A" BorderThickness="0,0,0,1">
+            <StackPanel Orientation="Horizontal" Spacing="16" VerticalAlignment="Center">
+
+                <StackPanel Spacing="4">
+                    <TextBlock Text="SUCURSAL" Foreground="#888" FontSize="11" FontWeight="SemiBold"/>
+                    <ComboBox ItemsSource="{Binding AvailableBranches}"
+                              SelectedItem="{Binding SelectedBranch}"
+                              Width="220"
+                              DisplayMemberBinding="{Binding Name}"/>
+                </StackPanel>
+
+                <StackPanel Spacing="4">
+                    <TextBlock Text="BUSCAR" Foreground="#888" FontSize="11" FontWeight="SemiBold"/>
+                    <TextBox Width="280"
+                             Watermark="Nombre o código de barras..."
+                             Text="{Binding SearchText, Mode=TwoWay}"/>
+                </StackPanel>
+
+                <StackPanel Spacing="4" VerticalAlignment="Bottom">
+                    <TextBlock Text="FILTRO" Foreground="#888" FontSize="11" FontWeight="SemiBold"/>
+                    <ToggleButton Classes="critical-toggle"
+                                  IsChecked="{Binding ShowCriticalOnly}"
+                                  ToolTip.Tip="Muestra solo productos con existencia ≤ 0 (qué comprar)">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <TextBlock Text="⚠" FontSize="13"/>
+                            <TextBlock Text="SOLO CRÍTICOS"/>
+                        </StackPanel>
+                    </ToggleButton>
+                </StackPanel>
+
+            </StackPanel>
+        </Border>
+
+        <!-- DATAGRID -->
+        <DataGrid Grid.Row="2"
+                  x:Name="StockGrid"
+                  Margin="20,8,20,0"
+                  ItemsSource="{Binding StockItems}"
+                  AutoGenerateColumns="False"
+                  IsReadOnly="True"
+                  GridLinesVisibility="Horizontal"
+                  BorderThickness="1"
+                  BorderBrush="#2A2A2A">
+            <DataGrid.Columns>
+
+                <DataGridTextColumn Header="CÓDIGO"
+                                    Width="130"
+                                    Binding="{Binding Product.Barcode}"/>
+
+                <DataGridTextColumn Header="NOMBRE"
+                                    Width="3*"
+                                    Binding="{Binding Product.Name}"/>
+
+                <DataGridTextColumn Header="SUCURSAL"
+                                    Width="2*"
+                                    Binding="{Binding Branch.Name}"/>
+
+                <DataGridTemplateColumn Header="PRECIO" Width="110">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate x:DataType="dto:ProductStockDto">
+                            <TextBlock Text="{Binding Product.PriceRetail, StringFormat='${0:N2}'}"
+                                       Margin="10,0"
+                                       VerticalAlignment="Center"
+                                       Foreground="White"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+
+                <DataGridTemplateColumn Header="EXISTENCIA" Width="120">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate x:DataType="dto:ProductStockDto">
+                            <TextBlock Text="{Binding Quantity, StringFormat='{}{0:N0}'}"
+                                       Margin="10,0"
+                                       FontWeight="Bold"
+                                       VerticalAlignment="Center"
+                                       Foreground="{Binding Quantity, Converter={StaticResource DecimalToColorConverter}}"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <!-- FOOTER / PAGINACIÓN -->
+        <Border Grid.Row="3" Background="#1E1E1E" BorderBrush="#2A2A2A" BorderThickness="0,1,0,0" Padding="20,10">
+            <Grid ColumnDefinitions="*,Auto">
+
+                <TextBlock Grid.Column="0"
+                           Text="{Binding StatusMessage}"
+                           Foreground="#A5D6A7"
+                           FontSize="12"
+                           VerticalAlignment="Center"/>
+
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
+
+                    <Button Classes="page-btn"
+                            Command="{Binding PreviousPageCommand}"
+                            IsEnabled="{Binding CanGoPrevious}"
+                            ToolTip.Tip="Página anterior">
+                        <TextBlock Text="‹" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Button>
+
+                    <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                        <TextBlock Text="Página" Foreground="#888" FontSize="12" VerticalAlignment="Center"/>
+                        <TextBlock Text="{Binding CurrentPage}" Foreground="White" FontSize="13" FontWeight="Bold" VerticalAlignment="Center"/>
+                        <TextBlock Text="de" Foreground="#888" FontSize="12" VerticalAlignment="Center"/>
+                        <TextBlock Text="{Binding TotalPages}" Foreground="White" FontSize="13" FontWeight="Bold" VerticalAlignment="Center"/>
+                    </StackPanel>
+
+                    <Button Classes="page-btn"
+                            Command="{Binding NextPageCommand}"
+                            IsEnabled="{Binding CanGoNext}"
+                            ToolTip.Tip="Página siguiente">
+                        <TextBlock Text="›" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Button>
+
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Loading Overlay -->
+        <Border Grid.RowSpan="4"
+                Background="#80000000"
+                IsVisible="{Binding IsLoading}">
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="10">
+                <ProgressBar IsIndeterminate="True"
+                             Foreground="#2E7D32"
+                             Width="200"/>
+                <TextBlock Text="Cargando existencias..."
+                           Foreground="White"
+                           HorizontalAlignment="Center"/>
+            </StackPanel>
+        </Border>
+
+    </Grid>
+</Window>

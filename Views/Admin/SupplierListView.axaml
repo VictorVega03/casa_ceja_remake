@@ -149,7 +149,7 @@
             <Grid ColumnDefinitions="*,Auto,Auto">
                 <TextBlock Grid.Column="0"
                            Text="{Binding StatusMessage}"
-                           Foreground="#FFAB91"
+                           Foreground="#B0BEC5"
                            FontSize="12"
                            VerticalAlignment="Center"/>
 

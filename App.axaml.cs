@@ -1045,7 +1045,20 @@ namespace CasaCejaRemake
 
             viewModel.GlobalStockSelected += async (s, e) =>
             {
-                await ShowAdminComingSoon(adminView, "Existencias Globales", "Etapa 5");
+                var branches = await _inventoryService!.GetBranchesAsync();
+                var stockVm  = new ViewModels.Admin.GlobalStockViewModel(ApiClient!, branches);
+                var stockView = new Views.Admin.GlobalStockView { DataContext = stockVm };
+
+                stockVm.GoBackRequested += (_, _) =>
+                {
+                    stockView.Tag = "back";
+                    stockView.Close();
+                };
+
+                stockView.Closed += (_, _) => ShowAdmin();
+                desktop.MainWindow = stockView;
+                stockView.Show();
+                adminView.Close();
             };
 
             // ── Navegación de salida ──
