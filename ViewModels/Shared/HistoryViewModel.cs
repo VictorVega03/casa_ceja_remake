@@ -30,6 +30,7 @@ namespace CasaCejaRemake.ViewModels.Shared
     {
         private readonly InventoryService _inventoryService;
         private readonly int _currentBranchId;
+        private readonly CasaCejaRemake.Services.ApiClient? _apiClient;
 
         public event EventHandler? GoBackRequested;
         public event EventHandler<HistoryItem>? MovementDetailRequested;
@@ -82,6 +83,12 @@ namespace CasaCejaRemake.ViewModels.Shared
         [ObservableProperty]
         private Branch? _selectedBranch;
 
+        [ObservableProperty]
+        private bool _isOffline;
+
+        [ObservableProperty]
+        private string _offlineMessage = string.Empty;
+
         private const int PageSize = 50;
         private bool _isUpdatingFilters;
         private List<HistoryItem> _allItems = new();
@@ -92,10 +99,12 @@ namespace CasaCejaRemake.ViewModels.Shared
             InventoryService inventoryService,
             int branchId,
             bool isAdminMode = false,
-            List<Branch>? allBranches = null)
+            List<Branch>? allBranches = null,
+            CasaCejaRemake.Services.ApiClient? apiClient = null)
         {
             _inventoryService = inventoryService;
             _currentBranchId = branchId;
+            _apiClient = apiClient;
             _isAdminMode = isAdminMode;
 
             if (isAdminMode)
@@ -118,6 +127,17 @@ namespace CasaCejaRemake.ViewModels.Shared
         {
             IsSearching = true;
             StatusMessage = "Cargando registros";
+
+            // Check de conectividad una sola vez al cargar/refrescar
+            if (_apiClient != null)
+            {
+                var online = await _apiClient.IsServerAvailableAsync();
+                IsOffline = !online;
+                OfflineMessage = online
+                    ? string.Empty
+                    : "Sin conexión al servidor";
+            }
+
             try
             {
                 var start = StartDate?.DateTime ?? DateTime.Today.AddDays(-30);

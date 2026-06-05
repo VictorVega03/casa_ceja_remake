@@ -6,6 +6,8 @@ namespace CasaCejaRemake.Views.Inventory
 {
     public partial class InventoryMainView : Window
     {
+        private bool _isExitDialogOpen;
+
         public InventoryMainView()
         {
             InitializeComponent();
@@ -18,10 +20,25 @@ namespace CasaCejaRemake.Views.Inventory
             {
                 viewModel.RequestExitConfirmation += async (s, args) =>
                 {
-                    var result = await casa_ceja_remake.Helpers.DialogHelper.ShowConfirmDialog(
-                        this, "Salir", "¿Está seguro de salir del inventario?");
-                    if (result)
-                        viewModel.ConfirmExit();
+                    if (_isExitDialogOpen)
+                        return;
+
+                    _isExitDialogOpen = true;
+                    try
+                    {
+                        var result = await CasaCejaRemake.Views.Shared.ModuleExitDialog.ShowAsync(
+                            this,
+                            "Salir de Inventario",
+                            "¿Está seguro de regresar al menú principal?",
+                            "#2F5D8A");
+
+                        if (result)
+                            viewModel.ConfirmExit();
+                    }
+                    finally
+                    {
+                        _isExitDialogOpen = false;
+                    }
                 };
 
                 await viewModel.CheckConnectivityCommand.ExecuteAsync(null);

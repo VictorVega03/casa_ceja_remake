@@ -25,6 +25,7 @@ namespace CasaCejaRemake.Views.POS
         private SalesViewModel? _viewModel;
         private DispatcherTimer? _timer;
         private bool _hasOpenDialog = false;
+        private bool _isExitDialogOpen;
         private Window? _activeTicketDialog;
 
         public SalesView()
@@ -1126,65 +1127,83 @@ namespace CasaCejaRemake.Views.POS
         private async void OnRequestExitConfirmation(object? sender, EventArgs e)
         {
             if (_viewModel == null) return;
+            if (_isExitDialogOpen) return;
 
-            bool confirmed;
-
-            if (_viewModel.Items.Count > 0)
+            _isExitDialogOpen = true;
+            try
             {
-                // Una sola pregunta: vaciar y salir
-                confirmed = await DialogHelper.ShowConfirmDialog(
-                    this,
-                    "Cobranza Pendiente",
-                    $"Hay {_viewModel.Items.Count} producto(s) en el carrito sin cobrar.\n\n¿Desea vaciar el carrito y salir del Punto de Venta?");
+                bool confirmed;
+
+                if (_viewModel.Items.Count > 0)
+                {
+                    confirmed = await ModuleExitDialog.ShowAsync(
+                        this,
+                        "Cobranza pendiente",
+                        $"Hay {_viewModel.Items.Count} producto(s) en el carrito sin cobrar.\n\nAl salir se vaciará el carrito. ¿Desea continuar?",
+                        "#C62828");
+
+                    if (confirmed)
+                        _viewModel.ConfirmClearCart();
+                }
+                else
+                {
+                    confirmed = await ModuleExitDialog.ShowAsync(
+                        this,
+                        "Salir de Punto de Venta",
+                        "¿Está seguro de regresar al menú principal?",
+                        "#C62828");
+                }
 
                 if (confirmed)
-                    _viewModel.ConfirmClearCart();
+                    _viewModel.ConfirmExit();
             }
-            else
+            finally
             {
-                // Una sola pregunta: confirmar salida
-                confirmed = await DialogHelper.ShowConfirmDialog(
-                    this,
-                    "Salir",
-                    "¿Está seguro de salir del Punto de Venta?");
+                _isExitDialogOpen = false;
+                TxtBarcode.Focus();
             }
-
-            if (confirmed)
-                _viewModel.ConfirmExit();
-
-            TxtBarcode.Focus();
         }
 
         private async void OnRequestLogoutConfirmation(object? sender, EventArgs e)
         {
             if (_viewModel == null) return;
+            if (_isExitDialogOpen) return;
 
-            bool confirmed;
-
-            if (_viewModel.Items.Count > 0)
+            _isExitDialogOpen = true;
+            try
             {
-                // Una sola pregunta: vaciar y cerrar sesión
-                confirmed = await DialogHelper.ShowConfirmDialog(
-                    this,
-                    "Cobranza Pendiente",
-                    $"Hay {_viewModel.Items.Count} producto(s) en el carrito sin cobrar.\n\n¿Desea vaciar el carrito y cerrar la sesión?");
+                bool confirmed;
+
+                if (_viewModel.Items.Count > 0)
+                {
+                    confirmed = await ModuleExitDialog.ShowAsync(
+                        this,
+                        "Cobranza pendiente",
+                        $"Hay {_viewModel.Items.Count} producto(s) en el carrito sin cobrar.\n\nAl cerrar sesión se vaciará el carrito. ¿Desea continuar?",
+                        "#C62828",
+                        "Cerrar sesión");
+
+                    if (confirmed)
+                        _viewModel.ConfirmClearCart();
+                }
+                else
+                {
+                    confirmed = await ModuleExitDialog.ShowAsync(
+                        this,
+                        "Cerrar sesión",
+                        "¿Está seguro de cerrar la sesión actual?",
+                        "#C62828",
+                        "Cerrar sesión");
+                }
 
                 if (confirmed)
-                    _viewModel.ConfirmClearCart();
+                    _viewModel.ConfirmLogout();
             }
-            else
+            finally
             {
-                // Una sola pregunta: confirmar cierre de sesión
-                confirmed = await DialogHelper.ShowConfirmDialog(
-                    this,
-                    "Cerrar Sesión",
-                    "¿Está seguro de cerrar la sesión?");
+                _isExitDialogOpen = false;
+                TxtBarcode.Focus();
             }
-
-            if (confirmed)
-                _viewModel.ConfirmLogout();
-
-            TxtBarcode.Focus();
         }
 
         private void OnCashCloseClick(object? sender, RoutedEventArgs e)

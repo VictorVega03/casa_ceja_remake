@@ -96,6 +96,7 @@ namespace CasaCejaRemake.ViewModels.Shared
         public event EventHandler? StartSaveConfirmation;
 
         private readonly int _currentBranchId;
+        public bool IsAdminMode => _currentBranchId == 0;
 
         public ProductFormViewModel(InventoryService inventoryService, ApiClient apiClient, int branchId, Product? product = null)
         {

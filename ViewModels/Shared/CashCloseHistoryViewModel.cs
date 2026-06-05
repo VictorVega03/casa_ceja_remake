@@ -54,6 +54,7 @@ namespace CasaCejaRemake.ViewModels.Shared
         private readonly BaseRepository<User> _userRepository;
         private readonly BaseRepository<Branch> _branchRepository;
         private readonly int _branchId;
+        private readonly CasaCejaRemake.Services.ApiClient? _apiClient;
         private List<CashCloseListItemWrapper> _allItems = new();
         private List<CashCloseListItemWrapper> _filteredItems = new();
         private const int HistoryLimit = 200;
@@ -104,6 +105,12 @@ namespace CasaCejaRemake.ViewModels.Shared
         [ObservableProperty]
         private Branch? _selectedBranch;
 
+        [ObservableProperty]
+        private bool _isOffline;
+
+        [ObservableProperty]
+        private string _offlineMessage = string.Empty;
+
         private const int PageSize = 50;
 
         public ObservableCollection<CashCloseListItemWrapper> Items { get; } = new();
@@ -121,7 +128,8 @@ namespace CasaCejaRemake.ViewModels.Shared
             BaseRepository<Branch> branchRepository,
             int branchId,
             bool isAdminMode = false,
-            List<Branch>? allBranches = null)
+            List<Branch>? allBranches = null,
+            CasaCejaRemake.Services.ApiClient? apiClient = null)
         {
             _cashCloseService = cashCloseService;
             _authService = authService;
@@ -129,6 +137,7 @@ namespace CasaCejaRemake.ViewModels.Shared
             _branchRepository = branchRepository;
             _branchId = branchId;
             _isAdminMode = isAdminMode;
+            _apiClient = apiClient;
 
             if (isAdminMode)
             {
@@ -155,6 +164,16 @@ namespace CasaCejaRemake.ViewModels.Shared
         [RelayCommand]
         private async Task LoadDataAsync()
         {
+            // Check de conectividad una sola vez al cargar/refrescar
+            if (_apiClient != null)
+            {
+                var online = await _apiClient.IsServerAvailableAsync();
+                IsOffline = !online;
+                OfflineMessage = online
+                    ? string.Empty
+                    : "Sin conexión al servidor";
+            }
+
             try
             {
                 IsLoading = true;

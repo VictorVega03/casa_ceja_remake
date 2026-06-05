@@ -85,7 +85,7 @@
         </Style>
     </Window.Styles>
 
-    <Grid RowDefinitions="Auto,Auto,Auto,*,Auto">
+    <Grid RowDefinitions="Auto,Auto,Auto,Auto,*,Auto">
 
         <!-- ═══ HEADER ═══ -->
         <Border Grid.Row="0" Background="#1E1E1E" BorderBrush="#2A2A2A" BorderThickness="0,0,0,1" Padding="20,10">
@@ -187,8 +187,20 @@
                        FontSize="11" Foreground="#444" FontStyle="Italic"/>
         </Border>
 
+        <!-- BANNER OFFLINE -->
+        <Border Grid.Row="3"
+                IsVisible="{Binding IsOffline}"
+                Background="#3A2A00" BorderBrush="#FFA000"
+                BorderThickness="0,0,0,1" Padding="20,8">
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <TextBlock Text="⚠" Foreground="#FFB300" FontSize="13" VerticalAlignment="Center"/>
+                <TextBlock Text="{Binding OfflineMessage}"
+                           Foreground="#FFB300" FontSize="12" VerticalAlignment="Center"/>
+            </StackPanel>
+        </Border>
+
         <!-- ═══ DATA GRID ═══ -->
-        <Grid Grid.Row="3">
+        <Grid Grid.Row="4">
             <DataGrid x:Name="HistoryDataGrid"
                       ItemsSource="{Binding Items}"
                       SelectedItem="{Binding SelectedItem}"
@@ -267,7 +279,7 @@
         </Grid>
 
         <!-- ═══ FOOTER / PAGINATION ═══ -->
-        <Border Grid.Row="4" Background="#1E1E1E" BorderBrush="#2A2A2A" BorderThickness="0,1,0,0" Padding="20,10">
+        <Border Grid.Row="5" Background="#1E1E1E" BorderBrush="#2A2A2A" BorderThickness="0,1,0,0" Padding="20,10">
             <Grid ColumnDefinitions="*,Auto,*">
 
                 <!-- Left: hint -->

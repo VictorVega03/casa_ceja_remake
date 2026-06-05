@@ -14,6 +14,7 @@ namespace CasaCejaRemake.ViewModels.Shared
     {
         private readonly InventoryService _inventoryService;
         private readonly int _currentBranchId;
+        private readonly CasaCejaRemake.Services.ApiClient? _apiClient;
 
         private const int PageSize = 50;
         private System.Collections.Generic.List<Product> _allResults = new();
@@ -58,6 +59,12 @@ namespace CasaCejaRemake.ViewModels.Shared
         [ObservableProperty]
         private string _paginationInfo = "Página 1 de 1";
 
+        [ObservableProperty]
+        private bool _isOffline;
+
+        [ObservableProperty]
+        private string _offlineMessage = string.Empty;
+
         public ObservableCollection<Product> SearchResults { get; } = new();
         public ObservableCollection<Category> Categories { get; } = new();
         public ObservableCollection<Unit> Units { get; } = new();
@@ -68,12 +75,15 @@ namespace CasaCejaRemake.ViewModels.Shared
         public event EventHandler<Product?>? ProductFormRequested;
         public event EventHandler<Product>? ProductDetailRequested;
         public event EventHandler<(Product Product, List<ProductStockItem> Items, bool IsFromCache, List<Branch> AllBranches)>? StockDataReady;
+        public event EventHandler? NoConnectionRequested;
 
-        public CatalogViewModel(InventoryService inventoryService, int branchId, bool isAdminMode = false)
+        public CatalogViewModel(InventoryService inventoryService, int branchId, bool isAdminMode = false,
+            CasaCejaRemake.Services.ApiClient? apiClient = null)
         {
             _inventoryService = inventoryService;
             _currentBranchId = branchId;
             IsAdminMode = isAdminMode;
+            _apiClient = apiClient;
 
             _ = InitializeAsync();
         }
@@ -134,10 +144,20 @@ namespace CasaCejaRemake.ViewModels.Shared
         private async Task SearchAsync()
         {
             if (_inventoryService == null) return;
-            
+
             IsSearching = true;
             StatusMessage = "Buscando...";
             CurrentPage = 1;
+
+            // Check de conectividad una sola vez al buscar/refrescar
+            if (_apiClient != null)
+            {
+                var online = await _apiClient.IsServerAvailableAsync();
+                IsOffline = !online;
+                OfflineMessage = online
+                    ? string.Empty
+                    : "Sin conexión al servidor";
+            }
 
             try
             {
@@ -226,6 +246,17 @@ namespace CasaCejaRemake.ViewModels.Shared
         private async Task ShowStockAsync()
         {
             if (SelectedProduct == null) return;
+
+            // Verificar conexión antes de intentar — operación en tiempo real
+            if (_apiClient != null)
+            {
+                var online = await _apiClient.IsServerAvailableAsync();
+                if (!online)
+                {
+                    NoConnectionRequested?.Invoke(this, EventArgs.Empty);
+                    return;
+                }
+            }
 
             IsLoadingStock = true;
             try

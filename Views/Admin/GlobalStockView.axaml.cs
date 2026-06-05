@@ -2,7 +2,6 @@ using System.Collections.Generic;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
-using casa_ceja_remake.Helpers;
 using CasaCejaRemake.Models.DTOs;
 using CasaCejaRemake.Services;
 using CasaCejaRemake.ViewModels.Admin;
@@ -27,11 +26,6 @@ namespace CasaCejaRemake.Views.Admin
                 _viewModel = vm;
 
                 _viewModel.GoBackRequested += (_, _) => Close();
-
-                _viewModel.NetworkErrorOccurred += async (_, msg) =>
-                {
-                    await DialogHelper.ShowMessageDialog(this, msg, "Sin conexión");
-                };
 
                 _viewModel.ExportRequested += async (_, _) =>
                 {

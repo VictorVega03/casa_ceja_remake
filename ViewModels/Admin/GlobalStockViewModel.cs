@@ -16,7 +16,7 @@ namespace CasaCejaRemake.ViewModels.Admin
     {
         private readonly ApiClient _apiClient;
         private CancellationTokenSource? _searchCts;
-        private List<ProductStockDto> _rawPageItems = new(); // items sin filtro de la página actual
+        private List<ProductStockDto> _rawPageItems = new();
 
         private const int PerPage = 100;
 
@@ -32,16 +32,16 @@ namespace CasaCejaRemake.ViewModels.Admin
         [ObservableProperty] private bool _canGoPrevious;
         [ObservableProperty] private bool _canGoNext;
         [ObservableProperty] private bool _showCriticalOnly;
+        [ObservableProperty] private bool _isOffline;
+        [ObservableProperty] private string _offlineMessage = string.Empty;
 
         public event EventHandler? GoBackRequested;
         public event EventHandler? ExportRequested;
-        public event EventHandler<string>? NetworkErrorOccurred;
 
         public GlobalStockViewModel(ApiClient apiClient, List<Branch> branches)
         {
             _apiClient = apiClient ?? throw new ArgumentNullException(nameof(apiClient));
 
-            // Entrada "Todas las sucursales" con Id=0
             var allBranches = new List<Branch>
             {
                 new Branch { Id = 0, Name = "Todas las sucursales" }
@@ -72,7 +72,6 @@ namespace CasaCejaRemake.ViewModels.Admin
 
         partial void OnShowCriticalOnlyChanged(bool value)
         {
-            // Filtro client-side: aplica sobre los ítems ya descargados de la página actual
             ApplyCriticalFilter();
             UpdateStatusMessage();
         }
@@ -90,17 +89,16 @@ namespace CasaCejaRemake.ViewModels.Admin
 
                 if (response == null || !response.IsSuccess || response.Data == null)
                 {
-                    var errorMsg = response == null
-                        ? "Sin conexión al servidor. Verifica tu red e intenta de nuevo."
-                        : "No se pudieron cargar las existencias.";
-                    StatusMessage = string.Empty;
-                    _rawPageItems = new List<ProductStockDto>();
-                    StockItems = new ObservableCollection<ProductStockDto>();
+                    IsOffline     = true;
+                    OfflineMessage = "Sin conexión al servidor";
+                    StatusMessage  = string.Empty;
+                    _rawPageItems  = new List<ProductStockDto>();
+                    StockItems     = new ObservableCollection<ProductStockDto>();
                     UpdatePagination(page, 1, 0);
-                    NetworkErrorOccurred?.Invoke(this, errorMsg);
                     return;
                 }
 
+                IsOffline = false;
                 var paged = response.Data;
                 _rawPageItems = paged.Data;
                 ApplyCriticalFilter();
@@ -109,7 +107,9 @@ namespace CasaCejaRemake.ViewModels.Admin
             }
             catch (Exception ex)
             {
-                StatusMessage = $"Error al cargar existencias: {ex.Message}";
+                IsOffline      = true;
+                OfflineMessage = "Sin conexión al servidor";
+                StatusMessage  = $"Error al cargar existencias: {ex.Message}";
                 Console.WriteLine($"[GlobalStockVM] Error: {ex.Message}");
             }
             finally

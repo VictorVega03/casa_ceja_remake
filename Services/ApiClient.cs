@@ -70,11 +70,12 @@ namespace CasaCejaRemake.Services
 
         public async Task<bool> IsServerAvailableAsync()
         {
+            // Timeout corto (3s) para que el usuario vea la respuesta rápido.
+            // Si el servidor responde (cualquier HTTP status) hay conexión.
+            using var cts = new System.Threading.CancellationTokenSource(TimeSpan.FromSeconds(3));
             try
             {
-                var response = await _httpClient.GetAsync($"{BaseUrl}/api/v1/health");
-                // Conectividad = servidor alcanzable, aunque responda 401/404.
-                // Si hubo respuesta HTTP, hay conexión con el servidor.
+                var response = await _httpClient.GetAsync($"{BaseUrl}/api/v1/health", cts.Token);
                 Console.WriteLine($"[ApiClient] Health check HTTP: {response.StatusCode}");
                 return true;
             }

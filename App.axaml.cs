@@ -782,7 +782,8 @@ namespace CasaCejaRemake
             if (_inventoryService == null) return;
 
             var branchId = ConfigService.AppConfig.CurrentBranchId ?? 0;
-            var viewModel = new ViewModels.Shared.CatalogViewModel(_inventoryService, branchId);
+            var viewModel = new ViewModels.Shared.CatalogViewModel(_inventoryService, branchId,
+                apiClient: ApiClient!);
             
             var catalogView = new Views.Shared.CatalogView
             {
@@ -846,7 +847,8 @@ namespace CasaCejaRemake
             if (_inventoryService == null) return;
 
             var branchId = ConfigService.AppConfig.CurrentBranchId ?? 0;
-            var viewModel = new ViewModels.Shared.HistoryViewModel(_inventoryService, branchId);
+            var viewModel = new ViewModels.Shared.HistoryViewModel(_inventoryService, branchId,
+                apiClient: ApiClient!);
             
             var historyView = new Views.Shared.HistoryView
             {
@@ -946,7 +948,8 @@ namespace CasaCejaRemake
                     var branches = await _inventoryService!.GetBranchesAsync();
                     var historyVm = new ViewModels.Shared.HistoryViewModel(
                         _inventoryService!, branchId: 0,
-                        isAdminMode: true, allBranches: branches);
+                        isAdminMode: true, allBranches: branches,
+                        apiClient: ApiClient!);
                     var historyView = new Views.Shared.HistoryView { DataContext = historyVm };
 
                     historyVm.GoBackRequested += (_, _) =>
@@ -995,7 +998,8 @@ namespace CasaCejaRemake
                         branchRepo,
                         branchId: 0,
                         isAdminMode: true,
-                        allBranches: branches);
+                        allBranches: branches,
+                        apiClient: ApiClient!);
                     var historyView = new Views.Shared.CashCloseHistoryView { DataContext = historyVm };
                     var isOpeningCashCloseDetail = false;
 
@@ -1063,10 +1067,31 @@ namespace CasaCejaRemake
 
             // ── Navegación de salida ──
 
-            viewModel.ExitRequested += (s, e) =>
+            var isExitDialogOpen = false;
+            viewModel.ExitRequested += async (s, e) =>
             {
-                adminView.Tag = "module_selector";
-                adminView.Close();
+                if (isExitDialogOpen)
+                    return;
+
+                isExitDialogOpen = true;
+                try
+                {
+                    var confirmed = await ModuleExitDialog.ShowAsync(
+                        adminView,
+                        "Salir de Administrador",
+                        "¿Está seguro de regresar al menú principal?",
+                        "#E65100");
+
+                    if (confirmed)
+                    {
+                        adminView.Tag = "module_selector";
+                        adminView.Close();
+                    }
+                }
+                finally
+                {
+                    isExitDialogOpen = false;
+                }
             };
 
 
@@ -1107,7 +1132,8 @@ namespace CasaCejaRemake
 
             // branchId = 0 → modo global (CatalogViewModel no filtra por sucursal)
             const int branchId = 0;
-            var viewModel = new ViewModels.Shared.CatalogViewModel(_inventoryService, branchId, isAdminMode: true);
+            var viewModel = new ViewModels.Shared.CatalogViewModel(_inventoryService, branchId, isAdminMode: true,
+                apiClient: ApiClient!);
 
             var catalogView = new Views.Shared.CatalogView
             {

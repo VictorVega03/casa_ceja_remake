@@ -2,6 +2,7 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using CasaCejaRemake.ViewModels.Inventory;
 using CasaCejaRemake.ViewModels.Shared;
+using CasaCejaRemake.Views.Shared;
 using casa_ceja_remake.Helpers;
 using System;
 using System.Collections.Generic;
@@ -25,7 +26,12 @@ namespace CasaCejaRemake.Views.Inventory
 
                 vm.StartSaveConfirmation += async (s, args) =>
                 {
-                    bool res = await DialogHelper.ShowConfirmDialog(this, "Guardar cambios", "¿Confirmar los cambios al producto?");
+                    bool res = await ModuleExitDialog.ShowAsync(
+                        this,
+                        "Guardar cambios",
+                        "¿Desea guardar los cambios realizados al producto?",
+                        "#7D4A1E",
+                        "Guardar");
                     if (res) await vm.ConfirmSaveAsync();
                 };
 

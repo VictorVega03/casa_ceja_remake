@@ -58,7 +58,7 @@ namespace CasaCejaRemake.Helpers
             }
         }
 
-        private static async Task ShowResultDialogAsync(Window parentWindow, string title, string message, string accentColor, string icon)
+        public static async Task ShowResultDialogAsync(Window parentWindow, string title, string message, string accentColor, string icon)
         {
             var accent = Color.Parse(accentColor);
 

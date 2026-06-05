@@ -3,6 +3,7 @@ using Avalonia.Input;
 using CasaCejaRemake.ViewModels.Shared;
 using System;
 using casa_ceja_remake.Helpers;
+using CasaCejaRemake.Helpers;
 
 namespace CasaCejaRemake.Views.Shared
 {
@@ -30,6 +31,7 @@ namespace CasaCejaRemake.Views.Shared
             {
                 _subscribedViewModel = vm;
                 vm.StockDataReady += OnStockDataReady;
+                vm.NoConnectionRequested += OnNoConnectionRequested;
             }
         }
 
@@ -38,6 +40,7 @@ namespace CasaCejaRemake.Views.Shared
             if (_subscribedViewModel != null)
             {
                 _subscribedViewModel.StockDataReady -= OnStockDataReady;
+                _subscribedViewModel.NoConnectionRequested -= OnNoConnectionRequested;
                 _subscribedViewModel = null;
             }
 
@@ -48,6 +51,13 @@ namespace CasaCejaRemake.Views.Shared
         {
             _isDialogOpen = true;
             await DialogHelper.ShowStockDialog(this, data.Product, data.Items, data.IsFromCache, data.AllBranches);
+            _isDialogOpen = false;
+        }
+
+        private async void OnNoConnectionRequested(object? sender, EventArgs e)
+        {
+            _isDialogOpen = true;
+            await AdminOperationHelper.ShowResultDialogAsync(this, "Error", "Sin conexión al servidor.", "#B71C1C", "✗");
             _isDialogOpen = false;
         }
 

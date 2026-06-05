@@ -23,7 +23,17 @@ namespace CasaCejaRemake.Views.Shared
                 vm.SetParentWindow(this);
                 vm.StartSaveConfirmation += async (s, args) =>
                 {
-                    bool res = await DialogHelper.ShowConfirmDialog(this, "Guardar", "¿Confirmar guardado?");
+                    bool res = vm.IsAdminMode
+                        ? await ModuleExitDialog.ShowAsync(
+                            this,
+                            "Guardar producto",
+                            "¿Desea guardar la información del producto?",
+                            "#7D4A1E",
+                            "Guardar")
+                        : await DialogHelper.ShowConfirmDialog(
+                            this,
+                            "Guardar",
+                            "¿Confirmar guardado?");
                     if (res)
                     {
                         await vm.ConfirmSaveAsync();
