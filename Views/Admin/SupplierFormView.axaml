@@ -1,0 +1,144 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="using:CasaCejaRemake.ViewModels.Admin"
+        xmlns:helpers="using:CasaCejaRemake.Helpers"
+        mc:Ignorable="d"
+        d:DesignWidth="520" d:DesignHeight="420"
+        x:Class="CasaCejaRemake.Views.Admin.SupplierFormView"
+        x:DataType="vm:SupplierFormViewModel"
+        Title="{Binding Title}"
+        Width="520" Height="440"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False"
+        SystemDecorations="None"
+        Background="Transparent"
+        TransparencyLevelHint="AcrylicBlur"
+        Focusable="True">
+
+    <Window.Resources>
+        <helpers:BoolToColorConverter x:Key="BoolToColorConverter"/>
+    </Window.Resources>
+
+    <Window.Styles>
+        <Style Selector="TextBox">
+            <Setter Property="Height" Value="35"/>
+            <Setter Property="Background" Value="#2D2D2D"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderBrush" Value="#404040"/>
+            <Setter Property="CornerRadius" Value="4"/>
+            <Setter Property="Padding" Value="10,8"/>
+        </Style>
+        <Style Selector="TextBox:pointerover">
+            <Setter Property="BorderBrush" Value="#4FC3F7"/>
+        </Style>
+        <Style Selector="TextBox:focus">
+            <Setter Property="BorderBrush" Value="#2196F3"/>
+        </Style>
+        <Style Selector="TextBlock.label">
+            <Setter Property="Foreground" Value="#B0B0B0"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Margin" Value="0,0,0,5"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+        </Style>
+    </Window.Styles>
+
+    <Border Background="#1E1E1E" CornerRadius="8" BorderBrush="#333" BorderThickness="1">
+        <Grid RowDefinitions="Auto,*,Auto">
+
+            <!-- HEADER -->
+            <Border Grid.Row="0" Background="#252525" Padding="20" CornerRadius="8,8,0,0">
+                <StackPanel Orientation="Horizontal" Spacing="15">
+                    <TextBlock Text="🚚" FontSize="24" VerticalAlignment="Center"/>
+                    <TextBlock Text="{Binding Title}" FontSize="20" FontWeight="Bold" Foreground="White" VerticalAlignment="Center"/>
+                </StackPanel>
+            </Border>
+
+            <!-- FORM -->
+            <ScrollViewer Grid.Row="1" Padding="20"
+                          VerticalScrollBarVisibility="Auto"
+                          HorizontalScrollBarVisibility="Disabled">
+                <StackPanel Spacing="15">
+
+                    <!-- Nombre -->
+                    <StackPanel>
+                        <TextBlock Classes="label">
+                            <Run Text="NOMBRE"/>
+                            <Run Text=" *" Foreground="#D32F2F"/>
+                        </TextBlock>
+                        <TextBox x:Name="NameTextBox"
+                                 Text="{Binding Name}"
+                                 Watermark="Ej. Distribuidora Central"/>
+                    </StackPanel>
+
+                    <!-- Teléfono + Correo -->
+                    <Grid ColumnDefinitions="*,15,*">
+                        <StackPanel Grid.Column="0">
+                            <TextBlock Classes="label" Text="TELÉFONO"/>
+                            <TextBox Text="{Binding Phone}" Watermark="Ej. 33 1234 5678"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="2">
+                            <TextBlock Classes="label" Text="CORREO ELECTRÓNICO"/>
+                            <TextBox Text="{Binding Email}" Watermark="Ej. proveedor@empresa.com"/>
+                        </StackPanel>
+                    </Grid>
+
+                    <!-- Dirección -->
+                    <StackPanel>
+                        <TextBlock Classes="label" Text="DIRECCIÓN"/>
+                        <TextBox Text="{Binding Address}" Watermark="Ej. Av. Industrial 456, Col. Norte"/>
+                    </StackPanel>
+
+                    <!-- Mensaje de Error/Estado -->
+                    <Border Background="{Binding HasError, Converter={StaticResource BoolToColorConverter}, ConverterParameter='#3D1F1F|#1F3D1F'}"
+                            BorderBrush="{Binding HasError, Converter={StaticResource BoolToColorConverter}, ConverterParameter='#D32F2F|#4CAF50'}"
+                            BorderThickness="1"
+                            CornerRadius="6"
+                            Padding="12,10"
+                            Margin="0,5,0,0"
+                            IsVisible="{Binding StatusMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                        <TextBlock Text="{Binding StatusMessage}"
+                                   Foreground="{Binding HasError, Converter={StaticResource BoolToColorConverter}, ConverterParameter='#FF6B6B|#81C784'}"
+                                   TextWrapping="Wrap"
+                                   FontSize="13"/>
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
+
+            <!-- FOOTER -->
+            <Border Grid.Row="2" Padding="20" Background="#252525" CornerRadius="0,0,8,8">
+                <Grid ColumnDefinitions="*,*">
+                    <Button Grid.Column="0"
+                            Command="{Binding CancelCommand}"
+                            Content="CANCELAR (Esc)"
+                            HorizontalAlignment="Stretch"
+                            HorizontalContentAlignment="Center"
+                            Margin="0,0,5,0"
+                            Background="#D32F2F"
+                            Foreground="White"/>
+
+                    <Button Grid.Column="1"
+                            Command="{Binding SaveCommand}"
+                            Content="GUARDAR (F5)"
+                            HorizontalAlignment="Stretch"
+                            HorizontalContentAlignment="Center"
+                            Margin="5,0,0,0"
+                            Background="#2E7D32"
+                            Foreground="White"
+                            IsEnabled="{Binding !IsSaving}"/>
+                </Grid>
+            </Border>
+
+            <!-- Loading Overlay -->
+            <Border Grid.RowSpan="3"
+                    Background="#80000000"
+                    CornerRadius="8"
+                    IsVisible="{Binding IsSaving}">
+                <ProgressBar IsIndeterminate="True"
+                             HorizontalAlignment="Center"
+                             VerticalAlignment="Center"/>
+            </Border>
+        </Grid>
+    </Border>
+</Window>

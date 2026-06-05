@@ -13,13 +13,13 @@ using CasaCejaRemake.ViewModels.Admin;
 
 namespace CasaCejaRemake.Views.Admin
 {
-    public partial class BranchListView : Window
+    public partial class SupplierListView : Window
     {
-        private BranchListViewModel? _viewModel;
+        private SupplierListViewModel? _viewModel;
         private bool _isDetailOpen;
         private Window? _activeDetailDialog;
 
-        public BranchListView()
+        public SupplierListView()
         {
             InitializeComponent();
             this.AddHandler(InputElement.KeyDownEvent, OnPreviewKeyDown, RoutingStrategies.Tunnel, handledEventsToo: true);
@@ -28,32 +28,32 @@ namespace CasaCejaRemake.Views.Admin
 
         private async void OnLoaded(object? sender, RoutedEventArgs e)
         {
-            if (DataContext is BranchListViewModel vm)
+            if (DataContext is SupplierListViewModel vm)
             {
                 _viewModel = vm;
                 _viewModel.SetParentWindow(this);
                 _viewModel.GoBackRequested += (_, _) => Close();
 
-                var grid = this.FindControl<DataGrid>("BranchesGrid");
+                var grid = this.FindControl<DataGrid>("SuppliersGrid");
                 grid?.AddHandler(InputElement.KeyDownEvent, OnGridKeyDown, RoutingStrategies.Tunnel);
 
                 await _viewModel.LoadCommand.ExecuteAsync(null);
 
                 Dispatcher.UIThread.Post(() =>
                 {
-                    EnsureFirstRowSelected(this.FindControl<DataGrid>("BranchesGrid"));
+                    EnsureFirstRowSelected(this.FindControl<DataGrid>("SuppliersGrid"));
                 }, DispatcherPriority.Loaded);
             }
         }
 
         private async void OnGridKeyDown(object? sender, KeyEventArgs e)
         {
-            if (_viewModel?.SelectedBranch == null || _isDetailOpen) return;
+            if (_viewModel?.SelectedSupplier == null || _isDetailOpen) return;
 
             if (e.Key == Key.Enter)
             {
                 e.Handled = true;
-                await ShowBranchDetail(_viewModel.SelectedBranch);
+                await ShowSupplierDetail(_viewModel.SelectedSupplier);
             }
             else if (e.Key == Key.F2)
             {
@@ -62,13 +62,13 @@ namespace CasaCejaRemake.Views.Admin
             }
         }
 
-        private async System.Threading.Tasks.Task ShowBranchDetail(Branch branch)
+        private async System.Threading.Tasks.Task ShowSupplierDetail(Supplier supplier)
         {
             _isDetailOpen = true;
 
             var dialog = new Window
             {
-                Title = "Detalle de Sucursal",
+                Title = "Detalle de Proveedor",
                 Width = 480,
                 Height = 340,
                 WindowStartupLocation = WindowStartupLocation.CenterOwner,
@@ -83,7 +83,7 @@ namespace CasaCejaRemake.Views.Admin
             var root = new Border
             {
                 Background = new SolidColorBrush(Color.Parse("#1E1E1E")),
-                BorderBrush = new SolidColorBrush(Color.Parse("#BF360C")),
+                BorderBrush = new SolidColorBrush(Color.Parse("#37474F")),
                 BorderThickness = new Thickness(1),
                 CornerRadius = new CornerRadius(8),
             };
@@ -101,12 +101,12 @@ namespace CasaCejaRemake.Views.Admin
             headerStack.Children.Add(new Border
             {
                 Width = 6, Height = 20, CornerRadius = new CornerRadius(3),
-                Background = new SolidColorBrush(Color.Parse("#BF360C")),
+                Background = new SolidColorBrush(Color.Parse("#37474F")),
                 VerticalAlignment = VerticalAlignment.Center,
             });
             headerStack.Children.Add(new TextBlock
             {
-                Text = $"🏢  {branch.Name}",
+                Text = $"🚚  {supplier.Name}",
                 FontSize = 16, FontWeight = FontWeight.Bold,
                 Foreground = Brushes.White, VerticalAlignment = VerticalAlignment.Center,
             });
@@ -116,10 +116,10 @@ namespace CasaCejaRemake.Views.Admin
 
             // Fields
             var fieldsPanel = new StackPanel { Spacing = 12, Margin = new Thickness(20, 16) };
-            AddDetailField(fieldsPanel, "DIRECCIÓN", branch.Address);
-            AddDetailField(fieldsPanel, "CORREO ELECTRÓNICO", branch.Email);
-            AddDetailField(fieldsPanel, "RAZÓN SOCIAL", branch.RazonSocial);
-            AddDetailField(fieldsPanel, "ESTADO", branch.Active ? "Activa" : "Inactiva");
+            AddDetailField(fieldsPanel, "TELÉFONO", supplier.Phone ?? string.Empty);
+            AddDetailField(fieldsPanel, "CORREO ELECTRÓNICO", supplier.Email ?? string.Empty);
+            AddDetailField(fieldsPanel, "DIRECCIÓN", supplier.Address ?? string.Empty);
+            AddDetailField(fieldsPanel, "ESTADO", supplier.Active ? "Activo" : "Inactivo");
 
             Grid.SetRow(fieldsPanel, 1);
             layout.Children.Add(fieldsPanel);
@@ -135,13 +135,13 @@ namespace CasaCejaRemake.Views.Admin
             {
                 Content = "Cerrar (Esc)",
                 HorizontalAlignment = HorizontalAlignment.Right,
-                Background = new SolidColorBrush(Color.Parse("#BF360C")),
+                Background = new SolidColorBrush(Color.Parse("#37474F")),
                 Foreground = Brushes.White,
                 BorderThickness = new Thickness(0),
                 CornerRadius = new CornerRadius(4),
                 Padding = new Thickness(18, 8),
             };
-            closeBtn.Click += (_, _) => CloseBranchDetailDialog(dialog);
+            closeBtn.Click += (_, _) => CloseSupplierDetailDialog(dialog);
             footer.Child = closeBtn;
             Grid.SetRow(footer, 2);
             layout.Children.Add(footer);
@@ -153,7 +153,7 @@ namespace CasaCejaRemake.Views.Admin
             {
                 if (e2.Key == Key.Escape || e2.Key == Key.Enter)
                 {
-                    CloseBranchDetailDialog(dialog);
+                    CloseSupplierDetailDialog(dialog);
                     e2.Handled = true;
                 }
             }, RoutingStrategies.Tunnel, handledEventsToo: true);
@@ -169,7 +169,7 @@ namespace CasaCejaRemake.Views.Admin
             _activeDetailDialog = null;
         }
 
-        private void CloseBranchDetailDialog(Window dialog)
+        private void CloseSupplierDetailDialog(Window dialog)
         {
             if (dialog.IsVisible)
                 dialog.Close();
@@ -221,7 +221,7 @@ namespace CasaCejaRemake.Views.Admin
             if (_isDetailOpen)
             {
                 if (_activeDetailDialog != null)
-                    CloseBranchDetailDialog(_activeDetailDialog);
+                    CloseSupplierDetailDialog(_activeDetailDialog);
 
                 e.Handled = true;
                 return;

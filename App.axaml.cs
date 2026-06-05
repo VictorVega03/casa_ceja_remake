@@ -32,6 +32,7 @@ namespace CasaCejaRemake
         public static FolioService? FolioService { get; private set; }
         public static UserService? UserService { get; private set; }
         public static Services.BranchService? BranchService { get; private set; }
+        public static Services.SupplierService? SupplierService { get; private set; }
 
         // Servicios del POS
         private CartService? _cartService;
@@ -131,6 +132,9 @@ namespace CasaCejaRemake
                 UserService   = new UserService(userRepo, RoleService, SyncService, ApiClient);
                 BranchService = new Services.BranchService(
                     new BaseRepository<Models.Branch>(DatabaseService),
+                    ApiClient);
+                SupplierService = new Services.SupplierService(
+                    new BaseRepository<Models.Supplier>(DatabaseService),
                     ApiClient);
 
                 // Sincronizar la sucursal inicial en AuthService desde ConfigService
@@ -926,9 +930,9 @@ namespace CasaCejaRemake
                 ShowAdminBranches(adminView);
             };
 
-            viewModel.SuppliersSelected += async (s, e) =>
+            viewModel.SuppliersSelected += (s, e) =>
             {
-                await ShowAdminComingSoon(adminView, "Proveedores", "Etapa 4");
+                ShowAdminSuppliers(adminView);
             };
 
             viewModel.MovementsSelected += async (s, e) =>
@@ -1257,6 +1261,59 @@ namespace CasaCejaRemake
 
                 var formVm   = new ViewModels.Admin.BranchFormViewModel(BranchService, branchCopy);
                 var formView = new Views.Admin.BranchFormView { DataContext = formVm };
+
+                formVm.SaveCompleted += async (_, _) =>
+                {
+                    await listVm.LoadCommand.ExecuteAsync(null);
+                };
+
+                await formView.ShowDialog(listView);
+            };
+
+            listView.ShowDialog(parentWindow);
+        }
+
+        /// <summary>
+        /// Abre SupplierListView en modo Admin como diálogo modal sobre el menú del Admin.
+        /// </summary>
+        private void ShowAdminSuppliers(Window parentWindow)
+        {
+            if (SupplierService == null) return;
+
+            var listVm   = new ViewModels.Admin.SupplierListViewModel(SupplierService);
+            var listView = new Views.Admin.SupplierListView { DataContext = listVm };
+
+            listVm.AddRequested += async (s, e) =>
+            {
+                var formVm   = new ViewModels.Admin.SupplierFormViewModel(SupplierService);
+                var formView = new Views.Admin.SupplierFormView { DataContext = formVm };
+
+                formVm.SaveCompleted += async (_, _) =>
+                {
+                    await listVm.LoadCommand.ExecuteAsync(null);
+                };
+
+                await formView.ShowDialog(listView);
+            };
+
+            listVm.EditRequested += async (s, supplier) =>
+            {
+                var supplierCopy = new Models.Supplier
+                {
+                    Id         = supplier.Id,
+                    Name       = supplier.Name,
+                    Phone      = supplier.Phone,
+                    Email      = supplier.Email,
+                    Address    = supplier.Address,
+                    Active     = supplier.Active,
+                    CreatedAt  = supplier.CreatedAt,
+                    UpdatedAt  = supplier.UpdatedAt,
+                    SyncStatus = supplier.SyncStatus,
+                    LastSync   = supplier.LastSync,
+                };
+
+                var formVm   = new ViewModels.Admin.SupplierFormViewModel(SupplierService, supplierCopy);
+                var formView = new Views.Admin.SupplierFormView { DataContext = formVm };
 
                 formVm.SaveCompleted += async (_, _) =>
                 {
