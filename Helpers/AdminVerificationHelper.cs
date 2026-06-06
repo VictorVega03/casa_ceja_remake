@@ -23,7 +23,9 @@ public static class AdminVerificationHelper
         {
             Title = "Verificación de Administrador",
             Width = 400,
-            Height = 340,
+            Height = 380,
+            MinWidth = 340,
+            MinHeight = 300,
             WindowStartupLocation = WindowStartupLocation.CenterOwner,
             CanResize = false,
             Background = new SolidColorBrush(Color.Parse("#1E1E1E")),
@@ -33,7 +35,7 @@ public static class AdminVerificationHelper
 
         var panel = new StackPanel
         {
-            Margin = new Avalonia.Thickness(30),
+            Margin = new Avalonia.Thickness(24),
             Spacing = 15
         };
 
@@ -106,23 +108,26 @@ public static class AdminVerificationHelper
             Foreground = new SolidColorBrush(Color.Parse("#FF6B6B")),
             FontSize = 12,
             HorizontalAlignment = HorizontalAlignment.Center,
+            TextAlignment = TextAlignment.Center,
+            TextWrapping = TextWrapping.Wrap,
             IsVisible = false
         };
 
         // Botones
-        var buttonsPanel = new StackPanel
+        var buttonsPanel = new Grid
         {
-            Orientation = Orientation.Horizontal,
-            HorizontalAlignment = HorizontalAlignment.Center,
-            Spacing = 10,
-            Margin = new Avalonia.Thickness(0, 10, 0, 0)
+            ColumnSpacing = 10,
+            Margin = new Avalonia.Thickness(20, 14),
+            HorizontalAlignment = HorizontalAlignment.Stretch
         };
+        buttonsPanel.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Star));
+        buttonsPanel.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Star));
 
         var btnVerify = new Button
         {
             Content = "Verificar (Enter)",
-            Width = 140,
             Height = 35,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
             Background = new SolidColorBrush(Color.Parse("#2E7D32")),
             Foreground = Brushes.White,
             CornerRadius = new Avalonia.CornerRadius(4)
@@ -131,8 +136,8 @@ public static class AdminVerificationHelper
         var btnCancel = new Button
         {
             Content = "Cancelar (Esc)",
-            Width = 140,
             Height = 35,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
             Background = new SolidColorBrush(Color.Parse("#757575")),
             Foreground = Brushes.White,
             CornerRadius = new Avalonia.CornerRadius(4)
@@ -204,6 +209,8 @@ public static class AdminVerificationHelper
             }
         };
 
+        Grid.SetColumn(btnCancel, 0);
+        Grid.SetColumn(btnVerify, 1);
         buttonsPanel.Children.Add(btnCancel);
         buttonsPanel.Children.Add(btnVerify);
 
@@ -214,12 +221,37 @@ public static class AdminVerificationHelper
         panel.Children.Add(passLabel);
         panel.Children.Add(txtPassword);
         panel.Children.Add(errorText);
-        panel.Children.Add(buttonsPanel);
 
-        dialog.Content = panel;
+        var scrollViewer = new ScrollViewer
+        {
+            Content = panel,
+            VerticalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto,
+            HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled
+        };
+
+        var root = new Grid();
+        root.RowDefinitions.Add(new RowDefinition(GridLength.Star));
+        root.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
+        Grid.SetRow(scrollViewer, 0);
+        Grid.SetRow(buttonsPanel, 1);
+        root.Children.Add(scrollViewer);
+        root.Children.Add(buttonsPanel);
+
+        dialog.Content = root;
 
         // Focus inicial en el campo de usuario
-        dialog.Opened += (s, e) => txtUsername.Focus();
+        dialog.Opened += (s, e) =>
+        {
+            var screen = dialog.Screens.ScreenFromWindow(dialog) ?? dialog.Screens.Primary;
+            if (screen != null)
+            {
+                var area = screen.WorkingArea;
+                dialog.Width = Math.Max(340, Math.Min(440, area.Width * 0.9));
+                dialog.Height = Math.Max(300, Math.Min(400, area.Height * 0.75));
+            }
+
+            txtUsername.Focus();
+        };
 
         await dialog.ShowDialog(parentWindow);
 

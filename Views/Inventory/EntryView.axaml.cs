@@ -127,9 +127,8 @@ namespace CasaCejaRemake.Views.Inventory
                 return;
             }
 
-            // Cuando el foco está en el buscador, las flechas deben comportarse
-            // como navegación de texto y NO ajustar cantidades.
-            if ((e.Key == Key.Left || e.Key == Key.Right) && SearchBox?.IsFocused == true)
+            // Dentro de cualquier campo editable, las flechas mueven el cursor.
+            if ((e.Key == Key.Left || e.Key == Key.Right) && IsTextInputSource(e.Source))
             {
                 return;
             }
@@ -173,6 +172,15 @@ namespace CasaCejaRemake.Views.Inventory
                 e.Handled = true;
                 return;
             }
+        }
+
+        private static bool IsTextInputSource(object? source)
+        {
+            if (source is TextBox)
+                return true;
+
+            return source is Control control
+                && control.GetVisualAncestors().OfType<TextBox>().Any();
         }
 
         protected override async void OnClosing(WindowClosingEventArgs e)
