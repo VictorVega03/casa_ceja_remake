@@ -702,74 +702,19 @@ namespace CasaCejaRemake.Views.POS
             if (_viewModel == null || _viewModel.SelectedItemIndex < 0) return;
 
             var item = _viewModel.Items[_viewModel.SelectedItemIndex];
-            
-            var dialog = new Window
-            {
-                Title = "Modify Quantity",
-                Width = 300,
-                Height = 150,
-                WindowStartupLocation = WindowStartupLocation.CenterOwner,
-                CanResize = false,
-                Background = Avalonia.Media.Brushes.DimGray
-            };
-
-            var stackPanel = new StackPanel
-            {
-                Margin = new Thickness(15),
-                Spacing = 10
-            };
-
-            var labelProduct = new TextBlock
-            {
-                Text = item.ProductName,
-                Foreground = Avalonia.Media.Brushes.White,
-                FontWeight = Avalonia.Media.FontWeight.Bold
-            };
-
-            var inputQuantity = new NumericUpDown
-            {
-                Value = item.Quantity,
-                Minimum = 1,
-                Maximum = 9999,
-                Increment = 1,
-                FormatString = "0"
-            };
-
-            var buttonsPanel = new StackPanel
-            {
-                Orientation = Avalonia.Layout.Orientation.Horizontal,
-                HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Right,
-                Spacing = 10
-            };
-
-            var btnAccept = new Button { Content = "Accept", Width = 80 };
-            var btnCancel = new Button { Content = "Cancel", Width = 80 };
-
-            btnAccept.Click += async (s, args) =>
-            {
-                var newQuantity = (int)(inputQuantity.Value ?? 1);
-                await _viewModel.ApplyNewQuantityAsync(newQuantity);
-                dialog.Close();
-            };
-
-            btnCancel.Click += (s, args) =>
-            {
-                dialog.Close();
-            };
-
-            buttonsPanel.Children.Add(btnCancel);
-            buttonsPanel.Children.Add(btnAccept);
-
-            stackPanel.Children.Add(labelProduct);
-            stackPanel.Children.Add(inputQuantity);
-            stackPanel.Children.Add(buttonsPanel);
-
-            dialog.Content = stackPanel;
 
             _hasOpenDialog = true;
-            await dialog.ShowDialog(this);
-            _hasOpenDialog = false;
-            TxtBarcode.Focus();
+            try
+            {
+                var quantity = await QuantityDialog.ShowAsync(this, item.ProductName, item.Quantity);
+                if (quantity.HasValue)
+                    await _viewModel.ApplyNewQuantityAsync(quantity.Value);
+            }
+            finally
+            {
+                _hasOpenDialog = false;
+                TxtBarcode.Focus();
+            }
         }
 
         private async void OnRequestShowCreditsLayaways(object? sender, EventArgs e)
@@ -818,46 +763,16 @@ namespace CasaCejaRemake.Views.POS
 
         private async void OnShowMessage(object? sender, string message)
         {
-            var dialog = new Window
-            {
-                Title = "Aviso",
-                Width = 350,
-                Height = 130,
-                WindowStartupLocation = WindowStartupLocation.CenterOwner,
-                CanResize = false,
-                Background = Avalonia.Media.Brushes.DimGray
-            };
-
-            var stackPanel = new StackPanel
-            {
-                Margin = new Thickness(15),
-                Spacing = 15
-            };
-
-            var textBlock = new TextBlock
-            {
-                Text = message,
-                Foreground = Avalonia.Media.Brushes.White,
-                TextWrapping = Avalonia.Media.TextWrapping.Wrap
-            };
-
-            var btnOk = new Button
-            {
-                Content = "Aceptar",
-                Width = 80,
-                HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center
-            };
-
-            btnOk.Click += (s, args) => dialog.Close();
-
-            stackPanel.Children.Add(textBlock);
-            stackPanel.Children.Add(btnOk);
-
-            dialog.Content = stackPanel;
-
             _hasOpenDialog = true;
-            await dialog.ShowDialog(this);
-            _hasOpenDialog = false;
+            try
+            {
+                await DialogHelper.ShowMessageDialog(this, "Aviso", message);
+            }
+            finally
+            {
+                _hasOpenDialog = false;
+                TxtBarcode.Focus();
+            }
         }
 
         private void OnRequestExit(object? sender, EventArgs e)
@@ -1517,14 +1432,20 @@ namespace CasaCejaRemake.Views.POS
 
             dialog.Content = panel;
 
-            // Cerrar con Enter o Escape
-            dialog.KeyDown += (s, e) =>
+            // Cerrar con Enter o Escape aunque el foco esté en un control hijo.
+            dialog.AddHandler(InputElement.KeyDownEvent, (s, e) =>
             {
                 if (e.Key == Key.Enter || e.Key == Key.Escape)
                 {
                     dialog.Close();
                     e.Handled = true;
                 }
+            }, RoutingStrategies.Tunnel, handledEventsToo: true);
+
+            dialog.Opened += (_, _) =>
+            {
+                dialog.Activate();
+                closeButton.Focus();
             };
 
             _hasOpenDialog = true;

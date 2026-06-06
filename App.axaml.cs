@@ -33,6 +33,7 @@ namespace CasaCejaRemake
         public static UserService? UserService { get; private set; }
         public static Services.BranchService? BranchService { get; private set; }
         public static Services.SupplierService? SupplierService { get; private set; }
+        public static bool DeveloperToolsEnabled { get; internal set; }
 
         // Servicios del POS
         private CartService? _cartService;

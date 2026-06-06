@@ -6,6 +6,8 @@ using CasaCejaRemake.Helpers;
 
 using static CasaCejaRemake.Helpers.FileHelper;
 using System.Collections.Generic;
+using System;
+using Avalonia.Threading;
 
 namespace CasaCejaRemake.Views.Shared
 {
@@ -13,6 +15,8 @@ namespace CasaCejaRemake.Views.Shared
     {
         private HistoryViewModel? _viewModel;
         internal bool IsDetailOpen { get; set; }
+        private bool _isExportFlowOpen;
+        private DateTime _ignoreEscapeUntil;
 
         public HistoryView()
         {
@@ -37,24 +41,35 @@ namespace CasaCejaRemake.Views.Shared
 
         private async System.Threading.Tasks.Task OnExportRequestedAsync()
         {
-            if (_viewModel == null || App.ExportService == null || IsDetailOpen) return;
+            if (_viewModel == null || App.ExportService == null || IsDetailOpen || _isExportFlowOpen) return;
 
-            var choice = await casa_ceja_remake.Helpers.DialogHelper.ShowInventoryExportTypeDialog(this);
-            if (choice == casa_ceja_remake.Helpers.DialogHelper.InventoryExportChoice.Cancelar) return;
-
-            bool entradas = choice != casa_ceja_remake.Helpers.DialogHelper.InventoryExportChoice.Salidas;
-            bool salidas  = choice != casa_ceja_remake.Helpers.DialogHelper.InventoryExportChoice.Entradas;
-
-            var sheets = await _viewModel.PrepareExportAsync(App.ExportService, entradas, salidas);
-
-            var fileName = choice switch
+            _isExportFlowOpen = true;
+            try
             {
-                casa_ceja_remake.Helpers.DialogHelper.InventoryExportChoice.Entradas => "Historial de Entradas",
-                casa_ceja_remake.Helpers.DialogHelper.InventoryExportChoice.Salidas  => "Historial de Salidas",
-                _                                                                     => "Historial Entradas y Salidas"
-            };
+                var choice = await casa_ceja_remake.Helpers.DialogHelper.ShowInventoryExportTypeDialog(this);
+                if (choice == casa_ceja_remake.Helpers.DialogHelper.InventoryExportChoice.Cancelar) return;
 
-            await ExportHelper.ExportMultiSheetAsync(this, sheets, fileName, DocumentModule.Inventario);
+                bool entradas = choice != casa_ceja_remake.Helpers.DialogHelper.InventoryExportChoice.Salidas;
+                bool salidas  = choice != casa_ceja_remake.Helpers.DialogHelper.InventoryExportChoice.Entradas;
+
+                var sheets = await _viewModel.PrepareExportAsync(App.ExportService, entradas, salidas);
+
+                var fileName = choice switch
+                {
+                    casa_ceja_remake.Helpers.DialogHelper.InventoryExportChoice.Entradas => "Historial de Entradas",
+                    casa_ceja_remake.Helpers.DialogHelper.InventoryExportChoice.Salidas  => "Historial de Salidas",
+                    _                                                                     => "Historial Entradas y Salidas"
+                };
+
+                await ExportHelper.ExportMultiSheetAsync(this, sheets, fileName, DocumentModule.Inventario);
+            }
+            finally
+            {
+                _ignoreEscapeUntil = DateTime.UtcNow.AddMilliseconds(300);
+                Dispatcher.UIThread.Post(
+                    () => _isExportFlowOpen = false,
+                    DispatcherPriority.Background);
+            }
         }
 
         private void DataGrid_PreviewKeyDown(object? sender, KeyEventArgs e)
@@ -68,7 +83,17 @@ namespace CasaCejaRemake.Views.Shared
 
         protected override void OnKeyDown(KeyEventArgs e)
         {
-            if (IsDetailOpen) return;
+            if (IsDetailOpen || _isExportFlowOpen)
+            {
+                e.Handled = true;
+                return;
+            }
+
+            if (e.Key == Key.Escape && DateTime.UtcNow < _ignoreEscapeUntil)
+            {
+                e.Handled = true;
+                return;
+            }
 
             if (_viewModel == null)
             {

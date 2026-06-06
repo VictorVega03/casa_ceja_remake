@@ -1,0 +1,92 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="CasaCejaRemake.Views.Shared.TextInputDialog"
+        Title="Capturar información"
+        Width="440"
+        Height="275"
+        MinWidth="340"
+        MinHeight="245"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False"
+        ShowInTaskbar="False"
+        SystemDecorations="None"
+        Background="Transparent"
+        TransparencyLevelHint="Transparent">
+
+    <Border Background="#1E1E1E"
+            BorderBrush="#3A3A3A"
+            BorderThickness="1"
+            CornerRadius="8"
+            ClipToBounds="True">
+        <Grid RowDefinitions="Auto,*,Auto">
+            <Border Grid.Row="0"
+                    Background="#242424"
+                    BorderBrush="#333333"
+                    BorderThickness="0,0,0,1"
+                    Padding="22,16">
+                <StackPanel Orientation="Horizontal" Spacing="12">
+                    <Border x:Name="AccentBorder"
+                            Width="4"
+                            Height="24"
+                            CornerRadius="2"
+                            Background="#1976D2"/>
+                    <TextBlock x:Name="TitleText"
+                               Foreground="White"
+                               FontSize="18"
+                               FontWeight="Bold"
+                               TextWrapping="Wrap"
+                               VerticalAlignment="Center"/>
+                </StackPanel>
+            </Border>
+
+            <StackPanel Grid.Row="1"
+                        Margin="24,20"
+                        Spacing="10">
+                <TextBlock x:Name="PromptText"
+                           Foreground="#E0E0E0"
+                           FontSize="14"
+                           TextWrapping="Wrap"/>
+                <TextBox x:Name="ValueInput"
+                         Height="38"
+                         Padding="10,7"
+                         Background="#2E2E2E"
+                         Foreground="White"
+                         BorderBrush="#555555"
+                         CaretBrush="White"
+                         CornerRadius="4"/>
+                <TextBlock Text="Enter: Guardar   |   Esc: Cancelar"
+                           Foreground="#777777"
+                           FontSize="11"/>
+            </StackPanel>
+
+            <Border Grid.Row="2"
+                    Background="#242424"
+                    BorderBrush="#333333"
+                    BorderThickness="0,1,0,0"
+                    Padding="18,14">
+                <StackPanel Orientation="Horizontal"
+                            HorizontalAlignment="Right"
+                            Spacing="10">
+                    <Button Content="Cancelar (Esc)"
+                            MinWidth="125"
+                            Padding="14,8"
+                            Background="#424242"
+                            Foreground="White"
+                            BorderThickness="0"
+                            CornerRadius="4"
+                            Click="OnCancelClick"/>
+                    <Button x:Name="SaveButton"
+                            Content="Guardar (Enter)"
+                            MinWidth="125"
+                            Padding="14,8"
+                            Background="#1976D2"
+                            Foreground="White"
+                            BorderThickness="0"
+                            CornerRadius="4"
+                            FontWeight="SemiBold"
+                            Click="OnSaveClick"/>
+                </StackPanel>
+            </Border>
+        </Grid>
+    </Border>
+</Window>

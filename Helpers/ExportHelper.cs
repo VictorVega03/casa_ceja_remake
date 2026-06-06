@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Avalonia.Controls;
 using CasaCejaRemake.Helpers;
 using CasaCejaRemake.Services;
+using CasaCejaRemake.Views.Shared;
 using casa_ceja_remake.Helpers;
 
 namespace CasaCejaRemake.Helpers
@@ -32,7 +33,7 @@ namespace CasaCejaRemake.Helpers
                 if (App.ExportService == null)
                 {
                     await DialogHelper.ShowMessageDialog(parentWindow,
-                        "El servicio de exportación no está disponible.", "Error");
+                        "Error", "El servicio de exportación no está disponible.");
                     return;
                 }
 
@@ -47,7 +48,7 @@ namespace CasaCejaRemake.Helpers
             catch (Exception ex)
             {
                 await DialogHelper.ShowMessageDialog(parentWindow,
-                    $"Error al exportar: {ex.Message}", "Error");
+                    "Error", $"Error al exportar: {ex.Message}");
             }
         }
 
@@ -64,7 +65,7 @@ namespace CasaCejaRemake.Helpers
                 if (App.ExportService == null)
                 {
                     await DialogHelper.ShowMessageDialog(parentWindow,
-                        "El servicio de exportación no está disponible.", "Error");
+                        "Error", "El servicio de exportación no está disponible.");
                     return;
                 }
 
@@ -78,7 +79,7 @@ namespace CasaCejaRemake.Helpers
             catch (Exception ex)
             {
                 await DialogHelper.ShowMessageDialog(parentWindow,
-                    $"Error al exportar: {ex.Message}", "Error");
+                    "Error", $"Error al exportar: {ex.Message}");
             }
         }
 
@@ -96,7 +97,7 @@ namespace CasaCejaRemake.Helpers
                 if (App.ExportService == null)
                 {
                     await DialogHelper.ShowMessageDialog(parentWindow,
-                        "El servicio de exportación no está disponible.", "Error");
+                        "Error", "El servicio de exportación no está disponible.");
                     return;
                 }
 
@@ -109,7 +110,7 @@ namespace CasaCejaRemake.Helpers
             catch (Exception ex)
             {
                 await DialogHelper.ShowMessageDialog(parentWindow,
-                    $"Error al exportar: {ex.Message}", "Error");
+                    "Error", $"Error al exportar: {ex.Message}");
             }
         }
 
@@ -154,14 +155,15 @@ namespace CasaCejaRemake.Helpers
                 var fileName = Path.GetFileName(result.FilePath);
                 var folder = FileHelper.GetModulePath(module);
                 await DialogHelper.ShowMessageDialog(parentWindow,
+                    "Exportación completada",
                     $"Archivo exportado exitosamente:\n{fileName}\n\nUbicación: CasaCejaDocs/{folder}/",
-                    "Exportación completada");
+                    AppDialogTone.Success);
             }
             else
             {
                 await DialogHelper.ShowMessageDialog(parentWindow,
-                    result.ErrorMessage ?? "Error desconocido al exportar",
-                    "Error de exportación");
+                    "Error de exportación",
+                    result.ErrorMessage ?? "Error desconocido al exportar");
             }
         }
     }

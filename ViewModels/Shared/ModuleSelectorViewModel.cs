@@ -20,6 +20,18 @@ namespace CasaCejaRemake.ViewModels.Shared
         private string _welcomeMessage = string.Empty;
 
         [ObservableProperty]
+        private string _headerTitle = string.Empty;
+
+        [ObservableProperty]
+        private string _headerSubtitle = string.Empty;
+
+        [ObservableProperty]
+        private string _headerBackground = "#2F5D8A";
+
+        [ObservableProperty]
+        private string _selectorBackground = "#1A1A2E";
+
+        [ObservableProperty]
         private bool _isAdmin;
 
         [ObservableProperty]
@@ -39,6 +51,9 @@ namespace CasaCejaRemake.ViewModels.Shared
         // Visibilidad del candado en el card de admin (inventario y cajero lo ven bloqueado)
         [ObservableProperty]
         private bool _isAdminLocked;
+
+        [ObservableProperty]
+        private bool _isDeveloperToolsEnabled;
 
         // ====================
         // EVENTOS
@@ -90,6 +105,20 @@ namespace CasaCejaRemake.ViewModels.Shared
             // Configurar mensaje de bienvenida
             var userName = _authService.CurrentUserName ?? "Administrador";
             WelcomeMessage = $"Bienvenido, {userName}";
+            IsDeveloperToolsEnabled = App.DeveloperToolsEnabled;
+
+            if (IsDeveloperToolsEnabled)
+            {
+                HeaderTitle = "Bienvenido Wega :)";
+                HeaderSubtitle = "SELECCIONE UN MÓDULO";
+                HeaderBackground = "#6A1B9A";
+                SelectorBackground = "#21152B";
+            }
+            else
+            {
+                HeaderTitle = "SELECCIONE UN MÓDULO";
+                HeaderSubtitle = WelcomeMessage;
+            }
             
             // Configurar permisos por rol
             IsAdmin = _authService.IsAdmin;

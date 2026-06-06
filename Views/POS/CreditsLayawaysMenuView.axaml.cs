@@ -680,148 +680,37 @@ namespace CasaCejaRemake.Views.POS
                 return false;
             }
 
-            var confirmDialog = new Window
+            var confirmed = await DialogHelper.ShowConfirmDialog(
+                this,
+                "Confirmar Entrega",
+                $"¿Confirmar entrega del apartado #{layaway.Folio}?",
+                "Sí, entregar",
+                "Cancelar");
+
+            if (!confirmed)
+                return false;
+
+            try
             {
-                Title = "Confirmar Entrega",
-                Width = 400,
-                Height = 200,
-                WindowStartupLocation = WindowStartupLocation.CenterOwner,
-                Background = Brushes.DimGray
-            };
-
-            var stackPanel = new StackPanel
+                var userId = _authService?.CurrentUser?.Id ?? 1;
+                await _layawayService.MarkAsDeliveredAsync(layaway.Id, userId);
+                return true;
+            }
+            catch (Exception ex)
             {
-                Margin = new Thickness(20),
-                Spacing = 15
-            };
-
-            var textBlock = new TextBlock
-            {
-                Text = $"¿Confirmar entrega del apartado #{layaway.Folio}?",
-                Foreground = Brushes.White,
-                FontSize = 16,
-                TextWrapping = Avalonia.Media.TextWrapping.Wrap
-            };
-
-            var buttonsPanel = new StackPanel
-            {
-                Orientation = Avalonia.Layout.Orientation.Horizontal,
-                HorizontalAlignment = HorizontalAlignment.Center,
-                Spacing = 10
-            };
-
-            var btnYes = new Button
-            {
-                Content = "Sí, Entregar",
-                Width = 120
-            };
-
-            var btnNo = new Button
-            {
-                Content = "Cancelar",
-                Width = 120
-            };
-
-            btnYes.Click += async (s, e) =>
-            {
-                try
-                {
-                    var userId = _authService?.CurrentUser?.Id ?? 1;
-                    await _layawayService.MarkAsDeliveredAsync(layaway.Id, userId);
-                    confirmDialog.Tag = "delivered";
-                    confirmDialog.Close();
-                }
-                catch (Exception ex)
-                {
-                    ShowMessageDialog("Error", $"Error al completar apartado: {ex.Message}");
-                }
-            };
-
-            btnNo.Click += (s, e) => confirmDialog.Close();
-
-            buttonsPanel.Children.Add(btnYes);
-            buttonsPanel.Children.Add(btnNo);
-
-            stackPanel.Children.Add(textBlock);
-            stackPanel.Children.Add(buttonsPanel);
-
-            confirmDialog.Content = stackPanel;
-
-            await confirmDialog.ShowDialog(this);
-
-            return confirmDialog.Tag is string tag && tag == "delivered";
+                await ShowMessageDialogAsync("Error", $"Error al completar apartado: {ex.Message}");
+                return false;
+            }
         }
 
         private async Task<bool> ShowConfirmDeliverDialog()
         {
-            var confirmDialog = new Window
-            {
-                Title = "Apartado Completado",
-                Width = 400,
-                Height = 180,
-                WindowStartupLocation = WindowStartupLocation.CenterOwner,
-                Background = Brushes.DimGray
-            };
-
-            var stackPanel = new StackPanel
-            {
-                Margin = new Thickness(20),
-                Spacing = 15
-            };
-
-            var textBlock = new TextBlock
-            {
-                Text = "El apartado ha sido pagado.\n¿Desea entregar la mercancía al cliente?",
-                Foreground = Brushes.White,
-                FontSize = 16,
-                TextWrapping = Avalonia.Media.TextWrapping.Wrap,
-                TextAlignment = Avalonia.Media.TextAlignment.Center
-            };
-
-            var buttonsPanel = new StackPanel
-            {
-                Orientation = Avalonia.Layout.Orientation.Horizontal,
-                HorizontalAlignment = HorizontalAlignment.Center,
-                Spacing = 10
-            };
-
-            var btnYes = new Button
-            {
-                Content = "Sí, Entregar",
-                Width = 120,
-                Background = new SolidColorBrush(Color.Parse("#4CAF50")),
-                Foreground = Brushes.White
-            };
-
-            var btnNo = new Button
-            {
-                Content = "No, Después",
-                Width = 120,
-                Background = new SolidColorBrush(Color.Parse("#666")),
-                Foreground = Brushes.White
-            };
-
-            bool shouldDeliver = false;
-
-            btnYes.Click += (s, e) =>
-            {
-                shouldDeliver = true;
-                confirmDialog.Close();
-            };
-
-            btnNo.Click += (s, e) => confirmDialog.Close();
-
-            buttonsPanel.Children.Add(btnYes);
-            buttonsPanel.Children.Add(btnNo);
-
-            stackPanel.Children.Add(textBlock);
-            stackPanel.Children.Add(buttonsPanel);
-
-            confirmDialog.Content = stackPanel;
-
-            await confirmDialog.ShowDialog(this);
-
-            return shouldDeliver;
+            return await DialogHelper.ShowConfirmDialog(
+                this,
+                "Apartado Completado",
+                "El apartado ha sido pagado.\n¿Desea entregar la mercancía al cliente?",
+                "Sí, entregar",
+                "No, después");
         }
 
         private async Task ShowMessageDialogAsync(string title, string message)

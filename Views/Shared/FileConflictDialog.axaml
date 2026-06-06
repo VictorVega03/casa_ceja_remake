@@ -1,0 +1,101 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="CasaCejaRemake.Views.Shared.FileConflictDialog"
+        Title="Archivo existente"
+        Width="500"
+        Height="300"
+        MinWidth="380"
+        MinHeight="270"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False"
+        ShowInTaskbar="False"
+        SystemDecorations="None"
+        Background="Transparent"
+        TransparencyLevelHint="Transparent">
+
+    <Border Background="#1E1E1E"
+            BorderBrush="#3A3A3A"
+            BorderThickness="1"
+            CornerRadius="8"
+            ClipToBounds="True">
+        <Grid RowDefinitions="Auto,*,Auto">
+            <Border Grid.Row="0"
+                    Background="#242424"
+                    BorderBrush="#333333"
+                    BorderThickness="0,0,0,1"
+                    Padding="22,16">
+                <StackPanel Orientation="Horizontal" Spacing="12">
+                    <Border Width="4"
+                            Height="24"
+                            CornerRadius="2"
+                            Background="#EF6C00"/>
+                    <TextBlock Text="Archivo existente"
+                               Foreground="White"
+                               FontSize="18"
+                               FontWeight="Bold"
+                               VerticalAlignment="Center"/>
+                </StackPanel>
+            </Border>
+
+            <StackPanel Grid.Row="1"
+                        Margin="24,20"
+                        Spacing="10">
+                <TextBlock Text="Ya existe un archivo con el nombre:"
+                           Foreground="#E0E0E0"
+                           FontSize="14"/>
+                <Border Background="#292929"
+                        BorderBrush="#3A3A3A"
+                        BorderThickness="1"
+                        CornerRadius="4"
+                        Padding="12,9">
+                    <TextBlock x:Name="FileNameText"
+                               Foreground="White"
+                               FontSize="13"
+                               FontWeight="SemiBold"
+                               TextWrapping="Wrap"/>
+                </Border>
+                <TextBlock Text="Selecciona qué deseas hacer."
+                           Foreground="#AAAAAA"
+                           FontSize="13"/>
+                <TextBlock Text="Esc: Cancelar"
+                           Foreground="#777777"
+                           FontSize="11"
+                           TextWrapping="Wrap"/>
+            </StackPanel>
+
+            <Border Grid.Row="2"
+                    Background="#242424"
+                    BorderBrush="#333333"
+                    BorderThickness="0,1,0,0"
+                    Padding="18,14">
+                <StackPanel Orientation="Horizontal"
+                            HorizontalAlignment="Right"
+                            Spacing="8">
+                    <Button x:Name="CancelButton"
+                            Content="Cancelar (Esc)"
+                            Padding="14,8"
+                            Background="#424242"
+                            Foreground="White"
+                            BorderThickness="0"
+                            CornerRadius="4"
+                            Click="OnCancelClick"/>
+                    <Button Content="Duplicar"
+                            Padding="14,8"
+                            Background="#2E7D32"
+                            Foreground="White"
+                            BorderThickness="0"
+                            CornerRadius="4"
+                            Click="OnDuplicateClick"/>
+                    <Button Content="Reemplazar"
+                            Padding="14,8"
+                            Background="#EF6C00"
+                            Foreground="White"
+                            BorderThickness="0"
+                            CornerRadius="4"
+                            FontWeight="SemiBold"
+                            Click="OnReplaceClick"/>
+                </StackPanel>
+            </Border>
+        </Grid>
+    </Border>
+</Window>

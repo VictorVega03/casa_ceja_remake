@@ -195,12 +195,14 @@ namespace CasaCejaRemake.Services
             string reportTitle)
         {
             var worksheet = workbook.Worksheets.Add(sheetName);
+            worksheet.Style.Font.FontName = "Arial";
+            worksheet.Style.Font.FontSize = 10;
             int row = 1;
 
             // ===== TÍTULO =====
             worksheet.Cell(row, 1).Value = reportTitle;
             worksheet.Cell(row, 1).Style.Font.Bold = true;
-            worksheet.Cell(row, 1).Style.Font.FontSize = 14;
+            worksheet.Cell(row, 1).Style.Font.FontSize = 12;
             worksheet.Cell(row, 1).Style.Font.FontColor = XLColor.FromHtml("#1565C0");
             worksheet.Range(row, 1, row, columns.Count).Merge();
             row++;
@@ -220,6 +222,7 @@ namespace CasaCejaRemake.Services
                 var cell = worksheet.Cell(row, col + 1);
                 cell.Value = columns[col].Header;
                 cell.Style.Font.Bold = true;
+                cell.Style.Font.FontSize = 10;
                 cell.Style.Font.FontColor = XLColor.White;
                 cell.Style.Fill.BackgroundColor = XLColor.FromHtml(HEADER_BG_COLOR);
                 cell.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;

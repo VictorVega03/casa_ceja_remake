@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Avalonia.Threading;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
@@ -15,6 +16,8 @@ namespace CasaCejaRemake.Views.POS
     public partial class SalesHistoryView : Window
     {
         private SalesHistoryViewModel? _viewModel;
+        private bool _isExportFlowOpen;
+        private DateTime _ignoreEscapeUntil;
 
         public SalesHistoryView()
         {
@@ -68,6 +71,18 @@ namespace CasaCejaRemake.Views.POS
 
         protected override void OnKeyDown(KeyEventArgs e)
         {
+            if (_isExportFlowOpen)
+            {
+                e.Handled = true;
+                return;
+            }
+
+            if (e.Key == Key.Escape && DateTime.UtcNow < _ignoreEscapeUntil)
+            {
+                e.Handled = true;
+                return;
+            }
+
             if (_viewModel == null)
             {
                 base.OnKeyDown(e);
@@ -238,14 +253,25 @@ namespace CasaCejaRemake.Views.POS
 
         private async void OnExportRequested(object? sender, EventArgs e)
         {
-            if (_viewModel == null || App.ExportService == null) return;
+            if (_viewModel == null || App.ExportService == null || _isExportFlowOpen) return;
 
-            var sheets = await _viewModel.PrepareMultiSheetExportAsync(App.ExportService);
-            
-            await ExportHelper.ExportMultiSheetAsync(
-                this,
-                sheets,
-                "Reporte de Ventas");
+            _isExportFlowOpen = true;
+            try
+            {
+                var sheets = await _viewModel.PrepareMultiSheetExportAsync(App.ExportService);
+
+                await ExportHelper.ExportMultiSheetAsync(
+                    this,
+                    sheets,
+                    "Reporte de Ventas");
+            }
+            finally
+            {
+                _ignoreEscapeUntil = DateTime.UtcNow.AddMilliseconds(300);
+                Dispatcher.UIThread.Post(
+                    () => _isExportFlowOpen = false,
+                    DispatcherPriority.Background);
+            }
         }
     }
 }

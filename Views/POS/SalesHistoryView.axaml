@@ -182,7 +182,7 @@
 
             <!-- TAB: VENTAS -->
             <TabItem Header="Ventas">
-                <Grid RowDefinitions="*,Auto">
+                <Grid>
                     <!-- Estado vacío -->
                     <Border Grid.Row="0"
                             IsVisible="{Binding ShowEmptyState}"
@@ -221,27 +221,6 @@
                         </DataGrid.Columns>
                     </DataGrid>
 
-                    <!-- Paginación -->
-                    <Border Grid.Row="1" Background="#252525" Padding="10">
-                        <Grid ColumnDefinitions="*,Auto,*">
-                            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10">
-                                <Button Content="◀ Anterior"
-                                        Command="{Binding PreviousPageCommand}"
-                                        IsEnabled="{Binding CanGoBack}"
-                                        Classes="filter"/>
-                                <TextBlock VerticalAlignment="Center" Foreground="White">
-                                    <Run Text="Página "/>
-                                    <Run Text="{Binding CurrentPage}"/>
-                                    <Run Text=" de "/>
-                                    <Run Text="{Binding TotalPages}"/>
-                                </TextBlock>
-                                <Button Content="Siguiente ▶"
-                                        Command="{Binding NextPageCommand}"
-                                        IsEnabled="{Binding CanGoForward}"
-                                        Classes="filter"/>
-                            </StackPanel>
-                        </Grid>
-                    </Border>
                 </Grid>
             </TabItem>
 
@@ -304,36 +283,81 @@
         </TabControl>
 
         <!-- Bottom Buttons -->
-        <Border Grid.Row="3" Background="#2D2D2D" Padding="15">
-            <Grid ColumnDefinitions="*,Auto,Auto,Auto,*">
-                <Button Grid.Column="1"
-                        Command="{Binding ViewDetailCommand}"
-                        Classes="primary"
-                        Margin="5,0"
-                        IsEnabled="{Binding HasSelectedItem}">
-                    <StackPanel Orientation="Horizontal" Spacing="5">
-                        <TextBlock Text="Enter"/>
-                        <TextBlock Text="Ver Detalle"/>
-                    </StackPanel>
-                </Button>
-                <Button Grid.Column="2"
-                        Command="{Binding ExportToExcelCommand}"
-                        Background="#2E7D32"
-                        Foreground="White"
-                        Padding="20,10"
-                        Margin="5,0">
-                    <StackPanel Orientation="Horizontal" Spacing="5">
-                        <TextBlock Text="F8"/>
-                        <TextBlock Text="Exportar Excel"/>
-                    </StackPanel>
-                </Button>
-                <Button Grid.Column="3"
-                        Content="Salir (Esc)"
-                        Command="{Binding CloseCommand}"
-                        Background="#555555"
-                        Foreground="White"
-                        Padding="20,10"
-                        Margin="5,0"/>
+        <Border Grid.Row="3"
+                Background="#1E1E1E"
+                BorderBrush="#2A2A2A"
+                BorderThickness="0,1,0,0"
+                Padding="20,10">
+            <Grid ColumnDefinitions="*,Auto,*">
+                <TextBlock Grid.Column="0"
+                           Text="Esc: Volver"
+                           Foreground="#555"
+                           FontSize="12"
+                           VerticalAlignment="Center"/>
+
+                <StackPanel Grid.Column="1"
+                            Orientation="Horizontal"
+                            HorizontalAlignment="Center"
+                            Spacing="10"
+                            VerticalAlignment="Center">
+                    <Button Content="← Anterior"
+                            Command="{Binding PreviousPageCommand}"
+                            IsEnabled="{Binding CanGoBack}"
+                            Classes="filter"/>
+                    <Border Background="#252525" CornerRadius="5" Padding="16,7">
+                        <TextBlock VerticalAlignment="Center"
+                                   Foreground="White"
+                                   FontSize="13"
+                                   FontWeight="SemiBold">
+                            <Run Text="Página "/>
+                            <Run Text="{Binding CurrentPage}"/>
+                            <Run Text=" de "/>
+                            <Run Text="{Binding TotalPages}"/>
+                        </TextBlock>
+                    </Border>
+                    <Button Content="Siguiente →"
+                            Command="{Binding NextPageCommand}"
+                            IsEnabled="{Binding CanGoForward}"
+                            Classes="filter"/>
+                </StackPanel>
+
+                <StackPanel Grid.Column="2"
+                            Orientation="Horizontal"
+                            HorizontalAlignment="Right"
+                            Spacing="10"
+                            VerticalAlignment="Center">
+                    <Button Command="{Binding ViewDetailCommand}"
+                            Width="155"
+                            MinHeight="34"
+                            Background="#102A43"
+                            Foreground="#64B5F6"
+                            BorderBrush="#1976D2"
+                            BorderThickness="1"
+                            Padding="14,7"
+                            CornerRadius="5"
+                            FontSize="12"
+                            FontWeight="SemiBold"
+                            Cursor="Hand"
+                            IsEnabled="{Binding HasSelectedItem}"
+                            ToolTip.Tip="Ver detalle (Enter)">
+                        Ver detalle (Enter)
+                    </Button>
+                    <Button Command="{Binding ExportToExcelCommand}"
+                            Width="155"
+                            MinHeight="34"
+                            Background="#1A2A1A"
+                            Foreground="#4CAF50"
+                            BorderBrush="#2E7D32"
+                            BorderThickness="1"
+                            Padding="14,7"
+                            CornerRadius="5"
+                            FontSize="12"
+                            FontWeight="SemiBold"
+                            Cursor="Hand"
+                            ToolTip.Tip="Generar Excel (F8)">
+                        ⬇  Generar Excel (F8)
+                    </Button>
+                </StackPanel>
             </Grid>
         </Border>
 
